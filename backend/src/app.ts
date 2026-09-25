@@ -65,7 +65,7 @@ app.use('/api/v1/uploads', express.static(path.join(process.cwd(), 'backend/uplo
 
 
 // Health Check with Database Status
-app.get('/api/v1/health', (_req: Request, res: Response) => {
+const healthCheckHandler = (_req: Request, res: Response) => {
   const dbStatus = getDbStatus();
   const healthy = isDbConnected();
 
@@ -77,22 +77,30 @@ app.get('/api/v1/health', (_req: Request, res: Response) => {
     uptime: process.uptime(),
     database: dbStatus,
   });
-});
+};
 
-// Mount Centralized API Routes
-app.use('/api/v1/auth', authRoutes);
-app.use('/api/v1/admin/employees', employeeRoutes);
-app.use('/api/v1/employees', employeeRoutes);
-app.use('/api/v1/complaint-types', complaintTypeRoutes);
-app.use('/api/v1/complaints', complaintRoutes);
-app.use('/api/v1/tickets', complaintRoutes);
-app.use('/api/v1/warranty', warrantyRoutes);
-app.use('/api/v1/warranties', warrantyRoutes);
-app.use('/api/v1/forms', formRoutes);
-app.use('/api/v1/dashboard', dashboardRoutes);
-app.use('/api/v1/customers', customerRoutes);
-app.use('/api/v1/content', contentRoutes);
-app.use('/api/v1/cms', contentRoutes);
+app.get('/api/v1/health', healthCheckHandler);
+app.get('/api/health', healthCheckHandler);
+
+// Mount Centralized API Routes (supports both /api/v1 and /api prefixes)
+const mountRoutes = (prefix: string) => {
+  app.use(`${prefix}/auth`, authRoutes);
+  app.use(`${prefix}/admin/employees`, employeeRoutes);
+  app.use(`${prefix}/employees`, employeeRoutes);
+  app.use(`${prefix}/complaint-types`, complaintTypeRoutes);
+  app.use(`${prefix}/complaints`, complaintRoutes);
+  app.use(`${prefix}/tickets`, complaintRoutes);
+  app.use(`${prefix}/warranty`, warrantyRoutes);
+  app.use(`${prefix}/warranties`, warrantyRoutes);
+  app.use(`${prefix}/forms`, formRoutes);
+  app.use(`${prefix}/dashboard`, dashboardRoutes);
+  app.use(`${prefix}/customers`, customerRoutes);
+  app.use(`${prefix}/content`, contentRoutes);
+  app.use(`${prefix}/cms`, contentRoutes);
+};
+
+mountRoutes('/api/v1');
+mountRoutes('/api');
 
 export default app;
 

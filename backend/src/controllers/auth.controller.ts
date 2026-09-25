@@ -14,7 +14,16 @@ export const adminLogin = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
   try {
-    const user = await User.findOne({ email }).select('+password');
+    const cleanEmail = (email || '').toString().trim();
+    if (!cleanEmail || !password) {
+      return res.status(400).json({ success: false, message: 'Please provide email and password' });
+    }
+
+    const escapedEmail = cleanEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const user = await User.findOne({ 
+      email: { $regex: `^${escapedEmail}$`, $options: 'i' } 
+    }).select('+password');
+
     if (user && (await user.matchPassword(password))) {
       res.json({
         success: true,
@@ -39,10 +48,21 @@ export const employeeLogin = async (req: Request, res: Response) => {
   const { employeeId, password } = req.body;
 
   try {
-    const employee = await Employee.findOne({ employeeId }).select('+password');
+    const cleanId = (employeeId || '').toString().trim();
+    if (!cleanId || !password) {
+      return res.status(400).json({ success: false, message: 'Please provide employee ID and password' });
+    }
+
+    const escapedId = cleanId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const employee = await Employee.findOne({
+      $or: [
+        { employeeId: { $regex: `^${escapedId}$`, $options: 'i' } },
+        { email: { $regex: `^${escapedId}$`, $options: 'i' } },
+      ]
+    }).select('+password');
     
     if (!employee || !employee.password) {
-       return res.status(401).json({ success: false, message: 'Invalid credentials' });
+       return res.status(401).json({ success: false, message: 'Invalid credentials. Please check your Employee ID and password.' });
     }
 
     if (employee.status === 'Inactive') {
@@ -70,9 +90,10 @@ export const employeeLogin = async (req: Request, res: Response) => {
         },
       });
     } else {
-      res.status(401).json({ success: false, message: 'Invalid credentials' });
+      res.status(401).json({ success: false, message: 'Invalid credentials. Please check your Employee ID and password.' });
     }
   } catch (error: any) {
+    console.error('employeeLogin error:', error);
     res.status(500).json({ success: false, message: error.message || 'Server error' });
   }
 };
