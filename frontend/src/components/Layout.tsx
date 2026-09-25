@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import { EbsLogo } from './EbsLogo';
-import { Phone, Mail, MapPin, Clock, ShieldCheck, FileText, Search, ExternalLink } from 'lucide-react';
-import { API_BASE } from '../config/api';
+import { Phone, Mail, MapPin, Clock, ShieldCheck, FileText, Search, ExternalLink, Lock, UserCheck } from 'lucide-react';
+import { API_BASE, ADMIN_PORTAL_URL, EMPLOYEE_PORTAL_URL } from '../config/api';
 
 interface HeaderLogoContent {
   logoType?: 'preset' | 'image';
@@ -227,35 +227,92 @@ const Layout = () => {
                     <span>Contact Us & Helpline</span>
                   </NavLink>
                 </li>
+                <li className="pt-1.5 border-t border-slate-800/80">
+                  <a
+                    href={ADMIN_PORTAL_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-emerald-400 transition flex items-center gap-2 text-slate-400 hover:text-emerald-300"
+                  >
+                    <Lock size={13} className="text-emerald-400" />
+                    <span>Admin Portal</span>
+                    <ExternalLink size={11} className="text-slate-500" />
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href={EMPLOYEE_PORTAL_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-blue-400 transition flex items-center gap-2 text-slate-400 hover:text-blue-300"
+                  >
+                    <UserCheck size={13} className="text-blue-400" />
+                    <span>Employee Portal</span>
+                    <ExternalLink size={11} className="text-slate-500" />
+                  </a>
+                </li>
               </ul>
             </div>
 
-            {/* Column 4: Official Policies & Legal */}
-            <div className="space-y-2 text-xs">
-              <h4 className="text-slate-200 font-bold text-sm tracking-wide mb-3">Policies & Information</h4>
-              <ul className="space-y-2.5 font-medium">
-                {footer.showTermsConditions && (
-                  <li>
-                    <NavLink to="/terms-conditions" className="hover:text-emerald-400 transition flex items-center gap-1.5">
-                      <span>• Terms & Conditions (Battery Policy)</span>
-                    </NavLink>
-                  </li>
-                )}
-                {footer.showPrivacyPolicy && (
-                  <li>
-                    <NavLink to="/privacy-policy" className="hover:text-emerald-400 transition flex items-center gap-1.5">
-                      <span>• Privacy Policy & Battery Telemetry</span>
-                    </NavLink>
-                  </li>
-                )}
-                {footer.showRefundPolicy && (
-                  <li>
-                    <NavLink to="/refund-policy" className="hover:text-emerald-400 transition flex items-center gap-1.5">
-                      <span>• Refund & Battery Replacement Terms</span>
-                    </NavLink>
-                  </li>
-                )}
-              </ul>
+            {/* Column 4: Official Policies & Legal + Staff Access */}
+            <div className="space-y-4 text-xs">
+              <div className="space-y-2">
+                <h4 className="text-slate-200 font-bold text-sm tracking-wide mb-3">Policies & Information</h4>
+                <ul className="space-y-2.5 font-medium">
+                  {footer.showTermsConditions && (
+                    <li>
+                      <NavLink to="/terms-conditions" className="hover:text-emerald-400 transition flex items-center gap-1.5">
+                        <span>• Terms & Conditions (Battery Policy)</span>
+                      </NavLink>
+                    </li>
+                  )}
+                  {footer.showPrivacyPolicy && (
+                    <li>
+                      <NavLink to="/privacy-policy" className="hover:text-emerald-400 transition flex items-center gap-1.5">
+                        <span>• Privacy Policy & Battery Telemetry</span>
+                      </NavLink>
+                    </li>
+                  )}
+                  {footer.showRefundPolicy && (
+                    <li>
+                      <NavLink to="/refund-policy" className="hover:text-emerald-400 transition flex items-center gap-1.5">
+                        <span>• Refund & Battery Replacement Terms</span>
+                      </NavLink>
+                    </li>
+                  )}
+                </ul>
+              </div>
+
+              {/* Staff Portals Quick Launch */}
+              <div className="pt-2 border-t border-slate-800/80 space-y-2">
+                <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">Staff & Admin Access</span>
+                <div className="flex flex-col gap-1.5">
+                  <a
+                    href={ADMIN_PORTAL_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-between px-2.5 py-1.5 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-emerald-400 border border-slate-800 transition group text-[11px]"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <Lock size={12} className="text-emerald-400 group-hover:scale-110 transition-transform" />
+                      <span>Admin Management Portal</span>
+                    </span>
+                    <ExternalLink size={10} className="text-slate-500 group-hover:text-emerald-400" />
+                  </a>
+                  <a
+                    href={EMPLOYEE_PORTAL_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-between px-2.5 py-1.5 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-blue-400 border border-slate-800 transition group text-[11px]"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <UserCheck size={12} className="text-blue-400 group-hover:scale-110 transition-transform" />
+                      <span>Employee & Technician Portal</span>
+                    </span>
+                    <ExternalLink size={10} className="text-slate-500 group-hover:text-blue-400" />
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -263,10 +320,23 @@ const Layout = () => {
             {footer.disclaimer && (
               <p className="max-w-2xl mx-auto text-[11px] leading-relaxed">{footer.disclaimer}</p>
             )}
-            <p>&copy; {footer.copyrightText || `${new Date().getFullYear()} Ekosmart Battery Solution. All rights reserved.`}</p>
+            <div className="flex flex-wrap items-center justify-center gap-3 text-[11px] text-slate-400 pt-1">
+              <span>&copy; {footer.copyrightText || `${new Date().getFullYear()} Ekosmart Battery Solution. All rights reserved.`}</span>
+              <span className="text-slate-700 hidden sm:inline">•</span>
+              <a href={ADMIN_PORTAL_URL} target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition flex items-center gap-1">
+                <Lock size={11} className="text-emerald-400" />
+                <span>Admin Login</span>
+              </a>
+              <span className="text-slate-700 hidden sm:inline">•</span>
+              <a href={EMPLOYEE_PORTAL_URL} target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition flex items-center gap-1">
+                <UserCheck size={11} className="text-blue-400" />
+                <span>Employee Workspace</span>
+              </a>
+            </div>
           </div>
         </div>
       </footer>
+
     </div>
   );
 };

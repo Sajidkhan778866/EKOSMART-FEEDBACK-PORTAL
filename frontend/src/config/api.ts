@@ -7,3 +7,9 @@ export const API_HOST =
 
 export const API_BASE =
   import.meta.env.VITE_API_URL || `${API_HOST}/api/v1`;
+
+export const ADMIN_PORTAL_URL =
+  import.meta.env.VITE_ADMIN_PORTAL_URL || 'http://localhost:5001';
+
+export const EMPLOYEE_PORTAL_URL =
+  import.meta.env.VITE_EMPLOYEE_PORTAL_URL || 'http://localhost:5002';
