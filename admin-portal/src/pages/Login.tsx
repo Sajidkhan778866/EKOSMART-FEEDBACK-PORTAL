@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Lock, Mail, AlertCircle, Loader2 } from 'lucide-react';
-import { authApi } from '../api/client';
+import { Eye, EyeOff, Lock, Mail, AlertCircle, Loader2, Settings, CheckCircle2, RefreshCw } from 'lucide-react';
+import { authApi, getApiBaseUrl, getCustomApiUrl, setCustomApiUrl, clearCustomApiUrl } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
@@ -10,9 +10,43 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Backend URL Configurer
+  const [showConfig, setShowConfig] = useState(false);
+  const [customUrlInput, setCustomUrlInput] = useState('');
+  const [currentBaseUrl, setCurrentBaseUrl] = useState('');
+  const [configSuccess, setConfigSuccess] = useState('');
   
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setCurrentBaseUrl(getApiBaseUrl());
+    const saved = getCustomApiUrl();
+    if (saved) setCustomUrlInput(saved);
+  }, []);
+
+  const handleSaveApiUrl = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customUrlInput.trim()) {
+      clearCustomApiUrl();
+      setCurrentBaseUrl(getApiBaseUrl());
+      setConfigSuccess('Reset to default API URL.');
+      setError('');
+      setTimeout(() => setConfigSuccess(''), 3000);
+      return;
+    }
+
+    setCustomApiUrl(customUrlInput.trim());
+    const newBase = getApiBaseUrl();
+    setCurrentBaseUrl(newBase);
+    setConfigSuccess(`Connected to: ${newBase}`);
+    setError('');
+    setTimeout(() => {
+      setConfigSuccess('');
+      setShowConfig(false);
+    }, 2000);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,13 +75,16 @@ const Login = () => {
       } else if (err.response?.status === 403) {
         setError('This admin account has been deactivated.');
       } else if (err.response?.status === 405) {
-        setError('Configuration Notice: Backend API URL not configured. Please add VITE_API_URL in your Vercel Project Settings (e.g. https://your-backend.vercel.app/api/v1) and redeploy.');
+        setError('Backend API URL not configured in Vercel. Click "Configure Backend URL" below to connect.');
+        setShowConfig(true);
       } else if (err.response?.status === 404) {
-        setError('Backend API endpoint not found. Please ensure VITE_API_URL is configured.');
+        setError('Backend API endpoint not found. Click "Configure Backend URL" below to connect your deployed backend.');
+        setShowConfig(true);
       } else if (err.response?.status === 503) {
         setError('Database is currently connecting. Please wait a few moments and try again.');
       } else if (err.message === 'Network Error' || !err.response) {
-        setError('Network error: Unable to connect to backend server. Please check your internet connection or backend URL.');
+        setError('Network error: Unable to connect to backend server. Please verify backend URL below.');
+        setShowConfig(true);
       } else {
         setError(err.message || 'Server error. Please check your credentials.');
       }
@@ -71,9 +108,11 @@ const Login = () => {
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-8 space-y-6">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-3 text-sm">
-              <AlertCircle size={18} className="flex-shrink-0" />
-              <span>{error}</span>
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start gap-3 text-sm">
+              <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <span>{error}</span>
+              </div>
             </div>
           )}
 
@@ -126,11 +165,64 @@ const Login = () => {
             {loading ? <Loader2 size={20} className="animate-spin" /> : 'SIGN IN TO DASHBOARD'}
           </button>
 
-          <div className="text-center pt-2">
+          <div className="text-center pt-2 space-y-2">
             <p className="text-xs text-slate-400">
               Default Credentials: <span className="font-mono text-slate-600">admin@ekosmart.com / admin123</span>
             </p>
+            <div>
+              <button
+                type="button"
+                onClick={() => setShowConfig(!showConfig)}
+                className="text-xs text-slate-500 hover:text-green-600 inline-flex items-center gap-1 font-medium transition-colors"
+              >
+                <Settings size={13} />
+                {showConfig ? 'Hide Backend Settings' : 'Configure Backend API URL'}
+              </button>
+            </div>
           </div>
+
+          {showConfig && (
+            <div className="mt-4 p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 text-xs">
+              <div className="font-semibold text-slate-700 flex items-center gap-1.5">
+                <Settings size={14} className="text-green-600" />
+                Backend API Connection
+              </div>
+              <div className="text-slate-500 break-all font-mono bg-white p-2 border border-slate-200 rounded">
+                Active: {currentBaseUrl || 'Default'}
+              </div>
+              {configSuccess && (
+                <div className="text-emerald-700 bg-emerald-50 border border-emerald-200 p-2 rounded flex items-center gap-1.5 font-medium">
+                  <CheckCircle2 size={14} />
+                  {configSuccess}
+                </div>
+              )}
+              <div className="space-y-1.5">
+                <label className="block text-slate-600 font-medium">
+                  Deployed Backend URL:
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={customUrlInput}
+                    onChange={(e) => setCustomUrlInput(e.target.value)}
+                    placeholder="https://ekosmart-backend.vercel.app"
+                    className="flex-1 px-3 py-2 border border-slate-300 rounded text-slate-800 font-mono text-xs focus:ring-1 focus:ring-green-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSaveApiUrl}
+                    className="bg-green-600 hover:bg-green-700 text-white font-semibold px-3 py-2 rounded text-xs transition-colors flex items-center gap-1"
+                  >
+                    <RefreshCw size={12} />
+                    Connect
+                  </button>
+                </div>
+                <p className="text-[10px] text-slate-400">
+                  Tip: In Vercel, set <span className="font-mono font-bold">VITE_API_URL</span> in Project Settings for permanent configuration.
+                </p>
+              </div>
+            </div>
+          )}
         </form>
       </div>
     </div>

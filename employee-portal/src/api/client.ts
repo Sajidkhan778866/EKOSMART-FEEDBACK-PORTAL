@@ -1,6 +1,36 @@
 import axios from 'axios';
 
-const getDynamicHost = () => {
+export const getCustomApiUrl = (): string => {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    const custom = localStorage.getItem('ekosmart_api_url');
+    if (custom && custom.trim()) {
+      return custom.trim().replace(/\/+$/, '');
+    }
+  }
+  return '';
+};
+
+export const setCustomApiUrl = (url: string) => {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    let clean = url.trim().replace(/\/+$/, '');
+    if (clean && !clean.startsWith('http://') && !clean.startsWith('https://')) {
+      clean = `https://${clean}`;
+    }
+    localStorage.setItem('ekosmart_api_url', clean);
+  }
+};
+
+export const clearCustomApiUrl = () => {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    localStorage.removeItem('ekosmart_api_url');
+  }
+};
+
+export const getDynamicHost = () => {
+  const custom = getCustomApiUrl();
+  if (custom) {
+    return custom.replace(/\/api\/v1\/?$/, '').replace(/\/api\/?$/, '');
+  }
   if (import.meta.env.VITE_API_HOST) return import.meta.env.VITE_API_HOST;
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL.replace(/\/api\/v1\/?$/, '').replace(/\/api\/?$/, '');
@@ -19,13 +49,22 @@ const getDynamicHost = () => {
   return 'http://localhost:5000';
 };
 
-export const API_HOST = getDynamicHost();
+export const getApiBaseUrl = (): string => {
+  const custom = getCustomApiUrl();
+  if (custom) {
+    return custom.endsWith('/api/v1') ? custom : custom.endsWith('/api') ? `${custom}/v1` : `${custom}/api/v1`;
+  }
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  if (typeof window !== 'undefined' && window.location.port) {
+    return `${window.location.origin}/api/v1`;
+  }
+  return `${getDynamicHost()}/api/v1`;
+};
 
-export const API_BASE_URL =
-  import.meta.env.VITE_API_URL ||
-  (typeof window !== 'undefined' && window.location.port
-    ? `${window.location.origin}/api/v1`
-    : `${API_HOST}/api/v1`);
+export const API_HOST = getDynamicHost();
+export const API_BASE_URL = getApiBaseUrl();
 
 export const resolveImageUrl = (url?: string): string => {
   if (!url || typeof url !== 'string') return '';
@@ -36,6 +75,8 @@ export const resolveImageUrl = (url?: string): string => {
     return trimmed;
   }
 
+  const currentHost = getDynamicHost();
+
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
     if (
       trimmed.includes('localhost:5000') &&
@@ -44,29 +85,30 @@ export const resolveImageUrl = (url?: string): string => {
       window.location.hostname !== 'localhost' &&
       window.location.hostname !== '127.0.0.1'
     ) {
-      return trimmed.replace(/http:\/\/localhost:5000/, API_HOST);
+      return trimmed.replace(/http:\/\/localhost:5000/, currentHost);
     }
     return trimmed;
   }
 
   if (trimmed.startsWith('/uploads/') || trimmed.startsWith('uploads/')) {
     const cleanPath = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
-    return `${API_HOST}${cleanPath}`;
+    return `${currentHost}${cleanPath}`;
   }
 
   if (trimmed.startsWith('/')) {
     return trimmed;
   }
 
-  return `${API_HOST}/${trimmed}`;
+  return `${currentHost}/${trimmed}`;
 };
 
 export const apiClient = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: getApiBaseUrl(),
   timeout: 20000,
 });
 
 apiClient.interceptors.request.use((config) => {
+  config.baseURL = getApiBaseUrl();
   const token = localStorage.getItem('ekosmart_emp_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
