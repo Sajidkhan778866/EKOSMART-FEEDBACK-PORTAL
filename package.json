@@ -1,0 +1,13 @@
+{
+  "name": "ekosmart-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Ekosmart EV Battery Solution & Spare Parts - Full-Stack Enterprise Platform",
+  "scripts": {
+    "build": "npm run build --prefix backend && npm run build --prefix frontend && npm run build --prefix admin-portal && npm run build --prefix employee-portal",
+    "build:backend": "npm run build --prefix backend",
+    "build:frontend": "npm run build --prefix frontend",
+    "build:admin": "npm run build --prefix admin-portal",
+    "build:employee": "npm run build --prefix employee-portal"
+  }
+}
