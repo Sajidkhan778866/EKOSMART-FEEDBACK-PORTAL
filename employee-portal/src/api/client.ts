@@ -5,13 +5,14 @@ const getDynamicHost = () => {
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL.replace(/\/api\/v1\/?$/, '');
   }
-  if (
-    typeof window !== 'undefined' &&
-    window.location.hostname &&
-    window.location.hostname !== 'localhost' &&
-    window.location.hostname !== '127.0.0.1'
-  ) {
-    return `${window.location.protocol}//${window.location.hostname}:5000`;
+  if (typeof window !== 'undefined' && window.location) {
+    const { hostname, protocol, origin, port } = window.location;
+    if (hostname.endsWith('.vercel.app') || (!port && hostname !== 'localhost' && hostname !== '127.0.0.1')) {
+      return origin;
+    }
+    if (hostname && hostname !== 'localhost' && hostname !== '127.0.0.1') {
+      return `${protocol}//${hostname}:5000`;
+    }
   }
   return 'http://localhost:5000';
 };
@@ -19,7 +20,11 @@ const getDynamicHost = () => {
 export const API_HOST = getDynamicHost();
 
 export const API_BASE_URL =
-  import.meta.env.VITE_API_URL || `${API_HOST}/api/v1`;
+  import.meta.env.VITE_API_URL ||
+  (typeof window !== 'undefined' && window.location.port
+    ? `${window.location.origin}/api/v1`
+    : `${API_HOST}/api/v1`);
+
 
 export const resolveImageUrl = (url?: string): string => {
   if (!url || typeof url !== 'string') return '';

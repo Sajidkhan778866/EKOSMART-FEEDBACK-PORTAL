@@ -16,9 +16,10 @@ process.on('uncaughtException', (err) => {
 
 connectDB()
   .then(() => {
-    const server = app.listen(PORT, () => {
-      console.log(`[Server] Ekosmart API Server running on port ${PORT}`);
+    const server = app.listen(Number(PORT), '0.0.0.0', () => {
+      console.log(`[Server] Ekosmart API Server running on port ${PORT} (0.0.0.0)`);
     });
+
 
     const shutdown = async () => {
       console.log('[Server] Graceful shutdown initiated...');
