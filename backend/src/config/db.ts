@@ -1,24 +1,43 @@
 import mongoose from 'mongoose';
-
-let isConnecting = false;
-let reconnectTimer: NodeJS.Timeout | null = null;
-let reconnectAttempts = 0;
-const MAX_RECONNECT_ATTEMPTS = 10;
-const INITIAL_RECONNECT_DELAY_MS = 2000;
+import { ensureDefaultSeedData } from '../utils/autoSeed';
 
 const getMongoUri = (): string => {
-  return process.env.DATABASE_URL || 'mongodb://127.0.0.1:27017/ekosmart';
+  const uri =
+    process.env.DATABASE_URL ||
+    process.env.MONGODB_URI ||
+    process.env.MONGO_URI ||
+    process.env.MONGODB_URL ||
+    'mongodb://127.0.0.1:27017/ekosmart';
+  return uri.trim();
 };
 
-// Set up connection event listeners once
+interface MongooseCache {
+  conn: typeof mongoose | null;
+  promise: Promise<typeof mongoose> | null;
+}
+
+declare global {
+  // eslint-disable-next-line no-var
+  var mongooseCache: MongooseCache | undefined;
+}
+
+let cached: MongooseCache = global.mongooseCache || { conn: null, promise: null };
+if (!global.mongooseCache) {
+  global.mongooseCache = cached;
+}
+
+let listenersConfigured = false;
+
 const setupConnectionListeners = () => {
+  if (listenersConfigured) return;
+  listenersConfigured = true;
+
   mongoose.connection.on('connected', () => {
-    reconnectAttempts = 0;
-    if (reconnectTimer) {
-      clearTimeout(reconnectTimer);
-      reconnectTimer = null;
-    }
-    console.log(`[MongoDB] Connected successfully to: ${mongoose.connection.host}:${mongoose.connection.port}/${mongoose.connection.name}`);
+    console.log(`[MongoDB] Connected successfully to: ${mongoose.connection.host}/${mongoose.connection.name}`);
+    // Run idempotent auto-seeding on fresh connection
+    ensureDefaultSeedData().catch((err) => {
+      console.error('[MongoDB] Auto-seeding error:', err);
+    });
   });
 
   mongoose.connection.on('error', (err) => {
@@ -27,94 +46,82 @@ const setupConnectionListeners = () => {
 
   mongoose.connection.on('disconnected', () => {
     console.warn('[MongoDB] Disconnected from database server.');
-    scheduleReconnect();
+    if (cached) {
+      cached.conn = null;
+      cached.promise = null;
+    }
   });
 
   mongoose.connection.on('reconnected', () => {
     console.log('[MongoDB] Reconnected to database server.');
   });
-
-  mongoose.connection.on('close', () => {
-    console.log('[MongoDB] Connection closed.');
-  });
 };
 
-const scheduleReconnect = () => {
-  if (reconnectTimer || mongoose.connection.readyState === 1 || mongoose.connection.readyState === 2) {
-    return;
+const connectDB = async (): Promise<typeof mongoose> => {
+  // 1. If already connected, return existing connection
+  if ((mongoose.connection.readyState as number) === 1) {
+    // If connected but not seeded yet, trigger seed check
+    ensureDefaultSeedData().catch(() => {});
+    return mongoose;
   }
 
-  if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-    console.error(`[MongoDB] Max reconnection attempts (${MAX_RECONNECT_ATTEMPTS}) reached. Please check MongoDB server status.`);
-    return;
+  // 2. If cached connection exists and is ready
+  if (cached.conn && (mongoose.connection.readyState as number) === 1) {
+    return cached.conn;
   }
 
-  reconnectAttempts++;
-  const delay = Math.min(INITIAL_RECONNECT_DELAY_MS * Math.pow(1.5, reconnectAttempts - 1), 30000);
-  console.log(`[MongoDB] Scheduling reconnection attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS} in ${Math.round(delay / 1000)}s...`);
+  setupConnectionListeners();
 
-  reconnectTimer = setTimeout(async () => {
-    reconnectTimer = null;
-    try {
-      await connectDB();
-    } catch (err: any) {
-      console.error(`[MongoDB] Reconnection attempt failed: ${err.message}`);
-    }
-  }, delay);
-};
-
-let listenersConfigured = false;
-
-const connectDB = async () => {
-  // If already connected (readyState 1), return existing connection
-  if (mongoose.connection.readyState === 1) {
-    return mongoose.connection;
-  }
-
-  // If already connecting (readyState 2), wait for it
-  if (isConnecting) {
-    return mongoose.connection;
-  }
-
-  if (!listenersConfigured) {
-    setupConnectionListeners();
-    listenersConfigured = true;
-  }
-
-  isConnecting = true;
   const uri = getMongoUri();
 
-  try {
-    const conn = await mongoose.connect(uri, {
-      maxPoolSize: 25,
-      minPoolSize: 5,
-      serverSelectionTimeoutMS: 5000,
+  // 3. If a connection promise is already in flight, reuse it
+  if (!cached.promise) {
+    const opts: mongoose.ConnectOptions = {
+      maxPoolSize: 20,
+      minPoolSize: 1,
+      serverSelectionTimeoutMS: 8000,
       socketTimeoutMS: 45000,
       heartbeatFrequencyMS: 10000,
       autoIndex: true,
-    });
+    };
 
-    console.log(`[MongoDB] Connection pool established (Pool: 5-25): ${conn.connection.host}`);
+    console.log(`[MongoDB] Connecting to database (${uri.includes('mongodb+srv') ? 'MongoDB Atlas Cloud' : 'Local MongoDB'})...`);
 
-    // Clean up obsolete indexes safely if they exist
-    try {
-      const customerCollection = mongoose.connection.collection('customers');
-      const indexes = await customerCollection.indexes();
-      if (indexes.some((idx: any) => idx.name === 'phone_1')) {
-        await customerCollection.dropIndex('phone_1');
-        console.log('[MongoDB] Cleaned up obsolete phone_1 index on customers collection');
+    cached.promise = mongoose.connect(uri, opts).then((m) => {
+      console.log(`[MongoDB] Connection pool established with ${m.connection.host}`);
+      // Clean up obsolete indexes safely if they exist
+      try {
+        const customerCollection = m.connection.collection('customers');
+        customerCollection.indexes().then((indexes: any) => {
+          if (indexes.some((idx: any) => idx.name === 'phone_1')) {
+            customerCollection.dropIndex('phone_1').catch(() => {});
+          }
+        }).catch(() => {});
+      } catch {
+        // Ignore
       }
-    } catch {
-      // Ignore if index doesn't exist
-    }
 
-    return conn;
-  } catch (error: any) {
-    console.error(`[MongoDB] Initial connection error: ${error.message || error}`);
-    scheduleReconnect();
-    throw error;
-  } finally {
-    isConnecting = false;
+      // Run auto-seeding
+      ensureDefaultSeedData().catch((err) => {
+        console.error('[MongoDB] Auto-seeding background error:', err);
+      });
+
+      return m;
+    }).catch((err) => {
+      cached.promise = null;
+      cached.conn = null;
+      console.error(`[MongoDB] Connection failed: ${err.message || err}`);
+      throw err;
+    });
+  }
+
+  try {
+    cached.conn = await cached.promise;
+    return cached.conn;
+  } catch (err) {
+    cached.promise = null;
+    cached.conn = null;
+    throw err;
   }
 };
 
@@ -132,8 +139,9 @@ export const getDbStatus = () => {
   return {
     state: states[mongoose.connection.readyState] || 'unknown',
     readyState: mongoose.connection.readyState,
-    host: mongoose.connection.host,
-    name: mongoose.connection.name,
+    host: mongoose.connection.host || 'unknown',
+    name: mongoose.connection.name || 'unknown',
+    isCloud: getMongoUri().includes('mongodb+srv'),
   };
 };
 

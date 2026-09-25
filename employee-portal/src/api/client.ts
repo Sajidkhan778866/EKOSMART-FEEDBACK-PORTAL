@@ -3,13 +3,15 @@ import axios from 'axios';
 const getDynamicHost = () => {
   if (import.meta.env.VITE_API_HOST) return import.meta.env.VITE_API_HOST;
   if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL.replace(/\/api\/v1\/?$/, '');
+    return import.meta.env.VITE_API_URL.replace(/\/api\/v1\/?$/, '').replace(/\/api\/?$/, '');
   }
   if (typeof window !== 'undefined' && window.location) {
     const { hostname, protocol, origin, port } = window.location;
+    // On Vercel or cloud deployment without explicit port
     if (hostname.endsWith('.vercel.app') || (!port && hostname !== 'localhost' && hostname !== '127.0.0.1')) {
       return origin;
     }
+    // On local LAN / Wi-Fi IP address
     if (hostname && hostname !== 'localhost' && hostname !== '127.0.0.1') {
       return `${protocol}//${hostname}:5000`;
     }
@@ -24,7 +26,6 @@ export const API_BASE_URL =
   (typeof window !== 'undefined' && window.location.port
     ? `${window.location.origin}/api/v1`
     : `${API_HOST}/api/v1`);
-
 
 export const resolveImageUrl = (url?: string): string => {
   if (!url || typeof url !== 'string') return '';
@@ -62,6 +63,7 @@ export const resolveImageUrl = (url?: string): string => {
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 20000,
 });
 
 apiClient.interceptors.request.use((config) => {
@@ -71,6 +73,33 @@ apiClient.interceptors.request.use((config) => {
   }
   return config;
 });
+
+apiClient.interceptors.response.use(
+  (response) => {
+    // If response is HTML (happens when a static SPA rewrite intercepts the API route)
+    if (typeof response.data === 'string' && response.data.trim().toLowerCase().startsWith('<!doctype html')) {
+      const error: any = new Error('Backend API endpoint returned HTML. Please verify backend deployment and VITE_API_URL.');
+      error.response = {
+        status: 404,
+        data: {
+          success: false,
+          message: 'Backend API returned HTML instead of JSON. Ensure VITE_API_URL is configured in your Vercel project.',
+        },
+      };
+      return Promise.reject(error);
+    }
+    return response;
+  },
+  (error) => {
+    if (error.response && typeof error.response.data === 'string' && error.response.data.includes('<!DOCTYPE html')) {
+      error.response.data = {
+        success: false,
+        message: 'Backend API endpoint returned HTML. Please check VITE_API_URL or backend server.',
+      };
+    }
+    return Promise.reject(error);
+  }
+);
 
 export const empAuthApi = {
   login: (employeeId: string, password: string) =>
@@ -88,5 +117,3 @@ export const complaintApi = {
 export const contentApi = {
   getPublic: () => apiClient.get('/content/public'),
 };
-
-

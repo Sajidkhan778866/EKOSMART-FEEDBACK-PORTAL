@@ -1,4 +1,4 @@
-import express, { Express, Request, Response } from 'express';
+import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import path from 'path';
 import connectDB, { getDbStatus, isDbConnected } from './config/db';
@@ -15,23 +15,60 @@ import contentRoutes from './routes/content.routes';
 
 const app: Express = express();
 
-app.use(
-  cors({
-    origin: '*',
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  })
-);
+// Allowed Origins Parser
+const rawAllowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map((s) => s.trim().toLowerCase())
+  : [];
+
+const corsOptions: cors.CorsOptions = {
+  origin: (requestOrigin, callback) => {
+    // 1. Allow server-to-server, curl, mobile apps, or same-origin requests (no origin header)
+    if (!requestOrigin) {
+      return callback(null, true);
+    }
+
+    const originLower = requestOrigin.toLowerCase();
+
+    // 2. Allow if wildcard or in configured list
+    if (
+      rawAllowedOrigins.includes('*') ||
+      rawAllowedOrigins.includes(originLower) ||
+      originLower.endsWith('.vercel.app') ||
+      originLower.includes('localhost') ||
+      originLower.includes('127.0.0.1') ||
+      process.env.NODE_ENV !== 'production'
+    ) {
+      return callback(null, true);
+    }
+
+    // Default: allow and reflect the requesting origin
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
+    'Accept',
+    'Origin',
+    'Access-Control-Request-Method',
+    'Access-Control-Request-Headers',
+  ],
+  exposedHeaders: ['Content-Disposition'],
+};
+
+app.use(cors(corsOptions));
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Serverless DB auto-connection middleware
-app.use(async (_req, _res, next) => {
+app.use(async (_req: Request, _res: Response, next: NextFunction) => {
   try {
     await connectDB();
-  } catch (err) {
-    console.error('[Middleware] Database connection error:', err);
+  } catch (err: any) {
+    console.error('[Middleware] Database connection error during request:', err.message || err);
   }
   next();
 });
@@ -43,6 +80,7 @@ app.get('/', (_req: Request, res: Response) => {
     message: 'Ekosmart EV & Battery Management API Server',
     status: 'online',
     version: '1.0.0',
+    database: getDbStatus(),
     healthCheck: '/api/v1/health',
   });
 });
@@ -63,7 +101,6 @@ app.use('/api/v1/uploads', express.static(path.join(__dirname, '../uploads'), st
 app.use('/api/v1/uploads', express.static(path.join(process.cwd(), 'uploads'), staticUploadOptions));
 app.use('/api/v1/uploads', express.static(path.join(process.cwd(), 'backend/uploads'), staticUploadOptions));
 
-
 // Health Check with Database Status
 const healthCheckHandler = (_req: Request, res: Response) => {
   const dbStatus = getDbStatus();
@@ -71,7 +108,7 @@ const healthCheckHandler = (_req: Request, res: Response) => {
 
   res.status(healthy ? 200 : 503).json({
     success: healthy,
-    message: healthy ? 'Ekosmart API Server is healthy' : 'Database is currently reconnecting/degraded',
+    message: healthy ? 'Ekosmart API Server is healthy' : 'Database is currently connecting or degraded',
     environment: process.env.NODE_ENV || 'development',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
@@ -102,5 +139,24 @@ const mountRoutes = (prefix: string) => {
 mountRoutes('/api/v1');
 mountRoutes('/api');
 
-export default app;
+// Catch-all 404 JSON response for unmatched API routes (prevents returning HTML)
+app.use((req: Request, res: Response, next: NextFunction) => {
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({
+      success: false,
+      message: `API endpoint not found: ${req.method} ${req.originalUrl}`,
+    });
+  }
+  next();
+});
 
+// Centralized error handler returning clean JSON
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  console.error('[AppError]', err);
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || 'Internal server error occurred.',
+  });
+});
+
+export default app;

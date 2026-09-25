@@ -33,18 +33,25 @@ const Login = () => {
         setError(res.data?.message || 'Invalid credentials. Please check your Employee ID and password.');
       }
     } catch (err: any) {
-      console.error('Login error:', err);
+      console.error('Employee Login error:', err);
       if (err.response?.data?.message) {
         setError(err.response.data.message);
+      } else if (err.response?.status === 401) {
+        setError('Invalid Employee ID or password. Please verify your credentials.');
+      } else if (err.response?.status === 403) {
+        setError('This employee account has been deactivated. Please contact administrator.');
+      } else if (err.response?.status === 404) {
+        setError('Backend API endpoint not found. Please ensure VITE_API_URL is configured.');
+      } else if (err.response?.status === 503) {
+        setError('Database is currently connecting. Please wait a few moments and try again.');
       } else if (err.message === 'Network Error' || !err.response) {
-        setError('Network error: Unable to connect to backend server. Please reload the page.');
+        setError('Network error: Unable to connect to backend server. Please check your internet connection or backend URL.');
       } else {
-        setError('Server error. Please check your credentials.');
+        setError(err.message || 'Server error. Please check your credentials.');
       }
     } finally {
       setLoading(false);
     }
-
   };
 
   return (

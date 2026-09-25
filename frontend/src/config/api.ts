@@ -1,7 +1,7 @@
 const getDynamicHost = () => {
   if (import.meta.env.VITE_API_HOST) return import.meta.env.VITE_API_HOST;
   if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL.replace(/\/api\/v1\/?$/, '');
+    return import.meta.env.VITE_API_URL.replace(/\/api\/v1\/?$/, '').replace(/\/api\/?$/, '');
   }
   if (typeof window !== 'undefined' && window.location) {
     const { hostname, protocol, origin, port } = window.location;
@@ -22,7 +22,6 @@ export const API_BASE =
   (typeof window !== 'undefined' && window.location.port
     ? `${window.location.origin}/api/v1`
     : `${API_HOST}/api/v1`);
-
 
 export const ADMIN_PORTAL_URL =
   import.meta.env.VITE_ADMIN_PORTAL_URL ||
@@ -58,7 +57,6 @@ export const resolveImageUrl = (url?: string): string => {
 
   // Absolute HTTP / HTTPS URLs
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-    // If it points to localhost:5000 and we are on a mobile device / LAN / custom domain
     if (
       trimmed.includes('localhost:5000') &&
       typeof window !== 'undefined' &&
