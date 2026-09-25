@@ -25,19 +25,26 @@ const Login = () => {
     setError('');
 
     try {
-      const res = await authApi.login(email, password);
-      if (res.data.success) {
+      const res = await authApi.login(email.trim(), password.trim());
+      if (res.data?.success && res.data?.data?.token) {
         login(res.data.data.token, res.data.data);
         navigate('/dashboard');
       } else {
-        setError(res.data.message || 'Invalid credentials');
+        setError(res.data?.message || 'Invalid credentials. Please check your email and password.');
       }
     } catch (err: any) {
-      console.error(err);
-      setError(err.response?.data?.message || 'Server error. Please check your credentials.');
+      console.error('Login error:', err);
+      if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else if (err.message === 'Network Error' || !err.response) {
+        setError('Network error: Unable to connect to backend server. Please reload the page.');
+      } else {
+        setError('Server error. Please check your credentials.');
+      }
     } finally {
       setLoading(false);
     }
+
   };
 
   return (
