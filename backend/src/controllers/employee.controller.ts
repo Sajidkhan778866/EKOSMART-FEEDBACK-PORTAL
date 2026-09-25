@@ -134,10 +134,17 @@ export const createEmployee = async (req: Request, res: Response) => {
     // 9. Process photo
     let photoUrl = '';
     if (req.file) {
-      photoUrl = `/uploads/employees/${req.file.filename}`;
+      if (req.file.buffer) {
+        photoUrl = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+      } else if (req.file.filename) {
+        photoUrl = `/uploads/employees/${req.file.filename}`;
+      }
+    } else if (req.body.photoUrl) {
+      photoUrl = req.body.photoUrl;
     }
 
     // 10. Generate Barcode
+
     const barcode = generateBarcodeSVG(employeeId.trim());
 
     // 11. Create employee
@@ -333,8 +340,13 @@ export const updateEmployee = async (req: Request, res: Response) => {
 
     // Handle photo file
     if (req.file) {
-      updates.photoUrl = `/uploads/employees/${req.file.filename}`;
+      if (req.file.buffer) {
+        updates.photoUrl = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+      } else if (req.file.filename) {
+        updates.photoUrl = `/uploads/employees/${req.file.filename}`;
+      }
     }
+
 
     // Handle division parsing
     if (updates.division !== undefined) {
