@@ -15,7 +15,7 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import { EbsLogo } from '../components/EbsLogo';
-import { API_BASE } from '../config/api';
+import { API_BASE, resolveImageUrl } from '../config/api';
 
 interface DivisionMeta {
   key: string;
@@ -390,13 +390,13 @@ export const RegisterComplaint = () => {
             <div className="bg-white rounded-2xl p-4 shadow-lg flex items-center justify-center mx-auto w-48 h-28 border border-white/80 overflow-hidden">
               {cmsHero?.complaintLogoType === 'image' && cmsHero?.complaintLogoImage ? (
                 <img
-                  src={cmsHero.complaintLogoImage}
+                  src={resolveImageUrl(cmsHero.complaintLogoImage)}
                   alt="Brand Logo"
                   className="max-h-20 w-auto max-w-full object-contain"
                 />
               ) : cmsHero?.logoType === 'image' && cmsHero?.logoImage ? (
                 <img
-                  src={cmsHero.logoImage}
+                  src={resolveImageUrl(cmsHero.logoImage)}
                   alt="Brand Logo"
                   className="max-h-20 w-auto max-w-full object-contain"
                 />
@@ -404,6 +404,7 @@ export const RegisterComplaint = () => {
                 <EbsLogo variant="smart-drive" size="lg" showText={true} />
               )}
             </div>
+
 
             {/* Tracker Main Heading */}
             <div className="space-y-3 pt-2">

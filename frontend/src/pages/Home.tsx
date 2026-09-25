@@ -22,7 +22,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { EbsLogo } from '../components/EbsLogo';
-import { API_BASE } from '../config/api';
+import { API_BASE, resolveImageUrl } from '../config/api';
 
 interface ServiceCard {
   id: string;
@@ -190,16 +190,16 @@ const renderCardIcon = (card: ServiceCard, iconColorClass: string) => {
   if (card.iconType === 'image' && card.iconImage) {
     return (
       <img
-        src={card.iconImage}
+        src={resolveImageUrl(card.iconImage)}
         alt={card.title}
         className="w-10 h-10 object-contain mx-auto"
       />
     );
   }
-  if (card.icon && (card.icon.startsWith('data:image') || card.icon.startsWith('http') || card.icon.startsWith('/'))) {
+  if (card.icon && (card.icon.startsWith('data:image') || card.icon.startsWith('http') || card.icon.startsWith('/') || card.icon.startsWith('uploads/'))) {
     return (
       <img
-        src={card.icon}
+        src={resolveImageUrl(card.icon)}
         alt={card.title}
         className="w-10 h-10 object-contain mx-auto"
       />
@@ -207,6 +207,7 @@ const renderCardIcon = (card: ServiceCard, iconColorClass: string) => {
   }
   return renderDivisionIcon(card.icon, iconColorClass);
 };
+
 
 const getDivisionCardStyles = (color: string) => {
   switch (color?.toLowerCase()) {
@@ -328,11 +329,12 @@ const Home = () => {
             <div className="flex flex-col items-center gap-3">
               <div className="bg-white/10 backdrop-blur-md p-3 rounded-2xl border border-white/20 inline-block shadow-lg">
                 <img
-                  src={hero.logoImage}
+                  src={resolveImageUrl(hero.logoImage)}
                   alt="Brand Logo"
                   className="h-14 max-h-16 w-auto max-w-[240px] object-contain"
                 />
               </div>
+
               <div className="inline-flex items-center gap-2 bg-emerald-800/60 border border-emerald-500/40 px-4 py-1.5 rounded-full text-emerald-300 text-xs font-bold tracking-widest uppercase">
                 <Sparkles size={14} />
                 <span>Official EBS Battery Solution Portal • Kota, Rajasthan</span>
@@ -466,12 +468,13 @@ const Home = () => {
                 style={
                   hasBgImage
                     ? {
-                        backgroundImage: `url("${card.bgImage}")`,
+                        backgroundImage: `url("${resolveImageUrl(card.bgImage)}")`,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
                       }
                     : undefined
                 }
+
                 className={`relative overflow-hidden ${
                   hasBgImage ? 'bg-slate-900' : styles.cardBg
                 } rounded-3xl p-6 text-white text-center flex flex-col justify-between shadow-xl ${

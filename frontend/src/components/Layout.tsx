@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import { EbsLogo } from './EbsLogo';
 import { Phone, Mail, MapPin, Clock, ShieldCheck, FileText, Search, ExternalLink, Lock, UserCheck } from 'lucide-react';
-import { API_BASE, ADMIN_PORTAL_URL, EMPLOYEE_PORTAL_URL } from '../config/api';
+import { API_BASE, ADMIN_PORTAL_URL, EMPLOYEE_PORTAL_URL, resolveImageUrl } from '../config/api';
 
 interface HeaderLogoContent {
   logoType?: 'preset' | 'image';
@@ -99,7 +99,7 @@ const Layout = () => {
           <NavLink to="/" className="flex items-center gap-3">
             {headerLogo.logoType === 'image' && headerLogo.logoImage ? (
               <img
-                src={headerLogo.logoImage}
+                src={resolveImageUrl(headerLogo.logoImage)}
                 alt="Ekosmart Logo"
                 className="h-12 max-h-14 w-auto max-w-[220px] object-contain"
               />
@@ -154,7 +154,7 @@ const Layout = () => {
               {footer.logoType === 'image' && footer.logoImage ? (
                 <div className="bg-slate-900/60 p-2 rounded-xl inline-block border border-slate-800">
                   <img
-                    src={footer.logoImage}
+                    src={resolveImageUrl(footer.logoImage)}
                     alt={footer.companyName || 'Ekosmart Logo'}
                     className="h-12 max-h-14 w-auto max-w-[220px] object-contain"
                   />

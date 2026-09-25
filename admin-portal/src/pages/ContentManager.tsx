@@ -48,7 +48,9 @@ import {
   MapPin,
   Clock,
 } from 'lucide-react';
-import { contentApi, API_BASE_URL } from '../api/client';
+import { contentApi, API_BASE_URL, resolveImageUrl } from '../api/client';
+
+
 
 const FRONTEND_URL = import.meta.env.VITE_FRONTEND_URL || 'http://localhost:5003';
 
@@ -1816,11 +1818,12 @@ const ContentManager = () => {
                     <div className="w-24 h-16 bg-slate-100 rounded-xl flex items-center justify-center border border-slate-300 overflow-hidden shadow-xs">
                       {content.hero.logoImage ? (
                         <img
-                          src={content.hero.logoImage}
+                          src={resolveImageUrl(content.hero.logoImage)}
                           alt="Header Logo Preview"
                           className="w-full h-full object-contain p-1"
                         />
                       ) : (
+
                         <ImageIcon size={28} className="text-slate-400" />
                       )}
                     </div>
@@ -1969,11 +1972,12 @@ const ContentManager = () => {
                     <div className="w-24 h-16 bg-slate-100 rounded-xl flex items-center justify-center border border-slate-300 overflow-hidden shadow-xs">
                       {content.hero.complaintLogoImage ? (
                         <img
-                          src={content.hero.complaintLogoImage}
+                          src={resolveImageUrl(content.hero.complaintLogoImage)}
                           alt="Sidebar Logo Preview"
                           className="w-full h-full object-contain p-1"
                         />
                       ) : (
+
                         <ImageIcon size={28} className="text-slate-400" />
                       )}
                     </div>
@@ -2402,11 +2406,12 @@ const ContentManager = () => {
                     <div className="w-24 h-16 bg-slate-100 rounded-xl flex items-center justify-center border border-slate-300 overflow-hidden shadow-xs">
                       {content.footer.logoImage ? (
                         <img
-                          src={content.footer.logoImage}
+                          src={resolveImageUrl(content.footer.logoImage)}
                           alt="Footer Logo Preview"
                           className="w-full h-full object-contain p-1"
                         />
                       ) : (
+
                         <ImageIcon size={28} className="text-slate-400" />
                       )}
                     </div>

@@ -1,13 +1,59 @@
 import axios from 'axios';
 
-export const API_HOST =
-  import.meta.env.VITE_API_HOST ||
-  (import.meta.env.VITE_API_URL
-    ? import.meta.env.VITE_API_URL.replace(/\/api\/v1\/?$/, '')
-    : 'http://localhost:5000');
+const getDynamicHost = () => {
+  if (import.meta.env.VITE_API_HOST) return import.meta.env.VITE_API_HOST;
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL.replace(/\/api\/v1\/?$/, '');
+  }
+  if (
+    typeof window !== 'undefined' &&
+    window.location.hostname &&
+    window.location.hostname !== 'localhost' &&
+    window.location.hostname !== '127.0.0.1'
+  ) {
+    return `${window.location.protocol}//${window.location.hostname}:5000`;
+  }
+  return 'http://localhost:5000';
+};
+
+export const API_HOST = getDynamicHost();
 
 export const API_BASE_URL =
   import.meta.env.VITE_API_URL || `${API_HOST}/api/v1`;
+
+export const resolveImageUrl = (url?: string): string => {
+  if (!url || typeof url !== 'string') return '';
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+
+  if (trimmed.startsWith('data:') || trimmed.startsWith('blob:')) {
+    return trimmed;
+  }
+
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    if (
+      trimmed.includes('localhost:5000') &&
+      typeof window !== 'undefined' &&
+      window.location.hostname &&
+      window.location.hostname !== 'localhost' &&
+      window.location.hostname !== '127.0.0.1'
+    ) {
+      return trimmed.replace(/http:\/\/localhost:5000/, API_HOST);
+    }
+    return trimmed;
+  }
+
+  if (trimmed.startsWith('/uploads/') || trimmed.startsWith('uploads/')) {
+    const cleanPath = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+    return `${API_HOST}${cleanPath}`;
+  }
+
+  if (trimmed.startsWith('/')) {
+    return trimmed;
+  }
+
+  return `${API_HOST}/${trimmed}`;
+};
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,

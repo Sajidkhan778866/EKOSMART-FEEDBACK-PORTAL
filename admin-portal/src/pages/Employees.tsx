@@ -28,7 +28,8 @@ import {
   Package,
   Box,
 } from 'lucide-react';
-import { employeeApi, formApi, contentApi, API_HOST } from '../api/client';
+import { employeeApi, formApi, contentApi, resolveImageUrl } from '../api/client';
+
 import { IdCardModal } from '../components/IdCardModal';
 
 export interface ICertificate {
@@ -556,8 +557,9 @@ const Employees = () => {
     setPassword('');
     setConfirmPassword('');
     setPhotoFile(null);
-    setPhotoPreview(emp.photoUrl ? (emp.photoUrl.startsWith('http') ? emp.photoUrl : `${API_HOST}${emp.photoUrl}`) : '');
+    setPhotoPreview(emp.photoUrl ? resolveImageUrl(emp.photoUrl) : '');
     setStatus(emp.status || 'Active');
+
 
     const isStandardDesignation = SOFT_CODED_DESIGNATION_PRESETS
       .filter((p) => p !== 'Other / Custom Designation...')
@@ -1082,11 +1084,12 @@ const Employees = () => {
                       <div className="flex items-center gap-3">
                         {emp.photoUrl ? (
                           <img
-                            src={emp.photoUrl.startsWith('http') ? emp.photoUrl : `${API_HOST}${emp.photoUrl}`}
+                            src={resolveImageUrl(emp.photoUrl)}
                             alt={emp.name}
                             className="w-11 h-11 rounded-full object-cover border border-slate-200 shadow-xs"
                           />
                         ) : (
+
                           <div className="w-11 h-11 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center border border-emerald-200 text-sm">
                             {emp.name.slice(0, 2).toUpperCase()}
                           </div>

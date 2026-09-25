@@ -47,8 +47,22 @@ app.get('/', (_req: Request, res: Response) => {
   });
 });
 
-// Serve uploaded files statically
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// Serve uploaded files statically across all routes with no-stale cache headers
+const staticUploadOptions = {
+  maxAge: 0,
+  setHeaders: (res: Response) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+  },
+};
+
+app.use('/uploads', express.static(path.join(__dirname, '../uploads'), staticUploadOptions));
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), staticUploadOptions));
+app.use('/uploads', express.static(path.join(process.cwd(), 'backend/uploads'), staticUploadOptions));
+app.use('/api/v1/uploads', express.static(path.join(__dirname, '../uploads'), staticUploadOptions));
+app.use('/api/v1/uploads', express.static(path.join(process.cwd(), 'uploads'), staticUploadOptions));
+app.use('/api/v1/uploads', express.static(path.join(process.cwd(), 'backend/uploads'), staticUploadOptions));
+
 
 // Health Check with Database Status
 app.get('/api/v1/health', (_req: Request, res: Response) => {

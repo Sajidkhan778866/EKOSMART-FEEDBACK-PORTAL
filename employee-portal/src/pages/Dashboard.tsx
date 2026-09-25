@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ClipboardList, Clock, CheckCircle, UserCheck, Loader2, QrCode, Eye } from 'lucide-react';
-import { empAuthApi, API_HOST } from '../api/client';
+import { empAuthApi, resolveImageUrl } from '../api/client';
+
 import { useAuth } from '../context/AuthContext';
 import { IdCardModal } from '../components/IdCardModal';
 import { TicketDetailModal } from '../components/TicketDetailModal';
@@ -51,11 +52,12 @@ const Dashboard = () => {
         <div className="flex items-center gap-4">
           {employee?.photoUrl ? (
             <img
-              src={employee.photoUrl.startsWith('http') ? employee.photoUrl : `${API_HOST}${employee.photoUrl}`}
+              src={resolveImageUrl(employee.photoUrl)}
               alt={employee.name}
               className="w-16 h-16 rounded-full object-cover border-2 border-indigo-500 shadow"
             />
           ) : (
+
             <div className="w-16 h-16 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xl flex items-center justify-center border-2 border-indigo-500">
               {employee?.name?.slice(0, 2).toUpperCase() || 'EM'}
             </div>

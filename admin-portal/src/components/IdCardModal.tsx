@@ -13,7 +13,7 @@ import {
   Sliders,
   RotateCcw,
 } from 'lucide-react';
-import { contentApi, API_HOST } from '../api/client';
+import { contentApi, resolveImageUrl } from '../api/client';
 
 export interface EmployeeCardData {
   _id: string;
@@ -563,11 +563,12 @@ export const IdCardModal: FC<IdCardModalProps> = ({ employee, onClose }) => {
                   <div className="relative inline-block">
                     {employee.photoUrl ? (
                       <img
-                        src={employee.photoUrl.startsWith('http') ? employee.photoUrl : `${API_HOST}${employee.photoUrl}`}
+                        src={resolveImageUrl(employee.photoUrl)}
                         alt={employee.name}
                         className="w-24 h-24 rounded-2xl object-cover mx-auto border-4 border-white shadow-md bg-white"
                       />
                     ) : (
+
                       <div className={`w-24 h-24 rounded-2xl bg-gradient-to-tr from-slate-800 to-slate-700 text-white font-black text-2xl flex items-center justify-center mx-auto border-4 border-white shadow-md`}>
                         {employee.name.slice(0, 2).toUpperCase()}
                       </div>
