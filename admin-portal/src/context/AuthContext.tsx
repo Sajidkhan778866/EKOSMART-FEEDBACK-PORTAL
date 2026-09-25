@@ -1,5 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { API_BASE_URL } from '../api/client';
+import React, { createContext, useContext, useState } from 'react';
 
 interface User {
   _id: string;
@@ -39,32 +38,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('ekosmart_admin_user');
   };
 
-  useEffect(() => {
-    // If token is empty or mock_admin_token, get a real backend token
-    if (!token || token === 'mock_admin_token') {
-      fetch(`${API_BASE_URL}/auth/admin/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: 'admin@ekosmart.com', password: 'admin123' }),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success && data.data?.token) {
-            login(data.data.token, data.data);
-          }
-        })
-        .catch((err) => {
-          console.warn('Auto auth login check:', err);
-        });
-    }
-  }, []);
-
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated: !!token }}>
+    <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated: !!token && !!user }}>
       {children}
     </AuthContext.Provider>
   );
 };
+
 
 export const useAuth = () => {
   const context = useContext(AuthContext);

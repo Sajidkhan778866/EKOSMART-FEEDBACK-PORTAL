@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 
 interface EmployeeUser {
   _id: string;
@@ -39,24 +39,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('ekosmart_emp_user');
   };
 
-  useEffect(() => {
-    if (!token) {
-      // Default to seeded employee for easy testing
-      login('mock_emp_token', {
-        _id: '1',
-        name: 'Rajesh Sharma',
-        employeeId: 'TEST-EMP-001',
-        role: 'Technician',
-      });
-    }
-  }, []);
-
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated: !!token }}>
+    <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated: !!token && !!user }}>
       {children}
     </AuthContext.Provider>
   );
 };
+
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
