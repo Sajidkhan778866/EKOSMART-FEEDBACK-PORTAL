@@ -40,6 +40,8 @@ const Login = () => {
         setError('Invalid Employee ID or password. Please verify your credentials.');
       } else if (err.response?.status === 403) {
         setError('This employee account has been deactivated. Please contact administrator.');
+      } else if (err.response?.status === 405) {
+        setError('Configuration Notice: Backend API URL not configured. Please add VITE_API_URL in your Vercel Project Settings (e.g. https://your-backend.vercel.app/api/v1) and redeploy.');
       } else if (err.response?.status === 404) {
         setError('Backend API endpoint not found. Please ensure VITE_API_URL is configured.');
       } else if (err.response?.status === 503) {
