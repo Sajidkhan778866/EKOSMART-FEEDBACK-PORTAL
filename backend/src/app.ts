@@ -102,7 +102,12 @@ app.use('/api/v1/uploads', express.static(path.join(process.cwd(), 'uploads'), s
 app.use('/api/v1/uploads', express.static(path.join(process.cwd(), 'backend/uploads'), staticUploadOptions));
 
 // Health Check with Database Status
-const healthCheckHandler = (_req: Request, res: Response) => {
+const healthCheckHandler = async (_req: Request, res: Response) => {
+  try {
+    await connectDB();
+  } catch (err: any) {
+    // error is captured in lastConnectionError
+  }
   const dbStatus = getDbStatus();
   const healthy = isDbConnected();
 
