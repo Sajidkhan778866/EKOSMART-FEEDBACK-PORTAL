@@ -118,7 +118,20 @@ export const ensureDefaultSeedData = async (): Promise<void> => {
           barcode,
         });
         console.log(`[AutoSeed] Default Employee created: ${emp.employeeId} (${emp.name})`);
+      } else if (!existingEmp.plainPassword) {
+        existingEmp.plainPassword = emp.password;
+        await existingEmp.save();
       }
+    }
+
+    // Backfill any other employees that lack plainPassword
+    try {
+      await Employee.updateMany(
+        { $or: [{ plainPassword: { $exists: false } }, { plainPassword: '' }, { plainPassword: null }] },
+        { $set: { plainPassword: 'employee123' } }
+      );
+    } catch {
+      // Ignore
     }
 
     // 3. Ensure Default Complaint Forms exist

@@ -39,6 +39,9 @@ export const getDynamicHost = () => {
     const { hostname, protocol, origin, port } = window.location;
     // On Vercel or cloud deployment without explicit port
     if (hostname.endsWith('.vercel.app') || (!port && hostname !== 'localhost' && hostname !== '127.0.0.1')) {
+      if (!hostname.startsWith('backend-') && !hostname.startsWith('api-')) {
+        return 'https://backend-k31i.vercel.app';
+      }
       return origin;
     }
     // On local LAN / Wi-Fi IP address

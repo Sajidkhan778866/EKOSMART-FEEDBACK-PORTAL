@@ -1192,18 +1192,18 @@ const Employees = () => {
                     {/* Password / Credentials Column */}
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-2 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-200 w-fit">
-                        <span className="font-mono text-xs text-slate-700 font-semibold tracking-wider">
-                          {visiblePasswords[emp._id]
-                            ? emp.plainPassword || (emp.employeeId?.startsWith('TEST-') || emp.employeeId?.startsWith('EMP-') ? 'employee123' : 'employee123')
+                        <span className="font-mono text-xs text-slate-700 font-semibold tracking-wider select-all">
+                          {visiblePasswords[emp._id || emp.employeeId]
+                            ? (emp.plainPassword || (emp.employeeId?.startsWith('TEST-') || emp.employeeId?.startsWith('EMP-') ? 'employee123' : 'employee123'))
                             : '••••••••'}
                         </span>
                         <button
                           type="button"
-                          onClick={() => togglePasswordView(emp._id)}
-                          className="text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
-                          title="Toggle Password Mask"
+                          onClick={() => togglePasswordView(emp._id || emp.employeeId)}
+                          className="text-slate-400 hover:text-emerald-600 focus:outline-none cursor-pointer p-0.5 rounded transition"
+                          title={visiblePasswords[emp._id || emp.employeeId] ? "Hide Password" : "Show Password"}
                         >
-                          {visiblePasswords[emp._id] ? <EyeOff size={14} /> : <Eye size={14} />}
+                          {visiblePasswords[emp._id || emp.employeeId] ? <EyeOff size={15} className="text-emerald-600" /> : <Eye size={15} />}
                         </button>
                       </div>
                     </td>
