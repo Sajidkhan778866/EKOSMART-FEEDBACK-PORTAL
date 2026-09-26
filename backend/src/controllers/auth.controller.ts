@@ -161,6 +161,9 @@ export const employeeLogin = async (req: Request, res: Response) => {
         token,
       },
     });
+  } catch (error: any) {
+    console.error('[EmployeeLogin] Error:', error);
+    const healthy = isDbConnected();
     const errorMsg = error.message || String(error);
     const isDbErr = !healthy || errorMsg.includes('buffering timed out') || errorMsg.includes('ECONNREFUSED') || errorMsg.includes('Server selection timed out') || errorMsg.includes('Authentication failed');
     return res.status(healthy ? 500 : 503).json({
