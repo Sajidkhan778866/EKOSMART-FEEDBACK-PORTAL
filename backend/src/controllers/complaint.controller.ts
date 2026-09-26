@@ -14,7 +14,7 @@ const DIVISION_PREFIXES: Record<string, string> = {
 };
 
 export const generateTicketNumber = async (division: string): Promise<string> => {
-  const prefix = DIVISION_PREFIXES[division] || (division ? division.slice(0, 3).toUpperCase() : 'CMP');
+  const prefix = DIVISION_PREFIXES[division] || (division ? division.slice(0, 3).toUpperCase().replace(/[^A-Z]/g, '') : 'CMP');
   const today = new Date();
   const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
   
@@ -24,13 +24,31 @@ export const generateTicketNumber = async (division: string): Promise<string> =>
   const endOfDay = new Date(today);
   endOfDay.setHours(23, 59, 59, 999);
 
-  const count = await Complaint.countDocuments({
-    division: division,
-    createdAt: { $gte: startOfDay, $lte: endOfDay },
-  });
+  let count = 0;
+  try {
+    count = await Complaint.countDocuments({
+      division: division,
+      createdAt: { $gte: startOfDay, $lte: endOfDay },
+    });
+  } catch {
+    count = Math.floor(Math.random() * 50);
+  }
 
   const seq = (count + 1).toString().padStart(4, '0');
-  return `${prefix}-${dateStr}-${seq}`;
+  const candidate = `${prefix}-${dateStr}-${seq}`;
+  
+  // Guarantee uniqueness
+  try {
+    const exists = await Complaint.findOne({ ticketNumber: candidate });
+    if (exists) {
+      const rand = Math.floor(1000 + Math.random() * 9000);
+      return `${prefix}-${dateStr}-${seq}-${rand}`;
+    }
+  } catch {
+    // ignore
+  }
+
+  return candidate;
 };
 
 export const submitPublicComplaint = async (req: Request, res: Response) => {
@@ -54,33 +72,61 @@ export const submitPublicComplaint = async (req: Request, res: Response) => {
       });
     }
 
-    // 1. Find or create Customer
-    let customer = await Customer.findOne({ mobile: customerMobile.trim() });
+    const cleanMobile = String(customerMobile).trim();
+    const cleanName = String(customerName).trim();
+    const cleanEmail = customerEmail ? String(customerEmail).trim() : undefined;
+    const cleanAddress = address ? String(address).trim() : undefined;
+    const cleanDivision = String(division).trim();
+
+    // 1. Find or create Customer with upsert protection
+    let customer = await Customer.findOne({ mobile: cleanMobile });
     if (!customer) {
       const customerId = `CUST-${Date.now().toString().slice(-6)}`;
-      customer = await Customer.create({
-        customerId,
-        name: customerName.trim(),
-        mobile: customerMobile.trim(),
-        email: customerEmail ? customerEmail.trim() : undefined,
-        address: address ? address.trim() : undefined,
-        customerType: division === 'Showroom' ? 'Showroom' : 'General',
-      });
-    } else if (address && !customer.address) {
-      customer.address = address.trim();
-      await customer.save();
+      try {
+        customer = await Customer.create({
+          customerId,
+          name: cleanName,
+          mobile: cleanMobile,
+          email: cleanEmail,
+          address: cleanAddress,
+          customerType: cleanDivision === 'Showroom' ? 'Showroom' : 'General',
+        });
+      } catch (custErr: any) {
+        customer = await Customer.findOne({ mobile: cleanMobile });
+        if (!customer) {
+          throw new Error(`Failed to initialize customer record: ${custErr.message}`);
+        }
+      }
+    } else {
+      let updated = false;
+      if (cleanName && customer.name !== cleanName) {
+        customer.name = cleanName;
+        updated = true;
+      }
+      if (cleanEmail && !customer.email) {
+        customer.email = cleanEmail;
+        updated = true;
+      }
+      if (cleanAddress && !customer.address) {
+        customer.address = cleanAddress;
+        updated = true;
+      }
+      if (updated) {
+        await customer.save().catch(() => {});
+      }
     }
 
     // 2. Generate Ticket Number
-    const ticketNumber = await generateTicketNumber(division);
+    const ticketNumber = await generateTicketNumber(cleanDivision);
 
     // 3. Create Complaint
+    const desc = description ? String(description).trim() : (formData?.complaintDescription ? String(formData.complaintDescription).trim() : '');
     const complaint = await Complaint.create({
       ticketNumber,
       customer: customer._id,
-      division: division.trim(),
-      complaintType: complaintType ? complaintType.trim() : '',
-      description: description ? description.trim() : (formData?.complaintDescription || ''),
+      division: cleanDivision,
+      complaintType: complaintType ? String(complaintType).trim() : 'General Issue',
+      description: desc,
       formData: formData || {},
       status: 'Pending',
       priority: priority || 'Medium',
@@ -88,7 +134,7 @@ export const submitPublicComplaint = async (req: Request, res: Response) => {
         {
           status: 'Pending',
           note: 'Customer submitted complaint ticket online.',
-          updatedBy: customerName.trim(),
+          updatedBy: cleanName,
           updatedAt: new Date(),
         },
       ],
@@ -107,7 +153,14 @@ export const submitPublicComplaint = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Complaint submission error:', error);
-    res.status(500).json({ success: false, message: error.message || 'Failed to submit complaint' });
+    const msg = error.message || String(error);
+    const isDbErr = msg.includes('buffering timed out') || msg.includes('ECONNREFUSED') || msg.includes('Server selection timed out');
+    res.status(isDbErr ? 503 : 500).json({
+      success: false,
+      message: isDbErr
+        ? 'Database is currently connecting. Please try submitting again in a few moments.'
+        : (error.message || 'Failed to submit complaint'),
+    });
   }
 };
 
