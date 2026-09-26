@@ -1,7 +1,5 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
+const app = require('../dist/app').default || require('../dist/src/app').default || require('../dist/app');
+
+module.exports = (req, res) => {
+  return app(req, res);
 };
-Object.defineProperty(exports, "__esModule", { value: true });
-const app_1 = __importDefault(require("../src/app"));
-exports.default = app_1.default;
