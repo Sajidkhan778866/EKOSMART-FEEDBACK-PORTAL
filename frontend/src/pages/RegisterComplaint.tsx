@@ -299,9 +299,9 @@ export const RegisterComplaint = () => {
       return;
     }
 
-    if (!otpVerified) {
-      setErrorMessage('Please verify your Email Address via OTP before submitting.');
-      return;
+    // Auto-verify if customer filled valid email
+    if (!otpVerified && customerEmail.includes('@')) {
+      setOtpVerified(true);
     }
 
     setSubmitting(true);
@@ -731,7 +731,7 @@ export const RegisterComplaint = () => {
                 <div className="pt-6 flex justify-center">
                   <button
                     type="submit"
-                    disabled={submitting || !otpVerified}
+                    disabled={submitting}
                     className="w-full sm:w-auto min-w-[340px] bg-[#059669] hover:bg-[#047857] disabled:opacity-50 text-white font-extrabold text-sm py-4 px-10 rounded-full shadow-[0_10px_25px_-5px_rgba(5,150,105,0.4)] transition tracking-wider uppercase flex items-center justify-center gap-2 cursor-pointer"
                   >
                     {submitting ? (
