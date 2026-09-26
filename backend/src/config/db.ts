@@ -26,6 +26,8 @@ if (!global.mongooseCache) {
   global.mongooseCache = cached;
 }
 
+let lastConnectionError: string | null = null;
+
 let listenersConfigured = false;
 
 const setupConnectionListeners = () => {
@@ -33,6 +35,7 @@ const setupConnectionListeners = () => {
   listenersConfigured = true;
 
   mongoose.connection.on('connected', () => {
+    lastConnectionError = null;
     console.log(`[MongoDB] Connected successfully to: ${mongoose.connection.host}/${mongoose.connection.name}`);
     // Run idempotent auto-seeding on fresh connection
     ensureDefaultSeedData().catch((err) => {
@@ -41,7 +44,8 @@ const setupConnectionListeners = () => {
   });
 
   mongoose.connection.on('error', (err) => {
-    console.error(`[MongoDB] Connection error:`, err.message || err);
+    lastConnectionError = err.message || String(err);
+    console.error(`[MongoDB] Connection error:`, lastConnectionError);
   });
 
   mongoose.connection.on('disconnected', () => {
@@ -53,6 +57,7 @@ const setupConnectionListeners = () => {
   });
 
   mongoose.connection.on('reconnected', () => {
+    lastConnectionError = null;
     console.log('[MongoDB] Reconnected to database server.');
   });
 };
@@ -77,9 +82,9 @@ const connectDB = async (): Promise<typeof mongoose> => {
   // 3. If a connection promise is already in flight, reuse it
   if (!cached.promise) {
     const opts: mongoose.ConnectOptions = {
-      maxPoolSize: 20,
+      maxPoolSize: 10,
       minPoolSize: 1,
-      serverSelectionTimeoutMS: 8000,
+      serverSelectionTimeoutMS: 10000,
       socketTimeoutMS: 45000,
       heartbeatFrequencyMS: 10000,
       autoIndex: true,
@@ -88,6 +93,7 @@ const connectDB = async (): Promise<typeof mongoose> => {
     console.log(`[MongoDB] Connecting to database (${uri.includes('mongodb+srv') ? 'MongoDB Atlas Cloud' : 'Local MongoDB'})...`);
 
     cached.promise = mongoose.connect(uri, opts).then((m) => {
+      lastConnectionError = null;
       console.log(`[MongoDB] Connection pool established with ${m.connection.host}`);
       // Clean up obsolete indexes safely if they exist
       try {
@@ -108,9 +114,10 @@ const connectDB = async (): Promise<typeof mongoose> => {
 
       return m;
     }).catch((err) => {
+      lastConnectionError = err.message || String(err);
       cached.promise = null;
       cached.conn = null;
-      console.error(`[MongoDB] Connection failed: ${err.message || err}`);
+      console.error(`[MongoDB] Connection failed: ${lastConnectionError}`);
       throw err;
     });
   }
@@ -118,7 +125,8 @@ const connectDB = async (): Promise<typeof mongoose> => {
   try {
     cached.conn = await cached.promise;
     return cached.conn;
-  } catch (err) {
+  } catch (err: any) {
+    lastConnectionError = err.message || String(err);
     cached.promise = null;
     cached.conn = null;
     throw err;
@@ -142,6 +150,7 @@ export const getDbStatus = () => {
     host: mongoose.connection.host || 'unknown',
     name: mongoose.connection.name || 'unknown',
     isCloud: getMongoUri().includes('mongodb+srv'),
+    lastError: lastConnectionError,
   };
 };
 

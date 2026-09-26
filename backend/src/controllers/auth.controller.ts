@@ -75,11 +75,13 @@ export const adminLogin = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('[AdminLogin] Error:', error);
     const healthy = isDbConnected();
+    const errorMsg = error.message || String(error);
+    const isDbErr = !healthy || errorMsg.includes('buffering timed out') || errorMsg.includes('ECONNREFUSED') || errorMsg.includes('Server selection timed out') || errorMsg.includes('Authentication failed');
     return res.status(healthy ? 500 : 503).json({
       success: false,
-      message: healthy
-        ? (error.message || 'Internal server error occurred during login.')
-        : 'Database is currently connecting. Please wait a moment and try again.',
+      message: isDbErr
+        ? `Database connection error: ${errorMsg}. Please check MongoDB Atlas IP access and credentials.`
+        : (error.message || 'Internal server error occurred during login.'),
     });
   }
 };
@@ -159,14 +161,13 @@ export const employeeLogin = async (req: Request, res: Response) => {
         token,
       },
     });
-  } catch (error: any) {
-    console.error('[EmployeeLogin] Error:', error);
-    const healthy = isDbConnected();
+    const errorMsg = error.message || String(error);
+    const isDbErr = !healthy || errorMsg.includes('buffering timed out') || errorMsg.includes('ECONNREFUSED') || errorMsg.includes('Server selection timed out') || errorMsg.includes('Authentication failed');
     return res.status(healthy ? 500 : 503).json({
       success: false,
-      message: healthy
-        ? (error.message || 'Internal server error occurred during login.')
-        : 'Database is currently connecting. Please wait a moment and try again.',
+      message: isDbErr
+        ? `Database connection error: ${errorMsg}. Please check MongoDB Atlas IP access and credentials.`
+        : (error.message || 'Internal server error occurred during login.'),
     });
   }
 };
