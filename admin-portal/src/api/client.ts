@@ -40,7 +40,7 @@ export const getDynamicHost = () => {
     // On Vercel or cloud deployment without explicit port
     if (hostname.endsWith('.vercel.app') || (!port && hostname !== 'localhost' && hostname !== '127.0.0.1')) {
       if (!hostname.startsWith('backend-') && !hostname.startsWith('api-')) {
-        return 'https://backend-k31i.vercel.app';
+        return 'https://backend-sajidkhan778866s-projects.vercel.app';
       }
       return origin;
     }

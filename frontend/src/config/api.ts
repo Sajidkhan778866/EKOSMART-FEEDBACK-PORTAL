@@ -22,7 +22,7 @@ const getDynamicHost = () => {
     if (hostname.endsWith('.vercel.app') || (!port && hostname !== 'localhost' && hostname !== '127.0.0.1')) {
       // If deployed on Vercel and not backend itself, route to active deployed backend
       if (!hostname.startsWith('backend-') && !hostname.startsWith('api-')) {
-        return 'https://backend-k31i.vercel.app';
+        return 'https://backend-sajidkhan778866s-projects.vercel.app';
       }
       return window.location.origin;
     }
