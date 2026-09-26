@@ -106,9 +106,10 @@ const healthCheckHandler = (_req: Request, res: Response) => {
   const dbStatus = getDbStatus();
   const healthy = isDbConnected();
 
-  res.status(healthy ? 200 : 503).json({
-    success: healthy,
-    message: healthy ? 'Ekosmart API Server is healthy' : 'Database is currently connecting or degraded',
+  res.status(200).json({
+    success: true,
+    server: 'online',
+    message: healthy ? 'Ekosmart API Server & Database operational' : 'API Server online, database connecting/pending',
     environment: process.env.NODE_ENV || 'development',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),

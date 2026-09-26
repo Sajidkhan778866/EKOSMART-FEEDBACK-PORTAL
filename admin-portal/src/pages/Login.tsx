@@ -38,18 +38,17 @@ const Login = () => {
     for (const testUrl of candidateUrls) {
       try {
         const res = await fetch(testUrl, { method: 'GET', mode: 'cors' });
-        if (res.ok) {
-          const contentType = res.headers.get('content-type') || '';
-          if (contentType.includes('application/json')) {
-            const data = await res.json();
-            return { ok: true, data };
-          }
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          const data = await res.json();
+          const dbConnected = data?.database?.readyState === 1 || data?.database?.state === 'connected';
+          return { ok: true, serverReachable: true, dbConnected, data };
         }
       } catch (err) {
         // continue to next candidate
       }
     }
-    return { ok: false };
+    return { ok: false, serverReachable: false, dbConnected: false };
   };
 
   const handleSaveApiUrl = async (e: React.FormEvent) => {
@@ -80,10 +79,15 @@ const Login = () => {
     const newBase = getApiBaseUrl();
     setCurrentBaseUrl(newBase);
 
-    if (testResult.ok) {
-      const dbStatus = testResult.data?.database === 'connected' ? ' (DB Connected)' : '';
-      setConfigSuccess(`Connected & Verified! ${dbStatus}`);
-      setError('');
+    if (testResult.ok && testResult.serverReachable) {
+      if (testResult.dbConnected) {
+        setConfigSuccess('Connected & Verified! (Database Online)');
+        setError('');
+      } else {
+        setConfigError(
+          'Backend is reachable, but MongoDB database is disconnected. In your Vercel Backend Project Settings > Environment Variables, add DATABASE_URL (MongoDB Atlas connection URI).'
+        );
+      }
     } else {
       if (candidate.includes('.vercel.app')) {
         setConfigError(
