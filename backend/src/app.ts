@@ -118,6 +118,7 @@ const healthCheckHandler = (_req: Request, res: Response) => {
 
 app.get('/api/v1/health', healthCheckHandler);
 app.get('/api/health', healthCheckHandler);
+app.get('/health', healthCheckHandler);
 
 // Mount Centralized API Routes (supports both /api/v1 and /api prefixes)
 const mountRoutes = (prefix: string) => {

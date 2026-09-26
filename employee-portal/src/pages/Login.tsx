@@ -16,6 +16,8 @@ const Login = () => {
   const [customUrlInput, setCustomUrlInput] = useState('');
   const [currentBaseUrl, setCurrentBaseUrl] = useState('');
   const [configSuccess, setConfigSuccess] = useState('');
+  const [configError, setConfigError] = useState('');
+  const [testingConnection, setTestingConnection] = useState(false);
 
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -26,26 +28,71 @@ const Login = () => {
     if (saved) setCustomUrlInput(saved);
   }, []);
 
-  const handleSaveApiUrl = (e: React.FormEvent) => {
+  const testBackendConnection = async (targetUrl: string) => {
+    const cleanUrl = targetUrl.trim().replace(/\/+$/, '');
+    const candidateUrls = [
+      cleanUrl.endsWith('/api/v1') ? `${cleanUrl}/health` : `${cleanUrl}/api/v1/health`,
+      `${cleanUrl}/health`,
+    ];
+
+    for (const testUrl of candidateUrls) {
+      try {
+        const res = await fetch(testUrl, { method: 'GET', mode: 'cors' });
+        if (res.ok) {
+          const contentType = res.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            const data = await res.json();
+            return { ok: true, data };
+          }
+        }
+      } catch (err) {
+        // continue to next candidate
+      }
+    }
+    return { ok: false };
+  };
+
+  const handleSaveApiUrl = async (e: React.FormEvent) => {
     e.preventDefault();
+    setConfigError('');
+    setConfigSuccess('');
+
     if (!customUrlInput.trim()) {
       clearCustomApiUrl();
-      setCurrentBaseUrl(getApiBaseUrl());
+      const def = getApiBaseUrl();
+      setCurrentBaseUrl(def);
       setConfigSuccess('Reset to default API URL.');
       setError('');
       setTimeout(() => setConfigSuccess(''), 3000);
       return;
     }
 
-    setCustomApiUrl(customUrlInput.trim());
+    setTestingConnection(true);
+    let candidate = customUrlInput.trim().replace(/\/+$/, '');
+    if (!candidate.startsWith('http://') && !candidate.startsWith('https://')) {
+      candidate = `https://${candidate}`;
+    }
+
+    const testResult = await testBackendConnection(candidate);
+    setTestingConnection(false);
+
+    setCustomApiUrl(candidate);
     const newBase = getApiBaseUrl();
     setCurrentBaseUrl(newBase);
-    setConfigSuccess(`Connected to: ${newBase}`);
-    setError('');
-    setTimeout(() => {
-      setConfigSuccess('');
-      setShowConfig(false);
-    }, 2000);
+
+    if (testResult.ok) {
+      const dbStatus = testResult.data?.database === 'connected' ? ' (DB Connected)' : '';
+      setConfigSuccess(`Connected & Verified! ${dbStatus}`);
+      setError('');
+    } else {
+      if (candidate.includes('.vercel.app')) {
+        setConfigError(
+          'Saved, but backend blocked the request. If using Vercel, disable "Vercel Authentication" in your Backend Project Settings > Deployment Protection.'
+        );
+      } else {
+        setConfigSuccess(`Saved URL: ${newBase}. (Could not verify health endpoint)`);
+      }
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -190,8 +237,14 @@ const Login = () => {
               </div>
               {configSuccess && (
                 <div className="text-emerald-700 bg-emerald-50 border border-emerald-200 p-2 rounded flex items-center gap-1.5 font-medium">
-                  <CheckCircle2 size={14} />
-                  {configSuccess}
+                  <CheckCircle2 size={14} className="flex-shrink-0" />
+                  <span>{configSuccess}</span>
+                </div>
+              )}
+              {configError && (
+                <div className="text-amber-800 bg-amber-50 border border-amber-200 p-2.5 rounded flex items-start gap-2">
+                  <AlertCircle size={15} className="flex-shrink-0 mt-0.5 text-amber-600" />
+                  <span className="leading-tight">{configError}</span>
                 </div>
               )}
               <div className="space-y-1.5">
@@ -203,16 +256,17 @@ const Login = () => {
                     type="text"
                     value={customUrlInput}
                     onChange={(e) => setCustomUrlInput(e.target.value)}
-                    placeholder="https://ekosmart-backend.vercel.app"
+                    placeholder="https://backend-sajidkhan778866s-projects.vercel.app"
                     className="flex-1 px-3 py-2 border border-slate-300 rounded text-slate-800 font-mono text-xs focus:ring-1 focus:ring-indigo-500"
                   />
                   <button
                     type="button"
+                    disabled={testingConnection}
                     onClick={handleSaveApiUrl}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-2 rounded text-xs transition-colors flex items-center gap-1"
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-2 rounded text-xs transition-colors flex items-center gap-1 disabled:opacity-50"
                   >
-                    <RefreshCw size={12} />
-                    Connect
+                    {testingConnection ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+                    {testingConnection ? 'Testing...' : 'Connect'}
                   </button>
                 </div>
                 <p className="text-[10px] text-slate-400">
