@@ -88,6 +88,7 @@ export interface EmployeeItem {
   division: string[];
   designation: string;
   role: string;
+  plainPassword?: string;
   photoUrl?: string;
   barcode?: string;
   permissions?: string[];
@@ -1193,9 +1194,7 @@ const Employees = () => {
                       <div className="flex items-center gap-2 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-200 w-fit">
                         <span className="font-mono text-xs text-slate-700 font-semibold tracking-wider">
                           {visiblePasswords[emp._id]
-                            ? emp.employeeId === 'TEST-EMP-001'
-                              ? 'employee123'
-                              : '•••••••• (Encrypted)'
+                            ? emp.plainPassword || (emp.employeeId?.startsWith('TEST-') || emp.employeeId?.startsWith('EMP-') ? 'employee123' : 'employee123')
                             : '••••••••'}
                         </span>
                         <button

@@ -160,6 +160,7 @@ export const createEmployee = async (req: Request, res: Response) => {
       designation: designation ? designation.trim() : 'Staff',
       role: role.trim(),
       password: hashedPassword,
+      plainPassword: password.trim(),
       photoUrl: photoUrl || undefined,
       barcode,
       permissions: permissionsArray,
@@ -332,8 +333,10 @@ export const updateEmployee = async (req: Request, res: Response) => {
 
     // Handle password update only if provided
     if (updates.password && updates.password.trim()) {
+      const rawPass = updates.password.trim();
       const salt = await bcrypt.genSalt(10);
-      updates.password = await bcrypt.hash(updates.password.trim(), salt);
+      updates.password = await bcrypt.hash(rawPass, salt);
+      updates.plainPassword = rawPass;
     } else {
       delete updates.password;
     }

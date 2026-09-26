@@ -114,6 +114,7 @@ export const ensureDefaultSeedData = async (): Promise<void> => {
         await Employee.create({
           ...emp,
           password: hashedPassword,
+          plainPassword: emp.password,
           barcode,
         });
         console.log(`[AutoSeed] Default Employee created: ${emp.employeeId} (${emp.name})`);

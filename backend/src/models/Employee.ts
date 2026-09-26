@@ -55,6 +55,7 @@ export interface IEmployee extends Document {
   designation: string;
   role: string;
   password?: string;
+  plainPassword?: string;
   photoUrl?: string;
   barcode?: string;
   permissions?: string[];
@@ -123,6 +124,7 @@ const employeeSchema = new Schema(
     designation: { type: String },
     role: { type: String, required: true },
     password: { type: String, required: true, select: false },
+    plainPassword: { type: String, default: '' },
     photoUrl: { type: String },
     barcode: { type: String },
     permissions: [{ type: String }],
