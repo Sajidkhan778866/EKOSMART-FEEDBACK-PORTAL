@@ -4,6 +4,9 @@ import Login from './pages/Login';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Reports from './pages/Reports';
+import Billing from './pages/Billing';
+import Stock from './pages/Stock';
+import MyIdCard from './pages/MyIdCard';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
@@ -44,10 +47,12 @@ function App() {
           >
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
+            <Route path="billing" element={<Billing />} />
+            <Route path="stock" element={<Stock />} />
+            <Route path="idcard" element={<MyIdCard />} />
             <Route path="complaints" element={<Dashboard />} />
             <Route path="warranty" element={<Dashboard />} />
             <Route path="reports" element={<Reports />} />
-            <Route path="profile" element={<Dashboard />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>
           <Route path="*" element={<Navigate to="/login" replace />} />

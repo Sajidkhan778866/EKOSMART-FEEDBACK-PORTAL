@@ -214,3 +214,21 @@ export const contentApi = {
   getAdmin: () => apiClient.get('/content/admin'),
   updateAdmin: (data: any) => apiClient.put('/content/admin', data),
 };
+
+export const stockApi = {
+  getAll: (params?: any) => apiClient.get('/stock', { params }),
+  getById: (id: string) => apiClient.get(`/stock/${id}`),
+  getBySerial: (serial: string) => apiClient.get(`/stock/serial/${encodeURIComponent(serial)}`),
+  create: (data: any) => apiClient.post('/stock', data),
+  update: (id: string, data: any) => apiClient.put(`/stock/${id}`, data),
+  recordMovement: (data: any) => apiClient.post('/stock/movement', data),
+  getMovements: (params?: any) => apiClient.get('/stock/movements/audit', { params }),
+  delete: (id: string) => apiClient.delete(`/stock/${id}`),
+};
+
+export const billingApi = {
+  getAll: (params?: any) => apiClient.get('/billing', { params }),
+  getById: (id: string) => apiClient.get(`/billing/${id}`),
+  create: (data: any) => apiClient.post('/billing', data),
+  delete: (id: string) => apiClient.delete(`/billing/${id}`),
+};

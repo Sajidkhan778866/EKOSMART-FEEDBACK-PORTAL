@@ -162,3 +162,26 @@ export const complaintApi = {
 export const contentApi = {
   getPublic: () => apiClient.get('/content/public'),
 };
+
+export const stockApi = {
+  getAll: (params?: any) => apiClient.get('/stock', { params }),
+  getById: (id: string) => apiClient.get(`/stock/${id}`),
+  getBySerial: (serial: string) => apiClient.get(`/stock/serial/${encodeURIComponent(serial)}`),
+  recordMovement: (data: any) => apiClient.post('/stock/movement', data),
+};
+
+export const billingApi = {
+  getAll: (params?: any) => apiClient.get('/billing', { params }),
+  getById: (id: string) => apiClient.get(`/billing/${id}`),
+  create: (data: any) => apiClient.post('/billing', data),
+};
+
+export const warrantyApi = {
+  getAll: (params?: any) => apiClient.get('/warranty', { params }),
+  getById: (id: string) => apiClient.get(`/warranty/${id}`),
+};
+
+export const customerApi = {
+  getAll: (params?: any) => apiClient.get('/customers', { params }),
+  create: (data: any) => apiClient.post('/customers', data),
+};

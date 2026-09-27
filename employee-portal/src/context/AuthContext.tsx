@@ -1,11 +1,17 @@
 import React, { createContext, useContext, useState } from 'react';
 
-interface EmployeeUser {
+export interface EmployeeUser {
   _id: string;
   name: string;
   employeeId: string;
   role: string;
+  department?: string;
+  designation?: string;
   division?: string[] | string;
+  mobile?: string;
+  email?: string;
+  photoUrl?: string;
+  permissions?: string[];
 }
 
 interface AuthContextType {

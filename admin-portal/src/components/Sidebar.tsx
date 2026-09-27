@@ -10,6 +10,8 @@ import {
   BarChart2,
   Settings,
   LogOut,
+  Package,
+  Receipt,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { EbsLogo } from './EbsLogo';
@@ -20,6 +22,8 @@ const Sidebar = () => {
 
   const menuItems = [
     { name: 'Dashboard', path: '/dashboard', icon: <Home size={18} /> },
+    { name: 'Stock Inventory', path: '/stock', icon: <Package size={18} /> },
+    { name: 'Showroom Billing', path: '/billing', icon: <Receipt size={18} /> },
     { name: 'Employees', path: '/employees', icon: <Users size={18} /> },
     { name: 'Complaints', path: '/complaints', icon: <ClipboardList size={18} /> },
     { name: 'Warranty', path: '/warranty', icon: <ShieldCheck size={18} /> },

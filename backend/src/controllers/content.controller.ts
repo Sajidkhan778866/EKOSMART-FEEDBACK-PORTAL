@@ -85,6 +85,59 @@ export const defaultHeroData = {
   complaintLogoImage: '',
 };
 
+export const defaultNavigation: any[] = [
+  { id: 'nav-home', label: 'Home', url: '/', icon: 'Home', isVisible: true, order: 1, roleVisibility: ['public', 'employee', 'admin'] },
+  { id: 'nav-support', label: 'Support (Register Complaint)', url: '/complaint/register', icon: 'FileText', isVisible: true, order: 2, roleVisibility: ['public', 'employee', 'admin'] },
+  { id: 'nav-track', label: 'Track Ticket Status', url: '/complaint/track', icon: 'Search', isVisible: true, order: 3, roleVisibility: ['public', 'employee', 'admin'] },
+  { id: 'nav-warranty-check', label: 'Check Battery Warranty', url: '/warranty/check', icon: 'ShieldCheck', isVisible: true, order: 4, roleVisibility: ['public', 'employee', 'admin'] },
+  { id: 'nav-warranty-reg', label: 'Register Product / Warranty', url: '/warranty/register', icon: 'ShieldPlus', isVisible: true, order: 5, roleVisibility: ['public', 'employee', 'admin'] },
+  { id: 'nav-contact', label: 'Contact Us & Helpline', url: '/contact', icon: 'Phone', isVisible: true, order: 6, roleVisibility: ['public', 'employee', 'admin'] },
+  { id: 'nav-terms', label: 'Terms & Battery Policy', url: '/terms-conditions', icon: 'Shield', isVisible: true, order: 7, roleVisibility: ['public'] },
+  { id: 'nav-privacy', label: 'Privacy Policy', url: '/privacy-policy', icon: 'Lock', isVisible: true, order: 8, roleVisibility: ['public'] },
+  { id: 'nav-admin', label: 'Admin Portal', url: 'https://ekosmartadminportal.vercel.app', icon: 'Lock', isVisible: true, order: 9, isExternal: true, roleVisibility: ['public', 'admin'] },
+  { id: 'nav-emp', label: 'Employee Workspace', url: 'https://ekosmartemployeeportal.vercel.app', icon: 'UserCheck', isVisible: true, order: 10, isExternal: true, roleVisibility: ['public', 'employee'] },
+];
+
+export const defaultIdCardConfig = {
+  templateName: 'emerald',
+  companyName: 'Ekosmart Battery Solution (EBS)',
+  companySubtitle: 'High Power Lithium-Ion & LFP Technologies',
+  companyAddress: 'Rang Talab, Near by Star Kids School, Kota, Rajasthan - 324002',
+  logoType: 'preset' as const,
+  logoImage: '',
+  primaryColor: '#064e3b',
+  secondaryColor: '#059669',
+  fields: [
+    { fieldKey: 'name', label: 'Employee Full Name', isVisible: true, order: 1 },
+    { fieldKey: 'employeeId', label: 'Employee ID No.', isVisible: true, order: 2 },
+    { fieldKey: 'designation', label: 'Designation / Title', isVisible: true, order: 3 },
+    { fieldKey: 'department', label: 'Department', isVisible: true, order: 4 },
+    { fieldKey: 'division', label: 'Division Scope', isVisible: true, order: 5 },
+    { fieldKey: 'mobile', label: 'Contact Mobile', isVisible: true, order: 6 },
+    { fieldKey: 'email', label: 'Official Email', isVisible: true, order: 7 },
+    { fieldKey: 'joiningDate', label: 'Date of Joining / Issue', isVisible: true, order: 8 },
+  ],
+  showBarcode: true,
+  showQrCode: true,
+  authorizedSignatoryText: 'Authorized Signatory (Kota Central Plant)',
+  termsText: 'This card remains the property of Ekosmart Battery Solution. If found, please return to Kota Plant.',
+};
+
+export const defaultBillingConfig = {
+  invoicePrefix: 'EBS-INV',
+  defaultTaxRate: 18,
+  termsAndConditions: '1. Batteries covered by official Ekosmart warranty. 2. Physical damage or water immersion voids warranty. 3. Transport charges extra for factory repairs.',
+  currencySymbol: '₹',
+  showroomLocations: ['Showroom Counter', 'Kota Central Plant Store', 'Rental Dispatch Hub', 'Main Service Center'],
+  paymentModes: ['UPI', 'Cash', 'Card', 'Bank Transfer', 'Finance', 'Credit'],
+};
+
+export const defaultPortalLinks = {
+  adminPortalUrl: 'https://ekosmartadminportal.vercel.app',
+  employeePortalUrl: 'https://ekosmartemployeeportal.vercel.app',
+  customerFrontendUrl: 'https://ekosmartcustomersite.vercel.app',
+};
+
 export const defaultFooterData = {
   companyName: 'Ekosmart Battery Solution (EBS) & EV Spare Parts',
   copyrightText: '2026 Ekosmart Battery Solution. All rights reserved. GSTIN: 08DTUPM4205B1Z0',
@@ -189,6 +242,10 @@ export const getOrCreateDefaultContent = async () => {
       key: 'global_cms',
       hero: defaultHeroData,
       serviceCards: defaultServiceCards,
+      navigation: defaultNavigation,
+      idCardConfig: defaultIdCardConfig,
+      billingConfig: defaultBillingConfig,
+      portalLinks: defaultPortalLinks,
       contactInfo: defaultContactData,
       footer: defaultFooterData,
       privacyPolicy: defaultPrivacyPolicyData,
@@ -199,6 +256,22 @@ export const getOrCreateDefaultContent = async () => {
     let modified = false;
     if (!content.serviceCards || content.serviceCards.length === 0) {
       content.serviceCards = defaultServiceCards;
+      modified = true;
+    }
+    if (!content.navigation || content.navigation.length === 0) {
+      content.navigation = defaultNavigation;
+      modified = true;
+    }
+    if (!content.idCardConfig || !content.idCardConfig.companyName) {
+      content.idCardConfig = defaultIdCardConfig;
+      modified = true;
+    }
+    if (!content.billingConfig || !content.billingConfig.invoicePrefix) {
+      content.billingConfig = defaultBillingConfig;
+      modified = true;
+    }
+    if (!content.portalLinks || !content.portalLinks.adminPortalUrl) {
+      content.portalLinks = defaultPortalLinks;
       modified = true;
     }
     if (!content.contactInfo || !content.contactInfo.dropdownOptions || content.contactInfo.dropdownOptions.length === 0) {
@@ -231,11 +304,21 @@ export const getPublicContent = async (_req: Request, res: Response) => {
       .filter((card) => card.isVisible)
       .sort((a, b) => a.order - b.order);
 
+    const visibleNav = (content.navigation || [])
+      .filter((nav) => nav.isVisible !== false && (!nav.roleVisibility || nav.roleVisibility.includes('public')))
+      .sort((a, b) => a.order - b.order);
+
     res.status(200).json({
       success: true,
       data: {
         hero: content.hero,
         serviceCards: visibleCards,
+        navigation: visibleNav,
+        billingConfig: {
+          currencySymbol: content.billingConfig?.currencySymbol || '₹',
+          showroomLocations: content.billingConfig?.showroomLocations || defaultBillingConfig.showroomLocations,
+        },
+        portalLinks: content.portalLinks || defaultPortalLinks,
         contactInfo: content.contactInfo || defaultContactData,
         footer: content.footer,
         privacyPolicy: content.privacyPolicy,
@@ -251,6 +334,9 @@ export const getPublicContent = async (_req: Request, res: Response) => {
       data: {
         hero: defaultHeroData,
         serviceCards: defaultServiceCards,
+        navigation: defaultNavigation,
+        billingConfig: defaultBillingConfig,
+        portalLinks: defaultPortalLinks,
         contactInfo: defaultContactData,
         footer: defaultFooterData,
         privacyPolicy: defaultPrivacyPolicyData,
@@ -281,13 +367,41 @@ export const getAdminContent = async (_req: Request, res: Response) => {
 // PUT /api/v1/content/admin - Admin update endpoint
 export const updateAdminContent = async (req: Request, res: Response) => {
   try {
-    const { hero, serviceCards, footer, privacyPolicy, termsConditions, refundPolicy, contactInfo } = req.body;
+    const {
+      hero,
+      serviceCards,
+      navigation,
+      idCardConfig,
+      billingConfig,
+      portalLinks,
+      footer,
+      privacyPolicy,
+      termsConditions,
+      refundPolicy,
+      contactInfo,
+    } = req.body;
     let content = await getOrCreateDefaultContent();
 
     if (hero) content.hero = { ...content.hero, ...hero };
     if (serviceCards) {
       content.serviceCards = serviceCards;
       content.markModified('serviceCards');
+    }
+    if (navigation) {
+      content.navigation = navigation;
+      content.markModified('navigation');
+    }
+    if (idCardConfig) {
+      content.idCardConfig = { ...(content.idCardConfig || {}), ...idCardConfig };
+      content.markModified('idCardConfig');
+    }
+    if (billingConfig) {
+      content.billingConfig = { ...(content.billingConfig || {}), ...billingConfig };
+      content.markModified('billingConfig');
+    }
+    if (portalLinks) {
+      content.portalLinks = { ...(content.portalLinks || {}), ...portalLinks };
+      content.markModified('portalLinks');
     }
     if (contactInfo) {
       content.contactInfo = {

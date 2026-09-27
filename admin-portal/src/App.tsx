@@ -11,6 +11,8 @@ import Customers from './pages/Customers';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import ContentManager from './pages/ContentManager';
+import StockManager from './pages/StockManager';
+import BillingManager from './pages/BillingManager';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
@@ -51,6 +53,8 @@ function App() {
           >
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
+            <Route path="stock" element={<StockManager />} />
+            <Route path="billing" element={<BillingManager />} />
             <Route path="employees" element={<Employees />} />
             <Route path="complaints" element={<Complaints />} />
             <Route path="warranty" element={<Warranty />} />

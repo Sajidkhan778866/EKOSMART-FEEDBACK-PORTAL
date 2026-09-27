@@ -32,6 +32,55 @@ export interface IDivisionContact {
   address?: string;
 }
 
+export interface INavItem {
+  id: string;
+  label: string;
+  url: string;
+  icon: string;
+  isVisible: boolean;
+  order: number;
+  isExternal?: boolean;
+  roleVisibility?: ('public' | 'employee' | 'admin')[];
+}
+
+export interface IIdCardFieldConfig {
+  fieldKey: string;
+  label: string;
+  isVisible: boolean;
+  order: number;
+}
+
+export interface IIdCardConfig {
+  templateName: string;
+  companyName: string;
+  companySubtitle: string;
+  companyAddress: string;
+  logoType: 'preset' | 'image';
+  logoImage?: string;
+  primaryColor: string;
+  secondaryColor: string;
+  fields: IIdCardFieldConfig[];
+  showBarcode: boolean;
+  showQrCode: boolean;
+  authorizedSignatoryText: string;
+  termsText: string;
+}
+
+export interface IBillingConfig {
+  invoicePrefix: string;
+  defaultTaxRate: number;
+  termsAndConditions: string;
+  currencySymbol: string;
+  showroomLocations: string[];
+  paymentModes: string[];
+}
+
+export interface IPortalLinks {
+  adminPortalUrl: string;
+  employeePortalUrl: string;
+  customerFrontendUrl: string;
+}
+
 export interface IContent extends Document {
   key: string;
   hero: {
@@ -47,6 +96,10 @@ export interface IContent extends Document {
     complaintLogoImage?: string;
   };
   serviceCards: IServiceCard[];
+  navigation?: INavItem[];
+  idCardConfig?: IIdCardConfig;
+  billingConfig?: IBillingConfig;
+  portalLinks?: IPortalLinks;
   contactInfo: {
     heading: string;
     subheading: string;
@@ -264,6 +317,59 @@ Security deposits for EV rental plans are refunded to the original payment sourc
 Bulk battery orders applicable as per Minimum Order Quantity (MOQ 5 / MOQ 10) terms with dispatch clearance from Kota Central Plant.`,
       },
       isPublished: { type: Boolean, default: true },
+    },
+    navigation: [
+      {
+        id: { type: String, required: true },
+        label: { type: String, required: true },
+        url: { type: String, required: true },
+        icon: { type: String, default: 'FileText' },
+        isVisible: { type: Boolean, default: true },
+        order: { type: Number, default: 1 },
+        isExternal: { type: Boolean, default: false },
+        roleVisibility: [{ type: String }],
+      },
+    ],
+    idCardConfig: {
+      templateName: { type: String, default: 'emerald' },
+      companyName: { type: String, default: 'Ekosmart Battery Solution (EBS)' },
+      companySubtitle: { type: String, default: 'High Power Lithium-Ion & LFP Technologies' },
+      companyAddress: { type: String, default: 'Rang Talab, Near by Star Kids School, Kota - 324002' },
+      logoType: { type: String, enum: ['preset', 'image'], default: 'preset' },
+      logoImage: { type: String, default: '' },
+      primaryColor: { type: String, default: '#064e3b' },
+      secondaryColor: { type: String, default: '#059669' },
+      fields: [
+        {
+          fieldKey: { type: String, required: true },
+          label: { type: String, required: true },
+          isVisible: { type: Boolean, default: true },
+          order: { type: Number, default: 1 },
+        },
+      ],
+      showBarcode: { type: Boolean, default: true },
+      showQrCode: { type: Boolean, default: true },
+      authorizedSignatoryText: { type: String, default: 'Authorized Signatory (Kota Plant)' },
+      termsText: { type: String, default: 'This card is non-transferable property of Ekosmart Battery Solution.' },
+    },
+    billingConfig: {
+      invoicePrefix: { type: String, default: 'EBS-INV' },
+      defaultTaxRate: { type: Number, default: 18 },
+      termsAndConditions: { type: String, default: 'Goods once sold will be serviced under official Ekosmart warranty terms.' },
+      currencySymbol: { type: String, default: '₹' },
+      showroomLocations: {
+        type: [String],
+        default: ['Showroom Counter', 'Kota Central Plant Store', 'Rental Dispatch Hub', 'Main Service Center'],
+      },
+      paymentModes: {
+        type: [String],
+        default: ['UPI', 'Cash', 'Card', 'Bank Transfer', 'Finance', 'Credit'],
+      },
+    },
+    portalLinks: {
+      adminPortalUrl: { type: String, default: '' },
+      employeePortalUrl: { type: String, default: '' },
+      customerFrontendUrl: { type: String, default: '' },
     },
   },
   { timestamps: true }

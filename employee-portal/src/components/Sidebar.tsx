@@ -1,5 +1,14 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Home, ClipboardList, ShieldCheck, FileText, User, LogOut } from 'lucide-react';
+import {
+  Home,
+  Receipt,
+  Package,
+  CreditCard,
+  ClipboardList,
+  ShieldCheck,
+  FileText,
+  LogOut,
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { EbsLogo } from './EbsLogo';
 
@@ -9,10 +18,12 @@ const Sidebar = () => {
 
   const menuItems = [
     { name: 'Dashboard', path: '/dashboard', icon: <Home size={18} /> },
+    { name: 'Showroom Billing', path: '/billing', icon: <Receipt size={18} /> },
+    { name: 'Stock & Serials', path: '/stock', icon: <Package size={18} /> },
+    { name: 'My ID Card', path: '/idcard', icon: <CreditCard size={18} /> },
     { name: 'Complaints', path: '/complaints', icon: <ClipboardList size={18} /> },
     { name: 'Warranty', path: '/warranty', icon: <ShieldCheck size={18} /> },
     { name: 'Reports', path: '/reports', icon: <FileText size={18} /> },
-    { name: 'Profile', path: '/profile', icon: <User size={18} /> },
   ];
 
   const handleLogout = () => {

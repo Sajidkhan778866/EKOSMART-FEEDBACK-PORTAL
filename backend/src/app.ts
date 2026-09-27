@@ -12,6 +12,8 @@ import formRoutes from './routes/form.routes';
 import dashboardRoutes from './routes/dashboard.routes';
 import customerRoutes from './routes/customer.routes';
 import contentRoutes from './routes/content.routes';
+import stockRoutes from './routes/stock.routes';
+import billingRoutes from './routes/billing.routes';
 
 const app: Express = express();
 
@@ -141,6 +143,8 @@ const mountRoutes = (prefix: string) => {
   app.use(`${prefix}/customers`, customerRoutes);
   app.use(`${prefix}/content`, contentRoutes);
   app.use(`${prefix}/cms`, contentRoutes);
+  app.use(`${prefix}/stock`, stockRoutes);
+  app.use(`${prefix}/billing`, billingRoutes);
 };
 
 mountRoutes('/api/v1');
