@@ -21,6 +21,7 @@ import {
 import { billingApi, stockApi, billTemplateApi } from '../api/client';
 import ScannerModal from '../components/ScannerModal';
 import BillTemplateDesigner, { type IBillTemplate, normalizeTemplate } from '../components/BillTemplateDesigner';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 export interface IBillLineItem {
   productId: string;
@@ -649,7 +650,11 @@ const BillingManager = () => {
       )}
 
       {/* TAB 2: SOFT-CODED BILL TEMPLATE DESIGNER */}
-      {activeTab === 'designer' && <BillTemplateDesigner />}
+      {activeTab === 'designer' && (
+        <ErrorBoundary fallbackTitle="Soft-Coded Bill Template Designer">
+          <BillTemplateDesigner />
+        </ErrorBoundary>
+      )}
 
       {/* CREATE INVOICE MODAL */}
       {showCreateModal && (

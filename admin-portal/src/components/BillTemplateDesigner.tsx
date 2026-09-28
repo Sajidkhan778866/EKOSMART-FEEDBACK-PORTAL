@@ -661,7 +661,7 @@ export const BillTemplateDesigner: React.FC = () => {
 
   // Move Column Up/Down Helper
   const moveColumn = (index: number, direction: 'up' | 'down') => {
-    const cols = [...currentTemplate.productColumns];
+    const cols = [...(currentTemplate.productColumns || [])];
     const targetIdx = direction === 'up' ? index - 1 : index + 1;
     if (targetIdx < 0 || targetIdx >= cols.length) return;
 
@@ -680,7 +680,8 @@ export const BillTemplateDesigner: React.FC = () => {
   };
 
   const toggleColumnVisibility = (index: number) => {
-    const cols = [...currentTemplate.productColumns];
+    const cols = [...(currentTemplate.productColumns || [])];
+    if (!cols[index]) return;
     cols[index].visible = !cols[index].visible;
     setCurrentTemplate({
       ...currentTemplate,
@@ -689,7 +690,8 @@ export const BillTemplateDesigner: React.FC = () => {
   };
 
   const updateColumnLabel = (index: number, label: string) => {
-    const cols = [...currentTemplate.productColumns];
+    const cols = [...(currentTemplate.productColumns || [])];
+    if (!cols[index]) return;
     cols[index].label = label;
     setCurrentTemplate({
       ...currentTemplate,
@@ -699,7 +701,7 @@ export const BillTemplateDesigner: React.FC = () => {
 
   // Customer Field Handlers
   const moveCustomerField = (index: number, direction: 'up' | 'down') => {
-    const fields = [...currentTemplate.customerFields];
+    const fields = [...(currentTemplate.customerFields || [])];
     const targetIdx = direction === 'up' ? index - 1 : index + 1;
     if (targetIdx < 0 || targetIdx >= fields.length) return;
 
@@ -718,7 +720,8 @@ export const BillTemplateDesigner: React.FC = () => {
   };
 
   const toggleCustomerField = (index: number) => {
-    const fields = [...currentTemplate.customerFields];
+    const fields = [...(currentTemplate.customerFields || [])];
+    if (!fields[index]) return;
     fields[index].visible = !fields[index].visible;
     setCurrentTemplate({
       ...currentTemplate,
@@ -727,7 +730,8 @@ export const BillTemplateDesigner: React.FC = () => {
   };
 
   const updateCustomerFieldLabel = (index: number, label: string) => {
-    const fields = [...currentTemplate.customerFields];
+    const fields = [...(currentTemplate.customerFields || [])];
+    if (!fields[index]) return;
     fields[index].label = label;
     setCurrentTemplate({
       ...currentTemplate,
@@ -1182,7 +1186,10 @@ export const BillTemplateDesigner: React.FC = () => {
                 <div className="pt-2 border-t border-slate-100">
                   <span className="font-bold text-slate-700 block mb-2">Standard Earnings Components Included:</span>
                   <div className="grid grid-cols-2 gap-2">
-                    {currentTemplate.salaryConfig?.earningsColumns?.map((col, i) => (
+                    {(Array.isArray(currentTemplate.salaryConfig?.earningsColumns)
+                      ? currentTemplate.salaryConfig.earningsColumns
+                      : []
+                    ).map((col, i) => (
                       <div key={i} className="p-2 bg-emerald-50 rounded-xl border border-emerald-200 flex items-center gap-2">
                         <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
                         <span className="font-semibold text-emerald-950 text-[11px]">{col.label}</span>
@@ -1194,7 +1201,10 @@ export const BillTemplateDesigner: React.FC = () => {
                 <div className="pt-2 border-t border-slate-100">
                   <span className="font-bold text-slate-700 block mb-2">Standard Deductions Components Included:</span>
                   <div className="grid grid-cols-2 gap-2">
-                    {currentTemplate.salaryConfig?.deductionsColumns?.map((col, i) => (
+                    {(Array.isArray(currentTemplate.salaryConfig?.deductionsColumns)
+                      ? currentTemplate.salaryConfig.deductionsColumns
+                      : []
+                    ).map((col, i) => (
                       <div key={i} className="p-2 bg-rose-50 rounded-xl border border-rose-200 flex items-center gap-2">
                         <CheckCircle2 size={14} className="text-rose-600 shrink-0" />
                         <span className="font-semibold text-rose-950 text-[11px]">{col.label}</span>
@@ -1218,9 +1228,9 @@ export const BillTemplateDesigner: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                {currentTemplate.customerFields?.map((field, idx) => (
+                {(Array.isArray(currentTemplate.customerFields) ? currentTemplate.customerFields : []).map((field, idx) => (
                   <div
-                    key={field.key}
+                    key={field.key || idx}
                     className={`p-3 rounded-xl border flex items-center justify-between gap-3 transition ${
                       field.visible ? 'bg-slate-50 border-slate-200' : 'bg-slate-100/60 border-slate-200 opacity-60'
                     }`}
@@ -1228,13 +1238,13 @@ export const BillTemplateDesigner: React.FC = () => {
                     <div className="flex items-center gap-2 flex-1">
                       <input
                         type="checkbox"
-                        checked={field.visible}
+                        checked={Boolean(field.visible)}
                         onChange={() => toggleCustomerField(idx)}
                         className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
                       />
                       <input
                         type="text"
-                        value={field.label}
+                        value={field.label || ''}
                         onChange={(e) => updateCustomerFieldLabel(idx, e.target.value)}
                         className="flex-1 p-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold"
                       />
@@ -1252,7 +1262,7 @@ export const BillTemplateDesigner: React.FC = () => {
                       </button>
                       <button
                         type="button"
-                        disabled={idx === currentTemplate.customerFields.length - 1}
+                        disabled={idx === (currentTemplate.customerFields?.length || 0) - 1}
                         onClick={() => moveCustomerField(idx, 'down')}
                         className="p-1 text-slate-500 hover:text-slate-800 disabled:opacity-30 cursor-pointer"
                       >
@@ -1277,9 +1287,9 @@ export const BillTemplateDesigner: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                {currentTemplate.productColumns?.map((col, idx) => (
+                {(Array.isArray(currentTemplate.productColumns) ? currentTemplate.productColumns : []).map((col, idx) => (
                   <div
-                    key={col.key}
+                    key={col.key || idx}
                     className={`p-3 rounded-xl border flex items-center justify-between gap-3 transition ${
                       col.visible ? 'bg-slate-50 border-slate-200' : 'bg-slate-100/60 border-slate-200 opacity-60'
                     }`}
@@ -1287,13 +1297,13 @@ export const BillTemplateDesigner: React.FC = () => {
                     <div className="flex items-center gap-2 flex-1">
                       <input
                         type="checkbox"
-                        checked={col.visible}
+                        checked={Boolean(col.visible)}
                         onChange={() => toggleColumnVisibility(idx)}
                         className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
                       />
                       <input
                         type="text"
-                        value={col.label}
+                        value={col.label || ''}
                         onChange={(e) => updateColumnLabel(idx, e.target.value)}
                         placeholder="Column Header Name"
                         className="flex-1 p-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold"
@@ -1313,7 +1323,7 @@ export const BillTemplateDesigner: React.FC = () => {
                       </button>
                       <button
                         type="button"
-                        disabled={idx === currentTemplate.productColumns.length - 1}
+                        disabled={idx === (currentTemplate.productColumns?.length || 0) - 1}
                         onClick={() => moveColumn(idx, 'down')}
                         title="Move Right / Down"
                         className="p-1 text-slate-500 hover:text-slate-800 disabled:opacity-30 cursor-pointer"
@@ -1798,7 +1808,10 @@ export const BillTemplateDesigner: React.FC = () => {
                 <div>
                   <div className="font-bold text-slate-700 uppercase mb-1">Company Policy & Notes</div>
                   <ul className="list-disc pl-3.5 space-y-0.5">
-                    {currentTemplate.footer?.termsAndConditions?.map((term, idx) => (
+                    {(Array.isArray(currentTemplate.footer?.termsAndConditions)
+                      ? currentTemplate.footer.termsAndConditions
+                      : []
+                    ).map((term, idx) => (
                       <li key={idx}>{term}</li>
                     ))}
                   </ul>
@@ -1915,45 +1928,51 @@ export const BillTemplateDesigner: React.FC = () => {
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
                     <tr className="bg-slate-100 text-slate-700 font-bold border-b border-slate-300">
-                      {currentTemplate.productColumns
-                        ?.filter((c) => c.visible)
-                        .map((col) => (
-                          <th
-                            key={col.key}
-                            className={`p-2 ${col.key.includes('Amount') || col.key.includes('Price') ? 'text-right' : ''}`}
-                          >
-                            {col.label}
-                          </th>
-                        ))}
+                      {(currentTemplate.productColumns || [])
+                        .filter((c) => c && c.visible)
+                        .map((col, idx) => {
+                          const colKey = String(col.key || `col_${idx}`);
+                          const isNumeric = colKey.toLowerCase().includes('amount') || colKey.toLowerCase().includes('price') || colKey.toLowerCase().includes('rate');
+                          return (
+                            <th
+                              key={colKey}
+                              className={`p-2 ${isNumeric ? 'text-right' : ''}`}
+                            >
+                              {col.label || colKey}
+                            </th>
+                          );
+                        })}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
-                    {sampleBill.items.map((item, idx) => (
-                      <tr key={idx}>
-                        {currentTemplate.productColumns
-                          ?.filter((c) => c.visible)
-                          .map((col) => {
-                            let val = (item as any)[col.key];
+                    {sampleBill.items.map((item, rowIdx) => (
+                      <tr key={rowIdx}>
+                        {(currentTemplate.productColumns || [])
+                          .filter((c) => c && c.visible)
+                          .map((col, cIdx) => {
+                            const colKey = String(col.key || `col_${cIdx}`);
+                            let val = (item as any)[colKey];
                             if (
-                              col.key === 'unitPrice' ||
-                              col.key === 'totalAmount' ||
-                              col.key === 'taxAmount' ||
-                              col.key === 'discount'
+                              colKey === 'unitPrice' ||
+                              colKey === 'totalAmount' ||
+                              colKey === 'taxAmount' ||
+                              colKey === 'discount'
                             ) {
-                              val = `₹${(val || 0).toLocaleString('en-IN')}`;
+                              val = `₹${(Number(val) || 0).toLocaleString('en-IN')}`;
                             }
+                            const isNumeric = colKey.toLowerCase().includes('amount') || colKey.toLowerCase().includes('price') || colKey.toLowerCase().includes('rate');
                             return (
                               <td
-                                key={col.key}
+                                key={colKey}
                                 className={`p-2 ${
-                                  col.key.includes('Amount') || col.key.includes('Price')
+                                  isNumeric
                                     ? 'text-right font-bold'
-                                    : col.key === 'batterySerial'
+                                    : colKey === 'batterySerial'
                                     ? 'font-mono text-emerald-700 font-semibold'
                                     : 'text-slate-800'
                                 }`}
                               >
-                                {val || '-'}
+                                {val !== undefined && val !== null ? String(val) : '-'}
                               </td>
                             );
                           })}
@@ -2029,7 +2048,10 @@ export const BillTemplateDesigner: React.FC = () => {
                 <div>
                   <div className="font-bold text-slate-700 uppercase mb-1">Terms & Conditions</div>
                   <ul className="list-disc pl-3.5 space-y-0.5">
-                    {currentTemplate.footer?.termsAndConditions?.map((term, idx) => (
+                    {(Array.isArray(currentTemplate.footer?.termsAndConditions)
+                      ? currentTemplate.footer.termsAndConditions
+                      : []
+                    ).map((term, idx) => (
                       <li key={idx}>{term}</li>
                     ))}
                   </ul>

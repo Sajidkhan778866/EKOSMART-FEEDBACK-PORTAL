@@ -13,6 +13,7 @@ import Settings from './pages/Settings';
 import ContentManager from './pages/ContentManager';
 import StockManager from './pages/StockManager';
 import BillingManager from './pages/BillingManager';
+import ErrorBoundary from './components/ErrorBoundary';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
@@ -47,7 +48,9 @@ function App() {
             path="/"
             element={
               <ProtectedRoute>
-                <Layout />
+                <ErrorBoundary fallbackTitle="Admin Portal Error">
+                  <Layout />
+                </ErrorBoundary>
               </ProtectedRoute>
             }
           >
