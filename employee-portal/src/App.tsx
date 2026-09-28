@@ -7,6 +7,7 @@ import Reports from './pages/Reports';
 import Billing from './pages/Billing';
 import Stock from './pages/Stock';
 import MyIdCard from './pages/MyIdCard';
+import MySalarySlip from './pages/MySalarySlip';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
@@ -50,6 +51,7 @@ function App() {
             <Route path="billing" element={<Billing />} />
             <Route path="stock" element={<Stock />} />
             <Route path="idcard" element={<MyIdCard />} />
+            <Route path="salary" element={<MySalarySlip />} />
             <Route path="complaints" element={<Dashboard />} />
             <Route path="warranty" element={<Dashboard />} />
             <Route path="reports" element={<Reports />} />

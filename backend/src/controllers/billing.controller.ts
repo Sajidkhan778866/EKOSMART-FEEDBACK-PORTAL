@@ -11,15 +11,30 @@ import { BillTemplate } from '../models/BillTemplate';
 // Default Showroom Bill Template
 export const defaultBillTemplate = {
   templateName: 'Showroom GST Tax Invoice',
+  name: 'Showroom GST Tax Invoice',
   templateType: 'Showroom' as const,
+  type: 'Showroom' as const,
   description: 'Official showroom retail tax invoice for EV batteries and components',
   isActive: true,
+  companyProfile: {
+    businessName: 'EKOSMART EV BATTERY SOLUTION',
+    tagline: 'Clean Energy & Smart Electric Mobility',
+    address: 'Plot No. 14, Electronic Complex, Road No. 1, IPIA, Kota, Rajasthan - 324005',
+    phone: '+91 8949049003 / +91 9549730483',
+    email: 'support@ekosmartdrive.in',
+    website: 'www.ekosmartdrive.in',
+    gstin: '08DTUPM4205B1Z0',
+    cin: 'U31909RJ2023PTC085432',
+    pan: 'AABCE1234F',
+    logoUrl: '',
+    qrCodeUrl: '',
+  },
   company: {
-    name: 'Ekosmart Battery Solution (EBS)',
+    name: 'EKOSMART EV BATTERY SOLUTION',
     subtitle: 'High Power Lithium-Ion & LFP Technologies',
     logoType: 'preset' as const,
     logoUrl: '',
-    address: 'Rang Talab, Near by Star Kids School',
+    address: 'Plot No. 14, Electronic Complex, Road No. 1, IPIA, Kota, Rajasthan - 324005',
     city: 'Kota',
     state: 'Rajasthan',
     pincode: '324002',
@@ -28,9 +43,16 @@ export const defaultBillTemplate = {
     email: 'support@ekosmartdrive.in',
     website: 'www.ekosmartdrive.in',
     gstin: '08DTUPM4205B1Z0',
-    cin: 'REG-RJ-2026-EBS',
+    cin: 'U31909RJ2023PTC085432',
     showroomName: 'Kota Central Showroom Counter',
-    showroomAddress: 'Rang Talab, Kota, Rajasthan - 324002',
+    showroomAddress: 'Plot No. 14, Electronic Complex, IPIA, Kota - 324005',
+  },
+  header: {
+    title: 'TAX INVOICE',
+    subtitle: 'Original for Recipient (Showroom Retail)',
+    showLogo: true,
+    showGstin: true,
+    showContact: true,
   },
   customerFields: [
     { key: 'customerName', label: 'Customer Name', visible: true, required: true, order: 1 },
@@ -60,6 +82,7 @@ export const defaultBillTemplate = {
     { key: 'totalAmount', label: 'Amount (₹)', visible: true, width: '12%', align: 'right' as const, order: 9 },
   ],
   warrantyConfig: {
+    enabled: true,
     visible: true,
     title: 'Official EBS Warranty Certificate Included',
     badgeText: 'VERIFIED OFFICIAL WARRANTY',
@@ -67,12 +90,17 @@ export const defaultBillTemplate = {
     showStartDate: true,
     showExpiryDate: true,
     showSerialNumber: true,
+    showWarrantyPeriod: true,
     termsSummary: 'Guaranteed battery capacity and free technical service support across all authorized service centers.',
   },
   totalsConfig: {
     showSubtotal: true,
+    showDiscountTotal: true,
     showDiscount: true,
+    showTaxBreakdown: true,
     showTaxBreakup: true,
+    splitGst: true,
+    showRoundOff: true,
     showOtherCharges: false,
     showGrandTotal: true,
     showAmountPaid: true,
@@ -81,22 +109,160 @@ export const defaultBillTemplate = {
     currencySymbol: '₹',
   },
   footer: {
-    termsAndConditions: '1. Goods once sold are covered under Ekosmart official replacement/repair warranty policy.\n2. Warranty seal must remain intact.\n3. Pan-India technical service assistance available on official helpline.',
+    termsAndConditions: [
+      '1. Goods once sold are covered under Ekosmart official replacement/repair warranty policy.',
+      '2. Warranty seal must remain intact and pack untampered.',
+      '3. Pan-India technical service assistance available on official helpline.',
+    ],
     warrantyPolicy: '3 Years Warranty on 48V LFP Packs; 1.5 Years on 60V/72V Packs; 1 Year on Lithium Fast Chargers.',
     returnPolicy: 'Defective verified units will be repaired or replaced by authorized service engineers within standard SLA.',
     supportHelpline: 'Helpline: +91 8949049003 / +91 9549730483 | support@ekosmartdrive.in',
     thankYouMessage: 'Thank you for choosing Ekosmart High Power Lithium Technologies!',
+    authorizedSignatoryLabel: 'For EKOSMART EV BATTERY SOLUTION',
     authorizedSignatoryTitle: 'Authorized Signatory (Kota Central Plant)',
+    signatoryName: 'Authorized Signatory',
     showAuthorizedSignature: true,
+    showSignatureBox: true,
     showCustomerSignature: true,
     showBarcode: true,
     showQrCode: true,
+    footerNote: 'Thank you for choosing EKOSMART Clean Energy & Green Mobility!',
   },
   theme: {
     primaryColor: '#059669',
+    secondaryColor: '#047857',
     accentColor: '#047857',
     fontPreset: 'sans' as const,
-    borderStyle: 'solid' as const,
+    fontFamily: 'Inter',
+    paperSize: 'A4' as const,
+    showWatermark: true,
+    watermarkText: 'ORIGINAL TAX INVOICE',
+    borderStyle: 'rounded' as const,
+    headerStyle: 'modern' as const,
+  },
+};
+
+// Default Official Salary Slip / Payslip Template
+export const defaultSalarySlipTemplate = {
+  templateName: 'Employee Official Salary Slip / Payslip',
+  name: 'Employee Official Salary Slip / Payslip',
+  templateType: 'Salary' as const,
+  type: 'Salary' as const,
+  description: 'Soft-coded monthly salary slip with earnings, deductions, PF, ESIC, attendance, and net pay',
+  isActive: true,
+  isDefault: true,
+  companyProfile: {
+    businessName: 'EKOSMART EV BATTERY SOLUTION',
+    tagline: 'Clean Energy & Smart Electric Mobility',
+    address: 'Plot No. 14, Electronic Complex, Road No. 1, IPIA, Kota, Rajasthan - 324005',
+    phone: '+91 8949049003 / +91 9549730483',
+    email: 'hr@ekosmartdrive.in',
+    website: 'www.ekosmartdrive.in',
+    gstin: '08DTUPM4205B1Z0',
+    cin: 'U31909RJ2023PTC085432',
+    pan: 'AABCE1234F',
+    logoUrl: '',
+    qrCodeUrl: '',
+  },
+  company: {
+    name: 'EKOSMART EV BATTERY SOLUTION',
+    subtitle: 'Clean Energy & Smart Electric Mobility',
+    address: 'Plot No. 14, Electronic Complex, Road No. 1, IPIA, Kota, Rajasthan - 324005',
+    phone: '+91 8949049003',
+    email: 'hr@ekosmartdrive.in',
+    gstin: '08DTUPM4205B1Z0',
+  },
+  header: {
+    title: 'PAYSLIP / SALARY STATEMENT',
+    subtitle: 'Confidential Monthly Employee Remuneration Slip',
+    showLogo: true,
+    showGstin: true,
+    showContact: true,
+  },
+  salaryConfig: {
+    allowancesTitle: 'Earnings / Gross Pay',
+    deductionsTitle: 'Deductions & Recoveries',
+    netSalaryLabel: 'Net Pay / Take Home Salary',
+    showWorkingDays: true,
+    showLeaveSummary: true,
+    showBankDetails: true,
+    authorizedSignatory: 'HR & Finance Director / Authorized Signatory',
+    earningsColumns: [
+      { key: 'basicPay', label: 'Basic Salary', visible: true, defaultAmount: 25000 },
+      { key: 'hra', label: 'House Rent Allowance (HRA)', visible: true, defaultAmount: 10000 },
+      { key: 'conveyance', label: 'Conveyance Allowance', visible: true, defaultAmount: 3000 },
+      { key: 'specialAllowance', label: 'Special / Performance Allowance', visible: true, defaultAmount: 5000 },
+      { key: 'overtime', label: 'Overtime & Incentives', visible: true, defaultAmount: 0 },
+    ],
+    deductionsColumns: [
+      { key: 'pf', label: 'Provident Fund (EPF 12%)', visible: true, defaultAmount: 1800 },
+      { key: 'esi', label: 'ESI Contribution', visible: true, defaultAmount: 500 },
+      { key: 'professionalTax', label: 'Professional Tax (PT)', visible: true, defaultAmount: 200 },
+      { key: 'tds', label: 'TDS / Income Tax', visible: true, defaultAmount: 0 },
+      { key: 'advance', label: 'Advance / Loan Recovery', visible: true, defaultAmount: 0 },
+    ],
+    employeeFields: [
+      { key: 'employeeId', label: 'Employee ID', visible: true },
+      { key: 'name', label: 'Employee Name', visible: true },
+      { key: 'designation', label: 'Designation', visible: true },
+      { key: 'department', label: 'Department', visible: true },
+      { key: 'division', label: 'Division / Unit', visible: true },
+      { key: 'joiningDate', label: 'Date of Joining', visible: true },
+      { key: 'bankAccount', label: 'Bank Account Number', visible: true },
+      { key: 'bankName', label: 'Bank Name & Branch', visible: true },
+      { key: 'ifscCode', label: 'IFSC Code', visible: true },
+      { key: 'pan', label: 'PAN Card #', visible: true },
+      { key: 'uan', label: 'UAN / PF Number', visible: true },
+      { key: 'workingDays', label: 'Total Working Days', visible: true },
+      { key: 'presentDays', label: 'Paid / Present Days', visible: true },
+      { key: 'payPeriod', label: 'Pay Month & Year', visible: true },
+    ],
+  },
+  customerFields: [],
+  invoiceFields: [],
+  productColumns: [],
+  warrantyConfig: { enabled: false, visible: false },
+  totalsConfig: {
+    showSubtotal: true,
+    showDiscountTotal: false,
+    showDiscount: false,
+    showTaxBreakdown: false,
+    showTaxBreakup: false,
+    splitGst: false,
+    showRoundOff: true,
+    showGrandTotal: true,
+    showAmountInWords: true,
+    currencySymbol: '₹',
+  },
+  footer: {
+    termsAndConditions: [
+      '1. This payslip is a confidential document generated by the EKOSMART HR & Payroll system.',
+      '2. Discrepancies in attendance or salary computation must be reported to HR within 7 days of credit.',
+      '3. PF and ESIC contributions are remitted directly to respective statutory bodies.',
+      '4. Subject to Kota jurisdiction.',
+    ],
+    bankDetails: {
+      bankName: 'HDFC Bank Ltd',
+      accountNumber: '50200088991122',
+      ifscCode: 'HDFC0001234',
+      branch: 'Industrial Area Branch, Kota',
+      upiId: 'ekosmartpayroll@hdfcbank',
+    },
+    authorizedSignatoryLabel: 'For EKOSMART EV BATTERY SOLUTION',
+    signatoryName: 'Authorized HR Signatory',
+    showSignatureBox: true,
+    footerNote: 'This is a computer-generated salary slip and requires authorized signature & company seal.',
+  },
+  theme: {
+    primaryColor: '#059669',
+    secondaryColor: '#047857',
+    accentColor: '#047857',
+    fontPreset: 'sans' as const,
+    fontFamily: 'Inter',
+    paperSize: 'A4' as const,
+    showWatermark: true,
+    watermarkText: 'CONFIDENTIAL PAYSLIP',
+    borderStyle: 'rounded' as const,
     headerStyle: 'modern' as const,
   },
 };
@@ -130,10 +296,13 @@ export const getActiveBillTemplate = async (req: Request, res: Response) => {
     const { type } = req.query;
     const query: any = { isActive: true };
     if (type) {
-      query.templateType = type;
+      query.$or = [{ templateType: type }, { type: type }];
     }
 
     let template = await BillTemplate.findOne(query);
+    if (!template && type === 'Salary') {
+      template = await BillTemplate.findOne({ $or: [{ templateType: 'Salary' }, { type: 'Salary' }] });
+    }
     if (!template) {
       template = await BillTemplate.findOne({ isActive: true });
     }
@@ -142,10 +311,10 @@ export const getActiveBillTemplate = async (req: Request, res: Response) => {
     }
 
     if (!template) {
-      // Return built-in default template
+      const fallback = type === 'Salary' ? defaultSalarySlipTemplate : defaultBillTemplate;
       return res.json({
         success: true,
-        data: defaultBillTemplate,
+        data: fallback,
         isDefault: true,
       });
     }
@@ -156,9 +325,10 @@ export const getActiveBillTemplate = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Failed to get active bill template:', error);
+    const fallback = req.query.type === 'Salary' ? defaultSalarySlipTemplate : defaultBillTemplate;
     res.json({
       success: true,
-      data: defaultBillTemplate,
+      data: fallback,
       isDefault: true,
     });
   }
@@ -167,12 +337,21 @@ export const getActiveBillTemplate = async (req: Request, res: Response) => {
 // GET /api/v1/billing/templates - List all templates (Admin)
 export const getAllBillTemplates = async (req: Request, res: Response) => {
   try {
-    const templates = await BillTemplate.find().sort({ isActive: -1, updatedAt: -1 });
+    let templates = await BillTemplate.find().sort({ isActive: -1, updatedAt: -1 });
     if (templates.length === 0) {
-      // Seed default template if none exist
-      const created = await BillTemplate.create(defaultBillTemplate);
-      return res.json({ success: true, data: [created] });
+      // Seed default showroom and salary templates if none exist
+      const createdShowroom = await BillTemplate.create(defaultBillTemplate);
+      const createdSalary = await BillTemplate.create(defaultSalarySlipTemplate);
+      return res.json({ success: true, data: [createdShowroom, createdSalary] });
     }
+
+    // Ensure at least one Salary template exists
+    const hasSalary = templates.some((t: any) => t.templateType === 'Salary' || t.type === 'Salary');
+    if (!hasSalary) {
+      const createdSalary = await BillTemplate.create(defaultSalarySlipTemplate);
+      templates.push(createdSalary);
+    }
+
     res.json({ success: true, data: templates });
   } catch (error: any) {
     console.error('Failed to get bill templates:', error);
@@ -198,20 +377,28 @@ export const getBillTemplateById = async (req: Request, res: Response) => {
 export const createBillTemplate = async (req: Request, res: Response) => {
   try {
     const payload = req.body;
-    if (!payload.templateName) {
+    const tName = payload.templateName || payload.name;
+    if (!tName) {
       return res.status(400).json({ success: false, message: 'Template name is required' });
     }
+
+    const tType = payload.templateType || payload.type || 'Showroom';
+    payload.templateName = tName;
+    payload.name = tName;
+    payload.templateType = tType;
+    payload.type = tType;
 
     // If marked as active, deactivate other templates of same type
     if (payload.isActive) {
       await BillTemplate.updateMany(
-        { templateType: payload.templateType || 'Showroom' },
+        { $or: [{ templateType: tType }, { type: tType }] },
         { $set: { isActive: false } }
       );
     }
 
+    const baseTemplate = tType === 'Salary' ? defaultSalarySlipTemplate : defaultBillTemplate;
     const newTemplate = await BillTemplate.create({
-      ...defaultBillTemplate,
+      ...baseTemplate,
       ...payload,
     });
 
@@ -232,14 +419,22 @@ export const updateBillTemplate = async (req: Request, res: Response) => {
     const { id } = req.params;
     const payload = req.body;
 
-    if (payload.isActive) {
-      const existing = await BillTemplate.findById(id);
-      if (existing) {
-        await BillTemplate.updateMany(
-          { templateType: existing.templateType, _id: { $ne: id } },
-          { $set: { isActive: false } }
-        );
-      }
+    const tName = payload.templateName || payload.name;
+    if (tName) {
+      payload.templateName = tName;
+      payload.name = tName;
+    }
+    const tType = payload.templateType || payload.type;
+    if (tType) {
+      payload.templateType = tType;
+      payload.type = tType;
+    }
+
+    if (payload.isActive && tType) {
+      await BillTemplate.updateMany(
+        { $or: [{ templateType: tType }, { type: tType }], _id: { $ne: id } },
+        { $set: { isActive: false } }
+      );
     }
 
     const updated = await BillTemplate.findByIdAndUpdate(

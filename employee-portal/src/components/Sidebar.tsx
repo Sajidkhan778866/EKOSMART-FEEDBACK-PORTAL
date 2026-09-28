@@ -7,6 +7,7 @@ import {
   ClipboardList,
   ShieldCheck,
   FileText,
+  FileSpreadsheet,
   LogOut,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -21,6 +22,7 @@ const Sidebar = () => {
     { name: 'Showroom Billing', path: '/billing', icon: <Receipt size={18} /> },
     { name: 'Stock & Serials', path: '/stock', icon: <Package size={18} /> },
     { name: 'My ID Card', path: '/idcard', icon: <CreditCard size={18} /> },
+    { name: 'My Salary Slip', path: '/salary', icon: <FileSpreadsheet size={18} /> },
     { name: 'Complaints', path: '/complaints', icon: <ClipboardList size={18} /> },
     { name: 'Warranty', path: '/warranty', icon: <ShieldCheck size={18} /> },
     { name: 'Reports', path: '/reports', icon: <FileText size={18} /> },

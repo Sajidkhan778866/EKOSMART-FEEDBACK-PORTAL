@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { billingApi, stockApi, billTemplateApi } from '../api/client';
 import ScannerModal from '../components/ScannerModal';
-import BillTemplateDesigner, { type IBillTemplate } from '../components/BillTemplateDesigner';
+import BillTemplateDesigner, { type IBillTemplate, normalizeTemplate } from '../components/BillTemplateDesigner';
 
 export interface IBillLineItem {
   productId: string;
@@ -130,10 +130,12 @@ const BillingManager = () => {
     try {
       const res = await billTemplateApi.getActive();
       if (res.data?.success && res.data.data) {
-        setActiveTemplate(res.data.data);
+        setActiveTemplate(normalizeTemplate(res.data.data));
+      } else {
+        setActiveTemplate(normalizeTemplate());
       }
     } catch {
-      // Fallback
+      setActiveTemplate(normalizeTemplate());
     }
   };
 

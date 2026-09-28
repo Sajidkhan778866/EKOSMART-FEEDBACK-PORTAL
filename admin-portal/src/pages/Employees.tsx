@@ -32,6 +32,7 @@ import {
 import { employeeApi, formApi, contentApi, resolveImageUrl } from '../api/client';
 
 import { IdCardModal } from '../components/IdCardModal';
+import { SalarySlipModal } from '../components/SalarySlipModal';
 
 export interface ICertificate {
   id?: string;
@@ -215,6 +216,9 @@ const Employees = () => {
 
   // ID Card Modal
   const [selectedEmployeeForCard, setSelectedEmployeeForCard] = useState<EmployeeItem | null>(null);
+
+  // Salary Slip Modal
+  const [selectedEmployeeForSalarySlip, setSelectedEmployeeForSalarySlip] = useState<EmployeeItem | null>(null);
 
   // Assigned Tasks Modal
   const [selectedEmployeeForTasks, setSelectedEmployeeForTasks] = useState<EmployeeItem | null>(null);
@@ -1365,6 +1369,15 @@ const Employees = () => {
                           title="View & Print ID Card"
                         >
                           <QrCode size={17} />
+                        </button>
+
+                        {/* Salary Slip / Payslip Button */}
+                        <button
+                          onClick={() => setSelectedEmployeeForSalarySlip(emp)}
+                          className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition cursor-pointer"
+                          title="Generate & Print Official Salary Slip / Payslip"
+                        >
+                          <FileSpreadsheet size={16} />
                         </button>
 
                         {/* Status Toggle Button */}
@@ -2760,6 +2773,14 @@ const Employees = () => {
       {/* ID Card Modal */}
       {selectedEmployeeForCard && (
         <IdCardModal employee={selectedEmployeeForCard} onClose={() => setSelectedEmployeeForCard(null)} />
+      )}
+
+      {/* Salary Slip / Payslip Modal */}
+      {selectedEmployeeForSalarySlip && (
+        <SalarySlipModal
+          employee={selectedEmployeeForSalarySlip}
+          onClose={() => setSelectedEmployeeForSalarySlip(null)}
+        />
       )}
 
       {/* Reset Password Modal */}
