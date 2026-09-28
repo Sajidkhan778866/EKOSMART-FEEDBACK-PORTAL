@@ -328,7 +328,7 @@ export const getEmployeeTasks = async (req: Request, res: Response) => {
 
 export const updateEmployee = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id);
     const updates = { ...req.body };
 
     // Handle password update only if provided
@@ -415,7 +415,18 @@ export const updateEmployee = async (req: Request, res: Response) => {
       updates.barcode = generateBarcodeSVG(updates.employeeId.trim());
     }
 
-    const employee = await Employee.findByIdAndUpdate(id, updates, { new: true });
+    let employee = null;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      employee = await Employee.findByIdAndUpdate(id, updates, { new: true });
+    }
+    if (!employee) {
+      employee = await Employee.findOneAndUpdate(
+        { $or: [{ employeeId: id }, { email: id }] },
+        updates,
+        { new: true }
+      );
+    }
+
     if (!employee) {
       return res.status(404).json({ success: false, message: 'Employee not found' });
     }
@@ -429,14 +440,21 @@ export const updateEmployee = async (req: Request, res: Response) => {
       data: safeEmployee,
     });
   } catch (error: any) {
+    console.error('Error updating employee:', error);
     res.status(500).json({ success: false, message: error.message || 'Failed to update employee' });
   }
 };
 
 export const toggleEmployeeStatus = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const employee = await Employee.findById(id);
+    const id = String(req.params.id);
+    let employee = null;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      employee = await Employee.findById(id);
+    }
+    if (!employee) {
+      employee = await Employee.findOne({ $or: [{ employeeId: id }, { email: id }] });
+    }
     if (!employee) {
       return res.status(404).json({ success: false, message: 'Employee not found' });
     }
@@ -456,8 +474,14 @@ export const toggleEmployeeStatus = async (req: Request, res: Response) => {
 
 export const deleteEmployee = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const employee = await Employee.findByIdAndDelete(id);
+    const id = String(req.params.id);
+    let employee = null;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      employee = await Employee.findByIdAndDelete(id);
+    }
+    if (!employee) {
+      employee = await Employee.findOneAndDelete({ $or: [{ employeeId: id }, { email: id }] });
+    }
     if (!employee) {
       return res.status(404).json({ success: false, message: 'Employee not found' });
     }

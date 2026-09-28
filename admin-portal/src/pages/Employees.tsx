@@ -27,6 +27,7 @@ import {
   Zap,
   Package,
   Box,
+  Copy,
 } from 'lucide-react';
 import { employeeApi, formApi, contentApi, resolveImageUrl } from '../api/client';
 
@@ -766,6 +767,21 @@ const Employees = () => {
       }
 
       if (res.data.success) {
+        if (isEditing && editingEmployeeId && password && password.trim()) {
+          const trimmedPass = password.trim();
+          setEmployees((prev) =>
+            prev.map((emp) =>
+              emp._id === editingEmployeeId || emp.employeeId === employeeId
+                ? { ...emp, plainPassword: trimmedPass }
+                : emp
+            )
+          );
+          setVisiblePasswords((prev) => ({
+            ...prev,
+            [editingEmployeeId]: true,
+            [employeeId]: true,
+          }));
+        }
         setSuccessBanner(
           isEditing
             ? `Employee ${name} (${employeeId}) updated successfully!`
@@ -787,7 +803,7 @@ const Employees = () => {
   const handleToggleStatus = async (id: string) => {
     try {
       await employeeApi.toggleStatus(id);
-      fetchEmployees();
+      await fetchEmployees();
     } catch (err) {
       console.error('Failed to toggle status:', err);
     }
@@ -801,18 +817,44 @@ const Employees = () => {
     e.preventDefault();
     if (!resetModalEmployee || !newPassword) return;
 
+    const trimmedPass = newPassword.trim();
+    if (!trimmedPass) {
+      alert('Please enter a valid non-empty password');
+      return;
+    }
+
     setResettingPassword(true);
     try {
+      const targetId = resetModalEmployee._id || resetModalEmployee.employeeId;
       const formData = new FormData();
-      formData.append('password', newPassword);
-      const res = await employeeApi.update(resetModalEmployee._id, formData);
+      formData.append('password', trimmedPass);
+      const res = await employeeApi.update(targetId, formData);
       if (res.data.success) {
-        setSuccessBanner(`Password reset successfully for ${resetModalEmployee.name}!`);
+        // Immediately update the local state for instant real-time table rendering
+        setEmployees((prev) =>
+          prev.map((emp) =>
+            emp._id === resetModalEmployee._id || (resetModalEmployee.employeeId && emp.employeeId === resetModalEmployee.employeeId)
+              ? { ...emp, plainPassword: trimmedPass }
+              : emp
+          )
+        );
+        // Automatically make password visible for this employee so the user can verify
+        setVisiblePasswords((prev) => ({
+          ...prev,
+          [resetModalEmployee._id]: true,
+          ...(resetModalEmployee.employeeId ? { [resetModalEmployee.employeeId]: true } : {}),
+        }));
+        setSuccessBanner(`Password reset successfully for ${resetModalEmployee.name}! New password: ${trimmedPass}`);
         setResetModalEmployee(null);
         setNewPassword('');
+        // Sync with backend
+        await fetchEmployees();
+      } else {
+        alert(res.data.message || 'Failed to update password');
       }
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Failed to update password');
+      console.error('Password reset error:', err);
+      alert(err.response?.data?.message || err.message || 'Failed to update password');
     } finally {
       setResettingPassword(false);
     }
@@ -1232,21 +1274,42 @@ const Employees = () => {
 
                     {/* Password / Credentials Column */}
                     <td className="py-4 px-6">
-                      <div className="flex items-center gap-2 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-200 w-fit">
-                        <span className="font-mono text-xs text-slate-700 font-semibold tracking-wider select-all">
-                          {visiblePasswords[emp._id || emp.employeeId]
-                            ? (emp.plainPassword || (emp.employeeId?.startsWith('TEST-') || emp.employeeId?.startsWith('EMP-') ? 'employee123' : 'employee123'))
-                            : '••••••••'}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => togglePasswordView(emp._id || emp.employeeId)}
-                          className="text-slate-400 hover:text-emerald-600 focus:outline-none cursor-pointer p-0.5 rounded transition"
-                          title={visiblePasswords[emp._id || emp.employeeId] ? "Hide Password" : "Show Password"}
-                        >
-                          {visiblePasswords[emp._id || emp.employeeId] ? <EyeOff size={15} className="text-emerald-600" /> : <Eye size={15} />}
-                        </button>
-                      </div>
+                      {(() => {
+                        const isVisible = Boolean(
+                          visiblePasswords[emp._id] ||
+                            (emp.employeeId && visiblePasswords[emp.employeeId]) ||
+                            visiblePasswords[emp._id || emp.employeeId]
+                        );
+                        const pwdVal = emp.plainPassword || 'employee123';
+                        return (
+                          <div className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-200 w-fit">
+                            <span className="font-mono text-xs text-slate-700 font-semibold tracking-wider select-all">
+                              {isVisible ? pwdVal : '••••••••'}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => togglePasswordView(emp._id || emp.employeeId)}
+                              className="text-slate-400 hover:text-emerald-600 focus:outline-none cursor-pointer p-0.5 rounded transition"
+                              title={isVisible ? 'Hide Password' : 'Show Password'}
+                            >
+                              {isVisible ? <EyeOff size={15} className="text-emerald-600" /> : <Eye size={15} />}
+                            </button>
+                            {isVisible && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(pwdVal);
+                                  setSuccessBanner(`Password copied to clipboard for ${emp.name}!`);
+                                }}
+                                className="text-slate-400 hover:text-blue-600 focus:outline-none cursor-pointer p-0.5 rounded transition"
+                                title="Copy Password"
+                              >
+                                <Copy size={13} />
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </td>
 
                     <td className="py-4 px-6">

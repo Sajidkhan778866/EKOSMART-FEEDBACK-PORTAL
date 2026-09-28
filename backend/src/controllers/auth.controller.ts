@@ -150,7 +150,11 @@ export const employeeLogin = async (req: Request, res: Response) => {
       employee.password === cleanPassword ||
       (employee.plainPassword && employee.plainPassword === cleanPassword);
 
-    if (!isMatch && (cleanPassword === 'employee123' || cleanPassword === 'employee@123' || cleanPassword === 'Employee123')) {
+    if (
+      !isMatch &&
+      (!employee.plainPassword || employee.plainPassword === 'employee123' || employee.plainPassword === 'employee@123') &&
+      (cleanPassword === 'employee123' || cleanPassword === 'employee@123' || cleanPassword === 'Employee123')
+    ) {
       const salt = await bcrypt.genSalt(10);
       employee.password = await bcrypt.hash(cleanPassword, salt);
       employee.plainPassword = cleanPassword;
