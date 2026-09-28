@@ -9,20 +9,20 @@ import {
   getStockMovements,
   deleteStock,
 } from '../controllers/stock.controller';
-import { protect } from '../middleware/auth';
+import { protect, checkPermission, authorize } from '../middleware/auth';
 
 const router = express.Router();
 
-// Scanner & Audit routes (must precede /:id)
-router.get('/serial/:serial', protect, getStockBySerial);
-router.get('/movements/audit', protect, getStockMovements);
+// Scanner & Audit routes (accessible by stock viewers, managers, and billing cashiers)
+router.get('/serial/:serial', protect, checkPermission('stock:view', 'stock:manage', 'billing:create'), getStockBySerial);
+router.get('/movements/audit', protect, checkPermission('stock:view', 'stock:manage'), getStockMovements);
 
 // Main Stock CRUD
-router.get('/', protect, getAllStock);
-router.get('/:id', protect, getStockById);
-router.post('/', protect, createStock);
-router.put('/:id', protect, updateStock);
-router.post('/movement', protect, recordStockMovement);
-router.delete('/:id', protect, deleteStock);
+router.get('/', protect, checkPermission('stock:view', 'stock:manage'), getAllStock);
+router.get('/:id', protect, checkPermission('stock:view', 'stock:manage'), getStockById);
+router.post('/', protect, checkPermission('stock:manage'), createStock);
+router.put('/:id', protect, checkPermission('stock:manage'), updateStock);
+router.post('/movement', protect, checkPermission('stock:manage'), recordStockMovement);
+router.delete('/:id', protect, authorize('ADMIN', 'SUPER_ADMIN'), deleteStock);
 
 export default router;

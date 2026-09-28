@@ -6,8 +6,8 @@ import bcrypt from 'bcrypt';
 import { isDbConnected } from '../config/db';
 import { ensureDefaultSeedData } from '../utils/autoSeed';
 
-const generateToken = (id: string, role: string) => {
-  return jwt.sign({ id, role }, process.env.JWT_SECRET || 'ekosmart_default_secret_key_2026', {
+const generateToken = (id: string, role: string, permissions?: string[]) => {
+  return jwt.sign({ id, role, permissions: permissions || [] }, process.env.JWT_SECRET || 'ekosmart_default_secret_key_2026', {
     expiresIn: '30d',
   });
 };
@@ -142,7 +142,7 @@ export const employeeLogin = async (req: Request, res: Response) => {
       });
     }
 
-    const token = generateToken(employee._id.toString(), employee.role);
+    const token = generateToken(employee._id.toString(), employee.role, employee.permissions || []);
 
     return res.json({
       success: true,
@@ -156,6 +156,7 @@ export const employeeLogin = async (req: Request, res: Response) => {
         designation: employee.designation,
         division: employee.division,
         role: employee.role,
+        permissions: employee.permissions || [],
         status: employee.status,
         warrantyAccess: employee.warrantyAccess,
         token,

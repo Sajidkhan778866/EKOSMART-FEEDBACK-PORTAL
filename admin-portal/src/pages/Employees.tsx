@@ -246,8 +246,25 @@ const Employees = () => {
   const [photoPreview, setPhotoPreview] = useState<string>('');
   const [status, setStatus] = useState<'Active' | 'Inactive'>('Active');
   const [warrantyAccess, setWarrantyAccess] = useState<IWarrantyAccess>(defaultWarrantyAccess);
+  const [permissions, setPermissions] = useState<string[]>([
+    'billing:create',
+    'billing:view',
+    'stock:view',
+    'stock:manage',
+    'warranty:manage',
+    'complaints:manage',
+    'idcard:view',
+  ]);
   const [certificates, setCertificates] = useState<ICertificate[]>([]);
   const [issuedItems, setIssuedItems] = useState<IIssuedItem[]>([]);
+
+  const handlePermissionToggle = (permKey: string) => {
+    if (permissions.includes(permKey)) {
+      setPermissions(permissions.filter((p) => p !== permKey));
+    } else {
+      setPermissions([...permissions, permKey]);
+    }
+  };
 
   // Soft-Coded Form Customization State
   const [isCustomDesignation, setIsCustomDesignation] = useState(false);
@@ -528,6 +545,15 @@ const Employees = () => {
     setPhotoPreview('');
     setStatus('Active');
     setWarrantyAccess(defaultWarrantyAccess);
+    setPermissions([
+      'billing:create',
+      'billing:view',
+      'stock:view',
+      'stock:manage',
+      'warranty:manage',
+      'complaints:manage',
+      'idcard:view',
+    ]);
     setCertificates([]);
     setIssuedItems([]);
     setIsCustomDesignation(false);
@@ -587,6 +613,20 @@ const Employees = () => {
         voidWarranty: Boolean(rawWarranty.permissions?.voidWarranty),
       },
     });
+
+    setPermissions(
+      Array.isArray(emp.permissions) && emp.permissions.length > 0
+        ? emp.permissions
+        : [
+            'billing:create',
+            'billing:view',
+            'stock:view',
+            'stock:manage',
+            'warranty:manage',
+            'complaints:manage',
+            'idcard:view',
+          ]
+    );
 
     setCertificates(emp.certificates || []);
     setIssuedItems(emp.issuedItems || []);
@@ -708,6 +748,7 @@ const Employees = () => {
       formData.append('certificates', JSON.stringify(certificates));
       formData.append('issuedItems', JSON.stringify(issuedItems));
       formData.append('warrantyAccess', JSON.stringify(warrantyAccess));
+      formData.append('permissions', JSON.stringify(permissions));
 
       if (password) {
         formData.append('password', password);
@@ -2213,6 +2254,80 @@ const Employees = () => {
                     Warranty access is currently disabled for this staff member. Select an access tier above to grant privileges.
                   </p>
                 )}
+              </div>
+
+              {/* SECTION 6: SOFT-CODED GRANULAR SYSTEM PERMISSIONS */}
+              <div className="bg-white p-5 rounded-2xl border-2 border-emerald-200 shadow-sm space-y-4">
+                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-emerald-100 pb-3">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="text-emerald-600" size={20} />
+                    <div>
+                      <h4 className="text-sm font-bold text-emerald-950">6. Soft-Coded System & Role Permissions</h4>
+                      <p className="text-[11px] text-slate-500">
+                        Control employee access to billing counter, inventory scanning, warranty manager, and customer tickets.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPermissions([
+                          'billing:create',
+                          'billing:view',
+                          'stock:view',
+                          'stock:manage',
+                          'warranty:manage',
+                          'complaints:manage',
+                          'idcard:view',
+                        ])
+                      }
+                      className="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 cursor-pointer"
+                    >
+                      Select All
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPermissions(['idcard:view'])}
+                      className="text-[11px] font-bold text-slate-500 hover:text-slate-700 bg-slate-100 px-2.5 py-1 rounded-lg cursor-pointer"
+                    >
+                      Clear All
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  {[
+                    { key: 'billing:create', title: 'Showroom Billing Counter', desc: 'Create sales invoices, scan items & deduct stock' },
+                    { key: 'billing:view', title: 'View & Print Invoices', desc: 'Access showroom invoices & print receipts' },
+                    { key: 'stock:view', title: 'Inventory Browser & Serial Check', desc: 'Check serialized battery stock & quantities' },
+                    { key: 'stock:manage', title: 'Stock Intake & Transfer', desc: 'Register new stock & transfer between branches' },
+                    { key: 'warranty:manage', title: 'Warranty Registration & Claims', desc: 'Register customer warranties & file claims' },
+                    { key: 'complaints:manage', title: 'Service Tickets & Work Orders', desc: 'View, update, and resolve customer complaints' },
+                    { key: 'idcard:view', title: 'Employee Digital ID Card', desc: 'View & print verified official staff ID card' },
+                  ].map((perm) => {
+                    const active = permissions.includes(perm.key);
+                    return (
+                      <label
+                        key={perm.key}
+                        className={`flex items-center gap-2.5 p-3 rounded-xl border transition cursor-pointer ${
+                          active ? 'border-emerald-300 bg-emerald-50/60 shadow-xs' : 'border-slate-200 bg-slate-50/50 hover:bg-slate-100'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={active}
+                          onChange={() => handlePermissionToggle(perm.key)}
+                          className="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4"
+                        />
+                        <div>
+                          <span className="font-bold text-slate-800 block">{perm.title}</span>
+                          <span className="text-[10px] text-slate-500">{perm.desc}</span>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Modal Footer */}

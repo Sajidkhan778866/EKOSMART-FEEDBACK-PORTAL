@@ -195,6 +195,10 @@ const Billing = () => {
       const res = await stockApi.getBySerial(scannedSerial);
       if (res.data?.success && res.data.data) {
         const stock = res.data.data;
+        if (stock.status === 'Sold') {
+          showAlert('error', `Warning: Scanned battery (${scannedSerial}) is already recorded as SOLD in inventory!`);
+          return;
+        }
         if (activeScanRowIndex !== null && activeScanRowIndex < items.length) {
           const updated = [...items];
           updated[activeScanRowIndex] = calculateLineItem({

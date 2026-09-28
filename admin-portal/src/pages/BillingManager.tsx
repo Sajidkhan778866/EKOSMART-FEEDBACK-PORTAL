@@ -201,6 +201,14 @@ const BillingManager = () => {
       const res = await stockApi.getBySerial(serialLookup.trim());
       if (res.data?.success && res.data.data) {
         const stock = res.data.data;
+        if (stock.status === 'Sold') {
+          setLookupMsg({
+            type: 'error',
+            text: `Warning: Battery (${stock.serialNumber || stock.batterySerialNumber || serialLookup}) is already marked as SOLD in inventory!`,
+          });
+          return;
+        }
+
         const newItem: IBillLineItem = calculateLineItem({
           productId: stock.productId,
           productName: stock.productName,
@@ -225,7 +233,7 @@ const BillingManager = () => {
 
         setLookupMsg({
           type: 'success',
-          text: `Found: ${stock.productName} (Qty Available: ${stock.quantity})`,
+          text: `Verified & Added: ${stock.productName} (In Stock: ${stock.quantity})`,
         });
         setSerialLookup('');
       }

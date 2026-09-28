@@ -47,6 +47,7 @@ import {
   UserCheck,
   MapPin,
   Clock,
+  Edit3,
 } from 'lucide-react';
 import { contentApi, API_BASE_URL, resolveImageUrl } from '../api/client';
 
@@ -547,8 +548,13 @@ const ContentManager = () => {
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [newDropdownOption, setNewDropdownOption] = useState<string>('');
   const [selectedSectionFilter, setSelectedSectionFilter] = useState<string>('all');
-  const [featureDrafts, setFeatureDrafts] = useState<{ [cardId: string]: string }>({});
   const [expandedDivision, setExpandedDivision] = useState<string | null>(null);
+
+  // Dedicated Single Modal State for Adding / Editing Cards (Prevents duplicate fields)
+  const [cardModalOpen, setCardModalOpen] = useState<boolean>(false);
+  const [editingCardIndex, setEditingCardIndex] = useState<number | null>(null);
+  const [cardDraft, setCardDraft] = useState<IServiceCard | null>(null);
+  const [draftFeatureText, setDraftFeatureText] = useState<string>('');
 
   const getDivisionContact = (optName: string): IDivisionContact => {
     const existing = (content.contactInfo?.divisionContacts || []).find(
@@ -590,10 +596,11 @@ const ContentManager = () => {
   }, []);
 
   const normalizeServiceCards = (cards: IServiceCard[]) => {
+    const seenIds = new Set<string>();
     return (cards || []).map((card, idx) => {
       let section = card.section;
       if (!section || section === 'General') {
-        const lower = `${card.id} ${card.title}`.toLowerCase();
+        const lower = `${card.id || ''} ${card.title || ''}`.toLowerCase();
         if (lower.includes('showroom')) section = 'Showroom';
         else if (lower.includes('rental')) section = 'Rental';
         else if (lower.includes('spare') || lower.includes('parts')) section = 'Spare Parts';
@@ -601,7 +608,18 @@ const ContentManager = () => {
         else if (lower.includes('warranty')) section = 'Warranty';
         else section = section || 'General';
       }
-      return { ...card, section, order: card.order || idx + 1 };
+      let cardId = card.id || `card-${Date.now()}-${idx}`;
+      if (seenIds.has(cardId)) {
+        cardId = `card-${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 4)}`;
+      }
+      seenIds.add(cardId);
+      return {
+        ...card,
+        id: cardId,
+        section,
+        order: card.order || idx + 1,
+        features: Array.isArray(card.features) ? card.features : [],
+      };
     });
   };
 
@@ -680,31 +698,76 @@ const ContentManager = () => {
     }
   };
 
-  // Card Handlers
-  const handleAddCard = (sectionPreset?: string) => {
+  // Card Handlers with Single-Instance Modal
+  const handleOpenAddCard = (sectionPreset?: string) => {
     if (!content) return;
     const targetSection = sectionPreset && sectionPreset !== 'all' ? sectionPreset : 'General';
     const newCard: IServiceCard = {
       id: `card-${Date.now()}`,
       title: 'New Service Card',
-      subtitle: `${targetSection} Services`,
+      subtitle: `${targetSection} Support`,
       description: 'Add a helpful description for this customer action or support service.',
       section: targetSection,
       badge: 'NEW',
-      features: ['24/7 Dedicated Support', 'Fast Resolution SLA'],
+      features: ['24/7 Dedicated Support', 'Fast SLA Resolution'],
       linkUrl: `/complaint/register?division=${encodeURIComponent(targetSection)}`,
-      buttonText: 'Get Started',
+      buttonText: 'Select Service',
       color: targetSection === 'Battery' ? 'teal' : targetSection === 'Rental' ? 'blue' : targetSection === 'Spare Parts' ? 'purple' : targetSection === 'Showroom' ? 'emerald' : 'emerald',
       icon: targetSection === 'Battery' ? 'Battery' : targetSection === 'Rental' ? 'Bike' : targetSection === 'Spare Parts' ? 'Settings' : targetSection === 'Showroom' ? 'Store' : 'FileText',
       iconType: 'icon',
       iconImage: '',
+      bgType: 'color',
+      bgImage: '',
+      bgOverlayOpacity: 70,
       isVisible: true,
-      order: content.serviceCards.length + 1,
+      order: (content?.serviceCards?.length || 0) + 1,
     };
+    setCardDraft(newCard);
+    setEditingCardIndex(null);
+    setDraftFeatureText('');
+    setCardModalOpen(true);
+  };
+
+  const handleOpenEditCard = (index: number) => {
+    const cardToEdit = content.serviceCards[index];
+    if (!cardToEdit) return;
+    setCardDraft({
+      ...cardToEdit,
+      features: cardToEdit.features ? [...cardToEdit.features] : [],
+    });
+    setEditingCardIndex(index);
+    setDraftFeatureText('');
+    setCardModalOpen(true);
+  };
+
+  const handleCloseCardModal = () => {
+    setCardModalOpen(false);
+    setCardDraft(null);
+    setEditingCardIndex(null);
+    setDraftFeatureText('');
+  };
+
+  const handleSaveCardDraft = () => {
+    if (!cardDraft || !content) return;
+    const updatedCards = [...content.serviceCards];
+    if (editingCardIndex !== null && editingCardIndex >= 0 && editingCardIndex < updatedCards.length) {
+      updatedCards[editingCardIndex] = cardDraft;
+    } else {
+      updatedCards.push({
+        ...cardDraft,
+        order: updatedCards.length + 1,
+      });
+    }
     setContent({
       ...content,
-      serviceCards: [...content.serviceCards, newCard],
+      serviceCards: updatedCards,
     });
+    handleCloseCardModal();
+    setNotification({
+      type: 'success',
+      message: `Card "${cardDraft.title}" updated in draft! Click "Save All Changes" at the top to publish.`,
+    });
+    setTimeout(() => setNotification(null), 4000);
   };
 
   const handleDuplicateCard = (index: number) => {
@@ -721,12 +784,20 @@ const ContentManager = () => {
       ...content,
       serviceCards: [...content.serviceCards, copyCard],
     });
+    setNotification({
+      type: 'success',
+      message: `Duplicated "${original.title}". Click "Save All Changes" to publish.`,
+    });
+    setTimeout(() => setNotification(null), 3000);
   };
 
-  const handleUpdateCard = (index: number, field: keyof IServiceCard, value: any) => {
+  const handleToggleCardVisibility = (index: number) => {
     if (!content) return;
     const updatedCards = [...content.serviceCards];
-    updatedCards[index] = { ...updatedCards[index], [field]: value };
+    updatedCards[index] = {
+      ...updatedCards[index],
+      isVisible: !updatedCards[index].isVisible,
+    };
     setContent({ ...content, serviceCards: updatedCards });
   };
 
@@ -737,7 +808,7 @@ const ContentManager = () => {
 
     if (
       !window.confirm(
-        `Are you sure you want to permanently delete "${cardTitle}"? It will be removed from the homepage and customer portal.`
+        `Are you sure you want to permanently delete "${cardTitle}"? It will be removed from the homepage.`
       )
     ) {
       return;
@@ -747,7 +818,6 @@ const ContentManager = () => {
     const updatedContent = { ...content, serviceCards: updatedCards };
     setContent(updatedContent);
 
-    // Auto-reset section filter if the deleted card was the only card in this section
     const remainingSections = Array.from(new Set(updatedCards.map((c) => (c.section || '').trim()).filter(Boolean)));
     if (selectedSectionFilter !== 'all' && !remainingSections.some((s) => s.toLowerCase() === selectedSectionFilter.toLowerCase())) {
       setSelectedSectionFilter('all');
@@ -760,7 +830,7 @@ const ContentManager = () => {
         setContent(res.data.data);
         setNotification({
           type: 'success',
-          message: `Service card "${cardTitle}" deleted successfully and removed from frontend!`,
+          message: `Service card "${cardTitle}" deleted successfully!`,
         });
         setTimeout(() => setNotification(null), 4000);
       }
@@ -768,7 +838,7 @@ const ContentManager = () => {
       console.error('Failed to auto-save after delete:', err);
       setNotification({
         type: 'error',
-        message: err.response?.data?.message || 'Failed to delete card on server. Please check your admin connection.',
+        message: err.response?.data?.message || 'Failed to delete card on server.',
       });
     } finally {
       setSaving(false);
@@ -785,45 +855,36 @@ const ContentManager = () => {
     cards[index] = cards[targetIndex];
     cards[targetIndex] = temp;
 
-    // re-assign order numbers
     const reordered = cards.map((c, idx) => ({ ...c, order: idx + 1 }));
     setContent({ ...content, serviceCards: reordered });
   };
 
-  const handleAddFeature = (cardIndex: number, cardId: string) => {
-    const text = (featureDrafts[cardId] || '').trim();
-    if (!text || !content) return;
-    const updatedCards = [...content.serviceCards];
-    const currentFeatures = updatedCards[cardIndex].features || [];
-    updatedCards[cardIndex] = {
-      ...updatedCards[cardIndex],
-      features: [...currentFeatures, text],
-    };
-    setContent({ ...content, serviceCards: updatedCards });
-    setFeatureDrafts((prev) => ({ ...prev, [cardId]: '' }));
+  const handleAddDraftFeature = () => {
+    const text = draftFeatureText.trim();
+    if (!text || !cardDraft) return;
+    setCardDraft({
+      ...cardDraft,
+      features: [...(cardDraft.features || []), text],
+    });
+    setDraftFeatureText('');
   };
 
-  const handleRemoveFeature = (cardIndex: number, featureIndex: number) => {
-    if (!content) return;
-    const updatedCards = [...content.serviceCards];
-    const currentFeatures = updatedCards[cardIndex].features || [];
-    updatedCards[cardIndex] = {
-      ...updatedCards[cardIndex],
-      features: currentFeatures.filter((_, fIdx) => fIdx !== featureIndex),
-    };
-    setContent({ ...content, serviceCards: updatedCards });
+  const handleRemoveDraftFeature = (featureIndex: number) => {
+    if (!cardDraft) return;
+    setCardDraft({
+      ...cardDraft,
+      features: (cardDraft.features || []).filter((_, fIdx) => fIdx !== featureIndex),
+    });
   };
 
-  const handleUpdateFeature = (cardIndex: number, featureIndex: number, value: string) => {
-    if (!content) return;
-    const updatedCards = [...content.serviceCards];
-    const currentFeatures = [...(updatedCards[cardIndex].features || [])];
-    currentFeatures[featureIndex] = value;
-    updatedCards[cardIndex] = {
-      ...updatedCards[cardIndex],
-      features: currentFeatures,
-    };
-    setContent({ ...content, serviceCards: updatedCards });
+  const handleUpdateDraftFeature = (featureIndex: number, value: string) => {
+    if (!cardDraft) return;
+    const updatedFeatures = [...(cardDraft.features || [])];
+    updatedFeatures[featureIndex] = value;
+    setCardDraft({
+      ...cardDraft,
+      features: updatedFeatures,
+    });
   };
 
   // Derive unique section list dynamically strictly from existing cards (no ghost sections)
@@ -835,7 +896,6 @@ const ContentManager = () => {
     )
   );
 
-  // Auto-reset section filter if current filter section no longer exists
   useEffect(() => {
     if (
       selectedSectionFilter !== 'all' &&
@@ -983,19 +1043,19 @@ const ContentManager = () => {
                   <span>Homepage Service Cards & Section Divisions</span>
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Configure dynamic flash cards across all business sections (Showroom, Rental, Spare Parts, Battery, Warranty).
+                  Configure dynamic flash cards across all business sections. Click &ldquo;Edit&rdquo; on any card or &ldquo;Add Card&rdquo; to modify fields in the dedicated card modal.
                 </p>
               </div>
 
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => handleAddCard(selectedSectionFilter !== 'all' ? selectedSectionFilter : 'General')}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold shadow-sm transition cursor-pointer"
+                  onClick={() => handleOpenAddCard(selectedSectionFilter !== 'all' ? selectedSectionFilter : 'General')}
+                  className="flex items-center gap-1.5 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold shadow-sm transition cursor-pointer"
                 >
                   <Plus size={16} />
                   <span>
-                    Add Card {selectedSectionFilter !== 'all' ? `to ${selectedSectionFilter}` : ''}
+                    Add New Card {selectedSectionFilter !== 'all' ? `to ${selectedSectionFilter}` : ''}
                   </span>
                 </button>
               </div>
@@ -1049,7 +1109,7 @@ const ContentManager = () => {
             </div>
           </div>
 
-          {/* Cards Grid */}
+          {/* Cards Grid / Dashboard Table */}
           {displayedCards.length === 0 ? (
             <div className="bg-white p-12 text-center rounded-2xl border border-dashed border-slate-300 space-y-3">
               <div className="w-12 h-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto">
@@ -1057,11 +1117,11 @@ const ContentManager = () => {
               </div>
               <h3 className="font-bold text-slate-700 text-sm">No Service Cards in this Section</h3>
               <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                There are no cards assigned to section &ldquo;{selectedSectionFilter}&rdquo;. Click the button below to add one.
+                There are no cards assigned to section &ldquo;{selectedSectionFilter}&rdquo;. Click below to create a new card.
               </p>
               <button
                 type="button"
-                onClick={() => handleAddCard(selectedSectionFilter !== 'all' ? selectedSectionFilter : 'General')}
+                onClick={() => handleOpenAddCard(selectedSectionFilter !== 'all' ? selectedSectionFilter : 'General')}
                 className="inline-flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white text-xs font-bold rounded-xl shadow cursor-pointer hover:bg-green-700"
               >
                 <Plus size={15} />
@@ -1069,598 +1129,686 @@ const ContentManager = () => {
               </button>
             </div>
           ) : (
-            <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
               {displayedCards.map(({ card, originalIndex }) => {
                 const previewTheme = getCardPreviewTheme(card.color);
                 return (
                   <div
                     key={card.id || originalIndex}
-                    className={`bg-white rounded-2xl border shadow-sm transition overflow-hidden ${
+                    className={`bg-white rounded-2xl border transition-all hover:shadow-md flex flex-col justify-between overflow-hidden ${
                       card.isVisible ? 'border-slate-200' : 'border-dashed border-slate-300 opacity-60 bg-slate-50'
                     }`}
                   >
-                    {/* Card Card Header Strip */}
-                    <div className="bg-slate-50 px-5 py-3.5 border-b border-slate-200 flex flex-wrap justify-between items-center gap-2">
-                      <div className="flex items-center gap-2.5">
-                        <span className="w-6 h-6 bg-slate-800 text-white rounded-full font-bold text-xs flex items-center justify-center shadow-xs">
+                    {/* Top strip */}
+                    <div className="p-4 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="w-6 h-6 bg-slate-800 text-white rounded-full font-bold text-xs flex items-center justify-center shrink-0">
                           {card.order || originalIndex + 1}
                         </span>
-                        <span className="font-bold text-sm text-slate-800">
-                          {card.title || 'Untitled Card'}
-                        </span>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 border border-slate-300">
-                          Section: {card.section || 'General'}
+                        <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700 truncate">
+                          {card.section || 'General'}
                         </span>
                         {card.badge && (
-                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 uppercase">
+                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 uppercase truncate">
                             {card.badge}
                           </span>
                         )}
                       </div>
 
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1 shrink-0">
                         <button
                           type="button"
                           onClick={() => handleMoveCard(originalIndex, 'up')}
                           disabled={originalIndex === 0}
-                          className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-white rounded-lg border border-transparent hover:border-slate-200 disabled:opacity-30 transition cursor-pointer"
+                          className="p-1 text-slate-400 hover:text-slate-800 hover:bg-white rounded border border-transparent hover:border-slate-200 disabled:opacity-20 transition cursor-pointer"
                           title="Move Up"
                         >
-                          <ArrowUp size={15} />
+                          <ArrowUp size={13} />
                         </button>
                         <button
                           type="button"
                           onClick={() => handleMoveCard(originalIndex, 'down')}
                           disabled={originalIndex === content.serviceCards.length - 1}
-                          className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-white rounded-lg border border-transparent hover:border-slate-200 disabled:opacity-30 transition cursor-pointer"
+                          className="p-1 text-slate-400 hover:text-slate-800 hover:bg-white rounded border border-transparent hover:border-slate-200 disabled:opacity-20 transition cursor-pointer"
                           title="Move Down"
                         >
-                          <ArrowDown size={15} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDuplicateCard(originalIndex)}
-                          className="p-1.5 text-slate-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition cursor-pointer"
-                          title="Duplicate Card"
-                        >
-                          <Copy size={15} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateCard(originalIndex, 'isVisible', !card.isVisible)}
-                          className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition cursor-pointer ${
-                            card.isVisible
-                              ? 'bg-green-100 text-green-800 border border-green-200'
-                              : 'bg-slate-200 text-slate-600'
-                          }`}
-                          title={card.isVisible ? 'Visible on Homepage' : 'Hidden from Homepage'}
-                        >
-                          {card.isVisible ? <Eye size={14} /> : <EyeOff size={14} />}
-                          <span>{card.isVisible ? 'Live' : 'Hidden'}</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteCard(originalIndex)}
-                          className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition cursor-pointer"
-                          title="Delete Card"
-                        >
-                          <Trash2 size={15} />
+                          <ArrowDown size={13} />
                         </button>
                       </div>
                     </div>
 
-                    {/* Card Body: 2 Columns (Editor on Left, Live Preview on Right) */}
-                    <div className="p-5 grid grid-cols-1 lg:grid-cols-12 gap-6">
-                      {/* LEFT: Inputs (8 cols) */}
-                      <div className="lg:col-span-8 space-y-4">
-                        {/* Section & Badge Row */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                          <div>
-                            <label className="block font-bold text-slate-700 mb-1 flex items-center gap-1">
-                              <Tag size={13} className="text-green-600" />
-                              <span>Section / Category</span>
-                            </label>
-                            <input
-                              type="text"
-                              list={`section-list-${originalIndex}`}
-                              value={card.section || 'General'}
-                              onChange={(e) => handleUpdateCard(originalIndex, 'section', e.target.value)}
-                              placeholder="e.g. Showroom, Battery, Rental"
-                              className="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-1 focus:ring-green-500 bg-white"
-                            />
-                            <datalist id={`section-list-${originalIndex}`}>
-                              {STANDARD_SECTIONS.map((s) => (
-                                <option key={s} value={s} />
-                              ))}
-                            </datalist>
+                    {/* Card Content Summary */}
+                    <div className="p-5 space-y-3 flex-1 flex flex-col justify-between">
+                      <div className="space-y-2.5">
+                        <div className="flex items-start gap-3">
+                          <div
+                            className={`w-11 h-11 rounded-xl flex items-center justify-center text-white shrink-0 shadow-xs ${previewTheme.cardBg}`}
+                          >
+                            {renderLivePreviewIcon(card)}
                           </div>
-
-                          <div>
-                            <label className="block font-bold text-slate-700 mb-1 flex items-center gap-1">
-                              <Sparkles size={13} className="text-amber-500" />
-                              <span>Card Badge Pill (Optional)</span>
-                            </label>
-                            <input
-                              type="text"
-                              value={card.badge || ''}
-                              onChange={(e) => handleUpdateCard(originalIndex, 'badge', e.target.value)}
-                              placeholder="e.g. 3-YEAR WARRANTY, POPULAR, OEM"
-                              className="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-1 focus:ring-green-500 uppercase"
-                            />
+                          <div className="min-w-0 flex-1">
+                            <h3 className="font-bold text-sm text-slate-900 leading-snug truncate">
+                              {card.title || 'Untitled Card'}
+                            </h3>
+                            {card.subtitle && (
+                              <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider truncate mt-0.5">
+                                {card.subtitle}
+                              </p>
+                            )}
                           </div>
                         </div>
 
-                        {/* Title & Subtitle Row */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                          <div>
-                            <label className="block font-bold text-slate-700 mb-1">Card Title</label>
-                            <input
-                              type="text"
-                              value={card.title}
-                              onChange={(e) => handleUpdateCard(originalIndex, 'title', e.target.value)}
-                              placeholder="e.g. Lithium Battery"
-                              className="w-full border border-slate-300 rounded-lg p-2 text-xs font-semibold focus:ring-1 focus:ring-green-500"
-                            />
-                          </div>
+                        <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
+                          {card.description || 'No description provided.'}
+                        </p>
 
-                          <div>
-                            <label className="block font-bold text-slate-700 mb-1">Subtitle / Tagline</label>
-                            <input
-                              type="text"
-                              value={card.subtitle || ''}
-                              onChange={(e) => handleUpdateCard(originalIndex, 'subtitle', e.target.value)}
-                              placeholder="e.g. High Performance LFP & Li-Ion"
-                              className="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-1 focus:ring-green-500 text-slate-600"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Description */}
-                        <div>
-                          <label className="block font-bold text-slate-700 mb-1 text-xs">Description</label>
-                          <textarea
-                            rows={2}
-                            value={card.description}
-                            onChange={(e) => handleUpdateCard(originalIndex, 'description', e.target.value)}
-                            placeholder="Detailed explanation of services provided..."
-                            className="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-1 focus:ring-green-500"
-                          />
-                        </div>
-
-                        {/* Key Features Bullet Points Manager */}
-                        <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2.5">
-                          <label className="block font-bold text-slate-800 text-xs flex items-center justify-between">
-                            <span className="flex items-center gap-1.5">
-                              <CheckCircle2 size={14} className="text-green-600" />
-                              <span>Key Features & Highlights ({card.features?.length || 0})</span>
-                            </span>
-                            <span className="text-[10px] text-slate-400 font-normal">
-                              Rendered as bullet list on homepage card
-                            </span>
-                          </label>
-
-                          {/* Existing Features List */}
-                          {card.features && card.features.length > 0 && (
-                            <div className="space-y-1.5">
-                              {card.features.map((feature, fIdx) => (
-                                <div key={fIdx} className="flex items-center gap-1.5">
-                                  <span className="text-green-600 text-xs">✓</span>
-                                  <input
-                                    type="text"
-                                    value={feature}
-                                    onChange={(e) => handleUpdateFeature(originalIndex, fIdx, e.target.value)}
-                                    className="flex-1 border border-slate-200 rounded-lg px-2.5 py-1 text-xs bg-white focus:ring-1 focus:ring-green-500"
-                                  />
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRemoveFeature(originalIndex, fIdx)}
-                                    className="p-1 text-slate-400 hover:text-red-600 rounded transition cursor-pointer"
-                                    title="Remove Bullet"
-                                  >
-                                    <X size={14} />
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                          {/* Add New Feature Input */}
-                          <div className="flex items-center gap-1.5 pt-1">
-                            <input
-                              type="text"
-                              value={featureDrafts[card.id] || ''}
-                              onChange={(e) => setFeatureDrafts({ ...featureDrafts, [card.id]: e.target.value })}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault();
-                                  handleAddFeature(originalIndex, card.id);
-                                }
-                              }}
-                              placeholder="Type a feature and press enter (e.g. 3-Year Warranty Replacement)..."
-                              className="flex-1 border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:ring-1 focus:ring-green-500"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => handleAddFeature(originalIndex, card.id)}
-                              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer"
-                            >
-                              <Plus size={13} />
-                              <span>Add Bullet</span>
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Target Link URL with Quick Presets */}
-                        <div className="space-y-1.5 text-xs">
-                          <label className="block font-bold text-slate-700">Target Link URL</label>
-                          <input
-                            type="text"
-                            value={card.linkUrl}
-                            onChange={(e) => handleUpdateCard(originalIndex, 'linkUrl', e.target.value)}
-                            className="w-full border border-slate-300 rounded-lg p-2 text-xs font-mono focus:ring-1 focus:ring-green-500"
-                          />
-                          <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                            <span className="text-[10px] font-bold text-slate-400">Quick Links:</span>
-                            {QUICK_LINK_PRESETS.map((preset) => (
-                              <button
-                                key={preset.label}
-                                type="button"
-                                onClick={() => handleUpdateCard(originalIndex, 'linkUrl', preset.url)}
-                                className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-semibold transition cursor-pointer"
+                        {card.features && card.features.length > 0 && (
+                          <div className="pt-1 flex flex-wrap gap-1">
+                            {card.features.slice(0, 2).map((feat, fIdx) => (
+                              <span
+                                key={fIdx}
+                                className="text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md font-medium truncate max-w-full"
                               >
-                                {preset.label}
-                              </button>
+                                ✓ {feat}
+                              </span>
                             ))}
+                            {card.features.length > 2 && (
+                              <span className="text-[10px] text-slate-400 font-semibold px-1 py-0.5">
+                                +{card.features.length - 2} more
+                              </span>
+                            )}
                           </div>
+                        )}
+                      </div>
+
+                      {/* Status and Action Buttons */}
+                      <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleCardVisibility(originalIndex)}
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                            card.isVisible
+                              ? 'bg-green-50 text-green-700 border border-green-200'
+                              : 'bg-slate-100 text-slate-500 border border-slate-200'
+                          }`}
+                        >
+                          {card.isVisible ? <Eye size={13} /> : <EyeOff size={13} />}
+                          <span>{card.isVisible ? 'Live on Web' : 'Hidden'}</span>
+                        </button>
+
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleDuplicateCard(originalIndex)}
+                            className="p-1.5 text-slate-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition cursor-pointer"
+                            title="Duplicate Card"
+                          >
+                            <Copy size={15} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditCard(originalIndex)}
+                            className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                          >
+                            <Edit3 size={13} />
+                            <span>Edit</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteCard(originalIndex)}
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition cursor-pointer"
+                            title="Delete Card"
+                          >
+                            <Trash2 size={15} />
+                          </button>
                         </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
-                        {/* Button Text & Color Palette */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                          <div>
-                            <label className="block font-bold text-slate-700 mb-1">Button Text</label>
-                            <input
-                              type="text"
-                              value={card.buttonText}
-                              onChange={(e) => handleUpdateCard(originalIndex, 'buttonText', e.target.value)}
-                              placeholder="e.g. Select Battery"
-                              className="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-1 focus:ring-green-500 font-semibold"
-                            />
-                          </div>
+          {/* DEDICATED SINGLE-INSTANCE CARD MODAL (NO DUPLICATE FIELDS) */}
+          {cardModalOpen && cardDraft && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-xs p-3 sm:p-6 overflow-y-auto">
+              <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                {/* Modal Header */}
+                <div className="bg-slate-900 text-white p-5 flex justify-between items-center shrink-0">
+                  <div>
+                    <h2 className="text-base font-bold flex items-center gap-2">
+                      <CreditCard size={18} className="text-green-400" />
+                      <span>{editingCardIndex !== null ? `Edit Service Card: ${cardDraft.title}` : 'Add New Homepage Service Card'}</span>
+                    </h2>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Configure soft-coded content, links, icons, color theme, and background appearance. Each field renders once.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCloseCardModal}
+                    className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition cursor-pointer"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
 
+                {/* Modal Body: 2 Columns */}
+                <div className="p-6 overflow-y-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+                  {/* LEFT: Inputs (7 Columns) */}
+                  <div className="lg:col-span-7 space-y-4">
+                    {/* Section & Badge Row */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1 flex items-center gap-1">
+                          <Tag size={13} className="text-green-600" />
+                          <span>Section / Category</span>
+                        </label>
+                        <input
+                          type="text"
+                          list="modal-section-list"
+                          value={cardDraft.section || 'General'}
+                          onChange={(e) => setCardDraft({ ...cardDraft, section: e.target.value })}
+                          placeholder="e.g. Showroom, Battery, Rental"
+                          className="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-green-500/20 focus:border-green-600 bg-white"
+                        />
+                        <datalist id="modal-section-list">
+                          {STANDARD_SECTIONS.map((s) => (
+                            <option key={s} value={s} />
+                          ))}
+                        </datalist>
+                      </div>
+
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1 flex items-center gap-1">
+                          <Sparkles size={13} className="text-amber-500" />
+                          <span>Card Badge Pill (Optional)</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={cardDraft.badge || ''}
+                          onChange={(e) => setCardDraft({ ...cardDraft, badge: e.target.value })}
+                          placeholder="e.g. 3-YEAR WARRANTY, POPULAR, OEM"
+                          className="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-green-500/20 focus:border-green-600 uppercase"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Title & Subtitle Row */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1">Card Title</label>
+                        <input
+                          type="text"
+                          value={cardDraft.title}
+                          onChange={(e) => setCardDraft({ ...cardDraft, title: e.target.value })}
+                          placeholder="e.g. Lithium Battery"
+                          className="w-full border border-slate-300 rounded-lg p-2 text-xs font-semibold focus:ring-2 focus:ring-green-500/20 focus:border-green-600"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1">Subtitle / Tagline</label>
+                        <input
+                          type="text"
+                          value={cardDraft.subtitle || ''}
+                          onChange={(e) => setCardDraft({ ...cardDraft, subtitle: e.target.value })}
+                          placeholder="e.g. High Performance LFP & Li-Ion"
+                          className="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-green-500/20 focus:border-green-600 text-slate-600"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Description */}
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1 text-xs">Description</label>
+                      <textarea
+                        rows={2}
+                        value={cardDraft.description}
+                        onChange={(e) => setCardDraft({ ...cardDraft, description: e.target.value })}
+                        placeholder="Detailed explanation of services provided..."
+                        className="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-green-500/20 focus:border-green-600"
+                      />
+                    </div>
+
+                    {/* Key Features Bullet Points Manager */}
+                    <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2.5">
+                      <label className="block font-bold text-slate-800 text-xs flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">
+                          <CheckCircle2 size={14} className="text-green-600" />
+                          <span>Key Features & Highlights ({cardDraft.features?.length || 0})</span>
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-normal">
+                          Rendered as bullet list on card
+                        </span>
+                      </label>
+
+                      {/* Existing Features List */}
+                      {cardDraft.features && cardDraft.features.length > 0 && (
+                        <div className="space-y-1.5 max-h-36 overflow-y-auto">
+                          {cardDraft.features.map((feature, fIdx) => (
+                            <div key={fIdx} className="flex items-center gap-1.5">
+                              <span className="text-green-600 text-xs font-bold">✓</span>
+                              <input
+                                type="text"
+                                value={feature}
+                                onChange={(e) => handleUpdateDraftFeature(fIdx, e.target.value)}
+                                className="flex-1 border border-slate-200 rounded-lg px-2.5 py-1 text-xs bg-white focus:ring-1 focus:ring-green-500"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveDraftFeature(fIdx)}
+                                className="p-1 text-slate-400 hover:text-red-600 rounded transition cursor-pointer"
+                                title="Remove Bullet"
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Add New Feature Input */}
+                      <div className="flex items-center gap-1.5 pt-1">
+                        <input
+                          type="text"
+                          value={draftFeatureText}
+                          onChange={(e) => setDraftFeatureText(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleAddDraftFeature();
+                            }
+                          }}
+                          placeholder="Type a feature and press Enter (e.g. 3-Year Warranty Replacement)..."
+                          className="flex-1 border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:ring-1 focus:ring-green-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAddDraftFeature}
+                          className="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                        >
+                          <Plus size={13} />
+                          <span>Add</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Target Link URL with Quick Presets */}
+                    <div className="space-y-1.5 text-xs">
+                      <label className="block font-bold text-slate-700">Target Link URL</label>
+                      <input
+                        type="text"
+                        value={cardDraft.linkUrl}
+                        onChange={(e) => setCardDraft({ ...cardDraft, linkUrl: e.target.value })}
+                        className="w-full border border-slate-300 rounded-lg p-2 text-xs font-mono focus:ring-1 focus:ring-green-500"
+                      />
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        <span className="text-[10px] font-bold text-slate-400">Quick Links:</span>
+                        {QUICK_LINK_PRESETS.map((preset) => (
+                          <button
+                            key={preset.label}
+                            type="button"
+                            onClick={() => setCardDraft({ ...cardDraft, linkUrl: preset.url })}
+                            className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-semibold transition cursor-pointer"
+                          >
+                            {preset.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Button Text & Color Palette */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1">Button Text</label>
+                        <input
+                          type="text"
+                          value={cardDraft.buttonText}
+                          onChange={(e) => setCardDraft({ ...cardDraft, buttonText: e.target.value })}
+                          placeholder="e.g. Select Battery"
+                          className="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-1 focus:ring-green-500 font-semibold"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1">Color Palette Theme</label>
+                        <select
+                          value={cardDraft.color}
+                          onChange={(e) => setCardDraft({ ...cardDraft, color: e.target.value })}
+                          className="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-1 focus:ring-green-500 font-medium bg-white"
+                        >
+                          {AVAILABLE_COLORS.map((col) => (
+                            <option key={col.value} value={col.value}>
+                              {col.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Icon Mode Switcher & Configuration */}
+                    <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-3">
+                      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                        <label className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                          <ImageIcon size={15} className="text-green-600" />
+                          <span>Card Icon / Graphic Type</span>
+                        </label>
+
+                        <div className="flex bg-slate-200 p-0.5 rounded-lg text-xs self-start sm:self-auto">
+                          <button
+                            type="button"
+                            onClick={() => setCardDraft({ ...cardDraft, iconType: 'icon' })}
+                            className={`px-3 py-1 rounded-md font-bold text-[11px] transition cursor-pointer ${
+                              (cardDraft.iconType || 'icon') === 'icon'
+                                ? 'bg-white text-green-700 shadow-xs'
+                                : 'text-slate-600 hover:text-slate-900'
+                            }`}
+                          >
+                            Vector Icon
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setCardDraft({ ...cardDraft, iconType: 'image' })}
+                            className={`px-3 py-1 rounded-md font-bold text-[11px] transition cursor-pointer ${
+                              cardDraft.iconType === 'image'
+                                ? 'bg-white text-green-700 shadow-xs'
+                                : 'text-slate-600 hover:text-slate-900'
+                            }`}
+                          >
+                            Custom Image Icon
+                          </button>
+                        </div>
+                      </div>
+
+                      {(cardDraft.iconType || 'icon') === 'icon' ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
                           <div>
-                            <label className="block font-bold text-slate-700 mb-1">Color Palette Theme</label>
+                            <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                              Choose Built-in Icon
+                            </label>
                             <select
-                              value={card.color}
-                              onChange={(e) => handleUpdateCard(originalIndex, 'color', e.target.value)}
-                              className="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-1 focus:ring-green-500 font-medium bg-white"
+                              value={cardDraft.icon}
+                              onChange={(e) => setCardDraft({ ...cardDraft, icon: e.target.value })}
+                              className="w-full border border-slate-300 rounded-lg p-2 text-xs bg-white focus:ring-1 focus:ring-green-500"
                             >
-                              {AVAILABLE_COLORS.map((col) => (
-                                <option key={col.value} value={col.value}>
-                                  {col.label}
+                              {AVAILABLE_ICONS.map((icon) => (
+                                <option key={icon} value={icon}>
+                                  {icon}
                                 </option>
                               ))}
                             </select>
                           </div>
-                        </div>
 
-                        {/* Icon Mode Switcher & Configuration */}
-                        <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-3">
-                          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
-                            <label className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
-                              <ImageIcon size={15} className="text-green-600" />
-                              <span>Card Icon / Graphic Type</span>
-                            </label>
-
-                            <div className="flex bg-slate-200 p-0.5 rounded-lg text-xs self-start sm:self-auto">
-                              <button
-                                type="button"
-                                onClick={() => handleUpdateCard(originalIndex, 'iconType', 'icon')}
-                                className={`px-3 py-1 rounded-md font-bold text-[11px] transition cursor-pointer ${
-                                  (card.iconType || 'icon') === 'icon'
-                                    ? 'bg-white text-green-700 shadow-xs'
-                                    : 'text-slate-600 hover:text-slate-900'
-                                }`}
-                              >
-                                Vector Icon
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleUpdateCard(originalIndex, 'iconType', 'image')}
-                                className={`px-3 py-1 rounded-md font-bold text-[11px] transition cursor-pointer ${
-                                  card.iconType === 'image'
-                                    ? 'bg-white text-green-700 shadow-xs'
-                                    : 'text-slate-600 hover:text-slate-900'
-                                }`}
-                              >
-                                Custom Image Icon
-                              </button>
-                            </div>
+                          <div className="flex items-center gap-3 bg-white p-2 rounded-lg border border-slate-200">
+                            <span className="text-[11px] font-semibold text-slate-500">Selected:</span>
+                            <span className="text-xs font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-200">
+                              {cardDraft.icon}
+                            </span>
                           </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                            <div className="sm:col-span-3 flex flex-col items-center justify-center p-3 bg-white rounded-xl border border-slate-200 text-center">
+                              <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center border border-slate-300 overflow-hidden shadow-xs">
+                                {cardDraft.iconImage ? (
+                                  <img
+                                    src={cardDraft.iconImage}
+                                    alt="Card Icon Preview"
+                                    className="w-full h-full object-contain p-1"
+                                  />
+                                ) : (
+                                  <ImageIcon size={24} className="text-slate-400" />
+                                )}
+                              </div>
+                              <span className="text-[10px] font-bold text-slate-500 mt-1">Image Preview</span>
+                            </div>
 
-                          {(card.iconType || 'icon') === 'icon' ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+                            <div className="sm:col-span-9 space-y-2.5">
                               <div>
-                                <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                                  Choose Built-in Icon
+                                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                                  Upload Image from Computer
                                 </label>
-                                <select
-                                  value={card.icon}
-                                  onChange={(e) => handleUpdateCard(originalIndex, 'icon', e.target.value)}
-                                  className="w-full border border-slate-300 rounded-lg p-2 text-xs bg-white focus:ring-1 focus:ring-green-500"
-                                >
-                                  {AVAILABLE_ICONS.map((icon) => (
-                                    <option key={icon} value={icon}>
-                                      {icon}
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-
-                              <div className="flex items-center gap-3 bg-white p-2 rounded-lg border border-slate-200">
-                                <span className="text-[11px] font-semibold text-slate-500">Selected:</span>
-                                <span className="text-xs font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-200">
-                                  {card.icon}
-                                </span>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="space-y-3">
-                              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
-                                <div className="sm:col-span-3 flex flex-col items-center justify-center p-3 bg-white rounded-xl border border-slate-200 text-center">
-                                  <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center border border-slate-300 overflow-hidden shadow-xs">
-                                    {card.iconImage ? (
-                                      <img
-                                        src={card.iconImage}
-                                        alt="Card Icon Preview"
-                                        className="w-full h-full object-contain p-1"
-                                      />
-                                    ) : (
-                                      <ImageIcon size={24} className="text-slate-400" />
-                                    )}
-                                  </div>
-                                  <span className="text-[10px] font-bold text-slate-500 mt-1">Image Preview</span>
-                                </div>
-
-                                <div className="sm:col-span-9 space-y-2.5">
-                                  <div>
-                                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                                      Upload Image from Computer
-                                    </label>
-                                    <div className="flex items-center gap-2">
-                                      <label className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs">
-                                        <Upload size={14} />
-                                        <span>Choose Image File</span>
-                                        <input
-                                          type="file"
-                                          accept="image/*"
-                                          className="hidden"
-                                          onChange={async (e) => {
-                                            const file = e.target.files?.[0];
-                                            if (file) {
-                                              try {
-                                                const res = await compressImageFile(file, 400, 400, 0.9);
-                                                if (res) {
-                                                  handleUpdateCard(originalIndex, 'iconImage', res);
-                                                }
-                                              } catch (err) {
-                                                console.error('Failed to compress icon image:', err);
-                                              }
-                                            }
-                                          }}
-                                        />
-                                      </label>
-                                      {card.iconImage && (
-                                        <button
-                                          type="button"
-                                          onClick={() => handleUpdateCard(originalIndex, 'iconImage', '')}
-                                          className="px-2.5 py-1.5 text-red-600 hover:bg-red-50 rounded-lg text-xs font-semibold border border-red-200 transition cursor-pointer"
-                                        >
-                                          Clear
-                                        </button>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  <div>
-                                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                                      Or Enter Image URL
-                                    </label>
+                                <div className="flex items-center gap-2">
+                                  <label className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs">
+                                    <Upload size={14} />
+                                    <span>Choose Image File</span>
                                     <input
-                                      type="text"
-                                      placeholder="https://example.com/logo.png or /assets/battery.png"
-                                      value={card.iconImage || ''}
-                                      onChange={(e) => handleUpdateCard(originalIndex, 'iconImage', e.target.value)}
-                                      className="w-full border border-slate-300 rounded-lg p-2 text-xs bg-white focus:ring-1 focus:ring-green-500 font-mono"
+                                      type="file"
+                                      accept="image/*"
+                                      className="hidden"
+                                      onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                          try {
+                                            const res = await compressImageFile(file, 400, 400, 0.9);
+                                            if (res) {
+                                              setCardDraft({ ...cardDraft, iconImage: res });
+                                            }
+                                          } catch (err) {
+                                            console.error('Failed to compress icon image:', err);
+                                          }
+                                        }
+                                      }}
                                     />
-                                  </div>
+                                  </label>
+                                  {cardDraft.iconImage && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setCardDraft({ ...cardDraft, iconImage: '' })}
+                                      className="px-2.5 py-1.5 text-red-600 hover:bg-red-50 rounded-lg text-xs font-semibold border border-red-200 transition cursor-pointer"
+                                    >
+                                      Clear
+                                    </button>
+                                  )}
                                 </div>
                               </div>
-                            </div>
-                          )}
-                        </div>
 
-                        {/* Card Background Appearance & Image Option */}
-                        <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-3">
-                          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
-                            <label className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
-                              <ImageIcon size={15} className="text-blue-600" />
-                              <span>Card Background Appearance</span>
-                            </label>
-
-                            <div className="flex bg-slate-200 p-0.5 rounded-lg text-xs self-start sm:self-auto">
-                              <button
-                                type="button"
-                                onClick={() => handleUpdateCard(originalIndex, 'bgType', 'color')}
-                                className={`px-3 py-1 rounded-md font-bold text-[11px] transition cursor-pointer ${
-                                  (card.bgType || 'color') === 'color'
-                                    ? 'bg-white text-blue-700 shadow-xs'
-                                    : 'text-slate-600 hover:text-slate-900'
-                                }`}
-                              >
-                                Solid Color Theme
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleUpdateCard(originalIndex, 'bgType', 'image')}
-                                className={`px-3 py-1 rounded-md font-bold text-[11px] transition cursor-pointer ${
-                                  card.bgType === 'image'
-                                    ? 'bg-white text-blue-700 shadow-xs'
-                                    : 'text-slate-600 hover:text-slate-900'
-                                }`}
-                              >
-                                Custom Background Image
-                              </button>
+                              <div>
+                                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                                  Or Enter Image URL
+                                </label>
+                                <input
+                                  type="text"
+                                  placeholder="https://example.com/logo.png or /assets/battery.png"
+                                  value={cardDraft.iconImage || ''}
+                                  onChange={(e) => setCardDraft({ ...cardDraft, iconImage: e.target.value })}
+                                  className="w-full border border-slate-300 rounded-lg p-2 text-xs bg-white focus:ring-1 focus:ring-green-500 font-mono"
+                                />
+                              </div>
                             </div>
                           </div>
+                        </div>
+                      )}
+                    </div>
 
-                          {card.bgType === 'image' ? (
-                            <div className="space-y-3 pt-1">
-                              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
-                                <div className="sm:col-span-3 flex flex-col items-center justify-center p-3 bg-white rounded-xl border border-slate-200 text-center">
-                                  <div className="w-full h-20 bg-slate-100 rounded-xl flex items-center justify-center border border-slate-300 overflow-hidden shadow-xs relative">
-                                    {card.bgImage ? (
-                                      <>
-                                        <img
-                                          src={card.bgImage}
-                                          alt="Card Background Preview"
-                                          className="w-full h-full object-cover"
-                                        />
-                                        <div
-                                          className="absolute inset-0"
-                                          style={{
-                                            backgroundColor: `rgba(0,0,0, ${(card.bgOverlayOpacity ?? 70) / 100})`,
-                                          }}
-                                        />
-                                        <span className="absolute z-10 text-[10px] font-bold text-white uppercase drop-shadow">
-                                          Preview
-                                        </span>
-                                      </>
-                                    ) : (
-                                      <ImageIcon size={24} className="text-slate-400" />
-                                    )}
-                                  </div>
-                                  <span className="text-[10px] font-bold text-slate-500 mt-1">Background Preview</span>
-                                </div>
+                    {/* Card Background Appearance & Image Option */}
+                    <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-3">
+                      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                        <label className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                          <ImageIcon size={15} className="text-blue-600" />
+                          <span>Card Background Appearance</span>
+                        </label>
 
-                                <div className="sm:col-span-9 space-y-2.5">
-                                  <div>
-                                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                                      Upload Background Image from Device
-                                    </label>
-                                    <div className="flex items-center gap-2">
-                                      <label className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs">
-                                        <Upload size={14} />
-                                        <span>Choose Background File</span>
-                                        <input
-                                          type="file"
-                                          accept="image/*"
-                                          className="hidden"
-                                          onChange={async (e) => {
-                                            const file = e.target.files?.[0];
-                                            if (file) {
-                                              try {
-                                                const res = await compressImageFile(file, 1600, 1200, 0.8);
-                                                if (res) {
-                                                  handleUpdateCard(originalIndex, 'bgImage', res);
-                                                }
-                                              } catch (err) {
-                                                console.error('Failed to compress background image:', err);
-                                              }
-                                            }
-                                          }}
-                                        />
-                                      </label>
-                                      {card.bgImage && (
-                                        <button
-                                          type="button"
-                                          onClick={() => handleUpdateCard(originalIndex, 'bgImage', '')}
-                                          className="px-2.5 py-1.5 text-red-600 hover:bg-red-50 rounded-lg text-xs font-semibold border border-red-200 transition cursor-pointer"
-                                        >
-                                          Clear Image
-                                        </button>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  <div>
-                                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                                      Or Enter Background Image URL
-                                    </label>
-                                    <input
-                                      type="text"
-                                      placeholder="https://images.unsplash.com/... or /assets/battery-bg.jpg"
-                                      value={card.bgImage || ''}
-                                      onChange={(e) => handleUpdateCard(originalIndex, 'bgImage', e.target.value)}
-                                      className="w-full border border-slate-300 rounded-lg p-2 text-xs bg-white focus:ring-1 focus:ring-blue-500 font-mono"
-                                    />
-                                  </div>
-
-                                  {/* Dark Overlay Opacity Slider */}
-                                  <div>
-                                    <div className="flex justify-between items-center mb-1">
-                                      <label className="text-[11px] font-semibold text-slate-700">
-                                        Dark Readability Overlay: {card.bgOverlayOpacity ?? 70}%
-                                      </label>
-                                      <span className="text-[10px] text-slate-400 font-medium">
-                                        (Keeps text & buttons legible)
-                                      </span>
-                                    </div>
-                                    <input
-                                      type="range"
-                                      min="20"
-                                      max="95"
-                                      step="5"
-                                      value={card.bgOverlayOpacity ?? 70}
-                                      onChange={(e) =>
-                                        handleUpdateCard(originalIndex, 'bgOverlayOpacity', Number(e.target.value))
-                                      }
-                                      className="w-full accent-blue-600 cursor-pointer"
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          ) : (
-                            <p className="text-[11px] text-slate-500">
-                              Currently using the color palette theme (<span className="font-semibold text-slate-700 capitalize">{card.color || 'emerald'}</span>). Switch to &ldquo;Custom Background Image&rdquo; to add a photographic backdrop.
-                            </p>
-                          )}
+                        <div className="flex bg-slate-200 p-0.5 rounded-lg text-xs self-start sm:self-auto">
+                          <button
+                            type="button"
+                            onClick={() => setCardDraft({ ...cardDraft, bgType: 'color' })}
+                            className={`px-3 py-1 rounded-md font-bold text-[11px] transition cursor-pointer ${
+                              (cardDraft.bgType || 'color') === 'color'
+                                ? 'bg-white text-blue-700 shadow-xs'
+                                : 'text-slate-600 hover:text-slate-900'
+                            }`}
+                          >
+                            Solid Color Theme
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setCardDraft({ ...cardDraft, bgType: 'image' })}
+                            className={`px-3 py-1 rounded-md font-bold text-[11px] transition cursor-pointer ${
+                              cardDraft.bgType === 'image'
+                                ? 'bg-white text-blue-700 shadow-xs'
+                                : 'text-slate-600 hover:text-slate-900'
+                            }`}
+                          >
+                            Custom Background Image
+                          </button>
                         </div>
                       </div>
 
-                      {/* RIGHT: Live Preview (4 cols) */}
-                      <div className="lg:col-span-4 flex flex-col items-center justify-start bg-slate-100/70 p-4 rounded-2xl border border-slate-200 space-y-3">
-                        <div className="flex items-center justify-between w-full">
-                          <span className="text-xs font-bold text-slate-600 flex items-center gap-1.5">
-                            <Eye size={14} className="text-green-600" />
-                            <span>Live Card Preview</span>
-                          </span>
-                          <span className="text-[10px] font-semibold text-slate-400">
-                            {card.isVisible ? '● Live on Web' : '○ Hidden'}
-                          </span>
-                        </div>
+                      {cardDraft.bgType === 'image' ? (
+                        <div className="space-y-3 pt-1">
+                          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                            <div className="sm:col-span-3 flex flex-col items-center justify-center p-3 bg-white rounded-xl border border-slate-200 text-center">
+                              <div className="w-full h-20 bg-slate-100 rounded-xl flex items-center justify-center border border-slate-300 overflow-hidden shadow-xs relative">
+                                {cardDraft.bgImage ? (
+                                  <>
+                                    <img
+                                      src={cardDraft.bgImage}
+                                      alt="Card Background Preview"
+                                      className="w-full h-full object-cover"
+                                    />
+                                    <div
+                                      className="absolute inset-0"
+                                      style={{
+                                        backgroundColor: `rgba(0,0,0, ${(cardDraft.bgOverlayOpacity ?? 70) / 100})`,
+                                      }}
+                                    />
+                                    <span className="absolute z-10 text-[10px] font-bold text-white uppercase drop-shadow">
+                                      Preview
+                                    </span>
+                                  </>
+                                ) : (
+                                  <ImageIcon size={24} className="text-slate-400" />
+                                )}
+                              </div>
+                              <span className="text-[10px] font-bold text-slate-500 mt-1">Background Preview</span>
+                            </div>
 
-                        {/* Preview Card Component */}
+                            <div className="sm:col-span-9 space-y-2.5">
+                              <div>
+                                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                                  Upload Background Image from Device
+                                </label>
+                                <div className="flex items-center gap-2">
+                                  <label className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs">
+                                    <Upload size={14} />
+                                    <span>Choose Background File</span>
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      className="hidden"
+                                      onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                          try {
+                                            const res = await compressImageFile(file, 1600, 1200, 0.8);
+                                            if (res) {
+                                              setCardDraft({ ...cardDraft, bgImage: res });
+                                            }
+                                          } catch (err) {
+                                            console.error('Failed to compress background image:', err);
+                                          }
+                                        }
+                                      }}
+                                    />
+                                  </label>
+                                  {cardDraft.bgImage && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setCardDraft({ ...cardDraft, bgImage: '' })}
+                                      className="px-2.5 py-1.5 text-red-600 hover:bg-red-50 rounded-lg text-xs font-semibold border border-red-200 transition cursor-pointer"
+                                    >
+                                      Clear Image
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div>
+                                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                                  Or Enter Background Image URL
+                                </label>
+                                <input
+                                  type="text"
+                                  placeholder="https://images.unsplash.com/... or /assets/battery-bg.jpg"
+                                  value={cardDraft.bgImage || ''}
+                                  onChange={(e) => setCardDraft({ ...cardDraft, bgImage: e.target.value })}
+                                  className="w-full border border-slate-300 rounded-lg p-2 text-xs bg-white focus:ring-1 focus:ring-blue-500 font-mono"
+                                />
+                              </div>
+
+                              {/* Dark Overlay Opacity Slider */}
+                              <div>
+                                <div className="flex justify-between items-center mb-1">
+                                  <label className="text-[11px] font-semibold text-slate-700">
+                                    Dark Readability Overlay: {cardDraft.bgOverlayOpacity ?? 70}%
+                                  </label>
+                                  <span className="text-[10px] text-slate-400 font-medium">
+                                    (Keeps text & buttons legible)
+                                  </span>
+                                </div>
+                                <input
+                                  type="range"
+                                  min="20"
+                                  max="95"
+                                  step="5"
+                                  value={cardDraft.bgOverlayOpacity ?? 70}
+                                  onChange={(e) =>
+                                    setCardDraft({ ...cardDraft, bgOverlayOpacity: Number(e.target.value) })
+                                  }
+                                  className="w-full accent-blue-600 cursor-pointer"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-[11px] text-slate-500">
+                          Currently using solid color theme (<span className="font-semibold text-slate-700 capitalize">{cardDraft.color || 'emerald'}</span>). Switch to &ldquo;Custom Background Image&rdquo; to add a photo backdrop.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* RIGHT: Live Real-Time Card Preview (5 Columns) */}
+                  <div className="lg:col-span-5 flex flex-col items-center justify-start bg-slate-100/80 p-5 rounded-2xl border border-slate-200 space-y-4">
+                    <div className="flex items-center justify-between w-full">
+                      <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                        <Eye size={14} className="text-green-600" />
+                        <span>Live Homepage Card Preview</span>
+                      </span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">
+                        Section: {cardDraft.section || 'General'}
+                      </span>
+                    </div>
+
+                    {/* Preview Card Component */}
+                    {(() => {
+                      const modalPreviewTheme = getCardPreviewTheme(cardDraft.color);
+                      return (
                         <div
                           style={
-                            card.bgType === 'image' && card.bgImage
+                            cardDraft.bgType === 'image' && cardDraft.bgImage
                               ? {
-                                  backgroundImage: `url("${card.bgImage}")`,
+                                  backgroundImage: `url("${cardDraft.bgImage}")`,
                                   backgroundSize: 'cover',
                                   backgroundPosition: 'center',
                                 }
                               : undefined
                           }
-                          className={`w-full max-w-[280px] relative overflow-hidden ${
-                            card.bgType === 'image' && card.bgImage ? 'bg-slate-900' : previewTheme.cardBg
-                          } rounded-3xl p-5 text-white text-center flex flex-col justify-between shadow-lg transition duration-200 min-h-[340px]`}
+                          className={`w-full max-w-[290px] relative overflow-hidden ${
+                            cardDraft.bgType === 'image' && cardDraft.bgImage ? 'bg-slate-900' : modalPreviewTheme.cardBg
+                          } rounded-3xl p-5 text-white text-center flex flex-col justify-between shadow-xl transition duration-200 min-h-[360px]`}
                         >
                           {/* Background Overlay if image is active */}
-                          {card.bgType === 'image' && card.bgImage && (
+                          {cardDraft.bgType === 'image' && cardDraft.bgImage && (
                             <div
                               className="absolute inset-0 z-0"
                               style={{
-                                backgroundColor: `rgba(15, 23, 42, ${(card.bgOverlayOpacity ?? 70) / 100})`,
+                                backgroundColor: `rgba(15, 23, 42, ${(cardDraft.bgOverlayOpacity ?? 70) / 100})`,
                                 backgroundImage:
                                   'linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.7) 100%)',
                               }}
@@ -1669,46 +1817,46 @@ const ContentManager = () => {
 
                           <div className="space-y-3 relative z-10">
                             {/* Card Badge if any */}
-                            {card.badge && (
+                            {cardDraft.badge && (
                               <div className="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-white/20 text-white border border-white/30 tracking-wider backdrop-blur-xs">
-                                {card.badge}
+                                {cardDraft.badge}
                               </div>
                             )}
 
                             {/* Circular Icon */}
                             <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-md mx-auto border-2 border-white/40 overflow-hidden p-2">
-                              {renderLivePreviewIcon(card)}
+                              {renderLivePreviewIcon(cardDraft)}
                             </div>
 
                             {/* Title & Subtitle */}
                             <div>
                               <h4 className="text-base font-extrabold text-white tracking-wide">
-                                {card.title || 'Untitled Card'}
+                                {cardDraft.title || 'Untitled Card'}
                               </h4>
-                              {card.subtitle && (
+                              {cardDraft.subtitle && (
                                 <p className="text-[10px] font-bold text-white/80 uppercase tracking-wider mt-0.5">
-                                  {card.subtitle}
+                                  {cardDraft.subtitle}
                                 </p>
                               )}
                             </div>
 
                             {/* Description */}
                             <p className="text-white/90 text-xs leading-relaxed font-normal line-clamp-3">
-                              {card.description || 'Description goes here...'}
+                              {cardDraft.description || 'Description goes here...'}
                             </p>
 
                             {/* Features list in preview */}
-                            {card.features && card.features.length > 0 && (
+                            {cardDraft.features && cardDraft.features.length > 0 && (
                               <ul className="text-left space-y-1 pt-1 text-[11px] text-white/95">
-                                {card.features.slice(0, 3).map((feat, i) => (
+                                {cardDraft.features.slice(0, 3).map((feat, i) => (
                                   <li key={i} className="flex items-center gap-1.5">
-                                    <span className="text-white/70">✓</span>
+                                    <span className="text-white/70 font-bold">✓</span>
                                     <span className="truncate">{feat}</span>
                                   </li>
                                 ))}
-                                {card.features.length > 3 && (
+                                {cardDraft.features.length > 3 && (
                                   <li className="text-[10px] text-white/75 italic">
-                                    +{card.features.length - 3} more feature bullets
+                                    +{cardDraft.features.length - 3} more feature bullets
                                   </li>
                                 )}
                               </ul>
@@ -1718,21 +1866,41 @@ const ContentManager = () => {
                           {/* Button */}
                           <div className="pt-4 relative z-10">
                             <div
-                              className={`w-full bg-white ${previewTheme.btnText} font-bold py-2.5 px-4 rounded-full text-xs shadow-md text-center`}
+                              className={`w-full bg-white ${modalPreviewTheme.btnText} font-bold py-2.5 px-4 rounded-full text-xs shadow-md text-center`}
                             >
-                              {card.buttonText || 'Select Service'}
+                              {cardDraft.buttonText || 'Select Service'}
                             </div>
                           </div>
                         </div>
+                      );
+                    })()}
 
-                        <p className="text-[10px] text-slate-400 text-center">
-                          Preview reflects real-time styling on the customer homepage.
-                        </p>
-                      </div>
-                    </div>
+                    <p className="text-[10px] text-slate-500 text-center leading-tight">
+                      This card will render in the {cardDraft.section || 'General'} section grid on the public landing page.
+                    </p>
                   </div>
-                );
-              })}
+                </div>
+
+                {/* Modal Footer */}
+                <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-between items-center shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleCloseCardModal}
+                    className="px-4 py-2 border border-slate-300 hover:bg-slate-100 rounded-xl text-xs font-semibold text-slate-700 transition cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleSaveCardDraft}
+                    className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer flex items-center gap-2"
+                  >
+                    <CheckCircle size={15} />
+                    <span>Apply & Save Card Draft</span>
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>

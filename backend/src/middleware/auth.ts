@@ -78,3 +78,31 @@ export const authorize = (...roles: string[]) => {
     next();
   };
 };
+
+export const checkPermission = (...permissions: string[]) => {
+  return (req: AuthRequest, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Not authorized to access this route' });
+    }
+
+    const role = (req.user.role || '').toString().toUpperCase();
+    if (role === 'ADMIN' || role === 'SUPER_ADMIN' || role === 'SUPERADMIN') {
+      return next();
+    }
+
+    const userPerms: string[] = Array.isArray(req.user.permissions) ? req.user.permissions : [];
+    const hasPerm =
+      userPerms.includes('*') ||
+      userPerms.includes('all') ||
+      permissions.some((p) => userPerms.includes(p));
+
+    if (!hasPerm) {
+      return res.status(403).json({
+        success: false,
+        message: `You do not have permission (${permissions.join(', ')}) to access this resource.`,
+      });
+    }
+
+    next();
+  };
+};
