@@ -17,6 +17,16 @@
     "build:admin": "npm run build --prefix admin-portal",
     "build:employee": "npm run build --prefix employee-portal"
   },
+  "allowScripts": {
+    "esbuild": true,
+    "bcrypt": true
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "bcrypt"
+    ]
+  },
   "dependencies": {
     "axios": "^1.20.0",
     "bcrypt": "^6.0.0",

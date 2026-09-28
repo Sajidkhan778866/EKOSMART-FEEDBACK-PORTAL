@@ -8,6 +8,16 @@
     "dev": "nodemon src/server.ts",
     "build": "tsc"
   },
+  "allowScripts": {
+    "bcrypt": true,
+    "esbuild": true
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "bcrypt",
+      "esbuild"
+    ]
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
