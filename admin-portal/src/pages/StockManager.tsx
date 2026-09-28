@@ -20,8 +20,10 @@ import {
   Tag,
   MapPin,
   Barcode,
+  Camera,
 } from 'lucide-react';
 import { stockApi } from '../api/client';
+import ScannerModal from '../components/ScannerModal';
 
 export interface IStockItem {
   _id: string;
@@ -65,6 +67,10 @@ const StockManager = () => {
   const [statusFilter, setStatusFilter] = useState('All');
   const [meta, setMeta] = useState({ totalRecords: 0, totalQuantity: 0, inStockCount: 0, soldCount: 0 });
 
+  // Scanner State
+  const [showScanner, setShowScanner] = useState(false);
+  const [scannerTarget, setScannerTarget] = useState<'search' | 'add_serial' | 'add_battery' | 'edit_serial' | 'edit_battery'>('search');
+
   // Modal States
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -105,11 +111,12 @@ const StockManager = () => {
     fetchStock();
   }, [categoryFilter, locationFilter, statusFilter]);
 
-  const fetchStock = async () => {
+  const fetchStock = async (overrideSearch?: string) => {
     try {
       setLoading(true);
+      const querySearch = typeof overrideSearch === 'string' ? overrideSearch : search;
       const res = await stockApi.getAll({
-        search: search.trim() || undefined,
+        search: querySearch.trim() || undefined,
         category: categoryFilter !== 'All' ? categoryFilter : undefined,
         location: locationFilter !== 'All' ? locationFilter : undefined,
         status: statusFilter !== 'All' ? statusFilter : undefined,
@@ -128,6 +135,28 @@ const StockManager = () => {
   const showAlert = (type: 'success' | 'error', text: string) => {
     setAlertMsg({ type, text });
     setTimeout(() => setAlertMsg(null), 4000);
+  };
+
+  const openScannerFor = (target: 'search' | 'add_serial' | 'add_battery' | 'edit_serial' | 'edit_battery') => {
+    setScannerTarget(target);
+    setShowScanner(true);
+  };
+
+  const handleScanSuccess = (scannedText: string) => {
+    const clean = scannedText.trim();
+    if (!clean) return;
+
+    if (scannerTarget === 'search') {
+      setSearch(clean);
+      fetchStock(clean);
+      showAlert('success', `Scanned & Filtered: ${clean}`);
+    } else if (scannerTarget === 'add_serial' || scannerTarget === 'edit_serial') {
+      setFormData((prev) => ({ ...prev, serialNumber: clean }));
+      showAlert('success', `Product Serial Scanned: ${clean}`);
+    } else if (scannerTarget === 'add_battery' || scannerTarget === 'edit_battery') {
+      setFormData((prev) => ({ ...prev, batterySerialNumber: clean }));
+      showAlert('success', `Battery Pack Serial Scanned: ${clean}`);
+    }
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -276,7 +305,7 @@ const StockManager = () => {
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={fetchStock}
+            onClick={() => fetchStock()}
             className="flex items-center gap-1.5 px-3 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-semibold transition cursor-pointer"
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
@@ -346,18 +375,29 @@ const StockManager = () => {
 
       {/* Filter and Search Bar */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-3 justify-between items-stretch md:items-center">
-        <form onSubmit={handleSearchSubmit} className="flex-1 relative">
-          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by Product Name, Serial Barcode, Battery Pack #, or Model..."
-            className="w-full pl-10 pr-24 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-          />
+        <form onSubmit={handleSearchSubmit} className="flex-1 relative flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by Product Name, Serial Barcode, Battery Pack #, or Model..."
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => openScannerFor('search')}
+            title="Scan Barcode / Serial with Camera"
+            className="px-3 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-md shadow-emerald-900/20 transition flex-shrink-0"
+          >
+            <Camera size={14} />
+            <span>Scan Barcode</span>
+          </button>
           <button
             type="submit"
-            className="absolute right-1.5 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold cursor-pointer"
+            className="px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold cursor-pointer flex-shrink-0"
           >
             Search
           </button>
@@ -607,23 +647,43 @@ const StockManager = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-slate-700 font-bold mb-1">Product Serial Number</label>
-                  <input
-                    type="text"
-                    value={formData.serialNumber}
-                    onChange={(e) => setFormData({ ...formData, serialNumber: e.target.value })}
-                    placeholder="e.g. EBS-BAT-2026-00124"
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none font-mono"
-                  />
+                  <div className="flex gap-1.5">
+                    <input
+                      type="text"
+                      value={formData.serialNumber}
+                      onChange={(e) => setFormData({ ...formData, serialNumber: e.target.value })}
+                      placeholder="e.g. EBS-BAT-2026-00124"
+                      className="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => openScannerFor('add_serial')}
+                      title="Scan Product Serial Barcode"
+                      className="p-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl cursor-pointer transition shadow-xs flex items-center justify-center flex-shrink-0"
+                    >
+                      <Camera size={16} />
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-slate-700 font-bold mb-1">Battery Cell / Pack Serial</label>
-                  <input
-                    type="text"
-                    value={formData.batterySerialNumber}
-                    onChange={(e) => setFormData({ ...formData, batterySerialNumber: e.target.value })}
-                    placeholder="e.g. LFP-6030-9941"
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none font-mono"
-                  />
+                  <div className="flex gap-1.5">
+                    <input
+                      type="text"
+                      value={formData.batterySerialNumber}
+                      onChange={(e) => setFormData({ ...formData, batterySerialNumber: e.target.value })}
+                      placeholder="e.g. LFP-6030-9941"
+                      className="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => openScannerFor('add_battery')}
+                      title="Scan Battery Serial Barcode"
+                      className="p-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl cursor-pointer transition shadow-xs flex items-center justify-center flex-shrink-0"
+                    >
+                      <Camera size={16} />
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -769,21 +829,41 @@ const StockManager = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-slate-700 font-bold mb-1">Product Serial Number</label>
-                  <input
-                    type="text"
-                    value={formData.serialNumber}
-                    onChange={(e) => setFormData({ ...formData, serialNumber: e.target.value })}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none font-mono"
-                  />
+                  <div className="flex gap-1.5">
+                    <input
+                      type="text"
+                      value={formData.serialNumber}
+                      onChange={(e) => setFormData({ ...formData, serialNumber: e.target.value })}
+                      className="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => openScannerFor('edit_serial')}
+                      title="Scan Product Serial Barcode"
+                      className="p-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl cursor-pointer transition shadow-xs flex items-center justify-center flex-shrink-0"
+                    >
+                      <Camera size={16} />
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-slate-700 font-bold mb-1">Battery Serial Number</label>
-                  <input
-                    type="text"
-                    value={formData.batterySerialNumber}
-                    onChange={(e) => setFormData({ ...formData, batterySerialNumber: e.target.value })}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none font-mono"
-                  />
+                  <div className="flex gap-1.5">
+                    <input
+                      type="text"
+                      value={formData.batterySerialNumber}
+                      onChange={(e) => setFormData({ ...formData, batterySerialNumber: e.target.value })}
+                      className="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => openScannerFor('edit_battery')}
+                      title="Scan Battery Serial Barcode"
+                      className="p-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl cursor-pointer transition shadow-xs flex items-center justify-center flex-shrink-0"
+                    >
+                      <Camera size={16} />
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -1017,6 +1097,15 @@ const StockManager = () => {
           </div>
         </div>
       )}
+
+      {/* Camera Barcode Scanner Modal */}
+      <ScannerModal
+        isOpen={showScanner}
+        onClose={() => setShowScanner(false)}
+        onScanSuccess={handleScanSuccess}
+        title="Scan Battery / Product Barcode"
+        subtitle="Point camera at the barcode on the battery pack or product label"
+      />
     </div>
   );
 };

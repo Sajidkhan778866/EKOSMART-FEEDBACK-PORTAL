@@ -1,10 +1,24 @@
 import axios from 'axios';
 
+export const sanitizeApiUrl = (url: string): string => {
+  if (!url) return '';
+  let clean = url.trim().replace(/\/+$/, '');
+  // If preview vercel hash or old preview deployment URL, normalize to main production domain
+  if (clean.includes('.vercel.app') && clean.includes('backend-') && !clean.includes('backend-sajidkhan778866s-projects.vercel.app')) {
+    clean = 'https://backend-sajidkhan778866s-projects.vercel.app';
+  }
+  return clean;
+};
+
 export const getCustomApiUrl = (): string => {
   if (typeof window !== 'undefined' && window.localStorage) {
     const custom = localStorage.getItem('ekosmart_api_url');
     if (custom && custom.trim()) {
-      return custom.trim().replace(/\/+$/, '');
+      const sanitized = sanitizeApiUrl(custom);
+      if (sanitized !== custom.trim()) {
+        localStorage.setItem('ekosmart_api_url', sanitized);
+      }
+      return sanitized;
     }
   }
   return '';
@@ -12,7 +26,7 @@ export const getCustomApiUrl = (): string => {
 
 export const setCustomApiUrl = (url: string) => {
   if (typeof window !== 'undefined' && window.localStorage) {
-    let clean = url.trim().replace(/\/+$/, '');
+    let clean = sanitizeApiUrl(url);
     if (clean && !clean.startsWith('http://') && !clean.startsWith('https://')) {
       clean = `https://${clean}`;
     }
@@ -40,6 +54,9 @@ export const getDynamicHost = () => {
     // On Vercel or cloud deployment without explicit port
     if (hostname.endsWith('.vercel.app') || (!port && hostname !== 'localhost' && hostname !== '127.0.0.1')) {
       if (!hostname.startsWith('backend-') && !hostname.startsWith('api-')) {
+        return 'https://backend-sajidkhan778866s-projects.vercel.app';
+      }
+      if (hostname.startsWith('backend-') && hostname !== 'backend-sajidkhan778866s-projects.vercel.app') {
         return 'https://backend-sajidkhan778866s-projects.vercel.app';
       }
       return origin;
@@ -243,3 +260,14 @@ export const billingApi = {
   create: (data: any) => apiClient.post('/billing', data),
   delete: (id: string) => apiClient.delete(`/billing/${id}`),
 };
+
+export const billTemplateApi = {
+  getActive: (type?: string) => apiClient.get('/billing/template', { params: { type } }),
+  getAll: (params?: any) => apiClient.get('/billing/templates', { params }),
+  getById: (id: string) => apiClient.get(`/billing/templates/${id}`),
+  create: (data: any) => apiClient.post('/billing/templates', data),
+  update: (id: string, data: any) => apiClient.put(`/billing/templates/${id}`, data),
+  activate: (id: string) => apiClient.patch(`/billing/templates/${id}/activate`),
+  delete: (id: string) => apiClient.delete(`/billing/templates/${id}`),
+};
+

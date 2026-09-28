@@ -286,6 +286,57 @@ export const ensureDefaultSeedData = async (): Promise<void> => {
       console.log('[AutoSeed] Global CMS default service cards created.');
     }
 
+    // 6. Ensure Default Bill Templates exist
+    try {
+      const { BillTemplate } = await import('../models/BillTemplate');
+      const { defaultBillTemplate } = await import('../controllers/billing.controller');
+      const existingTemplatesCount = await BillTemplate.countDocuments();
+      if (existingTemplatesCount === 0) {
+        await BillTemplate.create([
+          defaultBillTemplate,
+          {
+            ...defaultBillTemplate,
+            templateName: 'Plant Commercial Dispatch Invoice',
+            templateType: 'Plant',
+            description: 'Commercial invoice for industrial battery packs and factory dispatches',
+            isActive: false,
+            warrantyConfig: {
+              ...defaultBillTemplate.warrantyConfig,
+              title: 'Ekosmart Commercial & Plant Warranty Terms',
+              badgeText: 'INDUSTRIAL GRADE WARRANTY',
+            },
+          },
+          {
+            ...defaultBillTemplate,
+            templateName: 'EV Rental Mobility Subscription Bill',
+            templateType: 'Rental',
+            description: 'Subscription billing for EV rental plans and battery swap usage',
+            isActive: false,
+            warrantyConfig: {
+              ...defaultBillTemplate.warrantyConfig,
+              title: 'Rental Roadside & Battery Swap Assurance',
+              badgeText: 'RENTAL COVERAGE',
+            },
+          },
+          {
+            ...defaultBillTemplate,
+            templateName: 'Warranty Replacement Voucher',
+            templateType: 'Warranty',
+            description: 'Zero-rated replacement and service handover voucher',
+            isActive: false,
+            warrantyConfig: {
+              ...defaultBillTemplate.warrantyConfig,
+              title: 'Warranty Repair & Replacement Certificate',
+              badgeText: 'VERIFIED REPLACEMENT',
+            },
+          },
+        ]);
+        console.log('[AutoSeed] Default Bill Templates created (Showroom, Plant, Rental, Warranty).');
+      }
+    } catch (e: any) {
+      console.warn('[AutoSeed] BillTemplate seed notice:', e.message);
+    }
+
     seedCompleted = true;
   } catch (error: any) {
     console.error('[AutoSeed] Error during auto-seeding:', error.message || error);

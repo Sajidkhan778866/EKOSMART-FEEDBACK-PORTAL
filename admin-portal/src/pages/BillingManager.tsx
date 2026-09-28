@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   FileText,
   Plus,
@@ -15,8 +15,12 @@ import {
   Receipt,
   Eye,
   Scan,
+  Camera,
+  Settings2,
 } from 'lucide-react';
-import { billingApi, stockApi } from '../api/client';
+import { billingApi, stockApi, billTemplateApi } from '../api/client';
+import ScannerModal from '../components/ScannerModal';
+import BillTemplateDesigner, { type IBillTemplate } from '../components/BillTemplateDesigner';
 
 export interface IBillLineItem {
   productId: string;
@@ -59,11 +63,19 @@ const PAYMENT_MODES = ['UPI', 'Cash', 'Card', 'Bank Transfer', 'Finance', 'Credi
 const SHOWROOMS = ['Main Showroom Counter', 'Kota Plant Store Counter', 'Service Center Desk'];
 
 const BillingManager = () => {
+  const [activeTab, setActiveTab] = useState<'invoices' | 'designer'>('invoices');
   const [bills, setBills] = useState<IBill[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [paymentStatusFilter, setPaymentStatusFilter] = useState('All');
   const [meta, setMeta] = useState({ totalRecords: 0, totalRevenue: 0 });
+
+  // Soft-Coded Active Template State for Invoices
+  const [activeTemplate, setActiveTemplate] = useState<IBillTemplate | null>(null);
+
+  // Scanner Modal State
+  const [showScanner, setShowScanner] = useState(false);
+  const [scannerTarget, setScannerTarget] = useState<'top_lookup' | number>('top_lookup');
 
   // Modal States
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -111,7 +123,19 @@ const BillingManager = () => {
 
   useEffect(() => {
     fetchBills();
+    fetchActiveTemplate();
   }, [paymentStatusFilter]);
+
+  const fetchActiveTemplate = async () => {
+    try {
+      const res = await billTemplateApi.getActive();
+      if (res.data?.success && res.data.data) {
+        setActiveTemplate(res.data.data);
+      }
+    } catch {
+      // Fallback
+    }
+  };
 
   const fetchBills = async () => {
     try {
@@ -191,20 +215,59 @@ const BillingManager = () => {
     setItems(items.filter((_, i) => i !== index));
   };
 
+  // Open Barcode Scanner
+  const openScanner = (target: 'top_lookup' | number) => {
+    setScannerTarget(target);
+    setShowScanner(true);
+  };
+
+  const handleScanSuccess = async (scannedCode: string) => {
+    if (scannerTarget === 'top_lookup') {
+      setSerialLookup(scannedCode);
+      lookupSerialCode(scannedCode);
+    } else if (typeof scannerTarget === 'number' && scannerTarget < items.length) {
+      const idx = scannerTarget;
+      try {
+        const res = await stockApi.getBySerial(scannedCode);
+        if (res.data?.success && res.data.data) {
+          const stock = res.data.data;
+          const updated = [...items];
+          updated[idx] = calculateLineItem({
+            ...updated[idx],
+            productId: stock.productId,
+            productName: stock.productName,
+            category: stock.category,
+            productSerial: stock.serialNumber || '',
+            batterySerial: stock.batterySerialNumber || scannedCode,
+            unitPrice: stock.unitPrice || updated[idx].unitPrice,
+            warrantyPeriodMonths: stock.warrantyPeriodMonths || 36,
+          });
+          setItems(updated);
+          showAlert('success', `Scanned and linked: ${stock.productName}`);
+        } else {
+          handleItemChange(idx, 'batterySerial', scannedCode);
+          showAlert('success', `Scanned serial applied: ${scannedCode}`);
+        }
+      } catch {
+        handleItemChange(idx, 'batterySerial', scannedCode);
+        showAlert('success', `Barcode applied: ${scannedCode}`);
+      }
+    }
+  };
+
   // Quick lookup stock by serial
-  const handleLookupSerial = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!serialLookup.trim()) return;
+  const lookupSerialCode = async (serial: string) => {
+    if (!serial.trim()) return;
     try {
       setLookupLoading(true);
       setLookupMsg(null);
-      const res = await stockApi.getBySerial(serialLookup.trim());
+      const res = await stockApi.getBySerial(serial.trim());
       if (res.data?.success && res.data.data) {
         const stock = res.data.data;
         if (stock.status === 'Sold') {
           setLookupMsg({
             type: 'error',
-            text: `Warning: Battery (${stock.serialNumber || stock.batterySerialNumber || serialLookup}) is already marked as SOLD in inventory!`,
+            text: `Warning: Battery (${stock.serialNumber || stock.batterySerialNumber || serial}) is already marked as SOLD in inventory!`,
           });
           return;
         }
@@ -224,7 +287,6 @@ const BillingManager = () => {
           warrantyPeriodMonths: stock.warrantyPeriodMonths || 36,
         });
 
-        // If first item was empty, replace it, otherwise append
         if (items.length === 1 && !items[0].productName) {
           setItems([newItem]);
         } else {
@@ -247,8 +309,13 @@ const BillingManager = () => {
     }
   };
 
+  const handleLookupSerial = (e: React.FormEvent) => {
+    e.preventDefault();
+    lookupSerialCode(serialLookup);
+  };
+
   // Compute Grand Totals
-  const subtotal = items.reduce((acc, it) => acc + (it.quantity * it.unitPrice), 0);
+  const subtotal = items.reduce((acc, it) => acc + it.quantity * it.unitPrice, 0);
   const discountTotal = items.reduce((acc, it) => acc + it.discount, 0);
   const taxTotal = items.reduce((acc, it) => acc + it.taxAmount, 0);
   const grandTotal = items.reduce((acc, it) => acc + it.totalAmount, 0);
@@ -307,16 +374,16 @@ const BillingManager = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Header */}
+      {/* Top Banner Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-6 rounded-2xl border border-slate-700 shadow-xl text-white">
         <div>
           <div className="flex items-center gap-2 text-indigo-400 text-xs font-bold uppercase tracking-wider mb-1">
             <Receipt size={16} />
-            <span>Point of Sale & Billing Management</span>
+            <span>Point of Sale & Soft-Coded Billing Engine</span>
           </div>
-          <h1 className="text-2xl font-black">Showroom Billing Counter</h1>
+          <h1 className="text-2xl font-black">Showroom Billing & Invoice Hub</h1>
           <p className="text-xs text-slate-300 mt-1">
-            Generate GST tax invoices, auto-deduct stock, and issue verified warranties in one unified flow.
+            Generate GST tax invoices, scan battery barcodes with camera, and customize bill templates in real-time.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -337,6 +404,37 @@ const BillingManager = () => {
         </div>
       </div>
 
+      {/* Main Top Navigation Tabs */}
+      <div className="flex border-b border-slate-200 bg-white p-1.5 rounded-2xl shadow-xs gap-2">
+        <button
+          type="button"
+          onClick={() => setActiveTab('invoices')}
+          className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 cursor-pointer ${
+            activeTab === 'invoices'
+              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-900/20'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          }`}
+        >
+          <Receipt size={16} />
+          <span>Showroom Invoices & POS History</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab('designer');
+            fetchActiveTemplate();
+          }}
+          className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 cursor-pointer ${
+            activeTab === 'designer'
+              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-900/20'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          }`}
+        >
+          <Settings2 size={16} />
+          <span>Soft-Coded Bill Template Designer</span>
+        </button>
+      </div>
+
       {/* Alert Notification */}
       {alertMsg && (
         <div
@@ -351,197 +449,205 @@ const BillingManager = () => {
         </div>
       )}
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
-            <span>Total Sales Revenue</span>
-            <Receipt size={16} className="text-emerald-500" />
+      {/* TAB 1: INVOICES & POS LIST */}
+      {activeTab === 'invoices' && (
+        <>
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+              <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
+                <span>Total Sales Revenue</span>
+                <Receipt size={16} className="text-emerald-500" />
+              </div>
+              <div className="text-2xl font-black text-emerald-600 mt-2">
+                ₹{meta.totalRevenue.toLocaleString('en-IN')}
+              </div>
+              <div className="text-[11px] text-slate-400 mt-0.5">Verified Showroom Invoices</div>
+            </div>
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+              <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
+                <span>Invoices Issued</span>
+                <FileText size={16} className="text-blue-500" />
+              </div>
+              <div className="text-2xl font-black text-slate-800 mt-2">{meta.totalRecords}</div>
+              <div className="text-[11px] text-blue-600/80 mt-0.5">GST Compliant Bills</div>
+            </div>
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+              <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
+                <span>Paid Invoices</span>
+                <CheckCircle2 size={16} className="text-teal-500" />
+              </div>
+              <div className="text-2xl font-black text-teal-600 mt-2">
+                {bills.filter((b) => b.paymentStatus === 'Paid').length}
+              </div>
+              <div className="text-[11px] text-slate-400 mt-0.5">Fully Settled</div>
+            </div>
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+              <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
+                <span>Warranties Generated</span>
+                <ShieldCheck size={16} className="text-indigo-500" />
+              </div>
+              <div className="text-2xl font-black text-indigo-600 mt-2">
+                {bills.filter((b) => b.warrantyGenerated).length}
+              </div>
+              <div className="text-[11px] text-indigo-600/80 mt-0.5">Linked Customer Records</div>
+            </div>
           </div>
-          <div className="text-2xl font-black text-emerald-600 mt-2">
-            ₹{meta.totalRevenue.toLocaleString('en-IN')}
-          </div>
-          <div className="text-[11px] text-slate-400 mt-0.5">Verified Showroom Invoices</div>
-        </div>
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
-            <span>Invoices Issued</span>
-            <FileText size={16} className="text-blue-500" />
-          </div>
-          <div className="text-2xl font-black text-slate-800 mt-2">{meta.totalRecords}</div>
-          <div className="text-[11px] text-blue-600/80 mt-0.5">GST Compliant Bills</div>
-        </div>
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
-            <span>Paid Invoices</span>
-            <CheckCircle2 size={16} className="text-teal-500" />
-          </div>
-          <div className="text-2xl font-black text-teal-600 mt-2">
-            {bills.filter((b) => b.paymentStatus === 'Paid').length}
-          </div>
-          <div className="text-[11px] text-slate-400 mt-0.5">Fully Settled</div>
-        </div>
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
-            <span>Warranties Generated</span>
-            <ShieldCheck size={16} className="text-indigo-500" />
-          </div>
-          <div className="text-2xl font-black text-indigo-600 mt-2">
-            {bills.filter((b) => b.warrantyGenerated).length}
-          </div>
-          <div className="text-[11px] text-indigo-600/80 mt-0.5">Linked Customer Records</div>
-        </div>
-      </div>
 
-      {/* Filter and Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-3 justify-between items-stretch md:items-center">
-        <div className="flex-1 relative">
-          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && fetchBills()}
-            placeholder="Search by Invoice Number, Customer Name, or Phone..."
-            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-          />
-        </div>
+          {/* Filter and Search Bar */}
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-3 justify-between items-stretch md:items-center">
+            <div className="flex-1 relative">
+              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && fetchBills()}
+                placeholder="Search by Invoice Number, Customer Name, or Phone..."
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              />
+            </div>
 
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5">
-            <CreditCard size={14} className="text-slate-500" />
-            <select
-              value={paymentStatusFilter}
-              onChange={(e) => setPaymentStatusFilter(e.target.value)}
-              className="bg-transparent text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer"
-            >
-              <option value="All">All Payment Status</option>
-              <option value="Paid">Paid</option>
-              <option value="Pending">Pending</option>
-              <option value="Partial">Partial</option>
-            </select>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5">
+                <CreditCard size={14} className="text-slate-500" />
+                <select
+                  value={paymentStatusFilter}
+                  onChange={(e) => setPaymentStatusFilter(e.target.value)}
+                  className="bg-transparent text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer"
+                >
+                  <option value="All">All Payment Status</option>
+                  <option value="Paid">Paid</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Partial">Partial</option>
+                </select>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
-      {/* Bills Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        {loading ? (
-          <div className="p-12 text-center text-slate-400 flex flex-col items-center gap-2">
-            <RefreshCw size={24} className="animate-spin text-indigo-500" />
-            <span className="text-xs font-medium">Loading showroom invoices...</span>
-          </div>
-        ) : bills.length === 0 ? (
-          <div className="p-12 text-center text-slate-500 flex flex-col items-center gap-3">
-            <Receipt size={36} className="text-slate-300" />
-            <p className="text-sm font-bold text-slate-700">No Billing Invoices Found</p>
-            <p className="text-xs text-slate-400 max-w-sm">
-              No bills match your query. Click "New Showroom Bill" to create a new customer invoice.
-            </p>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="mt-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer"
-            >
-              Create New Invoice
-            </button>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
-                  <th className="p-4">Invoice #</th>
-                  <th className="p-4">Date</th>
-                  <th className="p-4">Customer</th>
-                  <th className="p-4">Items / Description</th>
-                  <th className="p-4">Grand Total</th>
-                  <th className="p-4">Payment</th>
-                  <th className="p-4">Warranty Link</th>
-                  <th className="p-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {bills.map((bill) => (
-                  <tr key={bill._id} className="hover:bg-slate-50/80 transition">
-                    <td className="p-4">
-                      <div className="font-bold text-indigo-600 font-mono text-xs">{bill.invoiceNumber}</div>
-                      <div className="text-[10px] text-slate-400">{bill.showroom}</div>
-                    </td>
-                    <td className="p-4 text-slate-600">
-                      <div>{new Date(bill.createdAt).toLocaleDateString('en-IN')}</div>
-                      <div className="text-[10px] text-slate-400">
-                        {new Date(bill.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <div className="font-bold text-slate-800">{bill.customerName}</div>
-                      <div className="text-slate-500 font-mono text-[11px]">{bill.customerMobile}</div>
-                    </td>
-                    <td className="p-4">
-                      <div className="font-medium text-slate-700">
-                        {bill.items[0]?.productName || 'Line Item'}
-                        {bill.items.length > 1 && (
-                          <span className="text-[11px] text-indigo-600 font-bold ml-1">
-                            +{bill.items.length - 1} more
+          {/* Bills Table */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            {loading ? (
+              <div className="p-12 text-center text-slate-400 flex flex-col items-center gap-2">
+                <RefreshCw size={24} className="animate-spin text-indigo-500" />
+                <span className="text-xs font-medium">Loading showroom invoices...</span>
+              </div>
+            ) : bills.length === 0 ? (
+              <div className="p-12 text-center text-slate-500 flex flex-col items-center gap-3">
+                <Receipt size={36} className="text-slate-300" />
+                <p className="text-sm font-bold text-slate-700">No Billing Invoices Found</p>
+                <p className="text-xs text-slate-400 max-w-sm">
+                  No bills match your query. Click "New Showroom Bill" to create a new customer invoice.
+                </p>
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="mt-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer"
+                >
+                  Create New Invoice
+                </button>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
+                      <th className="p-4">Invoice #</th>
+                      <th className="p-4">Date</th>
+                      <th className="p-4">Customer</th>
+                      <th className="p-4">Items / Description</th>
+                      <th className="p-4">Grand Total</th>
+                      <th className="p-4">Payment</th>
+                      <th className="p-4">Warranty Link</th>
+                      <th className="p-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {bills.map((bill) => (
+                      <tr key={bill._id} className="hover:bg-slate-50/80 transition">
+                        <td className="p-4">
+                          <div className="font-bold text-indigo-600 font-mono text-xs">{bill.invoiceNumber}</div>
+                          <div className="text-[10px] text-slate-400">{bill.showroom}</div>
+                        </td>
+                        <td className="p-4 text-slate-600">
+                          <div>{new Date(bill.createdAt).toLocaleDateString('en-IN')}</div>
+                          <div className="text-[10px] text-slate-400">
+                            {new Date(bill.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <div className="font-bold text-slate-800">{bill.customerName}</div>
+                          <div className="text-slate-500 font-mono text-[11px]">{bill.customerMobile}</div>
+                        </td>
+                        <td className="p-4">
+                          <div className="font-medium text-slate-700">
+                            {bill.items[0]?.productName || 'Line Item'}
+                            {bill.items.length > 1 && (
+                              <span className="text-[11px] text-indigo-600 font-bold ml-1">
+                                +{bill.items.length - 1} more
+                              </span>
+                            )}
+                          </div>
+                          {bill.items[0]?.batterySerial && (
+                            <div className="text-[10px] text-emerald-700 font-mono">
+                              Bat: {bill.items[0].batterySerial}
+                            </div>
+                          )}
+                        </td>
+                        <td className="p-4">
+                          <div className="font-black text-slate-900 text-sm">₹{bill.grandTotal.toLocaleString('en-IN')}</div>
+                          <div className="text-[10px] text-slate-400">GST: ₹{bill.taxTotal.toLocaleString('en-IN')}</div>
+                        </td>
+                        <td className="p-4">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              bill.paymentStatus === 'Paid'
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                : 'bg-amber-50 text-amber-700 border border-amber-200'
+                            }`}
+                          >
+                            {bill.paymentMode} • {bill.paymentStatus}
                           </span>
-                        )}
-                      </div>
-                      {bill.items[0]?.batterySerial && (
-                        <div className="text-[10px] text-emerald-700 font-mono">
-                          Bat: {bill.items[0].batterySerial}
-                        </div>
-                      )}
-                    </td>
-                    <td className="p-4">
-                      <div className="font-black text-slate-900 text-sm">₹{bill.grandTotal.toLocaleString('en-IN')}</div>
-                      <div className="text-[10px] text-slate-400">GST: ₹{bill.taxTotal.toLocaleString('en-IN')}</div>
-                    </td>
-                    <td className="p-4">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          bill.paymentStatus === 'Paid'
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            : 'bg-amber-50 text-amber-700 border border-amber-200'
-                        }`}
-                      >
-                        {bill.paymentMode} • {bill.paymentStatus}
-                      </span>
-                    </td>
-                    <td className="p-4">
-                      {bill.warrantyGenerated ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
-                          <ShieldCheck size={12} />
-                          <span>Generated</span>
-                        </span>
-                      ) : (
-                        <span className="text-slate-400 text-[11px]">N/A</span>
-                      )}
-                    </td>
-                    <td className="p-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <button
-                          onClick={() => viewInvoice(bill)}
-                          title="View / Print Tax Invoice"
-                          className="p-1.5 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition cursor-pointer"
-                        >
-                          <Eye size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteBill(bill._id, bill.invoiceNumber)}
-                          title="Delete Invoice"
-                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition cursor-pointer"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                        </td>
+                        <td className="p-4">
+                          {bill.warrantyGenerated ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
+                              <ShieldCheck size={12} />
+                              <span>Generated</span>
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 text-[11px]">N/A</span>
+                          )}
+                        </td>
+                        <td className="p-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => viewInvoice(bill)}
+                              title="View / Print Tax Invoice"
+                              className="p-1.5 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition cursor-pointer"
+                            >
+                              <Eye size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteBill(bill._id, bill.invoiceNumber)}
+                              title="Delete Invoice"
+                              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition cursor-pointer"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </>
+      )}
+
+      {/* TAB 2: SOFT-CODED BILL TEMPLATE DESIGNER */}
+      {activeTab === 'designer' && <BillTemplateDesigner />}
 
       {/* CREATE INVOICE MODAL */}
       {showCreateModal && (
@@ -563,9 +669,19 @@ const BillingManager = () => {
             <form onSubmit={handleCreateBill} className="flex-1 overflow-y-auto py-4 space-y-5 text-xs">
               {/* Quick Serial Scanner / Lookup Bar */}
               <div className="p-3.5 bg-indigo-50/60 rounded-2xl border border-indigo-100 space-y-2">
-                <div className="flex items-center gap-2 text-indigo-900 font-bold">
-                  <Scan size={16} className="text-indigo-600" />
-                  <span>Quick Serial Scanner / Inventory Lookup</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-indigo-900 font-bold">
+                    <Scan size={16} className="text-indigo-600" />
+                    <span>Quick Serial Scanner / Inventory Lookup</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => openScanner('top_lookup')}
+                    className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold flex items-center gap-1 cursor-pointer transition shadow-xs"
+                  >
+                    <Camera size={12} />
+                    <span>Camera Scan</span>
+                  </button>
                 </div>
                 <div className="flex gap-2">
                   <input
@@ -754,16 +870,26 @@ const BillingManager = () => {
                       </div>
 
                       {/* Serial Numbers and Tax details */}
-                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 pt-2 border-t border-slate-100 text-[11px]">
-                        <div>
-                          <label className="block text-slate-500 font-semibold mb-0.5">Battery Serial #</label>
-                          <input
-                            type="text"
-                            value={item.batterySerial}
-                            onChange={(e) => handleItemChange(idx, 'batterySerial', e.target.value)}
-                            placeholder="e.g. BAT-LFP-6030"
-                            className="w-full p-1.5 bg-slate-50 border border-slate-200 rounded-lg font-mono text-[11px]"
-                          />
+                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 pt-2 border-t border-slate-100 text-[11px] items-center">
+                        <div className="flex items-center gap-1.5">
+                          <div className="flex-1">
+                            <label className="block text-slate-500 font-semibold mb-0.5">Battery Serial #</label>
+                            <input
+                              type="text"
+                              value={item.batterySerial}
+                              onChange={(e) => handleItemChange(idx, 'batterySerial', e.target.value)}
+                              placeholder="e.g. BAT-LFP-6030"
+                              className="w-full p-1.5 bg-slate-50 border border-slate-200 rounded-lg font-mono text-[11px]"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => openScanner(idx)}
+                            title="Scan Barcode via Camera"
+                            className="mt-3.5 p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg cursor-pointer transition shadow-xs"
+                          >
+                            <Camera size={14} />
+                          </button>
                         </div>
                         <div>
                           <label className="block text-slate-500 font-semibold mb-0.5">Product Serial #</label>
@@ -888,7 +1014,7 @@ const BillingManager = () => {
         </div>
       )}
 
-      {/* VIEW & PRINT INVOICE SLIP MODAL */}
+      {/* VIEW & PRINT INVOICE SLIP MODAL (USING SOFT-CODED BILL TEMPLATE) */}
       {showInvoiceModal && selectedBill && (
         <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 my-8">
@@ -914,17 +1040,43 @@ const BillingManager = () => {
               </div>
             </div>
 
-            {/* Printable Area */}
-            <div id="invoice-printable" className="mt-4 p-4 border border-slate-200 rounded-2xl bg-white space-y-4 text-xs">
+            {/* Soft-Coded Printable Slip */}
+            <div
+              id="invoice-printable"
+              className="mt-4 p-5 sm:p-6 border-2 rounded-2xl bg-white space-y-4 text-xs font-sans"
+              style={{
+                borderColor: activeTemplate?.theme?.primaryColor || '#4f46e5',
+              }}
+            >
               {/* Header */}
-              <div className="flex justify-between items-start border-b border-slate-200 pb-3">
+              <div
+                className="flex justify-between items-start border-b-2 pb-3"
+                style={{ borderColor: activeTemplate?.theme?.primaryColor || '#4f46e5' }}
+              >
                 <div>
-                  <h2 className="text-lg font-black text-slate-900">EKOSMART EV BATTERY SOLUTION</h2>
-                  <p className="text-[11px] text-slate-500">Official EV Battery & Scooter Showroom Counter</p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">Kota Industrial Area, Rajasthan | GSTIN: 08AABCE1234F1Z5</p>
+                  <h2
+                    className="text-base font-black"
+                    style={{ color: activeTemplate?.theme?.primaryColor || '#4f46e5' }}
+                  >
+                    {activeTemplate?.companyProfile?.businessName || 'EKOSMART EV BATTERY SOLUTION'}
+                  </h2>
+                  <p className="text-[11px] text-slate-500">
+                    {activeTemplate?.companyProfile?.tagline || 'Official EV Battery & Scooter Showroom Counter'}
+                  </p>
+                  <p className="text-[10px] text-slate-400 mt-0.5 max-w-sm">
+                    {activeTemplate?.companyProfile?.address || 'Kota Industrial Area, Rajasthan'}
+                  </p>
+                  {activeTemplate?.companyProfile?.gstin && (
+                    <p className="text-[10px] text-slate-700 font-mono font-bold mt-0.5">
+                      GSTIN: {activeTemplate.companyProfile.gstin}
+                    </p>
+                  )}
                 </div>
                 <div className="text-right">
-                  <span className="inline-block px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 font-mono font-bold text-xs border border-indigo-200">
+                  <span
+                    className="inline-block px-2.5 py-1 rounded-lg text-white font-mono font-bold text-xs shadow-xs"
+                    style={{ backgroundColor: activeTemplate?.theme?.primaryColor || '#4f46e5' }}
+                  >
                     {selectedBill.invoiceNumber}
                   </span>
                   <div className="text-[10px] text-slate-400 mt-1">
@@ -934,7 +1086,7 @@ const BillingManager = () => {
               </div>
 
               {/* Customer Info */}
-              <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl">
+              <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
                 <div>
                   <div className="text-[10px] text-slate-400 font-bold uppercase">Billed To</div>
                   <div className="font-bold text-slate-800">{selectedBill.customerName}</div>
@@ -945,7 +1097,9 @@ const BillingManager = () => {
                 </div>
                 <div className="text-right">
                   <div className="text-[10px] text-slate-400 font-bold uppercase">Payment Info</div>
-                  <div className="font-bold text-emerald-700">{selectedBill.paymentMode} ({selectedBill.paymentStatus})</div>
+                  <div className="font-bold text-emerald-700">
+                    {selectedBill.paymentMode} ({selectedBill.paymentStatus})
+                  </div>
                   <div className="text-slate-500 text-[10px]">{selectedBill.showroom}</div>
                 </div>
               </div>
@@ -968,7 +1122,7 @@ const BillingManager = () => {
                         {it.productName}
                         <div className="text-[10px] text-slate-400">Warranty: {it.warrantyPeriodMonths} Months</div>
                       </td>
-                      <td className="py-2 font-mono text-slate-600 text-[11px]">
+                      <td className="py-2 font-mono text-emerald-700 font-semibold text-[11px]">
                         {it.batterySerial || it.productSerial || '-'}
                       </td>
                       <td className="py-2 text-center font-bold">{it.quantity}</td>
@@ -981,7 +1135,7 @@ const BillingManager = () => {
 
               {/* Totals */}
               <div className="border-t border-slate-200 pt-3 flex justify-end">
-                <div className="w-48 space-y-1 text-[11px]">
+                <div className="w-52 space-y-1 text-[11px]">
                   <div className="flex justify-between text-slate-500">
                     <span>Subtotal:</span>
                     <span className="font-mono">₹{selectedBill.subtotal.toLocaleString('en-IN')}</span>
@@ -996,9 +1150,12 @@ const BillingManager = () => {
                     <span>GST Tax:</span>
                     <span className="font-mono">₹{selectedBill.taxTotal.toLocaleString('en-IN')}</span>
                   </div>
-                  <div className="flex justify-between font-black text-slate-900 text-sm pt-1 border-t border-slate-200">
+                  <div
+                    className="flex justify-between font-black text-sm pt-1 border-t"
+                    style={{ color: activeTemplate?.theme?.primaryColor || '#4f46e5' }}
+                  >
                     <span>Grand Total:</span>
-                    <span className="font-mono text-indigo-700">₹{selectedBill.grandTotal.toLocaleString('en-IN')}</span>
+                    <span className="font-mono font-black">₹{selectedBill.grandTotal.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
               </div>
@@ -1016,12 +1173,22 @@ const BillingManager = () => {
 
               {/* Footer Terms */}
               <div className="text-[10px] text-slate-400 border-t border-slate-100 pt-2 text-center">
-                Thank you for choosing Ekosmart. For queries contact helpline: +91 8949049003 | www.ekosmartdrive.in
+                {activeTemplate?.footer?.footerNote ||
+                  'Thank you for choosing Ekosmart. For queries contact helpline: +91 8949049003 | www.ekosmartevs.com'}
               </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* SCANNER MODAL */}
+      <ScannerModal
+        isOpen={showScanner}
+        onClose={() => setShowScanner(false)}
+        onScanSuccess={handleScanSuccess}
+        title="Scan Battery / Product Barcode"
+        subtitle="Point camera at the barcode on the battery pack or product carton"
+      />
     </div>
   );
 };

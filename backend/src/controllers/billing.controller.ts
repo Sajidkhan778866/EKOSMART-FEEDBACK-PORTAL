@@ -6,9 +6,103 @@ import { Stock } from '../models/Stock';
 import { StockMovement } from '../models/StockMovement';
 import { Warranty } from '../models/Warranty';
 import { Content } from '../models/Content';
+import { BillTemplate } from '../models/BillTemplate';
+
+// Default Showroom Bill Template
+export const defaultBillTemplate = {
+  templateName: 'Showroom GST Tax Invoice',
+  templateType: 'Showroom' as const,
+  description: 'Official showroom retail tax invoice for EV batteries and components',
+  isActive: true,
+  company: {
+    name: 'Ekosmart Battery Solution (EBS)',
+    subtitle: 'High Power Lithium-Ion & LFP Technologies',
+    logoType: 'preset' as const,
+    logoUrl: '',
+    address: 'Rang Talab, Near by Star Kids School',
+    city: 'Kota',
+    state: 'Rajasthan',
+    pincode: '324002',
+    phone: '+91 8949049003',
+    alternatePhone: '+91 9549730483',
+    email: 'support@ekosmartdrive.in',
+    website: 'www.ekosmartdrive.in',
+    gstin: '08DTUPM4205B1Z0',
+    cin: 'REG-RJ-2026-EBS',
+    showroomName: 'Kota Central Showroom Counter',
+    showroomAddress: 'Rang Talab, Kota, Rajasthan - 324002',
+  },
+  customerFields: [
+    { key: 'customerName', label: 'Customer Name', visible: true, required: true, order: 1 },
+    { key: 'customerMobile', label: 'Mobile Number', visible: true, required: true, order: 2 },
+    { key: 'customerEmail', label: 'Email Address', visible: true, required: false, order: 3 },
+    { key: 'customerAddress', label: 'Billing Address', visible: true, required: false, order: 4 },
+    { key: 'city', label: 'City', visible: true, required: false, order: 5 },
+    { key: 'state', label: 'State', visible: true, required: false, order: 6 },
+  ],
+  invoiceFields: [
+    { key: 'invoiceNumber', label: 'Invoice No', visible: true, required: true, order: 1 },
+    { key: 'createdAt', label: 'Invoice Date', visible: true, required: true, order: 2 },
+    { key: 'paymentMode', label: 'Payment Mode', visible: true, required: true, order: 3 },
+    { key: 'paymentStatus', label: 'Payment Status', visible: true, required: true, order: 4 },
+    { key: 'showroom', label: 'Showroom / Counter', visible: true, required: false, order: 5 },
+    { key: 'employeeName', label: 'Billed By', visible: true, required: false, order: 6 },
+  ],
+  productColumns: [
+    { key: 'index', label: '#', visible: true, width: '5%', align: 'center' as const, order: 1 },
+    { key: 'productName', label: 'Product / Battery Description', visible: true, width: '32%', align: 'left' as const, order: 2 },
+    { key: 'category', label: 'Category', visible: true, width: '12%', align: 'left' as const, order: 3 },
+    { key: 'serialNumber', label: 'Serial / Battery #', visible: true, width: '15%', align: 'left' as const, order: 4 },
+    { key: 'quantity', label: 'Qty', visible: true, width: '8%', align: 'center' as const, order: 5 },
+    { key: 'unitPrice', label: 'Rate (₹)', visible: true, width: '10%', align: 'right' as const, order: 6 },
+    { key: 'discount', label: 'Discount', visible: true, width: '8%', align: 'right' as const, order: 7 },
+    { key: 'taxRate', label: 'GST %', visible: true, width: '8%', align: 'center' as const, order: 8 },
+    { key: 'totalAmount', label: 'Amount (₹)', visible: true, width: '12%', align: 'right' as const, order: 9 },
+  ],
+  warrantyConfig: {
+    visible: true,
+    title: 'Official EBS Warranty Certificate Included',
+    badgeText: 'VERIFIED OFFICIAL WARRANTY',
+    showWarrantyNumber: true,
+    showStartDate: true,
+    showExpiryDate: true,
+    showSerialNumber: true,
+    termsSummary: 'Guaranteed battery capacity and free technical service support across all authorized service centers.',
+  },
+  totalsConfig: {
+    showSubtotal: true,
+    showDiscount: true,
+    showTaxBreakup: true,
+    showOtherCharges: false,
+    showGrandTotal: true,
+    showAmountPaid: true,
+    showBalance: true,
+    showAmountInWords: true,
+    currencySymbol: '₹',
+  },
+  footer: {
+    termsAndConditions: '1. Goods once sold are covered under Ekosmart official replacement/repair warranty policy.\n2. Warranty seal must remain intact.\n3. Pan-India technical service assistance available on official helpline.',
+    warrantyPolicy: '3 Years Warranty on 48V LFP Packs; 1.5 Years on 60V/72V Packs; 1 Year on Lithium Fast Chargers.',
+    returnPolicy: 'Defective verified units will be repaired or replaced by authorized service engineers within standard SLA.',
+    supportHelpline: 'Helpline: +91 8949049003 / +91 9549730483 | support@ekosmartdrive.in',
+    thankYouMessage: 'Thank you for choosing Ekosmart High Power Lithium Technologies!',
+    authorizedSignatoryTitle: 'Authorized Signatory (Kota Central Plant)',
+    showAuthorizedSignature: true,
+    showCustomerSignature: true,
+    showBarcode: true,
+    showQrCode: true,
+  },
+  theme: {
+    primaryColor: '#059669',
+    accentColor: '#047857',
+    fontPreset: 'sans' as const,
+    borderStyle: 'solid' as const,
+    headerStyle: 'modern' as const,
+  },
+};
 
 // Generate unique invoice number
-const generateInvoiceNumber = async (prefix = 'EKO-INV'): Promise<string> => {
+const generateInvoiceNumber = async (prefix = 'EBS-INV'): Promise<string> => {
   const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
   const countToday = await Bill.countDocuments({
     createdAt: {
@@ -25,6 +119,211 @@ const generateInvoiceNumber = async (prefix = 'EKO-INV'): Promise<string> => {
   }
   return candidate;
 };
+
+// ==============================================================================
+// 1. BILL TEMPLATE CONTROLLERS
+// ==============================================================================
+
+// GET /api/v1/billing/template - Get active bill template
+export const getActiveBillTemplate = async (req: Request, res: Response) => {
+  try {
+    const { type } = req.query;
+    const query: any = { isActive: true };
+    if (type) {
+      query.templateType = type;
+    }
+
+    let template = await BillTemplate.findOne(query);
+    if (!template) {
+      template = await BillTemplate.findOne({ isActive: true });
+    }
+    if (!template) {
+      template = await BillTemplate.findOne();
+    }
+
+    if (!template) {
+      // Return built-in default template
+      return res.json({
+        success: true,
+        data: defaultBillTemplate,
+        isDefault: true,
+      });
+    }
+
+    res.json({
+      success: true,
+      data: template,
+    });
+  } catch (error: any) {
+    console.error('Failed to get active bill template:', error);
+    res.json({
+      success: true,
+      data: defaultBillTemplate,
+      isDefault: true,
+    });
+  }
+};
+
+// GET /api/v1/billing/templates - List all templates (Admin)
+export const getAllBillTemplates = async (req: Request, res: Response) => {
+  try {
+    const templates = await BillTemplate.find().sort({ isActive: -1, updatedAt: -1 });
+    if (templates.length === 0) {
+      // Seed default template if none exist
+      const created = await BillTemplate.create(defaultBillTemplate);
+      return res.json({ success: true, data: [created] });
+    }
+    res.json({ success: true, data: templates });
+  } catch (error: any) {
+    console.error('Failed to get bill templates:', error);
+    res.status(500).json({ success: false, message: 'Failed to retrieve templates', error: error.message });
+  }
+};
+
+// GET /api/v1/billing/templates/:id - Get template by ID
+export const getBillTemplateById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const template = await BillTemplate.findById(id);
+    if (!template) {
+      return res.status(404).json({ success: false, message: 'Bill template not found' });
+    }
+    res.json({ success: true, data: template });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: 'Failed to fetch template', error: error.message });
+  }
+};
+
+// POST /api/v1/billing/templates - Create new bill template (Admin)
+export const createBillTemplate = async (req: Request, res: Response) => {
+  try {
+    const payload = req.body;
+    if (!payload.templateName) {
+      return res.status(400).json({ success: false, message: 'Template name is required' });
+    }
+
+    // If marked as active, deactivate other templates of same type
+    if (payload.isActive) {
+      await BillTemplate.updateMany(
+        { templateType: payload.templateType || 'Showroom' },
+        { $set: { isActive: false } }
+      );
+    }
+
+    const newTemplate = await BillTemplate.create({
+      ...defaultBillTemplate,
+      ...payload,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Bill template created successfully',
+      data: newTemplate,
+    });
+  } catch (error: any) {
+    console.error('Failed to create bill template:', error);
+    res.status(500).json({ success: false, message: error.message || 'Failed to create template' });
+  }
+};
+
+// PUT /api/v1/billing/templates/:id - Update bill template (Admin)
+export const updateBillTemplate = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const payload = req.body;
+
+    if (payload.isActive) {
+      const existing = await BillTemplate.findById(id);
+      if (existing) {
+        await BillTemplate.updateMany(
+          { templateType: existing.templateType, _id: { $ne: id } },
+          { $set: { isActive: false } }
+        );
+      }
+    }
+
+    const updated = await BillTemplate.findByIdAndUpdate(
+      id,
+      { $set: payload },
+      { new: true, runValidators: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ success: false, message: 'Bill template not found' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Bill template updated successfully',
+      data: updated,
+    });
+  } catch (error: any) {
+    console.error('Failed to update bill template:', error);
+    res.status(500).json({ success: false, message: error.message || 'Failed to update template' });
+  }
+};
+
+// PATCH /api/v1/billing/templates/:id/activate - Activate template
+export const activateBillTemplate = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const template = await BillTemplate.findById(id);
+    if (!template) {
+      return res.status(404).json({ success: false, message: 'Template not found' });
+    }
+
+    await BillTemplate.updateMany(
+      { templateType: template.templateType },
+      { $set: { isActive: false } }
+    );
+
+    template.isActive = true;
+    await template.save();
+
+    res.json({
+      success: true,
+      message: `Template "${template.templateName}" set as active`,
+      data: template,
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: 'Failed to activate template', error: error.message });
+  }
+};
+
+// DELETE /api/v1/billing/templates/:id - Delete template
+export const deleteBillTemplate = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const template = await BillTemplate.findById(id);
+    if (!template) {
+      return res.status(404).json({ success: false, message: 'Template not found' });
+    }
+
+    const count = await BillTemplate.countDocuments();
+    if (count <= 1) {
+      return res.status(400).json({ success: false, message: 'Cannot delete the only remaining template' });
+    }
+
+    await BillTemplate.findByIdAndDelete(id);
+
+    // If deleted template was active, activate another
+    if (template.isActive) {
+      const next = await BillTemplate.findOne();
+      if (next) {
+        next.isActive = true;
+        await next.save();
+      }
+    }
+
+    res.json({ success: true, message: 'Template deleted successfully' });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: 'Failed to delete template', error: error.message });
+  }
+};
+
+// ==============================================================================
+// 2. INVOICE & BILL GENERATION CONTROLLERS
+// ==============================================================================
 
 // GET /api/v1/billing - List bills
 export const getAllBills = async (req: Request, res: Response) => {
@@ -127,21 +426,24 @@ export const createBill = async (req: Request, res: Response) => {
         source: 'Showroom Billing Counter',
       });
     } else {
-      // Update customer address/email if provided
       if (customerAddress && !customer.address) customer.address = customerAddress.trim();
       if (customerEmail && !customer.email) customer.email = customerEmail.trim();
       await customer.save();
     }
 
-    // 2. Fetch soft-coded invoice prefix if configured
-    let invoicePrefix = 'EKO-INV';
+    // 2. Fetch soft-coded invoice prefix from active template or CMS
+    let invoicePrefix = 'EBS-INV';
     try {
+      const activeTemplate = await BillTemplate.findOne({ isActive: true });
+      if (activeTemplate?.company?.name) {
+        // Can derive prefix or use CMS billingConfig
+      }
       const cmsContent = await Content.findOne({ key: 'global_cms' });
       if (cmsContent?.billingConfig?.invoicePrefix) {
         invoicePrefix = cmsContent.billingConfig.invoicePrefix;
       }
     } catch {
-      // fallback to default
+      // fallback
     }
 
     const invoiceNumber = await generateInvoiceNumber(invoicePrefix);
@@ -179,7 +481,7 @@ export const createBill = async (req: Request, res: Response) => {
         taxRate,
         taxAmount: Math.round(lineTax * 100) / 100,
         totalAmount: Math.round(lineTotal * 100) / 100,
-        warrantyPeriodMonths: Number(item.warrantyPeriodMonths) || 36,
+        warrantyPeriodMonths: Number(item.warrantyPeriodMonths) !== undefined ? Number(item.warrantyPeriodMonths) : 36,
       };
     });
 
@@ -189,7 +491,6 @@ export const createBill = async (req: Request, res: Response) => {
 
     // 4. Stock deduction & movements
     for (const item of processedItems) {
-      // Look up stock by serial, batterySerial, or productId
       let stock = null;
       if (item.productSerial) {
         stock = await Stock.findOne({ serialNumber: item.productSerial });
@@ -202,7 +503,6 @@ export const createBill = async (req: Request, res: Response) => {
       }
 
       if (stock) {
-        const deductQty = Math.min(stock.quantity, item.quantity);
         stock.quantity = Math.max(0, stock.quantity - item.quantity);
         stock.totalSold = (stock.totalSold || 0) + item.quantity;
         if (stock.quantity === 0) {
@@ -219,7 +519,6 @@ export const createBill = async (req: Request, res: Response) => {
         });
         await stock.save();
 
-        // Record stock movement
         await StockMovement.create({
           movementType: 'Sold',
           productId: stock.productId,
@@ -259,7 +558,7 @@ export const createBill = async (req: Request, res: Response) => {
         try {
           const warranty = await Warranty.create({
             warrantyNumber,
-            category: item.category,
+            category: item.category === 'Battery' ? 'Showroom' : 'Plant',
             customer: customer._id,
             product: item.productName,
             serialNumber: item.batterySerial || item.productSerial || `AUTO-${invoiceNumber}`,

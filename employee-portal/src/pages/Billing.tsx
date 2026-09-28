@@ -14,7 +14,7 @@ import {
   Scan,
   Trash2,
 } from 'lucide-react';
-import { billingApi, stockApi } from '../api/client';
+import { billingApi, stockApi, billTemplateApi } from '../api/client';
 import ScannerModal from '../components/ScannerModal';
 
 export interface IBillLineItem {
@@ -60,6 +60,7 @@ const Billing = () => {
   const [bills, setBills] = useState<IBill[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [activeTemplate, setActiveTemplate] = useState<any>(null);
 
   // Scanner Modal State
   const [showScanner, setShowScanner] = useState(false);
@@ -106,7 +107,19 @@ const Billing = () => {
 
   useEffect(() => {
     fetchBills();
+    fetchActiveTemplate();
   }, []);
+
+  const fetchActiveTemplate = async () => {
+    try {
+      const res = await billTemplateApi.getActive();
+      if (res.data?.success && res.data.data) {
+        setActiveTemplate(res.data.data);
+      }
+    } catch {
+      // Fallback
+    }
+  };
 
   const fetchBills = async () => {
     try {
@@ -729,16 +742,42 @@ const Billing = () => {
               </div>
             </div>
 
-            {/* Printable Area */}
-            <div className="mt-4 p-4 border border-slate-200 rounded-2xl bg-white space-y-4 text-xs">
-              <div className="flex justify-between items-start border-b border-slate-200 pb-3">
+            {/* Soft-Coded Printable Area */}
+            <div
+              id="invoice-printable"
+              className="mt-4 p-5 sm:p-6 border-2 rounded-2xl bg-white space-y-4 text-xs font-sans"
+              style={{
+                borderColor: activeTemplate?.theme?.primaryColor || '#4f46e5',
+              }}
+            >
+              <div
+                className="flex justify-between items-start border-b-2 pb-3"
+                style={{ borderColor: activeTemplate?.theme?.primaryColor || '#4f46e5' }}
+              >
                 <div>
-                  <h2 className="text-lg font-black text-slate-900">EKOSMART EV BATTERY SOLUTION</h2>
-                  <p className="text-[11px] text-slate-500">Showroom Tax Invoice & Warranty Slip</p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">Kota Industrial Area | GSTIN: 08AABCE1234F1Z5</p>
+                  <h2
+                    className="text-base font-black"
+                    style={{ color: activeTemplate?.theme?.primaryColor || '#4f46e5' }}
+                  >
+                    {activeTemplate?.companyProfile?.businessName || 'EKOSMART EV BATTERY SOLUTION'}
+                  </h2>
+                  <p className="text-[11px] text-slate-500">
+                    {activeTemplate?.companyProfile?.tagline || 'Showroom Tax Invoice & Warranty Slip'}
+                  </p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">
+                    {activeTemplate?.companyProfile?.address || 'Kota Industrial Area | GSTIN: 08AABCE1234F1Z5'}
+                  </p>
+                  {activeTemplate?.companyProfile?.gstin && (
+                    <p className="text-[10px] text-slate-700 font-mono font-bold mt-0.5">
+                      GSTIN: {activeTemplate.companyProfile.gstin}
+                    </p>
+                  )}
                 </div>
                 <div className="text-right">
-                  <span className="inline-block px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 font-mono font-bold text-xs border border-indigo-200">
+                  <span
+                    className="inline-block px-2.5 py-1 rounded-lg text-white font-mono font-bold text-xs"
+                    style={{ backgroundColor: activeTemplate?.theme?.primaryColor || '#4f46e5' }}
+                  >
                     {selectedBill.invoiceNumber}
                   </span>
                   <div className="text-[10px] text-slate-400 mt-1">
@@ -747,15 +786,21 @@ const Billing = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl">
+              <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
                 <div>
                   <div className="text-[10px] text-slate-400 font-bold uppercase">Customer</div>
                   <div className="font-bold text-slate-800">{selectedBill.customerName}</div>
                   <div className="text-slate-600 font-mono">{selectedBill.customerMobile}</div>
+                  {selectedBill.customerAddress && (
+                    <div className="text-slate-500 text-[10px] mt-0.5">{selectedBill.customerAddress}</div>
+                  )}
                 </div>
                 <div className="text-right">
                   <div className="text-[10px] text-slate-400 font-bold uppercase">Payment Mode</div>
-                  <div className="font-bold text-emerald-700">{selectedBill.paymentMode} ({selectedBill.paymentStatus})</div>
+                  <div className="font-bold text-emerald-700">
+                    {selectedBill.paymentMode} ({selectedBill.paymentStatus})
+                  </div>
+                  <div className="text-slate-500 text-[10px]">{selectedBill.showroom}</div>
                 </div>
               </div>
 
@@ -765,6 +810,7 @@ const Billing = () => {
                     <th className="py-2">Item</th>
                     <th className="py-2">Serial Number</th>
                     <th className="py-2 text-center">Qty</th>
+                    <th className="py-2 text-right">Price</th>
                     <th className="py-2 text-right">Total</th>
                   </tr>
                 </thead>
@@ -775,10 +821,11 @@ const Billing = () => {
                         {it.productName}
                         <div className="text-[10px] text-slate-400">Warranty: {it.warrantyPeriodMonths} Months</div>
                       </td>
-                      <td className="py-2 font-mono text-slate-600 text-[11px]">
+                      <td className="py-2 font-mono text-emerald-700 font-semibold text-[11px]">
                         {it.batterySerial || it.productSerial || '-'}
                       </td>
                       <td className="py-2 text-center font-bold">{it.quantity}</td>
+                      <td className="py-2 text-right">₹{it.unitPrice.toLocaleString('en-IN')}</td>
                       <td className="py-2 text-right font-bold">₹{it.totalAmount.toLocaleString('en-IN')}</td>
                     </tr>
                   ))}
@@ -793,9 +840,18 @@ const Billing = () => {
                     </span>
                   )}
                 </div>
-                <div className="text-right font-black text-slate-900 text-base">
+                <div
+                  className="text-right font-black text-base"
+                  style={{ color: activeTemplate?.theme?.primaryColor || '#4f46e5' }}
+                >
                   Grand Total: ₹{selectedBill.grandTotal.toLocaleString('en-IN')}
                 </div>
+              </div>
+
+              {/* Footer Note */}
+              <div className="text-[10px] text-slate-400 border-t border-slate-100 pt-2 text-center">
+                {activeTemplate?.footer?.footerNote ||
+                  'Thank you for choosing EKOSMART Clean Energy & Green Mobility!'}
               </div>
             </div>
           </div>
