@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { ClipboardList, Clock, CheckCircle, UserCheck, Loader2, QrCode, Eye } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ClipboardList, Clock, CheckCircle, UserCheck, Loader2, QrCode, Eye, FileSpreadsheet } from 'lucide-react';
 import { empAuthApi, resolveImageUrl } from '../api/client';
 
 import { useAuth } from '../context/AuthContext';
@@ -75,7 +76,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="bg-slate-50 px-5 py-3 rounded-xl border border-slate-200 text-right">
             <span className="text-[10px] uppercase font-bold text-slate-400 block">Employee ID</span>
             <span className="font-mono font-bold text-indigo-700 text-sm">{employee?.employeeId}</span>
@@ -89,11 +90,20 @@ const Dashboard = () => {
             <QrCode size={18} />
             <span className="hidden sm:inline">My ID Badge</span>
           </button>
+
+          <Link
+            to="/salary"
+            className="flex items-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer"
+            title="View & Print Official Monthly Salary Slip"
+          >
+            <FileSpreadsheet size={18} />
+            <span>My Salary Slip</span>
+          </Link>
         </div>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 border-t-4 border-t-indigo-500">
           <div className="p-4 bg-indigo-50 text-indigo-600 rounded-full">
             <ClipboardList size={24} />
@@ -123,6 +133,22 @@ const Dashboard = () => {
             <p className="text-3xl font-bold text-slate-800">{stats.resolvedComplaints}</p>
           </div>
         </div>
+
+        <Link
+          to="/salary"
+          className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 border-t-4 border-t-teal-500 hover:shadow-md transition group cursor-pointer"
+        >
+          <div className="p-4 bg-teal-50 text-teal-600 rounded-full group-hover:scale-110 transition">
+            <FileSpreadsheet size={24} />
+          </div>
+          <div>
+            <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider">Official Payslip</h3>
+            <p className="text-sm font-bold text-teal-700 mt-1 flex items-center gap-1">
+              <span>View Salary Slip</span>
+              <Eye size={14} />
+            </p>
+          </div>
+        </Link>
       </div>
 
       {/* Recent Assignments Table */}

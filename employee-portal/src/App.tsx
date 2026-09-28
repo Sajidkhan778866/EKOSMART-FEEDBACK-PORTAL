@@ -8,6 +8,7 @@ import Billing from './pages/Billing';
 import Stock from './pages/Stock';
 import MyIdCard from './pages/MyIdCard';
 import MySalarySlip from './pages/MySalarySlip';
+import ErrorBoundary from './components/ErrorBoundary';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
@@ -42,7 +43,9 @@ function App() {
             path="/"
             element={
               <ProtectedRoute>
-                <Layout />
+                <ErrorBoundary fallbackTitle="Employee Portal Error">
+                  <Layout />
+                </ErrorBoundary>
               </ProtectedRoute>
             }
           >
