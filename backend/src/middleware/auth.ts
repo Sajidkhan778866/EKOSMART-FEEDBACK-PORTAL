@@ -7,6 +7,8 @@ interface AuthRequest extends Request {
 
 const JWT_SECRETS = [
   process.env.JWT_SECRET,
+  'ekosmart_super_secure_production_jwt_secret_2026_ebs',
+  'ekosmart_secure_production_jwt_key_2026_ebs_super_secret',
   'ekosmart_default_secret_key_2026',
   'ekosmart_production_jwt_secret_2026',
   'supersecretjwt',

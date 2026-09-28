@@ -26,6 +26,11 @@ const Login = () => {
     setCurrentBaseUrl(getApiBaseUrl());
     const saved = getCustomApiUrl();
     if (saved) setCustomUrlInput(saved);
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('expired')) {
+      setError('Your admin session has expired. Please sign in with your admin credentials.');
+    }
   }, []);
 
   const testBackendConnection = async (targetUrl: string) => {
