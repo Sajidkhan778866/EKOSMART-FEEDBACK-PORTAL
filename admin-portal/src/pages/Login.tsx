@@ -222,9 +222,17 @@ const Login = () => {
           </button>
 
           <div className="text-center pt-2 space-y-2">
-            <p className="text-xs text-slate-400">
-              Default Credentials: <span className="font-mono text-slate-600">admin@ekosmart.com / admin123</span>
-            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setEmail('admin@ekosmart.com');
+                setPassword('admin123');
+                setError('');
+              }}
+              className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-md font-medium transition cursor-pointer"
+            >
+              Autofill Default: <span className="font-mono text-green-700 font-bold">admin@ekosmart.com / admin123</span>
+            </button>
             <div>
               <button
                 type="button"
