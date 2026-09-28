@@ -59,7 +59,7 @@ export const adminLogin = async (req: Request, res: Response) => {
       });
     }
 
-    const token = generateToken(user._id.toString(), user.role);
+    const token = generateToken(user._id.toString(), user.role, ['*']);
 
     return res.json({
       success: true,

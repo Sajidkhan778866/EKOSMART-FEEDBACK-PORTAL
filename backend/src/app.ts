@@ -66,13 +66,28 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Serverless DB auto-connection middleware
-app.use(async (_req: Request, _res: Response, next: NextFunction) => {
+app.use(async (req: Request, res: Response, next: NextFunction) => {
+  // Allow health check, root ping and static uploads to bypass DB block if needed
+  if (
+    req.path === '/' ||
+    req.path.endsWith('/health') ||
+    req.path.startsWith('/uploads') ||
+    req.path.startsWith('/api/v1/uploads') ||
+    req.path.startsWith('/api/uploads')
+  ) {
+    return next();
+  }
   try {
     await connectDB();
+    next();
   } catch (err: any) {
     console.error('[Middleware] Database connection error during request:', err.message || err);
+    return res.status(503).json({
+      success: false,
+      message: `Database connection unavailable: ${err.message || 'Connection failed'}. Please check MongoDB Atlas connection string (DATABASE_URL / MONGODB_URI) and IP access whitelist (0.0.0.0/0).`,
+      error: err.message,
+    });
   }
-  next();
 });
 
 // Root ping

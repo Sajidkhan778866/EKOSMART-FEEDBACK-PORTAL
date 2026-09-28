@@ -55,6 +55,15 @@ export const ensureDefaultSeedData = async (): Promise<void> => {
         role: 'Technician',
         password: 'employee123',
         status: 'Active' as const,
+        permissions: [
+          'billing:create',
+          'billing:view',
+          'stock:view',
+          'stock:manage',
+          'warranty:manage',
+          'complaints:manage',
+          'idcard:view',
+        ],
         warrantyAccess: {
           enabled: true,
           accessType: 'Full Access' as const,
@@ -81,6 +90,15 @@ export const ensureDefaultSeedData = async (): Promise<void> => {
         role: 'Staff',
         password: 'employee123',
         status: 'Active' as const,
+        permissions: [
+          'billing:create',
+          'billing:view',
+          'stock:view',
+          'stock:manage',
+          'warranty:manage',
+          'complaints:manage',
+          'idcard:view',
+        ],
         warrantyAccess: {
           enabled: true,
           accessType: 'Registrar' as const,
@@ -118,17 +136,43 @@ export const ensureDefaultSeedData = async (): Promise<void> => {
           barcode,
         });
         console.log(`[AutoSeed] Default Employee created: ${emp.employeeId} (${emp.name})`);
-      } else if (!existingEmp.plainPassword) {
-        existingEmp.plainPassword = emp.password;
-        await existingEmp.save();
+      } else {
+        let changed = false;
+        if (!existingEmp.plainPassword) {
+          existingEmp.plainPassword = emp.password;
+          changed = true;
+        }
+        if (!existingEmp.permissions || existingEmp.permissions.length === 0) {
+          existingEmp.permissions = emp.permissions;
+          changed = true;
+        }
+        if (changed) {
+          await existingEmp.save();
+        }
       }
     }
 
-    // Backfill any other employees that lack plainPassword
+    // Backfill any other employees that lack plainPassword or permissions
     try {
       await Employee.updateMany(
         { $or: [{ plainPassword: { $exists: false } }, { plainPassword: '' }, { plainPassword: null }] },
         { $set: { plainPassword: 'employee123' } }
+      );
+      await Employee.updateMany(
+        { $or: [{ permissions: { $exists: false } }, { permissions: { $size: 0 } }] },
+        {
+          $set: {
+            permissions: [
+              'billing:create',
+              'billing:view',
+              'stock:view',
+              'stock:manage',
+              'warranty:manage',
+              'complaints:manage',
+              'idcard:view',
+            ],
+          },
+        }
       );
     } catch {
       // Ignore

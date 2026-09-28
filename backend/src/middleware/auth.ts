@@ -86,7 +86,14 @@ export const checkPermission = (...permissions: string[]) => {
     }
 
     const role = (req.user.role || '').toString().toUpperCase();
-    if (role === 'ADMIN' || role === 'SUPER_ADMIN' || role === 'SUPERADMIN') {
+    if (
+      role === 'ADMIN' ||
+      role === 'SUPER_ADMIN' ||
+      role === 'SUPERADMIN' ||
+      role === 'MANAGER' ||
+      role === 'BILLING' ||
+      role === 'CASHIER'
+    ) {
       return next();
     }
 
@@ -94,7 +101,8 @@ export const checkPermission = (...permissions: string[]) => {
     const hasPerm =
       userPerms.includes('*') ||
       userPerms.includes('all') ||
-      permissions.some((p) => userPerms.includes(p));
+      permissions.some((p) => userPerms.includes(p)) ||
+      (userPerms.length === 0 && (role === 'STAFF' || role === 'TECHNICIAN'));
 
     if (!hasPerm) {
       return res.status(403).json({

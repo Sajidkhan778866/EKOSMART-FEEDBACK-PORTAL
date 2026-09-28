@@ -62,10 +62,13 @@ const setupConnectionListeners = () => {
   });
 };
 
+// Set bufferCommands to false so Mongoose fails fast with informative errors instead of hanging for 10s
+mongoose.set('bufferCommands', false);
+
 const connectDB = async (): Promise<typeof mongoose> => {
   // 1. If already connected, return existing connection
   if ((mongoose.connection.readyState as number) === 1) {
-    // If connected but not seeded yet, trigger seed check
+    // If connected but not seeded yet, trigger seed check in background
     ensureDefaultSeedData().catch(() => {});
     return mongoose;
   }
@@ -84,7 +87,8 @@ const connectDB = async (): Promise<typeof mongoose> => {
     const opts: mongoose.ConnectOptions = {
       maxPoolSize: 10,
       minPoolSize: 1,
-      serverSelectionTimeoutMS: 10000,
+      serverSelectionTimeoutMS: 8000,
+      connectTimeoutMS: 10000,
       socketTimeoutMS: 45000,
       heartbeatFrequencyMS: 10000,
       autoIndex: true,
