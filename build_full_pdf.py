@@ -1,6 +1,7 @@
 import os
 import base64
 import subprocess
+import re
 
 SCREENSHOTS_DIR = r"C:\Users\Sajid Khan\.gemini\antigravity\brain\ea8a7107-27f2-47b2-abf9-5f35f4a547bd\.user_uploaded"
 OUTPUT_PDF = r"c:\Users\Sajid Khan\OneDrive\Desktop\Feed back ekosmart\EKOSMART_COMPLETE_PROJECT_DOCUMENTATION.pdf"
@@ -16,27 +17,21 @@ def get_base64_image(filename):
     return ""
 
 # Load all screenshots
-img_home = get_base64_image("media_1790689055035.png")
-img_service_cards = get_base64_image("media_1790689067607.png")
-img_complaint_form = get_base64_image("media_1790572646031.png")
-img_track_warranty = get_base64_image("media_1790398733116.png")
-img_warranty_mgr = get_base64_image("media_1790689962351.png")
-img_customer_dossier = get_base64_image("media_1790571523850.png")
-img_admin_login = get_base64_image("media_1790358081131.png")
-img_admin_dash = get_base64_image("media_1790582820093.png")
-img_cms_editor = get_base64_image("media_1790689067607.png")
-img_form_builder = get_base64_image("media_1790573005815.png")
-img_emp_mgmt = get_base64_image("media_1790572430957.png")
-img_id_card = get_base64_image("media_1790572059730.png")
-img_salary_slip = get_base64_image("media_1790571619509.png")
-img_pos_billing = get_base64_image("media_1790571523850.png")
-img_emp_login = get_base64_image("media_1790357713193.png")
-img_emp_dash = get_base64_image("media_1790398760696.png")
-img_complaints_list = get_base64_image("media_1790689897022.png")
-img_stock_mgr = get_base64_image("media_1790404662382.png")
-img_scanner = get_base64_image("media_1790403707215.png")
-img_admin_reports = get_base64_image("media_1790689880199.png")
-img_emp_reports = get_base64_image("media_1790691036463.png")
+img_p1_home = get_base64_image("media_1790689055035.png") # Public Homepage / Hero (1024x640)
+img_p2_services = get_base64_image("media_1790689067607.png") # Service Cards (1024x419)
+img_p3_complaint = get_base64_image("media_1790572646031.png") # Dynamic complaint form (1024x575)
+img_p4_warranty = get_base64_image("media_1790689962351.png") # Warranty Manager with date filter (1024x581)
+img_p5_dashboard = get_base64_image("media_1790582820093.png") # Admin Dashboard with KPIs (1024x379)
+img_p6_cms = get_base64_image("media_1790689067607.png") # CMS service card editor (1024x419)
+img_p7_form_builder = get_base64_image("media_1790573005815.png") # Dynamic form designer studio (620x925)
+img_p8_employees = get_base64_image("media_1790572430957.png") # Employee CRUD & permissions (1024x535)
+img_p9_salary = get_base64_image("media_1790571619509.png") # Salary slip modal (1024x638)
+img_p10_billing = get_base64_image("media_1790571523850.png") # POS Billing & slip (1024x585)
+img_p11_emp_dash = get_base64_image("media_1790398760696.png") # Employee dashboard & queue (1024x575)
+img_p12_dossier = get_base64_image("media_1790689897022.png") # Complaints dossier list (1024x463)
+img_p13_stock = get_base64_image("media_1790404662382.png") # Warehouse stock inventory (1024x538)
+img_p14_reports = get_base64_image("media_1790689880199.png") # Admin reports & export (1024x548)
+img_p15_summary = get_base64_image("media_1790691036463.png") # Employee Reports & workload audit (1024x575)
 
 html_content = f"""<!DOCTYPE html>
 <html lang="en">
@@ -59,8 +54,8 @@ html_content = f"""<!DOCTYPE html>
     background: #e2e8f0;
     font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
     color: #1e293b;
-    font-size: 8.8pt;
-    line-height: 1.35;
+    font-size: 8.5pt;
+    line-height: 1.32;
   }}
   .page {{
     width: 210mm;
@@ -82,12 +77,12 @@ html_content = f"""<!DOCTYPE html>
   }}
   .page-header {{
     border-bottom: 2px solid #059669;
-    padding-bottom: 4px;
-    margin-bottom: 8px;
+    padding-bottom: 3px;
+    margin-bottom: 6px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 7.5pt;
+    font-size: 7.2pt;
     font-weight: 700;
     color: #065f46;
     text-transform: uppercase;
@@ -95,52 +90,53 @@ html_content = f"""<!DOCTYPE html>
   }}
   .page-footer {{
     border-top: 1px solid #cbd5e1;
-    padding-top: 4px;
-    margin-top: 6px;
+    padding-top: 3px;
+    margin-top: 4px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 7pt;
+    font-size: 6.8pt;
     color: #64748b;
   }}
   .page-content {{
     flex: 1;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
-    gap: 6px;
+    justify-content: space-between;
+    gap: 4px;
     overflow: hidden;
   }}
   h1.page-title {{
-    font-size: 13pt;
+    font-size: 11.5pt;
     font-weight: 900;
     color: #0f172a;
-    margin: 0 0 4px 0;
+    margin: 0 0 3px 0;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     border-left: 4px solid #059669;
-    padding-left: 8px;
+    padding-left: 6px;
     line-height: 1.2;
   }}
   h2.section-heading {{
-    font-size: 9.5pt;
+    font-size: 8.8pt;
     font-weight: 800;
     color: #065f46;
-    margin: 4px 0 2px 0;
+    margin: 3px 0 1px 0;
     border-bottom: 1px solid #e2e8f0;
-    padding-bottom: 2px;
+    padding-bottom: 1px;
   }}
   p {{
-    margin: 0 0 4px 0;
+    margin: 0 0 3px 0;
     color: #334155;
     text-align: justify;
+    font-size: 8.2pt;
   }}
   .badge {{
     display: inline-block;
-    padding: 1px 6px;
-    border-radius: 4px;
-    font-size: 7pt;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 6.5pt;
     font-weight: 700;
     text-transform: uppercase;
   }}
@@ -151,19 +147,19 @@ html_content = f"""<!DOCTYPE html>
   .table-custom {{
     width: 100%;
     border-collapse: collapse;
-    font-size: 7.5pt;
-    margin: 3px 0 5px 0;
+    font-size: 7.2pt;
+    margin: 2px 0 4px 0;
   }}
   .table-custom th {{
     background: #065f46;
     color: #ffffff;
-    padding: 4px 6px;
+    padding: 3px 5px;
     text-align: left;
     font-weight: 700;
     border: 1px solid #047857;
   }}
   .table-custom td {{
-    padding: 3px 6px;
+    padding: 2.5px 5px;
     border: 1px solid #e2e8f0;
     color: #334155;
   }}
@@ -174,65 +170,81 @@ html_content = f"""<!DOCTYPE html>
   .card-box {{
     background: #f8fafc;
     border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    padding: 6px 8px;
-    margin: 2px 0;
+    border-radius: 5px;
+    padding: 5px 7px;
+    margin: 1px 0;
   }}
   .flowchart {{
     background: #0f172a;
     color: #f8fafc;
-    border-radius: 6px;
-    padding: 6px 8px;
+    border-radius: 5px;
+    padding: 4px 6px;
     font-family: 'Consolas', monospace;
-    font-size: 7.2pt;
-    line-height: 1.3;
-    margin: 3px 0;
+    font-size: 6.8pt;
+    line-height: 1.25;
+    margin: 2px 0;
     border-left: 3px solid #10b981;
   }}
 
-  .screenshot-container {{
-    border: 1px solid #cbd5e1;
+  /* High Visibility Screenshot Cards */
+  .screenshot-card {{
+    border: 1.5px solid #94a3b8;
     border-radius: 6px;
+    background: #ffffff;
     padding: 3px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+    margin: 4px 0 2px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }}
+  .screenshot-img-hero {{
+    width: 100%;
+    max-height: 220px;
+    height: 210px;
+    object-fit: contain;
+    border-radius: 4px;
+    background: #0f172a;
+    display: block;
+  }}
+  .screenshot-img-large {{
+    width: 100%;
+    max-height: 215px;
+    height: 205px;
+    object-fit: contain;
+    border-radius: 4px;
     background: #f8fafc;
-    margin: 3px 0;
-    text-align: center;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    display: block;
   }}
-  .screenshot-img {{
-    width: 100%;
-    max-height: 110px;
+  .screenshot-img-portrait {{
+    width: auto;
+    max-width: 100%;
+    max-height: 215px;
+    height: 205px;
     object-fit: contain;
     border-radius: 4px;
+    background: #f8fafc;
     display: block;
     margin: 0 auto;
-    background: #ffffff;
-  }}
-  .screenshot-img-sm {{
-    width: 100%;
-    max-height: 85px;
-    object-fit: contain;
-    border-radius: 4px;
-    display: block;
-    margin: 0 auto;
-    background: #ffffff;
   }}
   .screenshot-caption {{
-    font-size: 7pt;
-    font-weight: 700;
-    color: #475569;
-    margin-top: 2px;
+    font-size: 7.2pt;
+    font-weight: 800;
+    color: #0f172a;
+    margin-top: 3px;
     text-align: center;
+    letter-spacing: 0.1px;
   }}
   .grid-2 {{
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    gap: 6px;
   }}
   .grid-3 {{
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-    gap: 6px;
+    gap: 5px;
   }}
 </style>
 </head>
@@ -243,65 +255,58 @@ html_content = f"""<!DOCTYPE html>
 <!-- ========================================== -->
 <div class="page">
   <div class="page-header">
-    <span>EKOSMART EV BATTERY SOLUTION — SYSTEM DOCUMENTATION</span>
+    <span>EKOSMART EV BATTERY SOLUTION — ENGINEERING SYSTEM DOCUMENTATION</span>
     <span>PAGE 1 OF 15</span>
   </div>
   <div class="page-content">
-    <div style="background: linear-gradient(135deg, #064e3b, #0f172a); color: #fff; padding: 8px 12px; border-radius: 6px; margin-bottom: 4px;">
-      <span class="badge badge-amber" style="margin-bottom: 2px;">Technical Engineering Manual</span>
-      <h1 style="color: #fff; font-size: 13pt; margin: 2px 0; font-weight: 900; letter-spacing: -0.3px;">
+    <div style="background: linear-gradient(135deg, #064e3b, #0f172a); color: #fff; padding: 7px 10px; border-radius: 6px;">
+      <span class="badge badge-amber" style="margin-bottom: 2px;">Official Technical Architecture Document</span>
+      <h1 style="color: #fff; font-size: 11.5pt; margin: 2px 0; font-weight: 900; letter-spacing: -0.2px;">
         EKOSMART DIGITAL CUSTOMER SERVICE, MANAGEMENT AND OPERATIONS SYSTEM
       </h1>
-      <div style="font-size: 7.5pt; color: #a7f3d0;">
-        Full-Stack Enterprise EV Battery Service, POS Billing, Stock & Payroll Ecosystem • Architecture & System Manual
+      <div style="font-size: 7.2pt; color: #a7f3d0;">
+        Full-Stack Enterprise EV Lithium-ion/LFP Battery Platform, POS Invoicing, Warehouse Inventory & Payroll Engine
       </div>
     </div>
 
-    <h2 class="section-heading">1.1 Executive Summary & Problem Formulation</h2>
-    <p>
-      The <strong>Ekosmart EV Battery Management Platform</strong> is a unified, 3-tier enterprise software suite designed for electric vehicle lithium-ion/LFP battery manufacturing plants, service centers, and retail showrooms. Traditional EV after-sales workflows face severe operational bottlenecks: unorganized customer grievance logging, manual serial warranty lookups leading to claim disputes, disconnected POS showroom billing and warehouse inventory, static website CMS constraints, and paper-based payroll calculations.
-    </p>
+    <div>
+      <h2 class="section-heading">1.1 Executive Overview & Problem Statement</h2>
+      <p>
+        The <strong>Ekosmart EV Battery Management Platform</strong> resolves critical operational bottlenecks in electric mobility operations: fragmented customer grievance tracking, manual serial warranty verification disputes, disconnected showroom POS billing and stock counts, static CMS website constraints, and paper-based payroll calculations.
+      </p>
+    </div>
 
-    <h2 class="section-heading">1.2 System Objectives & Core Technology Stack</h2>
     <div class="grid-2">
       <div class="card-box">
-        <strong style="color: #065f46;">Key Strategic Objectives:</strong>
-        <ul style="margin: 2px 0 0 12px; padding: 0; font-size: 7.5pt;">
-          <li>Public dynamic service registration & automated ticket assignment.</li>
+        <strong style="color: #065f46; font-size: 7.8pt;">Key Platform Capabilities:</strong>
+        <ul style="margin: 2px 0 0 10px; padding: 0; font-size: 7.2pt;">
+          <li>Public dynamic service registration with automated ticket assignment.</li>
           <li>Real-time serial warranty verification & automated duration expiry.</li>
-          <li>Soft-coded CMS and dynamic form builders stored in MongoDB.</li>
+          <li>Soft-coded CMS and dynamic form builders stored in MongoDB Atlas.</li>
           <li>Showroom POS billing with camera barcode scanner & auto-stock deduction.</li>
           <li>Role-based access control (RBAC) & isolated A4 payslip generation.</li>
         </ul>
       </div>
       <div>
         <table class="table-custom" style="margin: 0;">
-          <tr><th>Layer</th><th>Technology</th><th>Role / Purpose</th></tr>
-          <tr><td><strong>Frontend</strong></td><td>React 19, TypeScript, Vite 8, Tailwind</td><td>Public, Admin & Employee SPAs</td></tr>
-          <tr><td><strong>Backend</strong></td><td>Node.js, Express, TypeScript</td><td>RESTful API Server (/api/v1/*)</td></tr>
-          <tr><td><strong>Database</strong></td><td>MongoDB Atlas + Mongoose ODM</td><td>NoSQL Document Store</td></tr>
+          <tr><th>Layer</th><th>Technology</th><th>Role / Specification</th></tr>
+          <tr><td><strong>Frontend</strong></td><td>React 19, Vite 8, Tailwind</td><td>Public, Admin & Staff Portals</td></tr>
+          <tr><td><strong>Backend</strong></td><td>Node.js, Express, TypeScript</td><td>RESTful APIs (/api/v1/*)</td></tr>
+          <tr><td><strong>Database</strong></td><td>MongoDB Atlas + Mongoose</td><td>NoSQL Document Store</td></tr>
           <tr><td><strong>Security</strong></td><td>JWT, bcrypt, RBAC Middleware</td><td>Token Auth & Route Protection</td></tr>
         </table>
       </div>
     </div>
 
-    <h2 class="section-heading">1.3 High-Level System Architecture & Flow</h2>
-    <div class="flowchart">
-[Customer] --> (Public Portal) --> [Dynamic Intake Form] --> (Express API) --> [MongoDB Atlas]
-                                                                  |
-[Administrator] --> (Admin Portal) --> [CMS / Forms / RBAC / Payroll] -------+
-                                                                  |
-[Staff / Engineer] --> (Employee Portal) --> [Diagnostics / POS / Stock / Slips] ----+
-    </div>
-
-    <div class="screenshot-container">
-      <img src="{img_home}" class="screenshot-img" alt="Public Website Homepage" />
-      <div class="screenshot-caption">Figure 1.1: Ekosmart Live Deployed Public Customer Web Portal & Brand Header</div>
+    <!-- LARGE VISIBLE SCREENSHOT -->
+    <div class="screenshot-card">
+      <img src="{img_p1_home}" class="screenshot-img-hero" alt="Public Customer Website Homepage" />
+      <div class="screenshot-caption">Figure 1.1: Real-Time Deployed Ekosmart Public Customer Web Portal & Brand Header (Live Vercel Production)</div>
     </div>
   </div>
   <div class="page-footer">
     <span>Confidential & Proprietary — Ekosmart EV Battery Solution</span>
-    <span>Software Project Documentation</span>
+    <span>Production System Documentation</span>
     <span>Page 1</span>
   </div>
 </div>
@@ -317,42 +322,37 @@ html_content = f"""<!DOCTYPE html>
   <div class="page-content">
     <h1 class="page-title">PAGE 2 — PUBLIC CUSTOMER WEBSITE</h1>
     
-    <h2 class="section-heading">2.1 Public Web Architecture & Customer Journey</h2>
-    <p>
-      The Public Customer Website (<code>frontend/</code>) serves as the primary customer touchpoint. Designed with React 19 and Tailwind CSS, it connects dynamically with the backend API to retrieve real-time CMS content, operational service cards, and division forms. Customers can register service tickets, track real-time resolution stages, verify battery warranty coverage, and review plant policies without logging in.
-    </p>
+    <div>
+      <h2 class="section-heading">2.1 Customer Journey & Soft-Coded Navigation Architecture</h2>
+      <p>
+        The Public Customer Website (<code>frontend/</code>) provides intuitive access for EV owners and dealership clients. Built with React 19 and Tailwind CSS, it loads real-time branding, promotional announcements, active service cards, and division forms directly from MongoDB via <code>GET /api/v1/content/public</code>.
+      </p>
+    </div>
 
     <div class="grid-2">
       <div class="card-box">
-        <strong style="color: #065f46;">Core Public Modules:</strong>
-        <ul style="margin: 2px 0 0 12px; padding: 0; font-size: 7.5pt;">
-          <li><strong>Hero Section:</strong> Dynamic headline, badge text, and action buttons.</li>
-          <li><strong>Service Cards:</strong> Showroom, Rental, Spare Parts, Lithium Battery.</li>
-          <li><strong>Ticket Tracker:</strong> Search by Ticket Number (<code>EBS-YYMM-XXXX</code>) or Phone.</li>
-          <li><strong>Warranty Center:</strong> Real-time serial check & self-service registration.</li>
-          <li><strong>Legal Policies:</strong> Dynamic Privacy, Terms, and Refund disclosures.</li>
+        <strong style="color: #065f46; font-size: 7.8pt;">Customer Portal Modules:</strong>
+        <ul style="margin: 2px 0 0 10px; padding: 0; font-size: 7.2pt;">
+          <li><strong>Hero Section:</strong> CMS-driven value proposition & CTA links.</li>
+          <li><strong>Service Catalog:</strong> Battery, Rental, Showroom, Spare Parts.</li>
+          <li><strong>Ticket Tracker:</strong> Search by <code>EBS-YYMM-XXXX</code> or Phone.</li>
+          <li><strong>Warranty Center:</strong> Live serial lookup & self-registration.</li>
         </ul>
       </div>
       <div class="card-box">
-        <strong style="color: #065f46;">CMS-Driven Data Flow:</strong>
-        <p style="font-size: 7.5pt; margin-top: 2px;">
-          During initialization, the client invokes <code>GET /api/v1/content/public</code>. Hero typography, branding titles, service card lists, and phone numbers are loaded directly from MongoDB. If the server is offline, embedded graceful fallbacks prevent UI disruption.
+        <strong style="color: #065f46; font-size: 7.8pt;">Dynamic Data Propagation Flow:</strong>
+        <p style="font-size: 7.2pt; margin-top: 2px;">
+          When an administrator edits hero text or service card details in the Admin CMS, the changes are stored in MongoDB (<code>Content.ts</code>) and immediately reflected on the live public website without requiring code rebuilds or server restarts.
         </p>
       </div>
     </div>
 
-    <div class="grid-2">
-      <div class="screenshot-container">
-        <img src="{img_home}" class="screenshot-img" alt="Public Homepage Hero" />
-        <div class="screenshot-caption">Figure 2.1: Live Deployed Ekosmart Customer Homepage & Hero Banner</div>
-      </div>
-      <div class="screenshot-container">
-        <img src="{img_service_cards}" class="screenshot-img" alt="Public Service Cards" />
-        <div class="screenshot-caption">Figure 2.2: Soft-Coded Division Service Cards Grid (CMS Controlled)</div>
-      </div>
+    <!-- LARGE VISIBLE SCREENSHOT -->
+    <div class="screenshot-card">
+      <img src="{img_p2_services}" class="screenshot-img-large" alt="Public Service Cards" />
+      <div class="screenshot-caption">Figure 2.1: Live Ekosmart Public Portal — Soft-Coded Division Service Cards & Navigation Grid</div>
     </div>
 
-    <h2 class="section-heading">2.2 Public Website Implementation Audit</h2>
     <table class="table-custom">
       <tr><th>Module / Page</th><th>Component</th><th>Route</th><th>Implementation Status</th></tr>
       <tr><td>Customer Homepage</td><td><code>Home.tsx</code></td><td><code>/</code></td><td><span class="badge badge-emerald">IMPLEMENTED</span></td></tr>
@@ -364,7 +364,7 @@ html_content = f"""<!DOCTYPE html>
   </div>
   <div class="page-footer">
     <span>Confidential & Proprietary — Ekosmart EV Battery Solution</span>
-    <span>Software Project Documentation</span>
+    <span>Production System Documentation</span>
     <span>Page 2</span>
   </div>
 </div>
@@ -380,10 +380,12 @@ html_content = f"""<!DOCTYPE html>
   <div class="page-content">
     <h1 class="page-title">PAGE 3 — CUSTOMER COMPLAINT REGISTRATION</h1>
     
-    <h2 class="section-heading">3.1 Grievance Ingestion & Processing Pipeline</h2>
-    <p>
-      The complaint registration module (<code>RegisterComplaint.tsx</code>) enables customers to submit technical battery issues, rental vehicle breakdowns, and showroom service requests. The submission pipeline connects to the dynamic form builder to generate custom inputs on a per-division basis.
-    </p>
+    <div>
+      <h2 class="section-heading">3.1 Grievance Ingestion & Dynamic Intake Schema</h2>
+      <p>
+        The complaint registration pipeline (<code>RegisterComplaint.tsx</code>) enables customers to submit technical battery issues, rental breakdowns, and showroom service requests. The frontend connects to the dynamic form builder to fetch custom inputs on a per-division basis.
+      </p>
+    </div>
 
     <div class="flowchart">
 [Customer Selects Division] --> [GET /forms/public/fields/:sec] --> [Renders Dynamic Technical Fields]
@@ -395,32 +397,24 @@ html_content = f"""<!DOCTYPE html>
 [Database Ledger Updated] --> [Assigned to Division Staff] --> [Status: PENDING -> IN_PROGRESS -> RESOLVED]
     </div>
 
-    <div class="grid-2">
-      <div class="screenshot-container">
-        <img src="{img_complaint_form}" class="screenshot-img" alt="Complaint Registration Form" />
-        <div class="screenshot-caption">Figure 3.1: Service Complaint Intake Form with Dynamic Technical Fields</div>
-      </div>
-      <div class="screenshot-container">
-        <img src="{img_track_warranty}" class="screenshot-img" alt="Ticket Status Tracker" />
-        <div class="screenshot-caption">Figure 3.2: Real-Time Ticket Status Tracker & Search Interface</div>
-      </div>
+    <!-- LARGE VISIBLE SCREENSHOT -->
+    <div class="screenshot-card">
+      <img src="{img_p3_complaint}" class="screenshot-img-large" alt="Complaint Registration Form" />
+      <div class="screenshot-caption">Figure 3.1: Service Complaint Registration Form with Dynamic Technical Fields & File Upload</div>
     </div>
 
-    <h2 class="section-heading">3.2 Complaint Lifecycle & Reference Specification</h2>
+    <h2 class="section-heading">3.2 Complaint Reference & Lifecycle Specification</h2>
     <table class="table-custom">
       <tr><th>Stage / Status</th><th>System Action</th><th>Visibility & Post-Resolution Behavior</th></tr>
-      <tr><td><strong>1. PENDING (NEW)</strong></td><td>Ticket generated (<code>EBS-2609-XXXX</code>), customer record created.</td><td>Visible on customer tracker & admin/employee incoming queue.</td></tr>
-      <tr><td><strong>2. ASSIGNED</strong></td><td>Ticket mapped to specific division specialist or engineer.</td><td>Employee assigned queue updated; SLA countdown active.</td></tr>
-      <tr><td><strong>3. IN PROGRESS</strong></td><td>Battery placed on diagnostic test bench / cell balancing.</td><td>Customer tracking displays "Under Lab Diagnostics".</td></tr>
-      <tr><td><strong>4. RESOLVED / CLOSED</strong></td><td>Repair complete, root-cause logged, parts replaced.</td><td>Moved from active workbench to permanent audit ledger.</td></tr>
+      <tr><td><strong>1. PENDING (NEW)</strong></td><td>Ticket generated (<code>EBS-2609-XXXX</code>), customer profile created.</td><td>Visible on customer tracker & incoming queue.</td></tr>
+      <tr><td><strong>2. ASSIGNED</strong></td><td>Ticket mapped to specific division specialist or engineer.</td><td>Employee assigned queue updated; SLA active.</td></tr>
+      <tr><td><strong>3. IN PROGRESS</strong></td><td>Battery placed on diagnostic test bench / cell balancing.</td><td>Tracking displays "Under Lab Diagnostics".</td></tr>
+      <tr><td><strong>4. RESOLVED / CLOSED</strong></td><td>Repair complete, root-cause logged, parts replaced.</td><td>Moved from active queue to permanent history ledger.</td></tr>
     </table>
-    <p style="font-size: 7.5pt; color: #475569; margin-top: 2px;">
-      *Note on OTP Verification: The UI features an OTP verification modal; direct phone logging is currently active while SMS gateway integration remains <span class="badge badge-amber">FRONTEND/UI ONLY</span>.
-    </p>
   </div>
   <div class="page-footer">
     <span>Confidential & Proprietary — Ekosmart EV Battery Solution</span>
-    <span>Software Project Documentation</span>
+    <span>Production System Documentation</span>
     <span>Page 3</span>
   </div>
 </div>
@@ -436,44 +430,40 @@ html_content = f"""<!DOCTYPE html>
   <div class="page-content">
     <h1 class="page-title">PAGE 4 — WARRANTY AND CUSTOMER MANAGEMENT</h1>
     
-    <h2 class="section-heading">4.1 Warranty Verification Engine & Coverage Rules</h2>
-    <p>
-      The warranty system (<code>backend/src/models/Warranty.ts</code>) governs product coverage for EV battery packs, chargers, and vehicles. When a customer or staff enters a serial number or invoice ID, the system queries MongoDB and computes remaining validity in real time.
-    </p>
+    <div>
+      <h2 class="section-heading">4.1 Warranty Verification Engine & Coverage Rules</h2>
+      <p>
+        The warranty system (<code>backend/src/models/Warranty.ts</code>) governs product coverage for EV battery packs, chargers, and vehicles. When a serial number or invoice ID is queried, the system queries MongoDB and computes remaining validity in real time.
+      </p>
+    </div>
 
     <div class="grid-2">
       <div class="card-box">
-        <strong style="color: #065f46;">Automated Expiry Computation:</strong>
-        <p style="font-size: 7.5pt; margin-top: 2px;">
+        <strong style="color: #065f46; font-size: 7.8pt;">Automated Expiry Computation:</strong>
+        <p style="font-size: 7.2pt; margin-top: 2px;">
           $$\\text{{Expiry Date}} = \\text{{Purchase Date}} + \\text{{Duration (Months)}}$$
           $$\\text{{Remaining Days}} = \\text{{Expiry Date}} - \\text{{Current Date}}$$
         </p>
-        <ul style="margin: 2px 0 0 12px; padding: 0; font-size: 7.3pt;">
+        <ul style="margin: 2px 0 0 10px; padding: 0; font-size: 7.1pt;">
           <li><strong>Active Coverage:</strong> Remaining Days &gt; 30 days.</li>
           <li><strong>Expiring Soon:</strong> 0 &lt; Remaining Days &le; 30 days.</li>
           <li><strong>Out of Warranty / Expired:</strong> Remaining Days &le; 0 days.</li>
         </ul>
       </div>
       <div class="card-box">
-        <strong style="color: #065f46;">Customer Relationship Ledger:</strong>
-        <p style="font-size: 7.5pt; margin-top: 2px;">
+        <strong style="color: #065f46; font-size: 7.8pt;">Customer Relationship Directory:</strong>
+        <p style="font-size: 7.2pt; margin-top: 2px;">
           The customer model (<code>Customer.ts</code>) acts as a centralized directory indexed by 10-digit mobile number. Every POS bill, complaint ticket, and warranty registration automatically associates with the customer's master record.
         </p>
       </div>
     </div>
 
-    <div class="grid-2">
-      <div class="screenshot-container">
-        <img src="{img_warranty_mgr}" class="screenshot-img" alt="Warranty Management Screen" />
-        <div class="screenshot-caption">Figure 4.1: Admin Warranty Manager with Date Filters & Excel Export</div>
-      </div>
-      <div class="screenshot-container">
-        <img src="{img_customer_dossier}" class="screenshot-img" alt="Customer Management Ledger" />
-        <div class="screenshot-caption">Figure 4.2: Customer History Ledger linking Complaints & Invoices</div>
-      </div>
+    <!-- LARGE VISIBLE SCREENSHOT -->
+    <div class="screenshot-card">
+      <img src="{img_p4_warranty}" class="screenshot-img-large" alt="Warranty Management Screen" />
+      <div class="screenshot-caption">Figure 4.1: Admin Warranty Manager with Date Range Filtering & Excel/CSV Export Engine</div>
     </div>
 
-    <h2 class="section-heading">4.2 Warranty & Customer Module Status</h2>
     <table class="table-custom">
       <tr><th>Feature / Capability</th><th>Endpoint / Controller</th><th>Status</th><th>Technical Notes</th></tr>
       <tr><td>Public Warranty Check</td><td><code>GET /api/v1/warranty/check/:query</code></td><td><span class="badge badge-emerald">IMPLEMENTED</span></td><td>Regex match on serial, bill #, customer mobile</td></tr>
@@ -484,7 +474,7 @@ html_content = f"""<!DOCTYPE html>
   </div>
   <div class="page-footer">
     <span>Confidential & Proprietary — Ekosmart EV Battery Solution</span>
-    <span>Software Project Documentation</span>
+    <span>Production System Documentation</span>
     <span>Page 4</span>
   </div>
 </div>
@@ -500,44 +490,37 @@ html_content = f"""<!DOCTYPE html>
   <div class="page-content">
     <h1 class="page-title">PAGE 5 — ADMIN LOGIN AND DASHBOARD</h1>
     
-    <h2 class="section-heading">5.1 Administrative Authentication & Security Architecture</h2>
-    <p>
-      The Admin Portal (<code>admin-portal/</code>) provides high-level command and control over company operations. Access requires authenticated credentials processed via <code>POST /api/v1/auth/login</code>. On successful bcrypt hash verification, the server issues a signed JSON Web Token (JWT) stored in <code>localStorage</code> (<code>admin_token</code>), attaching to all subsequent API requests.
-    </p>
-
-    <div class="grid-2">
-      <div class="screenshot-container">
-        <img src="{img_admin_login}" class="screenshot-img" alt="Admin Portal Login" />
-        <div class="screenshot-caption">Figure 5.1: Admin Portal Secure Authentication Gateway</div>
-      </div>
-      <div class="screenshot-container">
-        <img src="{img_admin_dash}" class="screenshot-img" alt="Admin Dashboard KPIs" />
-        <div class="screenshot-caption">Figure 5.2: Admin Operational Dashboard with Real-Time KPI Cards & Date Filter</div>
-      </div>
+    <div>
+      <h2 class="section-heading">5.1 Administrative Authentication & Dashboard Topology</h2>
+      <p>
+        The Admin Portal (<code>admin-portal/</code>) provides high-level command and control over company operations. Access requires authenticated credentials processed via <code>POST /api/v1/auth/login</code>. On verification, the server issues a signed JWT stored in <code>localStorage</code> (<code>admin_token</code>), attaching to all subsequent API calls.
+      </p>
     </div>
 
-    <h2 class="section-heading">5.2 Operational KPIs & Date Filter Presets</h2>
-    <p>
-      The dashboard aggregates live metrics across services, inventory, and revenue via <code>GET /api/v1/dashboard/stats</code>:
-    </p>
     <div class="grid-3">
       <div class="card-box" style="text-align: center;">
-        <strong style="color: #065f46; font-size: 8pt;">Service Counters</strong>
-        <div style="font-size: 7.2pt; margin-top: 2px;">Total Complaints, Pending Inspection, In-Progress Diagnostics, Resolved Tickets.</div>
+        <strong style="color: #065f46; font-size: 7.5pt;">Service Counters</strong>
+        <div style="font-size: 7pt; margin-top: 1px;">Total Complaints, Pending Inspection, In-Progress Diagnostics, Resolved Tickets.</div>
       </div>
       <div class="card-box" style="text-align: center;">
-        <strong style="color: #1e40af; font-size: 8pt;">Commercial Metrics</strong>
-        <div style="font-size: 7.2pt; margin-top: 2px;">Total Showroom Revenue (₹), Completed Invoices, Registered Warranties.</div>
+        <strong style="color: #1e40af; font-size: 7.5pt;">Commercial Metrics</strong>
+        <div style="font-size: 7pt; margin-top: 1px;">Total Showroom Revenue (₹), Completed Invoices, Registered Warranties.</div>
       </div>
       <div class="card-box" style="text-align: center;">
-        <strong style="color: #92400e; font-size: 8pt;">Warehouse & Staff</strong>
-        <div style="font-size: 7.2pt; margin-top: 2px;">Catalog Items, Available Batteries, Active Field Engineers.</div>
+        <strong style="color: #92400e; font-size: 7.5pt;">Warehouse & Staff</strong>
+        <div style="font-size: 7pt; margin-top: 1px;">Catalog Items, Available Batteries, Active Field Engineers.</div>
       </div>
     </div>
 
-    <h2 class="section-heading">5.3 Dashboard Date Behavior Specification</h2>
+    <!-- LARGE VISIBLE SCREENSHOT -->
+    <div class="screenshot-card">
+      <img src="{img_p5_dashboard}" class="screenshot-img-large" alt="Admin Dashboard KPIs" />
+      <div class="screenshot-caption">Figure 5.1: Real-Time Admin KPI Dashboard with Date Range Presets & Commercial Analytics</div>
+    </div>
+
+    <h2 class="section-heading">5.2 Dashboard Date Range Behavior Specification</h2>
     <table class="table-custom">
-      <tr><th>Preset Filter</th><th>Date Calculation / Scope</th><th>Implementation Status</th></tr>
+      <tr><th>Preset Filter</th><th>Date Scope / Calculation</th><th>Implementation Status</th></tr>
       <tr><td><strong>TODAY (Default)</strong></td><td><code>TODAY = default view</code> (00:00:00 to 23:59:59 local date)</td><td><span class="badge badge-emerald">IMPLEMENTED</span></td></tr>
       <tr><td><strong>Yesterday / 7 Days</strong></td><td>Past 24 hours / Past 7 rolling calendar days</td><td><span class="badge badge-emerald">IMPLEMENTED</span></td></tr>
       <tr><td><strong>30 Days / This Month</strong></td><td>Past 30 rolling days / First day of month to current timestamp</td><td><span class="badge badge-emerald">IMPLEMENTED</span></td></tr>
@@ -546,7 +529,7 @@ html_content = f"""<!DOCTYPE html>
   </div>
   <div class="page-footer">
     <span>Confidential & Proprietary — Ekosmart EV Battery Solution</span>
-    <span>Software Project Documentation</span>
+    <span>Production System Documentation</span>
     <span>Page 5</span>
   </div>
 </div>
@@ -562,10 +545,12 @@ html_content = f"""<!DOCTYPE html>
   <div class="page-content">
     <h1 class="page-title">PAGE 6 — ADMIN CMS & SOFT-CODED WEBSITE MANAGEMENT</h1>
     
-    <h2 class="section-heading">6.1 Soft-Coded Philosophy & Architecture</h2>
-    <p>
-      In the Ekosmart platform, <strong>soft-coding</strong> means that marketing text, hero typography, dynamic service cards, plant coordinates, and legal terms are decoupled from static code and stored in MongoDB (<code>Content.ts</code>). Administrators configure the entire platform through the CMS without modifying code or redeploying the application.
-    </p>
+    <div>
+      <h2 class="section-heading">6.1 Soft-Coded Philosophy & Data Propagation</h2>
+      <p>
+        In the Ekosmart platform, <strong>soft-coding</strong> means that marketing text, hero typography, dynamic service cards, plant coordinates, and legal terms are decoupled from static code and stored in MongoDB (<code>Content.ts</code>). Administrators configure the entire platform through the CMS without modifying code or redeploying the application.
+      </p>
+    </div>
 
     <div class="flowchart">
 [Admin CMS Studio] --> [PUT /api/v1/content/admin/update] --> [MongoDB: Content Collection]
@@ -574,18 +559,13 @@ html_content = f"""<!DOCTYPE html>
 (Renders Live Hero, Service Cards, Contacts, Terms without Redeployment)
     </div>
 
-    <div class="grid-2">
-      <div class="screenshot-container">
-        <img src="{img_cms_editor}" class="screenshot-img" alt="CMS Service Card Editor" />
-        <div class="screenshot-caption">Figure 6.1: Admin CMS Service Card & Hero Management Studio</div>
-      </div>
-      <div class="screenshot-container">
-        <img src="{img_home}" class="screenshot-img" alt="Public Result" />
-        <div class="screenshot-caption">Figure 6.2: Live Public Website displaying CMS Managed Service Cards</div>
-      </div>
+    <!-- LARGE VISIBLE SCREENSHOT -->
+    <div class="screenshot-card">
+      <img src="{img_p6_cms}" class="screenshot-img-large" alt="Admin CMS Studio" />
+      <div class="screenshot-caption">Figure 6.1: Admin CMS Content Studio — Service Card Management, Ordering & Visibility Toggles</div>
     </div>
 
-    <h2 class="section-heading">6.2 Configurable CMS Modules</h2>
+    <h2 class="section-heading">6.2 Configurable CMS Modules & Single Source of Truth</h2>
     <table class="table-custom">
       <tr><th>CMS Module</th><th>Configurable Properties</th><th>Database Storage / Schema</th></tr>
       <tr><td><strong>Hero & Branding</strong></td><td>Business Name, Tagline, Hero Title, Subtitle, CTA buttons</td><td><code>Content.companyProfile</code>, <code>Content.hero</code></td></tr>
@@ -596,7 +576,7 @@ html_content = f"""<!DOCTYPE html>
   </div>
   <div class="page-footer">
     <span>Confidential & Proprietary — Ekosmart EV Battery Solution</span>
-    <span>Software Project Documentation</span>
+    <span>Production System Documentation</span>
     <span>Page 6</span>
   </div>
 </div>
@@ -612,42 +592,38 @@ html_content = f"""<!DOCTYPE html>
   <div class="page-content">
     <h1 class="page-title">PAGE 7 — DYNAMIC FORM BUILDER</h1>
     
-    <h2 class="section-heading">7.1 Dynamic Schema Architecture per Division</h2>
-    <p>
-      The Dynamic Form Builder (<code>admin-portal/src/pages/Forms.tsx</code>) enables administrators to construct custom grievance intake forms for each operational area (e.g., <em>Battery</em>, <em>Rental</em>, <em>Showroom</em>, <em>Spare Parts</em>). Field schemas are stored in MongoDB (<code>ComplaintForm.ts</code>) and rendered dynamically on the public portal.
-    </p>
+    <div>
+      <h2 class="section-heading">7.1 Dynamic Schema Architecture per Division</h2>
+      <p>
+        The Dynamic Form Builder (<code>admin-portal/src/pages/Forms.tsx</code>) enables administrators to construct custom grievance intake forms for each operational area (e.g., <em>Battery</em>, <em>Rental</em>, <em>Showroom</em>, <em>Spare Parts</em>). Field schemas are stored in MongoDB (<code>ComplaintForm.ts</code>) and rendered dynamically on the public portal.
+      </p>
+    </div>
 
     <div class="grid-2">
       <div class="card-box">
-        <strong style="color: #065f46;">Supported Field Types:</strong>
-        <ul style="margin: 2px 0 0 12px; padding: 0; font-size: 7.3pt;">
+        <strong style="color: #065f46; font-size: 7.8pt;">Supported Input Field Types:</strong>
+        <ul style="margin: 2px 0 0 10px; padding: 0; font-size: 7.1pt;">
           <li><strong>Text / Textarea:</strong> Single line & paragraph fault descriptions.</li>
           <li><strong>Number:</strong> Battery voltage, ampere-hour (Ah), mileage.</li>
           <li><strong>Select Dropdown:</strong> Fault codes, cell chemistry (LFP/NMC).</li>
-          <li><strong>Date / Checkbox:</strong> Manufacturing date, warranty claim confirmation.</li>
+          <li><strong>Date / Checkbox:</strong> Manufacturing date, warranty confirmation.</li>
           <li><strong>File Upload:</strong> Diagnostic test reports, damaged battery photos.</li>
         </ul>
       </div>
       <div class="card-box">
-        <strong style="color: #065f46;">Client-Side Dynamic Rendering:</strong>
-        <p style="font-size: 7.5pt; margin-top: 2px;">
+        <strong style="color: #065f46; font-size: 7.8pt;">Client-Side Dynamic Rendering:</strong>
+        <p style="font-size: 7.1pt; margin-top: 2px;">
           When a customer selects a division on <code>RegisterComplaint.tsx</code>, the component queries <code>GET /api/v1/forms/public/fields/:section</code>. Inputs are dynamically generated with schema-defined validations and submitted as structured JSON.
         </p>
       </div>
     </div>
 
-    <div class="grid-2">
-      <div class="screenshot-container">
-        <img src="{img_form_builder}" class="screenshot-img" alt="Admin Dynamic Form Builder" />
-        <div class="screenshot-caption">Figure 7.1: Admin Dynamic Form Studio & Field Customizer</div>
-      </div>
-      <div class="screenshot-container">
-        <img src="{img_complaint_form}" class="screenshot-img" alt="Public Form Output" />
-        <div class="screenshot-caption">Figure 7.2: Dynamically Rendered Intake Form on Public Website</div>
-      </div>
+    <!-- LARGE VISIBLE SCREENSHOT -->
+    <div class="screenshot-card">
+      <img src="{img_p7_form_builder}" class="screenshot-img-portrait" alt="Admin Dynamic Form Builder" />
+      <div class="screenshot-caption">Figure 7.1: Admin Dynamic Form Builder Studio — Custom Field Editor, Validations & Order Manager</div>
     </div>
 
-    <h2 class="section-heading">7.2 Dynamic Field Schema Definition</h2>
     <table class="table-custom">
       <tr><th>Property</th><th>Type</th><th>Description / Operational Role</th></tr>
       <tr><td><code>fieldName</code></td><td>String</td><td>Database key used in the complaint's <code>formData</code> JSON payload.</td></tr>
@@ -659,7 +635,7 @@ html_content = f"""<!DOCTYPE html>
   </div>
   <div class="page-footer">
     <span>Confidential & Proprietary — Ekosmart EV Battery Solution</span>
-    <span>Software Project Documentation</span>
+    <span>Production System Documentation</span>
     <span>Page 7</span>
   </div>
 </div>
@@ -675,10 +651,12 @@ html_content = f"""<!DOCTYPE html>
   <div class="page-content">
     <h1 class="page-title">PAGE 8 — ADMIN EMPLOYEE MANAGEMENT & PERMISSIONS</h1>
     
-    <h2 class="section-heading">8.1 Staff Onboarding & Profile Management</h2>
-    <p>
-      The Employee Management module (<code>admin-portal/src/pages/Employees.tsx</code>) handles staff profiles, access credentials, department assignments, and security roles. Administrators maintain complete records including Employee ID (<code>EMP-XXXX</code>), name, contact number, official email, department, designation, and password visibility toggles.
-    </p>
+    <div>
+      <h2 class="section-heading">8.1 Staff Onboarding & Profile Management</h2>
+      <p>
+        The Employee Management module (<code>admin-portal/src/pages/Employees.tsx</code>) handles staff profiles, access credentials, department assignments, and security roles. Administrators maintain complete records including Employee ID (<code>EMP-XXXX</code>), name, contact number, official email, department, designation, and password visibility toggles.
+      </p>
+    </div>
 
     <div class="flowchart">
 [Admin Creates Employee] --> [Assigns Role & Permissions] --> [Saves to MongoDB Employee Model]
@@ -689,15 +667,10 @@ html_content = f"""<!DOCTYPE html>
 [Client Navigation & API Middleware Enforce Permission Gates]
     </div>
 
-    <div class="grid-2">
-      <div class="screenshot-container">
-        <img src="{img_emp_mgmt}" class="screenshot-img" alt="Employee Management Table" />
-        <div class="screenshot-caption">Figure 8.1: Admin Employee Directory, Role Assignment & Search Ledger</div>
-      </div>
-      <div class="screenshot-container">
-        <img src="{img_emp_mgmt}" class="screenshot-img" alt="Permissions Modal" />
-        <div class="screenshot-caption">Figure 8.2: Granular Role-Based Access Control (RBAC) Configuration</div>
-      </div>
+    <!-- LARGE VISIBLE SCREENSHOT -->
+    <div class="screenshot-card">
+      <img src="{img_p8_employees}" class="screenshot-img-large" alt="Employee Management Ledger" />
+      <div class="screenshot-caption">Figure 8.1: Admin Employee Directory, Role Assignment, Search Ledger & Granular RBAC Permissions</div>
     </div>
 
     <h2 class="section-heading">8.2 Granular RBAC Permission Matrix</h2>
@@ -715,7 +688,7 @@ html_content = f"""<!DOCTYPE html>
   </div>
   <div class="page-footer">
     <span>Confidential & Proprietary — Ekosmart EV Battery Solution</span>
-    <span>Software Project Documentation</span>
+    <span>Production System Documentation</span>
     <span>Page 8</span>
   </div>
 </div>
@@ -731,49 +704,42 @@ html_content = f"""<!DOCTYPE html>
   <div class="page-content">
     <h1 class="page-title">PAGE 9 — ID CARD, SALARY AND PAYROLL</h1>
     
-    <h2 class="section-heading">9.1 Digital Employee ID Card Engine</h2>
-    <p>
-      The ID card system (<code>IdCardModal.tsx</code> & <code>MyIdCard.tsx</code>) generates verified digital identification badges featuring company branding, staff photograph/avatar, official Employee ID (<code>EMP-XXXX</code>), division, designation, and an encoded QR badge for on-site scanning.
-    </p>
-
-    <div class="grid-2">
-      <div class="screenshot-container">
-        <img src="{img_id_card}" class="screenshot-img" alt="Digital Employee ID Card" />
-        <div class="screenshot-caption">Figure 9.1: Digital Employee ID Badge with Encoded QR Badge</div>
-      </div>
-      <div class="screenshot-container">
-        <img src="{img_salary_slip}" class="screenshot-img" alt="Salary Slip Modal" />
-        <div class="screenshot-caption">Figure 9.2: Official Monthly Remuneration Salary Slip Modal</div>
-      </div>
+    <div>
+      <h2 class="section-heading">9.1 Digital Employee ID Card & Remuneration Architecture</h2>
+      <p>
+        The payroll and ID card modules (<code>SalarySlipModal.tsx</code>, <code>IdCardModal.tsx</code> & <code>employee.controller.ts</code>) manage employee verification badges and monthly compensation packages. The engine records basic earnings, statutory deductions, computes net pay, and translates amounts into Indian Rupees in words.
+      </p>
     </div>
 
-    <h2 class="section-heading">9.2 Payroll Calculation & Isolated Payslip Engine</h2>
-    <p>
-      The payroll module (<code>SalarySlipModal.tsx</code> & <code>backend/src/controllers/employee.controller.ts</code>) manages remuneration packages. It records basic earnings, statutory deductions, computes net pay, and translates amounts into Indian Rupees in words.
-    </p>
     <div class="grid-2">
       <div class="card-box">
-        <strong style="color: #065f46;">Earnings & Allowances:</strong>
-        <p style="font-size: 7.3pt; margin-top: 2px;">
+        <strong style="color: #065f46; font-size: 7.8pt;">Earnings & Allowances:</strong>
+        <p style="font-size: 7.1pt; margin-top: 1px;">
           Basic Salary, HRA, Conveyance, Special/Tech Allowance, Overtime & Field Pay, Performance Bonus, Arrears.
         </p>
       </div>
       <div class="card-box">
-        <strong style="color: #92400e;">Statutory Deductions:</strong>
-        <p style="font-size: 7.3pt; margin-top: 2px;">
+        <strong style="color: #92400e; font-size: 7.8pt;">Statutory Deductions:</strong>
+        <p style="font-size: 7.1pt; margin-top: 1px;">
           Provident Fund (EPF 12%), ESI Contribution, Professional Tax (PT), TDS / Income Tax, Advance & Loan Recovery.
         </p>
       </div>
     </div>
 
-    <h2 class="section-heading">9.3 Isolated Single-Page A4 Print Engine</h2>
-    <p style="font-size: 7.5pt;">
-      The application utilizes an isolated print engine (<code>utils/print.ts</code>). When an employee clicks <strong>Print / Save PDF</strong>, a hidden iframe renders strictly the payslip card, preventing surrounding sidebars, navbars, and buttons from leaking into the printout or PDF.
+    <!-- LARGE VISIBLE SCREENSHOT -->
+    <div class="screenshot-card">
+      <img src="{img_p9_salary}" class="screenshot-img-large" alt="Salary Slip Modal" />
+      <div class="screenshot-caption">Figure 9.1: Admin Monthly Salary Structure, Deduction Ledger & Payslip Generator Modal</div>
+    </div>
+
+    <h2 class="section-heading">9.2 Isolated Single-Page A4 Print Engine</h2>
+    <p style="font-size: 7.3pt;">
+      The application utilizes an isolated print engine (<code>utils/print.ts</code>). When clicking <strong>Print / Save PDF</strong>, a hidden iframe renders strictly the payslip card, preventing surrounding sidebars, navbars, and buttons from leaking into the printout or PDF.
     </p>
   </div>
   <div class="page-footer">
     <span>Confidential & Proprietary — Ekosmart EV Battery Solution</span>
-    <span>Software Project Documentation</span>
+    <span>Production System Documentation</span>
     <span>Page 9</span>
   </div>
 </div>
@@ -789,10 +755,12 @@ html_content = f"""<!DOCTYPE html>
   <div class="page-content">
     <h1 class="page-title">PAGE 10 — BILLING AND INVOICE SYSTEM</h1>
     
-    <h2 class="section-heading">10.1 Showroom Point-of-Sale Billing Terminal</h2>
-    <p>
-      The billing module (<code>BillingManager.tsx</code> & <code>Billing.tsx</code>) serves as the POS checkout system for showrooms and service centers. Operators can add line items, calculate discounts and GST (18%), scan battery pack barcodes, select payment modes (UPI, Cash, Card, Finance), and generate tax invoices.
-    </p>
+    <div>
+      <h2 class="section-heading">10.1 Showroom Point-of-Sale Billing Terminal</h2>
+      <p>
+        The billing module (<code>BillingManager.tsx</code> & <code>Billing.tsx</code>) serves as the POS checkout system for showrooms and service centers. Operators can add line items, calculate discounts and GST (18%), scan battery pack barcodes, select payment modes (UPI, Cash, Card, Finance), and generate tax invoices.
+      </p>
+    </div>
 
     <div class="flowchart">
 [Select Product / Battery] --> [Scan Serial via Camera Scanner] --> [Validate Stock Level]
@@ -803,15 +771,10 @@ html_content = f"""<!DOCTYPE html>
              +---> [Decrements Available Warehouse Stock Quantity]
     </div>
 
-    <div class="grid-2">
-      <div class="screenshot-container">
-        <img src="{img_pos_billing}" class="screenshot-img" alt="POS Billing Terminal" />
-        <div class="screenshot-caption">Figure 10.1: Showroom Point-of-Sale Billing Terminal</div>
-      </div>
-      <div class="screenshot-container">
-        <img src="{img_pos_billing}" class="screenshot-img" alt="Tax Invoice Slip" />
-        <div class="screenshot-caption">Figure 10.2: Generated Tax Invoice Slip with Bill Template Styling</div>
-      </div>
+    <!-- LARGE VISIBLE SCREENSHOT -->
+    <div class="screenshot-card">
+      <img src="{img_p10_billing}" class="screenshot-img-large" alt="POS Billing Terminal" />
+      <div class="screenshot-caption">Figure 10.1: Showroom Point-of-Sale Billing Terminal & Customer Tax Invoice Slip Modal</div>
     </div>
 
     <h2 class="section-heading">10.2 Soft-Coded Bill Template Designer</h2>
@@ -825,7 +788,7 @@ html_content = f"""<!DOCTYPE html>
   </div>
   <div class="page-footer">
     <span>Confidential & Proprietary — Ekosmart EV Battery Solution</span>
-    <span>Software Project Documentation</span>
+    <span>Production System Documentation</span>
     <span>Page 10</span>
   </div>
 </div>
@@ -841,20 +804,17 @@ html_content = f"""<!DOCTYPE html>
   <div class="page-content">
     <h1 class="page-title">PAGE 11 — EMPLOYEE PORTAL</h1>
     
-    <h2 class="section-heading">11.1 Employee Workspace Architecture</h2>
-    <p>
-      The Employee Portal (<code>employee-portal/</code>) provides field engineers and showroom staff with a dedicated workstation. Authentication via <code>POST /api/v1/auth/login</code> verifies credentials, issues an <code>employee_token</code>, and evaluates RBAC permissions to dynamically configure the workspace.
-    </p>
+    <div>
+      <h2 class="section-heading">11.1 Employee Workspace Architecture</h2>
+      <p>
+        The Employee Portal (<code>employee-portal/</code>) provides field engineers and showroom staff with a dedicated workstation. Authentication via <code>POST /api/v1/auth/login</code> verifies credentials, issues an <code>employee_token</code>, and evaluates RBAC permissions to dynamically configure the workspace.
+      </p>
+    </div>
 
-    <div class="grid-2">
-      <div class="screenshot-container">
-        <img src="{img_emp_login}" class="screenshot-img" alt="Employee Login" />
-        <div class="screenshot-caption">Figure 11.1: Employee Portal Secure Authentication Gateway</div>
-      </div>
-      <div class="screenshot-container">
-        <img src="{img_emp_dash}" class="screenshot-img" alt="Employee Dashboard" />
-        <div class="screenshot-caption">Figure 11.2: Employee Workspace Dashboard & Active Assigned Queue</div>
-      </div>
+    <!-- LARGE VISIBLE SCREENSHOT -->
+    <div class="screenshot-card">
+      <img src="{img_p11_emp_dash}" class="screenshot-img-large" alt="Employee Dashboard" />
+      <div class="screenshot-caption">Figure 11.1: Employee Workspace Dashboard, Active Assigned Queue & Operational Metrics</div>
     </div>
 
     <h2 class="section-heading">11.2 Employee Portal Functional Module Directory</h2>
@@ -872,7 +832,7 @@ html_content = f"""<!DOCTYPE html>
   </div>
   <div class="page-footer">
     <span>Confidential & Proprietary — Ekosmart EV Battery Solution</span>
-    <span>Software Project Documentation</span>
+    <span>Production System Documentation</span>
     <span>Page 11</span>
   </div>
 </div>
@@ -888,10 +848,12 @@ html_content = f"""<!DOCTYPE html>
   <div class="page-content">
     <h1 class="page-title">PAGE 12 — EMPLOYEE COMPLAINT, CUSTOMER & WARRANTY WORKFLOW</h1>
     
-    <h2 class="section-heading">12.1 End-to-End Service Resolution Workflow</h2>
-    <p>
-      When an employee logs into the portal, tickets assigned to their division appear in their active queue. Staff open the technical problem dossier (<code>TicketDetailModal.tsx</code>) to inspect customer complaints, photos, and dynamic test metrics.
-    </p>
+    <div>
+      <h2 class="section-heading">12.1 End-to-End Service Resolution Workflow</h2>
+      <p>
+        When an employee logs into the portal, tickets assigned to their division appear in their active queue. Staff open the technical problem dossier (<code>TicketDetailModal.tsx</code>) to inspect customer complaints, photos, and dynamic test metrics.
+      </p>
+    </div>
 
     <div class="flowchart">
 [Assigned Ticket in Queue] --> [Inspect Customer Details & Photos] --> [Update Status to "IN PROGRESS"]
@@ -899,15 +861,10 @@ html_content = f"""<!DOCTYPE html>
 [Ticket Moved to Permanent History Ledger] <-- [Resolve Ticket & Add Remarks] <--+
     </div>
 
-    <div class="grid-2">
-      <div class="screenshot-container">
-        <img src="{img_complaints_list}" class="screenshot-img" alt="Complaint List" />
-        <div class="screenshot-caption">Figure 12.1: Service Complaint Problem Dossier & Technical Resolution Modal</div>
-      </div>
-      <div class="screenshot-container">
-        <img src="{img_emp_reports}" class="screenshot-img" alt="Assigned Workload" />
-        <div class="screenshot-caption">Figure 12.2: Staff Assigned Workload Audit & Resolution History</div>
-      </div>
+    <!-- LARGE VISIBLE SCREENSHOT -->
+    <div class="screenshot-card">
+      <img src="{img_p12_dossier}" class="screenshot-img-large" alt="Complaint Dossier" />
+      <div class="screenshot-caption">Figure 12.1: Service Complaint Inspection Dossier, Status Update & Resolution Workbench</div>
     </div>
 
     <h2 class="section-heading">12.2 Workload Isolation & Active Queue Rules</h2>
@@ -921,7 +878,7 @@ html_content = f"""<!DOCTYPE html>
   </div>
   <div class="page-footer">
     <span>Confidential & Proprietary — Ekosmart EV Battery Solution</span>
-    <span>Software Project Documentation</span>
+    <span>Production System Documentation</span>
     <span>Page 12</span>
   </div>
 </div>
@@ -937,20 +894,17 @@ html_content = f"""<!DOCTYPE html>
   <div class="page-content">
     <h1 class="page-title">PAGE 13 — STOCK, BILLING AND SCANNER</h1>
     
-    <h2 class="section-heading">13.1 Warehouse Stock & Inventory Architecture</h2>
-    <p>
-      The inventory engine (<code>backend/src/models/Stock.ts</code>) tracks catalog products, serialized battery packs, and movement ledgers across warehouses and showrooms. Stock items maintain status flags (<code>In Stock</code>, <code>Sold</code>, <code>Reserved</code>, <code>Damaged</code>) and record comprehensive movement histories.
-    </p>
+    <div>
+      <h2 class="section-heading">13.1 Warehouse Stock & Inventory Architecture</h2>
+      <p>
+        The inventory engine (<code>backend/src/models/Stock.ts</code>) tracks catalog products, serialized battery packs, and movement ledgers across warehouses and showrooms. Stock items maintain status flags (<code>In Stock</code>, <code>Sold</code>, <code>Reserved</code>, <code>Damaged</code>) and record comprehensive movement histories.
+      </p>
+    </div>
 
-    <div class="grid-2">
-      <div class="screenshot-container">
-        <img src="{img_stock_mgr}" class="screenshot-img" alt="Stock Inventory Explorer" />
-        <div class="screenshot-caption">Figure 13.1: Warehouse Inventory Explorer & Serial Number Lookup</div>
-      </div>
-      <div class="screenshot-container">
-        <img src="{img_scanner}" class="screenshot-img" alt="Camera Barcode Scanner" />
-        <div class="screenshot-caption">Figure 13.2: HTML5 Real-Time Camera Barcode & QR Scanner in Action</div>
-      </div>
+    <!-- LARGE VISIBLE SCREENSHOT -->
+    <div class="screenshot-card">
+      <img src="{img_p13_stock}" class="screenshot-img-large" alt="Warehouse Stock Inventory" />
+      <div class="screenshot-caption">Figure 13.1: Warehouse Stock Inventory Management, Serialized Battery Packs & Barcode Lookup</div>
     </div>
 
     <h2 class="section-heading">13.2 HTML5 Camera Barcode & QR Scanner Integration</h2>
@@ -969,7 +923,7 @@ html_content = f"""<!DOCTYPE html>
   </div>
   <div class="page-footer">
     <span>Confidential & Proprietary — Ekosmart EV Battery Solution</span>
-    <span>Software Project Documentation</span>
+    <span>Production System Documentation</span>
     <span>Page 13</span>
   </div>
 </div>
@@ -985,27 +939,23 @@ html_content = f"""<!DOCTYPE html>
   <div class="page-content">
     <h1 class="page-title">PAGE 14 — REPORTS, FILTERS AND EXCEL EXPORT</h1>
     
-    <h2 class="section-heading">14.1 Enterprise Reporting & Analytics Suite</h2>
-    <p>
-      The reporting engine (<code>admin-portal/src/pages/Reports.tsx</code> & <code>employee-portal/src/pages/Reports.tsx</code>) provides analytics across complaints, warranties, inventory, and revenue. It supports division filters (<em>Battery</em>, <em>Rental</em>, <em>Showroom</em>, <em>Spare Parts</em>) and date presets.
-    </p>
-
-    <div class="grid-2">
-      <div class="screenshot-container">
-        <img src="{img_admin_reports}" class="screenshot-img" alt="Admin Analytics Reports" />
-        <div class="screenshot-caption">Figure 14.1: Administrative Reports Suite with Date Presets & Division CSV Export</div>
-      </div>
-      <div class="screenshot-container">
-        <img src="{img_emp_reports}" class="screenshot-img" alt="Employee Reports" />
-        <div class="screenshot-caption">Figure 14.2: Staff Service Workload Audit & Excel/CSV Export Screen</div>
-      </div>
+    <div>
+      <h2 class="section-heading">14.1 Enterprise Reporting & Analytics Suite</h2>
+      <p>
+        The reporting engine (<code>admin-portal/src/pages/Reports.tsx</code> & <code>employee-portal/src/pages/Reports.tsx</code>) provides analytics across complaints, warranties, inventory, and revenue. It supports division filters (<em>Battery</em>, <em>Rental</em>, <em>Showroom</em>, <em>Spare Parts</em>) and date presets.
+      </p>
     </div>
 
-    <h2 class="section-heading">14.2 Date Range Presets & Workload Isolation</h2>
+    <!-- LARGE VISIBLE SCREENSHOT -->
+    <div class="screenshot-card">
+      <img src="{img_p14_reports}" class="screenshot-img-large" alt="Admin Reports Suite" />
+      <div class="screenshot-caption">Figure 14.1: Administrative Reports Suite with Date Presets, KPI Counters & Division CSV Export</div>
+    </div>
+
     <div class="grid-2">
       <div class="card-box">
-        <strong style="color: #065f46;">Date Range Filter Presets:</strong>
-        <ul style="margin: 2px 0 0 12px; padding: 0; font-size: 7.3pt;">
+        <strong style="color: #065f46; font-size: 7.8pt;">Date Range Filter Presets:</strong>
+        <ul style="margin: 2px 0 0 10px; padding: 0; font-size: 7.1pt;">
           <li><code>Today</code> (Default view) & <code>Yesterday</code></li>
           <li><code>Last 7 Days</code> & <code>Last 30 Days</code></li>
           <li><code>This Month</code> & <code>All Time</code></li>
@@ -1013,21 +963,21 @@ html_content = f"""<!DOCTYPE html>
         </ul>
       </div>
       <div class="card-box">
-        <strong style="color: #065f46;">Workload Isolation Guarantee:</strong>
-        <p style="font-size: 7.3pt; margin-top: 2px;">
+        <strong style="color: #065f46; font-size: 7.8pt;">Workload Isolation Guarantee:</strong>
+        <p style="font-size: 7.1pt; margin-top: 2px;">
           Employee Reports strictly filter tickets assigned to the logged-in staff member by matching <code>employeeId</code>, <code>_id</code>, <code>name</code>, and <code>email</code>, preventing data leakage across staff.
         </p>
       </div>
     </div>
 
-    <h2 class="section-heading">14.3 Excel / CSV Export Specifications</h2>
-    <p style="font-size: 7.5pt;">
+    <h2 class="section-heading">14.2 Excel / CSV Export Specifications</h2>
+    <p style="font-size: 7.3pt;">
       Export routines format data into RFC 4180 compliant CSV files with <code>\\uFEFF</code> UTF-8 Byte Order Marks (BOM), ensuring multilingual customer names and Indian Rupee (&8377;) currency symbols render cleanly in Microsoft Excel and Google Sheets.
     </p>
   </div>
   <div class="page-footer">
     <span>Confidential & Proprietary — Ekosmart EV Battery Solution</span>
-    <span>Software Project Documentation</span>
+    <span>Production System Documentation</span>
     <span>Page 14</span>
   </div>
 </div>
@@ -1043,15 +993,23 @@ html_content = f"""<!DOCTYPE html>
   <div class="page-content">
     <h1 class="page-title">PAGE 15 — COMPLETE SYSTEM FLOW & TECHNICAL SUMMARY</h1>
     
-    <h2 class="section-heading">15.1 Master End-to-End Operational Flow</h2>
-    <div class="flowchart" style="font-size: 6.8pt; line-height: 1.25;">
+    <div>
+      <h2 class="section-heading">15.1 Master End-to-End Operational Flow</h2>
+      <div class="flowchart" style="font-size: 6.5pt; line-height: 1.2;">
 [CUSTOMER] --> Public Portal --> Dynamic Form Intake --> Express API --> MongoDB Atlas (Ticket Created)
 [ADMIN]    --> Admin Portal  --> CMS / Form Designer / RBAC / Payroll --> MongoDB Atlas (Global Config)
 [EMPLOYEE] --> Employee Portal --> Diagnostic Dossier / POS / Stock --> MongoDB Atlas (Task Completed)
+      </div>
+    </div>
+
+    <!-- LARGE VISIBLE SCREENSHOT -->
+    <div class="screenshot-card">
+      <img src="{img_p15_summary}" class="screenshot-img-large" alt="Employee Workload Audit" />
+      <div class="screenshot-caption">Figure 15.1: Staff Assigned Workload Live Audit, Date Filter Presets & Excel CSV Export Terminal</div>
     </div>
 
     <h2 class="section-heading">15.2 Comprehensive System Implementation Audit Matrix</h2>
-    <table class="table-custom" style="font-size: 7pt;">
+    <table class="table-custom" style="font-size: 6.8pt;">
       <tr><th>System Module</th><th>Verified Status</th><th>Technical Architecture & Verification Notes</th></tr>
       <tr><td>Public Website</td><td><span class="badge badge-emerald">IMPLEMENTED</span></td><td>React 19 SPA, dynamic CMS hero, soft-coded division cards, mobile menu</td></tr>
       <tr><td>Admin Portal</td><td><span class="badge badge-emerald">IMPLEMENTED</span></td><td>KPI dashboard, CMS studio, dynamic form builder, staff management</td></tr>
@@ -1078,7 +1036,7 @@ html_content = f"""<!DOCTYPE html>
   </div>
   <div class="page-footer">
     <span>Confidential & Proprietary — Ekosmart EV Battery Solution</span>
-    <span>Software Project Documentation</span>
+    <span>Production System Documentation</span>
     <span>Page 15</span>
   </div>
 </div>
@@ -1110,7 +1068,6 @@ if os.path.exists(OUTPUT_PDF):
     size_kb = os.path.getsize(OUTPUT_PDF) / 1024
     with open(OUTPUT_PDF, "rb") as f:
         pdf_bytes = f.read()
-    # Count page objects
     page_count = len(re.findall(rb"/Type\s*/Page\b", pdf_bytes)) - len(re.findall(rb"/Type\s*/Pages\b", pdf_bytes))
     print(f"SUCCESS: Generated PDF at {OUTPUT_PDF}")
     print(f"Total Pages: {page_count}, File Size: {size_kb:.2f} KB")
