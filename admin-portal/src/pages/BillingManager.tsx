@@ -24,6 +24,7 @@ import ScannerModal from '../components/ScannerModal';
 import BillTemplateDesigner, { type IBillTemplate, normalizeTemplate } from '../components/BillTemplateDesigner';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { DateRangeFilter, type DateRangeState } from '../components/DateRangeFilter';
+import { printElement } from '../utils/print';
 
 export interface IBillLineItem {
   productId: string;
@@ -1095,11 +1096,12 @@ const BillingManager = () => {
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => window.print()}
+                  onClick={() => printElement('invoice-printable', `EKOSMART_Invoice_${selectedBill.invoiceNumber}`)}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-900 transition cursor-pointer"
+                  title="Print official invoice or choose 'Save as PDF' in the print dialog"
                 >
                   <Printer size={14} />
-                  <span>Print Slip</span>
+                  <span>Print / Save PDF</span>
                 </button>
                 <button
                   onClick={() => setShowInvoiceModal(false)}

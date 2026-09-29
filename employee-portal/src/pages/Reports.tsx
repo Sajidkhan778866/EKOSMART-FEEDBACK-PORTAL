@@ -20,6 +20,7 @@ import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { API_BASE_URL } from '../api/client';
 import { TicketDetailModal } from '../components/TicketDetailModal';
+import { printElement } from '../utils/print';
 
 export const Reports = () => {
   const { user } = useAuth();
@@ -284,11 +285,12 @@ export const Reports = () => {
         {/* Quick Actions */}
         <div className="flex items-center gap-3">
           <button
-            onClick={() => window.print()}
+            onClick={() => printElement('printable-service-report', `Employee_Service_Report_${user?.employeeId || 'STAFF'}`)}
             className="flex items-center gap-1.5 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition border border-slate-300 cursor-pointer shadow-xs"
+            title="Print clean service tickets table or save as PDF"
           >
             <Printer size={15} />
-            <span>Print Workload</span>
+            <span>Print / Save PDF</span>
           </button>
 
           <button
@@ -568,7 +570,7 @@ export const Reports = () => {
       </div>
 
       {/* Live Data Preview Table */}
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden p-6 space-y-4">
+      <div id="printable-service-report" className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden p-6 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-3">
           <div className="flex items-center gap-2">
             <Layers size={18} className="text-slate-700" />

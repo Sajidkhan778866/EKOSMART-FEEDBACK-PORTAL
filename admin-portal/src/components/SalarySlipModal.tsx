@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { billTemplateApi, employeeApi } from '../api/client';
 import { normalizeTemplate, type IBillTemplate } from './BillTemplateDesigner';
+import { printElement } from '../utils/print';
 
 interface SalarySlipModalProps {
   employee: any;
@@ -416,7 +417,10 @@ export const SalarySlipModal: React.FC<SalarySlipModalProps> = ({ employee, onCl
   };
 
   const handlePrint = () => {
-    window.print();
+    printElement(
+      'printable-salary-slip',
+      `EKOSMART_Payslip_${employee?.employeeId || 'STAFF'}_${selectedMonth}_${selectedYear}`
+    );
   };
 
   const handleCopySummary = () => {

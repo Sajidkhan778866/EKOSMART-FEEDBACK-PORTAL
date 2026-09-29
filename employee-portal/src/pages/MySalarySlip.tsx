@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { employeeApi, billTemplateApi } from '../api/client';
+import { printElement } from '../utils/print';
 
 export const numberToWordsINR = (num: number): string => {
   if (isNaN(num) || num <= 0) return 'Zero Rupees Only';
@@ -109,7 +110,10 @@ const MySalarySlip = () => {
   };
 
   const handlePrint = () => {
-    window.print();
+    printElement(
+      'printable-payslip',
+      `EKOSMART_Payslip_${user?.employeeId || 'STAFF'}_${selectedSlip?.month || ''}_${selectedSlip?.year || ''}`
+    );
   };
 
   const handleCopy = () => {
