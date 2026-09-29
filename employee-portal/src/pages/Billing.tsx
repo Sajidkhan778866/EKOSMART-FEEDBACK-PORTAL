@@ -13,9 +13,11 @@ import {
   Eye,
   Scan,
   Trash2,
+  Download,
 } from 'lucide-react';
 import { billingApi, stockApi, billTemplateApi } from '../api/client';
 import ScannerModal from '../components/ScannerModal';
+import { DateRangeFilter, type DateRangeState } from '../components/DateRangeFilter';
 
 export interface IBillLineItem {
   productId: string;
@@ -61,6 +63,10 @@ const Billing = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [activeTemplate, setActiveTemplate] = useState<any>(null);
+  const [exporting, setExporting] = useState(false);
+
+  // Date Filter
+  const [dateRange, setDateRange] = useState<DateRangeState>({ filter: 'all' });
 
   // Scanner Modal State
   const [showScanner, setShowScanner] = useState(false);
@@ -108,7 +114,7 @@ const Billing = () => {
   useEffect(() => {
     fetchBills();
     fetchActiveTemplate();
-  }, []);
+  }, [dateRange]);
 
   const fetchActiveTemplate = async () => {
     try {
@@ -126,6 +132,9 @@ const Billing = () => {
       setLoading(true);
       const res = await billingApi.getAll({
         search: search.trim() || undefined,
+        dateFilter: dateRange.filter,
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
       });
       if (res.data?.success) {
         setBills(res.data.data || []);
@@ -134,6 +143,32 @@ const Billing = () => {
       showAlert('error', err.response?.data?.message || 'Failed to load invoices');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleExportBills = async () => {
+    try {
+      setExporting(true);
+      const res = await billingApi.export({
+        search: search.trim() || undefined,
+        dateFilter: dateRange.filter,
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
+      });
+      const blob = new Blob([res.data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ekosmart-invoices-${dateRange.filter.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      showAlert('success', 'Invoices exported to Excel/CSV successfully');
+    } catch (err: any) {
+      showAlert('error', err.response?.data?.message || 'Failed to export invoices');
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -320,7 +355,17 @@ const Billing = () => {
             Create customer invoices, scan battery serials via camera, and auto-issue official warranties.
           </p>
         </div>
-        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
+          <DateRangeFilter value={dateRange} onChange={setDateRange} />
+          <button
+            type="button"
+            onClick={handleExportBills}
+            disabled={exporting}
+            className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition shadow-md cursor-pointer disabled:opacity-50"
+          >
+            <Download size={14} className={exporting ? 'animate-bounce' : ''} />
+            <span>{exporting ? 'Exporting...' : 'Export Excel / CSV'}</span>
+          </button>
           <button
             onClick={fetchBills}
             className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-semibold transition cursor-pointer"

@@ -333,3 +333,131 @@ export const getAdminWarranties = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: 'Failed to fetch warranties' });
   }
 };
+
+export const exportWarranties = async (req: Request, res: Response) => {
+  try {
+    const { category, status, search, startDate, endDate, datePreset } = req.query;
+    const query: any = {};
+
+    if (category && category !== 'All') query.category = category;
+    if (status && status !== 'All') query.status = status;
+
+    // Date range filtering
+    if (startDate || endDate) {
+      query.purchaseDate = {};
+      if (startDate) {
+        query.purchaseDate.$gte = new Date(startDate as string);
+      }
+      if (endDate) {
+        const e = new Date(endDate as string);
+        e.setHours(23, 59, 59, 999);
+        query.purchaseDate.$lte = e;
+      }
+    } else if (datePreset) {
+      const now = new Date();
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      if (datePreset === 'today') {
+        const endOfDay = new Date(startOfDay);
+        endOfDay.setHours(23, 59, 59, 999);
+        query.purchaseDate = { $gte: startOfDay, $lte: endOfDay };
+      } else if (datePreset === 'yesterday') {
+        const yStart = new Date(startOfDay);
+        yStart.setDate(yStart.getDate() - 1);
+        const yEnd = new Date(yStart);
+        yEnd.setHours(23, 59, 59, 999);
+        query.purchaseDate = { $gte: yStart, $lte: yEnd };
+      } else if (datePreset === 'last7days' || datePreset === '7days') {
+        const past = new Date(startOfDay);
+        past.setDate(past.getDate() - 7);
+        query.purchaseDate = { $gte: past };
+      } else if (datePreset === 'last30days' || datePreset === '30days') {
+        const past = new Date(startOfDay);
+        past.setDate(past.getDate() - 30);
+        query.purchaseDate = { $gte: past };
+      } else if (datePreset === 'thismonth' || datePreset === 'thisMonth') {
+        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+        query.purchaseDate = { $gte: firstDay };
+      }
+    }
+
+    if (search) {
+      const searchStr = (search as string).trim();
+      const matchingCustomers = await Customer.find({
+        $or: [
+          { name: { $regex: searchStr, $options: 'i' } },
+          { mobile: { $regex: searchStr, $options: 'i' } },
+          { email: { $regex: searchStr, $options: 'i' } },
+          { customerId: { $regex: searchStr, $options: 'i' } },
+        ],
+      }).select('_id');
+      const customerIds = matchingCustomers.map((c) => c._id);
+
+      const searchConditions: any[] = [
+        { warrantyNumber: { $regex: searchStr, $options: 'i' } },
+        { serialNumber: { $regex: searchStr, $options: 'i' } },
+        { billNumber: { $regex: searchStr, $options: 'i' } },
+        { product: { $regex: searchStr, $options: 'i' } },
+        { category: { $regex: searchStr, $options: 'i' } },
+        { status: { $regex: searchStr, $options: 'i' } },
+      ];
+
+      if (customerIds.length > 0) {
+        searchConditions.push({ customer: { $in: customerIds } });
+      }
+
+      query.$or = searchConditions;
+    }
+
+    const warranties = await Warranty.find(query)
+      .populate('customer', 'customerId name mobile email')
+      .sort({ createdAt: -1 });
+
+    const headers = [
+      'Warranty Number',
+      'Category',
+      'Product Model',
+      'Serial Number',
+      'Bill Number',
+      'Customer ID',
+      'Customer Name',
+      'Customer Mobile',
+      'Customer Email',
+      'Purchase Date',
+      'Warranty Start Date',
+      'Warranty Expiry Date',
+      'Status',
+      'Registered By',
+      'Created Date',
+    ];
+
+    const escapeCsv = (val: any) => `"${String(val ?? '').replace(/"/g, '""')}"`;
+
+    const rows = warranties.map((w: any) => [
+      escapeCsv(w.warrantyNumber),
+      escapeCsv(w.category),
+      escapeCsv(w.product),
+      escapeCsv(w.serialNumber),
+      escapeCsv(w.billNumber),
+      escapeCsv(w.customer?.customerId || ''),
+      escapeCsv(w.customer?.name || ''),
+      escapeCsv(w.customer?.mobile || ''),
+      escapeCsv(w.customer?.email || ''),
+      escapeCsv(w.purchaseDate ? new Date(w.purchaseDate).toLocaleDateString('en-IN') : ''),
+      escapeCsv(w.warrantyStartDate ? new Date(w.warrantyStartDate).toLocaleDateString('en-IN') : ''),
+      escapeCsv(w.warrantyExpiryDate ? new Date(w.warrantyExpiryDate).toLocaleDateString('en-IN') : ''),
+      escapeCsv(w.status || 'Active'),
+      escapeCsv(w.registeredBy || 'Direct / System'),
+      escapeCsv(w.createdAt ? new Date(w.createdAt).toLocaleDateString('en-IN') : ''),
+    ]);
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const timestamp = new Date().toISOString().slice(0, 10);
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="ekosmart_warranties_export_${timestamp}.csv"`);
+    return res.status(200).send(csvContent);
+  } catch (error: any) {
+    console.error('Export warranties error:', error);
+    res.status(500).json({ success: false, message: 'Failed to export warranties' });
+  }
+};

@@ -195,12 +195,14 @@ export const stockApi = {
   getBySerial: (serial: string) => apiClient.get(`/stock/serial/${encodeURIComponent(serial)}`),
   recordMovement: (data: any) => apiClient.post('/stock/movement', data),
   getMovements: (params?: any) => apiClient.get('/stock/movements/audit', { params }),
+  export: (params?: any) => apiClient.get('/stock/export/csv', { params, responseType: 'blob' }),
 };
 
 export const billingApi = {
   getAll: (params?: any) => apiClient.get('/billing', { params }),
   getById: (id: string) => apiClient.get(`/billing/${id}`),
   create: (data: any) => apiClient.post('/billing', data),
+  export: (params?: any) => apiClient.get('/billing/export/csv', { params, responseType: 'blob' }),
 };
 
 export const warrantyApi = {
@@ -211,6 +213,7 @@ export const warrantyApi = {
 export const customerApi = {
   getAll: (params?: any) => apiClient.get('/customers', { params }),
   create: (data: any) => apiClient.post('/customers', data),
+  export: (params?: any) => apiClient.get('/customers/export/csv', { params, responseType: 'blob' }),
 };
 
 export const billTemplateApi = {

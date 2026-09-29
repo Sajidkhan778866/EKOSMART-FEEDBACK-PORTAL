@@ -11,9 +11,11 @@ import {
   CheckCircle2,
   AlertCircle,
   Layers,
+  Download,
 } from 'lucide-react';
 import { stockApi } from '../api/client';
 import ScannerModal from '../components/ScannerModal';
+import { DateRangeFilter, type DateRangeState } from '../components/DateRangeFilter';
 
 export interface IStockItem {
   _id: string;
@@ -36,9 +38,13 @@ const CATEGORIES = ['All', 'Battery', 'EV Scooter', 'Spare Parts', 'Charger', 'A
 const Stock = () => {
   const [stockList, setStockList] = useState<IStockItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [meta, setMeta] = useState({ totalRecords: 0, totalQuantity: 0, inStockCount: 0 });
+
+  // Date Filter
+  const [dateRange, setDateRange] = useState<DateRangeState>({ filter: 'all' });
 
   // Scanner State
   const [showScanner, setShowScanner] = useState(false);
@@ -46,7 +52,7 @@ const Stock = () => {
 
   useEffect(() => {
     fetchStock();
-  }, [categoryFilter]);
+  }, [categoryFilter, dateRange]);
 
   const fetchStock = async () => {
     try {
@@ -54,6 +60,9 @@ const Stock = () => {
       const res = await stockApi.getAll({
         search: search.trim() || undefined,
         category: categoryFilter !== 'All' ? categoryFilter : undefined,
+        dateFilter: dateRange.filter,
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
       });
       if (res.data?.success) {
         setStockList(res.data.data || []);
@@ -63,6 +72,33 @@ const Stock = () => {
       showAlert('error', err.response?.data?.message || 'Failed to load stock');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleExportStock = async () => {
+    try {
+      setExporting(true);
+      const res = await stockApi.export({
+        search: search.trim() || undefined,
+        category: categoryFilter !== 'All' ? categoryFilter : undefined,
+        dateFilter: dateRange.filter,
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
+      });
+      const blob = new Blob([res.data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ekosmart-stock-${dateRange.filter.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      showAlert('success', 'Stock inventory exported to Excel/CSV successfully');
+    } catch (err: any) {
+      showAlert('error', err.response?.data?.message || 'Failed to export inventory');
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -100,10 +136,20 @@ const Stock = () => {
             Check real-time stock levels, available batteries, and scan item barcodes using your mobile camera.
           </p>
         </div>
-        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
+          <DateRangeFilter value={dateRange} onChange={setDateRange} />
+          <button
+            type="button"
+            onClick={handleExportStock}
+            disabled={exporting}
+            className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition shadow-md cursor-pointer disabled:opacity-50"
+          >
+            <Download size={14} className={exporting ? 'animate-bounce' : ''} />
+            <span>{exporting ? 'Exporting...' : 'Export Excel / CSV'}</span>
+          </button>
           <button
             onClick={() => setShowScanner(true)}
-            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-emerald-900/40 transition cursor-pointer"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-emerald-900/40 transition cursor-pointer"
           >
             <Scan size={16} />
             <span>Scan Barcode</span>

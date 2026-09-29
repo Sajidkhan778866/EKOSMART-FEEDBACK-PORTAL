@@ -54,7 +54,7 @@ const DIVISION_OPTIONS: DivisionMeta[] = [
     badgeTitle: 'Drive Rental',
     trackerTitle: 'EKOSMART TRACKER for EkoRide',
     formTitle: 'Complaint Registration Form EkoRide',
-    tagLabel: 'Showroom',
+    tagLabel: 'Drive Rental',
     defaultProduct: 'scooter',
     secondaryFieldLabel: 'Vehicle Registration No.',
     secondaryFieldPlaceholder: '54111',

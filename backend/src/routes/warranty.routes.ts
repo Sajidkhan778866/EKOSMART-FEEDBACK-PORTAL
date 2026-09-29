@@ -4,6 +4,7 @@ import {
   checkPublicWarranty,
   getAdminWarranties,
   verifyWarrantyStaff,
+  exportWarranties,
 } from '../controllers/warranty.controller';
 
 const router = express.Router();
@@ -15,6 +16,9 @@ router.post('/register', registerPublicWarranty);
 router.get('/public/check', checkPublicWarranty);
 router.get('/check', checkPublicWarranty);
 router.get('/admin', getAdminWarranties);
+router.get('/export/csv', exportWarranties);
+router.get('/export', exportWarranties);
 
 export default router;
+
 

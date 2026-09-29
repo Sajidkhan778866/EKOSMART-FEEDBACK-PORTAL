@@ -223,6 +223,7 @@ export const complaintApi = {
 
 export const warrantyApi = {
   getAll: (params?: any) => apiClient.get('/warranty/admin', { params }),
+  export: (params?: any) => apiClient.get('/warranty/export/csv', { params, responseType: 'blob' }),
 };
 
 export const formApi = {
