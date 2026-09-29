@@ -1081,7 +1081,7 @@ full_html = f"""<!DOCTYPE html>
     min-height: 297mm;
     max-height: 297mm;
     box-sizing: border-box;
-    padding: 10mm 14mm 10mm 14mm;
+    padding: 7mm 11mm 7mm 11mm;
     background: #ffffff;
     page-break-after: always;
     page-break-inside: avoid;
@@ -1095,8 +1095,8 @@ full_html = f"""<!DOCTYPE html>
   }}
   .page-header {{
     border-bottom: 2px solid #059669;
-    padding-bottom: 3px;
-    margin-bottom: 5px;
+    padding-bottom: 2px;
+    margin-bottom: 4px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1108,8 +1108,8 @@ full_html = f"""<!DOCTYPE html>
   }}
   .page-footer {{
     border-top: 1px solid #cbd5e1;
-    padding-top: 3px;
-    margin-top: 4px;
+    padding-top: 2px;
+    margin-top: 3px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1121,23 +1121,23 @@ full_html = f"""<!DOCTYPE html>
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    gap: 4px;
+    gap: 3px;
     overflow: hidden;
   }}
   h1.page-title {{
-    font-size: 11.2pt;
+    font-size: 10.8pt;
     font-weight: 900;
     color: #0f172a;
-    margin: 0 0 3px 0;
+    margin: 0 0 2px 0;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     border-left: 4px solid #059669;
     padding-left: 6px;
-    line-height: 1.2;
+    line-height: 1.15;
   }}
   h2.section-heading {{
-    font-size: 8.6pt;
+    font-size: 8.4pt;
     font-weight: 800;
     color: #065f46;
     margin: 2px 0 1px 0;
@@ -1145,10 +1145,11 @@ full_html = f"""<!DOCTYPE html>
     padding-bottom: 1px;
   }}
   p {{
-    margin: 0 0 3px 0;
+    margin: 0 0 2px 0;
     color: #334155;
     text-align: justify;
-    font-size: 8.1pt;
+    font-size: 7.8pt;
+    line-height: 1.28;
   }}
   .badge {{
     display: inline-block;
@@ -1165,19 +1166,19 @@ full_html = f"""<!DOCTYPE html>
   .table-custom {{
     width: 100%;
     border-collapse: collapse;
-    font-size: 7pt;
-    margin: 2px 0 3px 0;
+    font-size: 6.9pt;
+    margin: 1px 0 2px 0;
   }}
   .table-custom th {{
     background: #065f46;
     color: #ffffff;
-    padding: 2.5px 5px;
+    padding: 2px 5px;
     text-align: left;
     font-weight: 700;
     border: 1px solid #047857;
   }}
   .table-custom td {{
-    padding: 2px 5px;
+    padding: 1.8px 5px;
     border: 1px solid #e2e8f0;
     color: #334155;
   }}
@@ -1188,30 +1189,30 @@ full_html = f"""<!DOCTYPE html>
   .card-box {{
     background: #f8fafc;
     border: 1px solid #e2e8f0;
-    border-radius: 5px;
-    padding: 4px 6px;
+    border-radius: 4px;
+    padding: 3px 6px;
     margin: 1px 0;
   }}
   .flowchart {{
     background: #0f172a;
     color: #f8fafc;
-    border-radius: 5px;
-    padding: 4px 6px;
+    border-radius: 4px;
+    padding: 3px 6px;
     font-family: 'Consolas', monospace;
-    font-size: 6.8pt;
-    line-height: 1.25;
-    margin: 2px 0;
+    font-size: 6.5pt;
+    line-height: 1.2;
+    margin: 1px 0;
     border-left: 3px solid #10b981;
   }}
 
-  /* High Visibility Screenshot Cards */
+  /* High Visibility Large Screenshot Cards */
   .screenshot-card {{
-    border: 1.5px solid #94a3b8;
+    border: 1.5px solid #64748b;
     border-radius: 6px;
     background: #ffffff;
     padding: 3px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
-    margin: 3px 0 2px 0;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+    margin: 2px 0 1px 0;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1219,8 +1220,8 @@ full_html = f"""<!DOCTYPE html>
   }}
   .screenshot-img-large {{
     width: 100%;
-    max-height: 215px;
-    height: 205px;
+    max-height: 285px;
+    height: 275px;
     object-fit: contain;
     border-radius: 4px;
     background: #f8fafc;
@@ -1229,8 +1230,8 @@ full_html = f"""<!DOCTYPE html>
   .screenshot-img-portrait {{
     width: auto;
     max-width: 100%;
-    max-height: 215px;
-    height: 205px;
+    max-height: 285px;
+    height: 275px;
     object-fit: contain;
     border-radius: 4px;
     background: #f8fafc;
@@ -1241,19 +1242,19 @@ full_html = f"""<!DOCTYPE html>
     font-size: 7.2pt;
     font-weight: 800;
     color: #0f172a;
-    margin-top: 3px;
+    margin-top: 2px;
     text-align: center;
     letter-spacing: 0.1px;
   }}
   .grid-2 {{
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 6px;
+    gap: 5px;
   }}
   .grid-3 {{
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-    gap: 5px;
+    gap: 4px;
   }}
 </style>
 </head>
