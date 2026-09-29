@@ -832,3 +832,87 @@ export const deleteBill = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: 'Failed to delete invoice', error: error.message });
   }
 };
+
+// GET /api/v1/billing/export/csv - Export billing invoices to CSV / Excel
+export const exportBills = async (req: Request, res: Response) => {
+  try {
+    const { search, paymentStatus, showroom, dateFilter, startDate, endDate } = req.query;
+    const query: any = {};
+
+    if (paymentStatus && paymentStatus !== 'All') query.paymentStatus = paymentStatus;
+    if (showroom && showroom !== 'All') query.showroom = showroom;
+
+    applyDateFilterToQuery(query, 'createdAt', dateFilter as string, startDate as string, endDate as string);
+
+    if (search) {
+      const s = (search as string).trim();
+      query.$or = [
+        { invoiceNumber: { $regex: s, $options: 'i' } },
+        { customerName: { $regex: s, $options: 'i' } },
+        { customerMobile: { $regex: s, $options: 'i' } },
+      ];
+    }
+
+    const bills = await Bill.find(query).sort({ createdAt: -1 });
+
+    const headers = [
+      'Invoice Number',
+      'Invoice Date',
+      'Customer Name',
+      'Mobile Number',
+      'Email Address',
+      'Address',
+      'Showroom / Location',
+      'Billed By',
+      'Products Summary',
+      'Subtotal (INR)',
+      'Discount (INR)',
+      'Tax (INR)',
+      'Grand Total (INR)',
+      'Payment Mode',
+      'Payment Status',
+      'Warranty Linked',
+    ];
+
+    const escapeCsv = (str: any) => {
+      if (str === null || str === undefined) return '""';
+      const s = String(str).replace(/"/g, '""');
+      return `"${s}"`;
+    };
+
+    const rows = bills.map((b: any) => {
+      const itemsSummary = (b.items || [])
+        .map((it: any) => `${it.productName || 'Item'} (Qty: ${it.quantity || 1}, Serial: ${it.productSerial || it.batterySerial || 'N/A'})`)
+        .join('; ');
+
+      return [
+        escapeCsv(b.invoiceNumber),
+        escapeCsv(b.createdAt ? new Date(b.createdAt).toLocaleDateString('en-GB') : ''),
+        escapeCsv(b.customerName || ''),
+        escapeCsv(b.customerMobile || ''),
+        escapeCsv(b.customerEmail || ''),
+        escapeCsv(b.customerAddress || ''),
+        escapeCsv(b.showroom || ''),
+        escapeCsv(b.employeeName || ''),
+        escapeCsv(itemsSummary),
+        escapeCsv(b.subtotal || 0),
+        escapeCsv(b.discountTotal || 0),
+        escapeCsv(b.taxTotal || 0),
+        escapeCsv(b.grandTotal || 0),
+        escapeCsv(b.paymentMode || ''),
+        escapeCsv(b.paymentStatus || ''),
+        escapeCsv(b.warrantyGenerated ? 'Yes' : 'No'),
+      ].join(',');
+    });
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
+    const filename = `Ekosmart_Billing_Invoices_Export_${new Date().toISOString().slice(0, 10)}.csv`;
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.status(200).send(csvContent);
+  } catch (error: any) {
+    console.error('Failed to export invoices:', error);
+    res.status(500).json({ success: false, message: 'Failed to export invoices' });
+  }
+};

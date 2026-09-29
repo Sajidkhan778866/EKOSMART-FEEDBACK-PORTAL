@@ -202,10 +202,10 @@ const Complaints = () => {
             type="button"
             disabled={exporting}
             onClick={handleExportComplaints}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-md cursor-pointer disabled:opacity-50"
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-md cursor-pointer disabled:opacity-50"
           >
             {exporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-            <span>Export {activeTab === 'active' ? 'Active' : 'Resolved'} (CSV)</span>
+            <span>{exporting ? 'Exporting...' : `Export ${activeTab === 'active' ? 'Active' : 'Resolved'} (Excel / CSV)`}</span>
           </button>
         </div>
       </div>
@@ -253,6 +253,15 @@ const Complaints = () => {
             value={dateRange}
             onChange={setDateRange}
           />
+          <button
+            type="button"
+            disabled={exporting}
+            onClick={handleExportComplaints}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold transition cursor-pointer disabled:opacity-50"
+          >
+            <Download size={13} className={exporting ? 'animate-bounce' : ''} />
+            <span>Export Complaints (Excel / CSV)</span>
+          </button>
         </div>
 
         {/* Search and Dropdowns */}

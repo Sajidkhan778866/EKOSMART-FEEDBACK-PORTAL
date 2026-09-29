@@ -17,6 +17,7 @@ import {
   Scan,
   Camera,
   Settings2,
+  Download,
 } from 'lucide-react';
 import { billingApi, stockApi, billTemplateApi } from '../api/client';
 import ScannerModal from '../components/ScannerModal';
@@ -162,6 +163,35 @@ const BillingManager = () => {
       showAlert('error', err.response?.data?.message || 'Failed to load invoices');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportBills = async () => {
+    try {
+      setExporting(true);
+      const res = await billingApi.export({
+        search: search.trim() || undefined,
+        paymentStatus: paymentStatusFilter !== 'All' ? paymentStatusFilter : undefined,
+        dateFilter: dateRange.filter,
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
+      });
+      const blob = new Blob([res.data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ekosmart-invoices-${dateRange.filter.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      showAlert('success', 'Invoices exported to Excel/CSV successfully');
+    } catch (err: any) {
+      showAlert('error', err.response?.data?.message || 'Failed to export invoices');
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -396,13 +426,21 @@ const BillingManager = () => {
             Generate GST tax invoices, scan battery barcodes with camera, and customize bill templates in real-time.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={fetchBills}
             className="flex items-center gap-1.5 px-3 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-semibold transition cursor-pointer"
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
             <span>Refresh</span>
+          </button>
+          <button
+            onClick={handleExportBills}
+            disabled={exporting}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-emerald-900/40 cursor-pointer"
+          >
+            <Download size={15} className={exporting ? 'animate-bounce' : ''} />
+            <span>{exporting ? 'Exporting...' : 'Export Excel / CSV'}</span>
           </button>
           <button
             onClick={() => setShowCreateModal(true)}
@@ -506,10 +544,21 @@ const BillingManager = () => {
 
           {/* Filter and Search Bar */}
           <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-            <DateRangeFilter
-              value={dateRange}
-              onChange={setDateRange}
-            />
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <DateRangeFilter
+                value={dateRange}
+                onChange={setDateRange}
+              />
+              <button
+                type="button"
+                onClick={handleExportBills}
+                disabled={exporting}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold transition cursor-pointer"
+              >
+                <Download size={13} className={exporting ? 'animate-bounce' : ''} />
+                <span>{exporting ? 'Exporting...' : 'Export Invoices (Excel / CSV)'}</span>
+              </button>
+            </div>
 
             <div className="flex flex-col md:flex-row gap-3 justify-between items-stretch md:items-center pt-1 border-t border-slate-100">
               <div className="flex-1 relative">

@@ -164,33 +164,94 @@ export const RegisterComplaint = () => {
     complaintLogoImage?: string;
   } | null>(null);
 
-  // Fetch dynamic sections from backend
+  // Fetch dynamic sections from backend and CMS
   useEffect(() => {
-    // 1. Fetch CMS content
-    axios
-      .get(`${API_BASE}/content/public`)
-      .then((res) => {
-        if (res.data.success && res.data.data?.hero) {
-          setCmsHero(res.data.data.hero);
-        }
-      })
-      .catch((err) => {
-        console.warn('Failed to load CMS logo branding for complaint sidebar:', err);
+    Promise.all([
+      axios.get(`${API_BASE}/content/public`).catch(() => null),
+      axios.get(`${API_BASE}/forms/public/sections`).catch(() => null),
+    ]).then(([cmsRes, formsRes]) => {
+      const metasMap = new Map<string, DivisionMeta>();
+
+      // 1. First seed default known divisions
+      DIVISION_OPTIONS.forEach((d) => {
+        metasMap.set(d.key.toLowerCase(), d);
       });
 
-    // 2. Fetch all dynamic sections (from forms and CMS service cards)
-    axios
-      .get(`${API_BASE}/forms/public/sections`)
-      .then((res) => {
-        if (res.data.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
-          const fetchedSections: string[] = res.data.data;
-          const dynamicMetas = fetchedSections.map((sec) => findMeta(sec, DIVISION_OPTIONS));
-          setDivisionList(dynamicMetas);
+      // 2. Overlay / add CMS service cards
+      if (cmsRes?.data?.success && cmsRes.data.data) {
+        if (cmsRes.data.data.hero) {
+          setCmsHero(cmsRes.data.data.hero);
         }
-      })
-      .catch((err) => {
-        console.warn('Failed to load dynamic sections in RegisterComplaint:', err);
-      });
+
+        const cards = cmsRes.data.data.serviceCards;
+        if (Array.isArray(cards)) {
+          cards
+            .filter((c: any) => c.isVisible !== false)
+            .sort((a: any, b: any) => (a.order ?? 0) - (b.order ?? 0))
+            .forEach((card: any) => {
+              let divKey = '';
+              if (card.linkUrl && card.linkUrl.includes('division=')) {
+                try {
+                  const m = card.linkUrl.match(/division=([^&]+)/);
+                  if (m && m[1]) divKey = decodeURIComponent(m[1]).trim();
+                } catch {}
+              }
+              if (!divKey && card.section && card.section.trim()) {
+                divKey = card.section.trim();
+              }
+              if (!divKey && card.title && card.title.trim()) {
+                divKey = card.title.trim();
+              }
+              if (!divKey) return;
+
+              const lowerKey = divKey.toLowerCase();
+              const existing = metasMap.get(lowerKey);
+              if (existing) {
+                metasMap.set(lowerKey, {
+                  ...existing,
+                  badgeTitle: card.title || existing.badgeTitle,
+                  description: card.description || existing.description,
+                  color: card.color || existing.color,
+                });
+              } else {
+                metasMap.set(lowerKey, {
+                  key: divKey,
+                  name: card.section || divKey,
+                  badgeTitle: card.title || `${divKey} Support`,
+                  trackerTitle: `EKOSMART TRACKER for ${divKey}`,
+                  formTitle: `Complaint Registration Form ${divKey}`,
+                  tagLabel: divKey,
+                  defaultProduct: `${divKey} Service / Battery`,
+                  secondaryFieldLabel: 'Serial No. / Registration / Reference',
+                  secondaryFieldPlaceholder: `Enter ${divKey} reference or serial number`,
+                  description:
+                    card.description ||
+                    `Register your ${divKey} service request or technical assistance here. Our certified engineering team will resolve your ticket promptly.`,
+                  icon: Layers,
+                  color: card.color || 'emerald',
+                });
+              }
+            });
+        }
+      }
+
+      // 3. Add any custom form sections
+      if (formsRes?.data?.success && Array.isArray(formsRes.data.data)) {
+        formsRes.data.data.forEach((secName: string) => {
+          if (!secName || !secName.trim()) return;
+          const trimmed = secName.trim();
+          const lower = trimmed.toLowerCase();
+          if (!metasMap.has(lower)) {
+            metasMap.set(lower, buildCustomMeta(trimmed));
+          }
+        });
+      }
+
+      const mergedList = Array.from(metasMap.values());
+      if (mergedList.length > 0) {
+        setDivisionList(mergedList);
+      }
+    });
   }, []);
 
   // Sync state if URL search params change or dynamic divisionList loads

@@ -17,6 +17,7 @@ import {
   Barcode,
   Camera,
   Sliders,
+  Download,
 } from 'lucide-react';
 import { stockApi } from '../api/client';
 import ScannerModal from '../components/ScannerModal';
@@ -235,6 +236,37 @@ const StockManager = () => {
       showAlert('error', err.response?.data?.message || 'Failed to load inventory');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportStock = async () => {
+    try {
+      setExporting(true);
+      const res = await stockApi.export({
+        search: search.trim() || undefined,
+        category: categoryFilter !== 'All' ? categoryFilter : undefined,
+        location: locationFilter !== 'All' ? locationFilter : undefined,
+        status: statusFilter !== 'All' ? statusFilter : undefined,
+        dateFilter: dateRange.filter,
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
+      });
+      const blob = new Blob([res.data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ekosmart-stock-inventory-${dateRange.filter.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      showAlert('success', 'Stock inventory exported to Excel/CSV successfully');
+    } catch (err: any) {
+      showAlert('error', err.response?.data?.message || 'Failed to export inventory');
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -546,10 +578,21 @@ const StockManager = () => {
             <span>Scan Barcode</span>
           </button>
 
+          {/* Export Excel / CSV Button */}
+          <button
+            type="button"
+            onClick={handleExportStock}
+            disabled={exporting}
+            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-md cursor-pointer"
+          >
+            <Download size={14} className={exporting ? 'animate-bounce' : ''} />
+            <span>{exporting ? 'Exporting...' : 'Export Excel / CSV'}</span>
+          </button>
+
           {/* Add Stock Item */}
           <button
             onClick={openAddModal}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-xs cursor-pointer"
+            className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-xs cursor-pointer"
           >
             <Plus size={16} />
             <span>Add Stock Item</span>

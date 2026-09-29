@@ -412,3 +412,85 @@ export const deleteStock = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: 'Failed to delete stock item', error: error.message });
   }
 };
+
+// GET /api/v1/stock/export/csv - Export stock inventory to CSV / Excel
+export const exportStock = async (req: Request, res: Response) => {
+  try {
+    const { search, category, location, status, dateFilter, startDate, endDate } = req.query;
+    const query: any = {};
+
+    if (category && category !== 'All') query.category = category;
+    if (location && location !== 'All') query.location = location;
+    if (status && status !== 'All') query.status = status;
+
+    applyDateFilterToQuery(query, 'createdAt', dateFilter as string, startDate as string, endDate as string);
+
+    if (search) {
+      const s = (search as string).trim();
+      query.$or = [
+        { productId: { $regex: s, $options: 'i' } },
+        { productName: { $regex: s, $options: 'i' } },
+        { serialNumber: { $regex: s, $options: 'i' } },
+        { batterySerialNumber: { $regex: s, $options: 'i' } },
+      ];
+    }
+
+    const items = await Stock.find(query).sort({ createdAt: -1 });
+
+    const headers = [
+      'Product ID',
+      'Product Name',
+      'Category',
+      'Unit Serial Number',
+      'Battery Serial Number',
+      'Available Qty',
+      'Total Received',
+      'Total Sold',
+      'Unit Price (INR)',
+      'Total Valuation (INR)',
+      'Location',
+      'Status',
+      'Warranty Months',
+      'Date Registered',
+    ];
+
+    const escapeCsv = (str: any) => {
+      if (str === null || str === undefined) return '""';
+      const s = String(str).replace(/"/g, '""');
+      return `"${s}"`;
+    };
+
+    const rows = items.map((item: any) => {
+      const price = Number(item.unitPrice || item.price || 0);
+      const qty = Number(item.quantity || 0);
+      const val = price * qty;
+
+      return [
+        escapeCsv(item.productId || ''),
+        escapeCsv(item.productName || ''),
+        escapeCsv(item.category || ''),
+        escapeCsv(item.serialNumber || ''),
+        escapeCsv(item.batterySerialNumber || ''),
+        escapeCsv(qty),
+        escapeCsv(item.totalReceived || qty),
+        escapeCsv(item.totalSold || 0),
+        escapeCsv(price),
+        escapeCsv(val),
+        escapeCsv(item.location || ''),
+        escapeCsv(item.status || 'In Stock'),
+        escapeCsv(item.warrantyPeriodMonths || 36),
+        escapeCsv(item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-GB') : ''),
+      ].join(',');
+    });
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
+    const filename = `Ekosmart_Stock_Inventory_Export_${new Date().toISOString().slice(0, 10)}.csv`;
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.status(200).send(csvContent);
+  } catch (error: any) {
+    console.error('Failed to export stock inventory:', error);
+    res.status(500).json({ success: false, message: 'Failed to export stock inventory' });
+  }
+};

@@ -10,6 +10,7 @@ import {
   recordStockMovement,
   getStockMovements,
   deleteStock,
+  exportStock,
 } from '../controllers/stock.controller';
 import { protect, checkPermission, authorize } from '../middleware/auth';
 
@@ -24,6 +25,7 @@ router.get('/serial/:serial', protect, checkPermission('stock:view', 'stock:mana
 router.get('/movements/audit', protect, checkPermission('stock:view', 'stock:manage'), getStockMovements);
 
 // Main Stock CRUD
+router.get('/export/csv', protect, checkPermission('stock:view', 'stock:manage'), exportStock);
 router.get('/', protect, checkPermission('stock:view', 'stock:manage'), getAllStock);
 router.get('/:id', protect, checkPermission('stock:view', 'stock:manage'), getStockById);
 router.post('/', protect, checkPermission('stock:manage'), createStock);

@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Users, Search, Loader2 } from 'lucide-react';
+import { Users, Search, Loader2, Download } from 'lucide-react';
 import { customerApi } from '../api/client';
 import { DateRangeFilter, type DateRangeState } from '../components/DateRangeFilter';
 
 const Customers = () => {
   const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [search, setSearch] = useState('');
 
   // Date Filter
@@ -30,22 +31,69 @@ const Customers = () => {
     }
   };
 
+  const handleExportCustomers = async () => {
+    try {
+      setExporting(true);
+      const res = await customerApi.export({
+        search: search || undefined,
+        dateFilter: dateRange.filter,
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
+      });
+      const blob = new Blob([res.data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ekosmart-customers-${dateRange.filter.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to export customers:', err);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   useEffect(() => {
     fetchCustomers();
   }, [dateRange]);
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-800">Customer Directory</h1>
-        <p className="text-slate-500 text-sm">Customers registered via Showroom, Plant sales, or Service tickets</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">Customer Directory</h1>
+          <p className="text-slate-500 text-sm">Customers registered via Showroom, Plant sales, or Service tickets</p>
+        </div>
+        <button
+          type="button"
+          onClick={handleExportCustomers}
+          disabled={exporting}
+          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+        >
+          <Download size={14} className={exporting ? 'animate-bounce' : ''} />
+          <span>{exporting ? 'Exporting...' : 'Export Excel / CSV'}</span>
+        </button>
       </div>
 
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
-        <DateRangeFilter
-          value={dateRange}
-          onChange={setDateRange}
-        />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <DateRangeFilter
+            value={dateRange}
+            onChange={setDateRange}
+          />
+          <button
+            type="button"
+            onClick={handleExportCustomers}
+            disabled={exporting}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold transition cursor-pointer"
+          >
+            <Download size={13} />
+            <span>Export Customer Directory</span>
+          </button>
+        </div>
 
         <div className="relative max-w-md pt-1">
           <input

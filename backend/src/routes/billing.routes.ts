@@ -11,6 +11,7 @@ import {
   updateBillTemplate,
   activateBillTemplate,
   deleteBillTemplate,
+  exportBills,
 } from '../controllers/billing.controller';
 import { protect, authorize, checkPermission } from '../middleware/auth';
 
@@ -26,6 +27,7 @@ router.patch('/templates/:id/activate', protect, authorize('ADMIN', 'SUPER_ADMIN
 router.delete('/templates/:id', protect, authorize('ADMIN', 'SUPER_ADMIN', 'SUPERADMIN'), deleteBillTemplate);
 
 // 2. Invoices & Billing Routes
+router.get('/export/csv', protect, checkPermission('billing:view', 'billing:create'), exportBills);
 router.get('/', protect, checkPermission('billing:view', 'billing:create'), getAllBills);
 router.get('/:id', protect, checkPermission('billing:view', 'billing:create'), getBillById);
 router.post('/', protect, checkPermission('billing:create'), createBill);

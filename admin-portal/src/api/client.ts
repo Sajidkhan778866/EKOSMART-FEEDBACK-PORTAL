@@ -243,6 +243,7 @@ export const dashboardApi = {
 export const customerApi = {
   getAll: (params?: any) => apiClient.get('/customers', { params }),
   create: (data: any) => apiClient.post('/customers', data),
+  export: (params?: any) => apiClient.get('/customers/export/csv', { params, responseType: 'blob' }),
 };
 
 export const contentApi = {
@@ -261,6 +262,7 @@ export const stockApi = {
   recordMovement: (data: any) => apiClient.post('/stock/movement', data),
   getMovements: (params?: any) => apiClient.get('/stock/movements/audit', { params }),
   delete: (id: string) => apiClient.delete(`/stock/${id}`),
+  export: (params?: any) => apiClient.get('/stock/export/csv', { params, responseType: 'blob' }),
 };
 
 export const billingApi = {
@@ -268,6 +270,7 @@ export const billingApi = {
   getById: (id: string) => apiClient.get(`/billing/${id}`),
   create: (data: any) => apiClient.post('/billing', data),
   delete: (id: string) => apiClient.delete(`/billing/${id}`),
+  export: (params?: any) => apiClient.get('/billing/export/csv', { params, responseType: 'blob' }),
 };
 
 export const billTemplateApi = {

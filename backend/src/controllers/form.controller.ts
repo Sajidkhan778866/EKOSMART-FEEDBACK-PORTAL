@@ -4,53 +4,61 @@ import { WarrantyForm } from '../models/WarrantyForm';
 import { Content } from '../models/Content';
 import { ComplaintType } from '../models/ComplaintType';
 
-const extractDivisionFromCard = (c: any): string[] => {
-  const list: string[] = [];
-  if (c.section && c.section !== 'General' && c.section.trim()) {
-    list.push(c.section.trim());
-  } else if (c.linkUrl && c.linkUrl.includes('division=')) {
+const extractDivisionFromCard = (c: any): string => {
+  if (c.linkUrl && c.linkUrl.includes('division=')) {
     try {
       const match = c.linkUrl.match(/division=([^&]+)/);
       if (match && match[1]) {
-        list.push(decodeURIComponent(match[1]).trim());
+        return decodeURIComponent(match[1]).trim();
       }
     } catch {}
-  } else if (c.title && c.title.trim()) {
-    list.push(c.title.trim());
   }
-  return list;
+  if (c.section && c.section.trim()) {
+    return c.section.trim();
+  }
+  if (c.title && c.title.trim()) {
+    return c.title.trim();
+  }
+  return '';
 };
 
 export const getDynamicSections = async (_req: Request, res: Response) => {
   try {
     const content = (await Content.findOne({ key: 'global_cms' })) || (await Content.findOne());
-    const cmsSections: string[] = [];
-    if (content?.serviceCards) {
+    const sectionsSet = new Set<string>();
+
+    if (content?.serviceCards && Array.isArray(content.serviceCards)) {
       content.serviceCards
         .filter((c) => c.isVisible !== false)
         .forEach((c) => {
-          extractDivisionFromCard(c).forEach((s) => {
-            if (s && !cmsSections.includes(s)) cmsSections.push(s);
-          });
+          const div = extractDivisionFromCard(c);
+          if (div) sectionsSet.add(div);
         });
     }
 
     const complaintForms = await ComplaintForm.find({ isActive: { $ne: false } }, 'division');
-    const formDivisions: string[] = complaintForms
-      .map((f) => f.division?.trim())
-      .filter(Boolean);
+    complaintForms.forEach((f) => {
+      const d = f.division?.trim();
+      if (d) sectionsSet.add(d);
+    });
 
-    let sections: string[] = [];
-    if (cmsSections.length > 0) {
-      // CMS serviceCards are the definitive active services; also include any custom form divisions
-      sections = Array.from(new Set([...cmsSections, ...formDivisions]));
-    } else if (formDivisions.length > 0) {
-      sections = Array.from(new Set(formDivisions));
-    } else {
+    let sections = Array.from(sectionsSet);
+    if (sections.length === 0) {
       sections = ['Showroom', 'Rental', 'Spare Parts', 'Battery'];
     }
 
-    res.json({ success: true, data: sections });
+    // Case-insensitive deduplication while preserving original casing
+    const uniqueSections: string[] = [];
+    const seenLower = new Set<string>();
+    for (const sec of sections) {
+      const lower = sec.toLowerCase();
+      if (!seenLower.has(lower)) {
+        seenLower.add(lower);
+        uniqueSections.push(sec);
+      }
+    }
+
+    res.json({ success: true, data: uniqueSections });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error' });
   }
