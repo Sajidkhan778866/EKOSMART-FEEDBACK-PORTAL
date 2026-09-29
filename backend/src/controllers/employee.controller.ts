@@ -701,9 +701,10 @@ export const getEmployeeSalary = async (req: Request, res: Response) => {
 export const updateEmployeeSalary = async (req: Request, res: Response) => {
   try {
     const id = String(req.params.id);
-    const { salaryStructure } = req.body;
+    const body = req.body || {};
+    const salaryStructure = body.salaryStructure || body;
 
-    if (!salaryStructure) {
+    if (!salaryStructure || typeof salaryStructure !== 'object') {
       return res.status(400).json({ success: false, message: 'Salary structure payload is required.' });
     }
 
@@ -718,12 +719,66 @@ export const updateEmployeeSalary = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'Employee not found' });
     }
 
+    const basicSalary = Number(salaryStructure.basicSalary ?? salaryStructure.earnings?.basicSalary ?? 24000);
+
+    const allowList: any[] = [];
+    if (Array.isArray(salaryStructure.allowances)) {
+      salaryStructure.allowances.forEach((a: any) => {
+        allowList.push({
+          key: a.key || a.label?.toLowerCase().replace(/\s+/g, '_') || 'allowance',
+          label: a.label || a.key || 'Allowance',
+          amount: Number(a.amount) || 0,
+        });
+      });
+    } else if (salaryStructure.earnings && typeof salaryStructure.earnings === 'object') {
+      const e = salaryStructure.earnings;
+      if (e.hra !== undefined) allowList.push({ key: 'hra', label: 'House Rent Allowance (HRA)', amount: Number(e.hra) || 0 });
+      if (e.conveyance !== undefined) allowList.push({ key: 'conveyance', label: 'Conveyance Allowance', amount: Number(e.conveyance) || 0 });
+      if (e.specialAllowance !== undefined) allowList.push({ key: 'specialAllowance', label: 'Special / Tech Allowance', amount: Number(e.specialAllowance) || 0 });
+      if (e.overtime !== undefined) allowList.push({ key: 'overtime', label: 'Overtime & Field Pay', amount: Number(e.overtime) || 0 });
+      if (e.arrears !== undefined) allowList.push({ key: 'arrears', label: 'Arrears / Past Adjustments', amount: Number(e.arrears) || 0 });
+    }
+
+    const dedList: any[] = [];
+    if (Array.isArray(salaryStructure.deductions)) {
+      salaryStructure.deductions.forEach((d: any) => {
+        dedList.push({
+          key: d.key || d.label?.toLowerCase().replace(/\s+/g, '_') || 'deduction',
+          label: d.label || d.key || 'Deduction',
+          amount: Number(d.amount) || 0,
+        });
+      });
+    } else if (salaryStructure.deductions && typeof salaryStructure.deductions === 'object') {
+      const d = salaryStructure.deductions;
+      if (d.epf !== undefined) dedList.push({ key: 'epf', label: 'Provident Fund (EPF)', amount: Number(d.epf) || 0 });
+      if (d.esi !== undefined) dedList.push({ key: 'esi', label: 'ESI Contribution', amount: Number(d.esi) || 0 });
+      if (d.professionalTax !== undefined) dedList.push({ key: 'professionalTax', label: 'Professional Tax (PT)', amount: Number(d.professionalTax) || 0 });
+      if (d.tds !== undefined) dedList.push({ key: 'tds', label: 'TDS / Income Tax', amount: Number(d.tds) || 0 });
+      if (d.advance !== undefined) dedList.push({ key: 'advance', label: 'Salary Advance Recovery', amount: Number(d.advance) || 0 });
+      if (d.lateDeduction !== undefined) dedList.push({ key: 'lateDeduction', label: 'Late / Absence Deduction', amount: Number(d.lateDeduction) || 0 });
+      if (d.loan !== undefined) dedList.push({ key: 'loan', label: 'Loan / Asset EMI', amount: Number(d.loan) || 0 });
+      if (d.otherDeductions !== undefined) dedList.push({ key: 'otherDeductions', label: 'Other Deductions', amount: Number(d.otherDeductions) || 0 });
+    }
+
+    const bonusList: any[] = [];
+    if (Array.isArray(salaryStructure.bonuses)) {
+      salaryStructure.bonuses.forEach((b: any) => {
+        bonusList.push({
+          key: b.key || 'bonus',
+          label: b.label || 'Bonus',
+          amount: Number(b.amount) || 0,
+        });
+      });
+    } else if (salaryStructure.earnings?.bonus) {
+      bonusList.push({ key: 'bonus', label: 'Performance Bonus', amount: Number(salaryStructure.earnings.bonus) || 0 });
+    }
+
     employee.salaryStructure = {
-      basicSalary: Number(salaryStructure.basicSalary) || 0,
-      allowances: Array.isArray(salaryStructure.allowances) ? salaryStructure.allowances : [],
-      deductions: Array.isArray(salaryStructure.deductions) ? salaryStructure.deductions : [],
-      bonuses: Array.isArray(salaryStructure.bonuses) ? salaryStructure.bonuses : [],
-      bankDetails: salaryStructure.bankDetails || {},
+      basicSalary,
+      allowances: allowList,
+      deductions: dedList,
+      bonuses: bonusList,
+      bankDetails: salaryStructure.bankDetails || employee.salaryStructure?.bankDetails || {},
       effectiveDate: salaryStructure.effectiveDate ? new Date(salaryStructure.effectiveDate) : new Date(),
       notes: salaryStructure.notes || '',
     };
@@ -737,7 +792,7 @@ export const updateEmployeeSalary = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Error updating employee salary:', error);
-    res.status(500).json({ success: false, message: 'Failed to update salary structure', error: error.message });
+    res.status(500).json({ success: false, message: error.message || 'Failed to update salary structure', error: error.message });
   }
 };
 
@@ -745,25 +800,7 @@ export const updateEmployeeSalary = async (req: Request, res: Response) => {
 export const generateEmployeePayslip = async (req: Request, res: Response) => {
   try {
     const id = String(req.params.id);
-    const {
-      payMonth, // 1 - 12
-      payYear, // e.g. 2026
-      payPeriod, // e.g. "September 2026"
-      totalWorkingDays,
-      paidDays,
-      leaveDays,
-      basicSalary,
-      allowances,
-      deductions,
-      bonuses,
-      otherEarnings,
-      paymentMode,
-      paymentStatus,
-      bankDetails,
-      authorizedBy,
-      notes,
-      isPublishedToEmployee,
-    } = req.body;
+    const body = req.body || {};
 
     let employee = null;
     if (mongoose.Types.ObjectId.isValid(id)) {
@@ -776,32 +813,208 @@ export const generateEmployeePayslip = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'Employee not found' });
     }
 
-    const monthNum = Number(payMonth) || new Date().getMonth() + 1;
-    const yearNum = Number(payYear) || new Date().getFullYear();
-    const periodStr = payPeriod || `${new Date(yearNum, monthNum - 1).toLocaleString('default', { month: 'long' })} ${yearNum}`;
+    // 1. Month & Year normalization
+    const MONTH_MAP: Record<string, number> = {
+      january: 1,
+      jan: 1,
+      february: 2,
+      feb: 2,
+      march: 3,
+      mar: 3,
+      april: 4,
+      apr: 4,
+      may: 5,
+      june: 6,
+      jun: 6,
+      july: 7,
+      jul: 7,
+      august: 8,
+      aug: 8,
+      september: 9,
+      sep: 9,
+      sept: 9,
+      october: 10,
+      oct: 10,
+      november: 11,
+      nov: 11,
+      december: 12,
+      dec: 12,
+    };
 
-    const base = Number(basicSalary) !== undefined ? Number(basicSalary) : (employee.salaryStructure?.basicSalary || 25000);
-    const allowList = Array.isArray(allowances) ? allowances : (employee.salaryStructure?.allowances || []);
-    const dedList = Array.isArray(deductions) ? deductions : (employee.salaryStructure?.deductions || []);
-    const bonusList = Array.isArray(bonuses) ? bonuses : (employee.salaryStructure?.bonuses || []);
-    const otherList = Array.isArray(otherEarnings) ? otherEarnings : [];
+    const MONTH_NAMES = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+
+    let monthNum = new Date().getMonth() + 1;
+    let rawMonthStr = '';
+
+    if (body.payMonth !== undefined && !isNaN(Number(body.payMonth))) {
+      monthNum = Number(body.payMonth);
+    } else if (body.month !== undefined) {
+      if (typeof body.month === 'number') {
+        monthNum = body.month;
+      } else if (typeof body.month === 'string') {
+        const cleanMonth = body.month.trim().toLowerCase();
+        rawMonthStr = body.month.trim();
+        if (MONTH_MAP[cleanMonth]) {
+          monthNum = MONTH_MAP[cleanMonth];
+        } else if (!isNaN(Number(cleanMonth))) {
+          monthNum = Number(cleanMonth);
+        }
+      }
+    }
+
+    // Clamp month between 1 and 12
+    if (monthNum < 1 || monthNum > 12) monthNum = new Date().getMonth() + 1;
+    const monthName = rawMonthStr || MONTH_NAMES[monthNum - 1] || 'Current Month';
+
+    const yearNum = Number(body.payYear || body.year) || new Date().getFullYear();
+    const periodStr = body.payPeriod || `${monthName} ${yearNum}`;
+
+    // 2. Working days and attendance
+    const totalWorkingDays = Number(body.totalWorkingDays ?? body.workingDays ?? 30);
+    const paidDays = Number(body.paidDays ?? body.presentDays ?? totalWorkingDays);
+    const leaveDays = Number(body.leaveDays ?? Math.max(0, totalWorkingDays - paidDays));
+    const overtimeHours = Number(body.overtimeHours ?? 0);
+
+    // 3. Earnings & Basic Pay
+    const base = Number(body.basicSalary ?? body.earnings?.basicSalary ?? employee.salaryStructure?.basicSalary ?? 24000);
+
+    const allowList: any[] = [];
+    const bonusList: any[] = [];
+    const otherList: any[] = [];
+
+    if (Array.isArray(body.allowances) && body.allowances.length > 0) {
+      body.allowances.forEach((a: any) => {
+        allowList.push({
+          key: a.key || a.label?.toLowerCase().replace(/\s+/g, '_') || 'allowance',
+          label: a.label || a.key || 'Allowance',
+          amount: Number(a.amount) || 0,
+        });
+      });
+    } else if (body.earnings && typeof body.earnings === 'object') {
+      const e = body.earnings;
+      if (e.hra !== undefined) allowList.push({ key: 'hra', label: 'House Rent Allowance (HRA)', amount: Number(e.hra) || 0 });
+      if (e.conveyance !== undefined) allowList.push({ key: 'conveyance', label: 'Conveyance Allowance', amount: Number(e.conveyance) || 0 });
+      if (e.specialAllowance !== undefined) allowList.push({ key: 'specialAllowance', label: 'Special / Tech Allowance', amount: Number(e.specialAllowance) || 0 });
+      if (e.overtime !== undefined) allowList.push({ key: 'overtime', label: 'Overtime & Field Pay', amount: Number(e.overtime) || 0 });
+      if (e.arrears !== undefined) allowList.push({ key: 'arrears', label: 'Arrears / Past Adjustments', amount: Number(e.arrears) || 0 });
+      if (e.bonus !== undefined && Number(e.bonus) > 0) bonusList.push({ key: 'bonus', label: 'Performance Bonus', amount: Number(e.bonus) || 0 });
+      if (e.otherEarnings !== undefined && Number(e.otherEarnings) > 0) otherList.push({ key: 'otherEarnings', label: 'Other Earnings', amount: Number(e.otherEarnings) || 0 });
+    } else if (Array.isArray(employee.salaryStructure?.allowances)) {
+      employee.salaryStructure.allowances.forEach((a: any) => {
+        allowList.push({
+          key: a.key || 'allowance',
+          label: a.label || 'Allowance',
+          amount: Number(a.amount) || 0,
+        });
+      });
+    }
+
+    if (Array.isArray(body.bonuses)) {
+      body.bonuses.forEach((b: any) => {
+        bonusList.push({
+          key: b.key || 'bonus',
+          label: b.label || 'Bonus',
+          amount: Number(b.amount) || 0,
+        });
+      });
+    }
+
+    if (Array.isArray(body.otherEarnings)) {
+      body.otherEarnings.forEach((o: any) => {
+        otherList.push({
+          key: o.key || 'other',
+          label: o.label || 'Other Earning',
+          amount: Number(o.amount) || 0,
+        });
+      });
+    }
 
     const totalAllowances = allowList.reduce((acc: number, a: any) => acc + (Number(a.amount) || 0), 0);
     const totalBonuses = bonusList.reduce((acc: number, b: any) => acc + (Number(b.amount) || 0), 0);
     const totalOther = otherList.reduce((acc: number, o: any) => acc + (Number(o.amount) || 0), 0);
     const grossEarnings = base + totalAllowances + totalBonuses + totalOther;
 
+    // 4. Deductions
+    const dedList: any[] = [];
+    if (Array.isArray(body.deductions) && body.deductions.length > 0) {
+      body.deductions.forEach((d: any) => {
+        dedList.push({
+          key: d.key || d.label?.toLowerCase().replace(/\s+/g, '_') || 'deduction',
+          label: d.label || d.key || 'Deduction',
+          amount: Number(d.amount) || 0,
+        });
+      });
+    } else if (body.deductions && typeof body.deductions === 'object') {
+      const d = body.deductions;
+      if (d.epf !== undefined) dedList.push({ key: 'epf', label: 'Provident Fund (EPF)', amount: Number(d.epf) || 0 });
+      if (d.esi !== undefined) dedList.push({ key: 'esi', label: 'ESI Contribution', amount: Number(d.esi) || 0 });
+      if (d.professionalTax !== undefined) dedList.push({ key: 'professionalTax', label: 'Professional Tax (PT)', amount: Number(d.professionalTax) || 0 });
+      if (d.tds !== undefined) dedList.push({ key: 'tds', label: 'TDS / Income Tax', amount: Number(d.tds) || 0 });
+      if (d.advance !== undefined) dedList.push({ key: 'advance', label: 'Salary Advance Recovery', amount: Number(d.advance) || 0 });
+      if (d.lateDeduction !== undefined) dedList.push({ key: 'lateDeduction', label: 'Late / Absence Deduction', amount: Number(d.lateDeduction) || 0 });
+      if (d.loan !== undefined) dedList.push({ key: 'loan', label: 'Loan / Asset EMI', amount: Number(d.loan) || 0 });
+      if (d.otherDeductions !== undefined) dedList.push({ key: 'otherDeductions', label: 'Other Deductions', amount: Number(d.otherDeductions) || 0 });
+    } else if (Array.isArray(employee.salaryStructure?.deductions)) {
+      employee.salaryStructure.deductions.forEach((d: any) => {
+        dedList.push({
+          key: d.key || 'deduction',
+          label: d.label || 'Deduction',
+          amount: Number(d.amount) || 0,
+        });
+      });
+    }
+
     const totalDeductions = dedList.reduce((acc: number, d: any) => acc + (Number(d.amount) || 0), 0);
     const netSalary = Math.max(0, grossEarnings - totalDeductions);
     const amountInWords = convertNumberToWords(netSalary);
 
-    // Generate unique payslip number
+    // 5. Unique Payslip Number
     const dateCode = `${yearNum}${monthNum.toString().padStart(2, '0')}`;
     const randSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
     const payslipNumber = `EBS-PAY-${employee.employeeId}-${dateCode}-${randSuffix}`;
 
     const adminUser = (req as any).user;
-    const adminName = adminUser?.name || 'Admin';
+    const adminName = adminUser?.name || 'Super Admin';
+
+    // 6. Bank Details normalization
+    const mergedBank = {
+      ...(employee.salaryStructure?.bankDetails || {}),
+      ...(body.bankDetails || {}),
+      bankName: body.bankDetails?.bankName || employee.salaryStructure?.bankDetails?.bankName || '',
+      accountNumber: body.bankDetails?.accountNumber || body.bankDetails?.bankAccount || employee.salaryStructure?.bankDetails?.accountNumber || '',
+      ifscCode: body.bankDetails?.ifscCode || employee.salaryStructure?.bankDetails?.ifscCode || '',
+      pan: body.bankDetails?.pan || body.bankDetails?.panNumber || employee.salaryStructure?.bankDetails?.pan || '',
+      panNumber: body.bankDetails?.panNumber || body.bankDetails?.pan || employee.salaryStructure?.bankDetails?.pan || '',
+      uan: body.bankDetails?.uan || body.bankDetails?.uanNumber || employee.salaryStructure?.bankDetails?.uan || '',
+      uanNumber: body.bankDetails?.uanNumber || body.bankDetails?.uan || employee.salaryStructure?.bankDetails?.uan || '',
+      paymentMode: body.bankDetails?.paymentMode || body.paymentMode || 'Bank Transfer',
+    };
+
+    // Dictionary format for frontend compatibility
+    const earningsDict: Record<string, number> = {
+      basicSalary: base,
+      hra: allowList.find((a) => a.key === 'hra')?.amount || 0,
+      conveyance: allowList.find((a) => a.key === 'conveyance')?.amount || 0,
+      specialAllowance: allowList.find((a) => a.key === 'specialAllowance')?.amount || 0,
+      overtime: allowList.find((a) => a.key === 'overtime')?.amount || 0,
+      arrears: allowList.find((a) => a.key === 'arrears')?.amount || 0,
+      bonus: bonusList.reduce((acc, b) => acc + (b.amount || 0), 0),
+      otherEarnings: otherList.reduce((acc, o) => acc + (o.amount || 0), 0),
+    };
+
+    const deductionsDict: Record<string, number> = {
+      epf: dedList.find((d) => d.key === 'epf')?.amount || 0,
+      esi: dedList.find((d) => d.key === 'esi')?.amount || 0,
+      professionalTax: dedList.find((d) => d.key === 'professionalTax' || d.key === 'professional_tax')?.amount || 0,
+      tds: dedList.find((d) => d.key === 'tds')?.amount || 0,
+      advance: dedList.find((d) => d.key === 'advance' || d.key === 'salary_advance')?.amount || 0,
+      lateDeduction: dedList.find((d) => d.key === 'lateDeduction' || d.key === 'late_deduction')?.amount || 0,
+      loan: dedList.find((d) => d.key === 'loan' || d.key === 'loan_recovery')?.amount || 0,
+      otherDeductions: dedList.find((d) => d.key === 'otherDeductions' || d.key === 'other_deductions')?.amount || 0,
+    };
 
     // Create persistent historical payroll record
     const payslip = await PayrollRecord.create({
@@ -815,32 +1028,40 @@ export const generateEmployeePayslip = async (req: Request, res: Response) => {
       payPeriod: periodStr,
       payMonth: monthNum,
       payYear: yearNum,
+      month: monthName,
+      year: yearNum,
       payDate: new Date(),
       effectiveDate: new Date(),
-      totalWorkingDays: Number(totalWorkingDays) || 30,
-      paidDays: Number(paidDays) !== undefined ? Number(paidDays) : 30,
-      leaveDays: Number(leaveDays) || 0,
+      totalWorkingDays,
+      workingDays: totalWorkingDays,
+      paidDays,
+      presentDays: paidDays,
+      leaveDays,
+      overtimeHours,
       basicSalary: base,
       allowances: allowList,
       deductions: dedList,
       bonuses: bonusList,
       otherEarnings: otherList,
+      earnings: earningsDict,
+      deductionsSummary: deductionsDict,
       grossEarnings,
       totalDeductions,
       netSalary,
       amountInWords,
-      paymentMode: paymentMode || 'Bank Transfer',
-      paymentStatus: paymentStatus || 'Paid',
-      bankDetails: bankDetails || employee.salaryStructure?.bankDetails || {},
-      authorizedBy: authorizedBy || 'HR & Finance Director',
-      notes: notes || '',
-      isPublishedToEmployee: isPublishedToEmployee !== false,
+      paymentMode: body.paymentMode || mergedBank.paymentMode || 'Bank Transfer',
+      paymentStatus: body.paymentStatus || 'Paid',
+      status: body.status || 'Issued',
+      bankDetails: mergedBank,
+      authorizedBy: body.authorizedBy || 'HR & Finance Director',
+      notes: body.notes || '',
+      isPublishedToEmployee: body.isPublishedToEmployee !== false,
       history: [
         {
-          action: 'Created & Published',
+          action: 'Created & Issued',
           updatedBy: adminName,
           updatedAt: new Date(),
-          remarks: `Payslip generated for ${periodStr}`,
+          remarks: `Official salary payslip generated for ${periodStr} (Net: ₹${netSalary.toLocaleString('en-IN')})`,
         },
       ],
     });
@@ -852,7 +1073,7 @@ export const generateEmployeePayslip = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Error generating payslip:', error);
-    res.status(500).json({ success: false, message: 'Failed to generate payslip', error: error.message });
+    res.status(500).json({ success: false, message: error.message || 'Failed to generate payslip', error: error.message });
   }
 };
 

@@ -332,49 +332,63 @@ const MySalarySlip = () => {
                 <div className="p-2 flex justify-between">
                   <span className="text-slate-600">Basic Salary</span>
                   <span className="font-mono font-semibold">
-                    ₹{(selectedSlip.earnings?.basicSalary || 0).toLocaleString('en-IN')}
+                    ₹{(selectedSlip.basicSalary || selectedSlip.earnings?.basicSalary || 0).toLocaleString('en-IN')}
                   </span>
                 </div>
-                {(selectedSlip.earnings?.hra || 0) > 0 && (
-                  <div className="p-2 flex justify-between">
-                    <span className="text-slate-600">House Rent Allowance (HRA)</span>
-                    <span className="font-mono font-semibold">
-                      ₹{selectedSlip.earnings.hra.toLocaleString('en-IN')}
-                    </span>
-                  </div>
+                {Array.isArray(selectedSlip.allowances) && selectedSlip.allowances.length > 0 ? (
+                  selectedSlip.allowances.map((a: any, idx: number) => (
+                    <div key={idx} className="p-2 flex justify-between">
+                      <span className="text-slate-600">{a.label || a.key}</span>
+                      <span className="font-mono font-semibold">
+                        ₹{(Number(a.amount) || 0).toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <>
+                    {(selectedSlip.earnings?.hra || 0) > 0 && (
+                      <div className="p-2 flex justify-between">
+                        <span className="text-slate-600">House Rent Allowance (HRA)</span>
+                        <span className="font-mono font-semibold">
+                          ₹{selectedSlip.earnings.hra.toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                    )}
+                    {(selectedSlip.earnings?.conveyance || 0) > 0 && (
+                      <div className="p-2 flex justify-between">
+                        <span className="text-slate-600">Conveyance Allowance</span>
+                        <span className="font-mono font-semibold">
+                          ₹{selectedSlip.earnings.conveyance.toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                    )}
+                    {(selectedSlip.earnings?.specialAllowance || 0) > 0 && (
+                      <div className="p-2 flex justify-between">
+                        <span className="text-slate-600">Special / Tech Allowance</span>
+                        <span className="font-mono font-semibold">
+                          ₹{selectedSlip.earnings.specialAllowance.toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                    )}
+                    {(selectedSlip.earnings?.overtime || 0) > 0 && (
+                      <div className="p-2 flex justify-between">
+                        <span className="text-slate-600">Overtime & Field Pay</span>
+                        <span className="font-mono font-semibold">
+                          ₹{selectedSlip.earnings.overtime.toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                    )}
+                  </>
                 )}
-                {(selectedSlip.earnings?.conveyance || 0) > 0 && (
-                  <div className="p-2 flex justify-between">
-                    <span className="text-slate-600">Conveyance Allowance</span>
-                    <span className="font-mono font-semibold">
-                      ₹{selectedSlip.earnings.conveyance.toLocaleString('en-IN')}
-                    </span>
-                  </div>
-                )}
-                {(selectedSlip.earnings?.specialAllowance || 0) > 0 && (
-                  <div className="p-2 flex justify-between">
-                    <span className="text-slate-600">Special / Tech Allowance</span>
-                    <span className="font-mono font-semibold">
-                      ₹{selectedSlip.earnings.specialAllowance.toLocaleString('en-IN')}
-                    </span>
-                  </div>
-                )}
-                {(selectedSlip.earnings?.overtime || 0) > 0 && (
-                  <div className="p-2 flex justify-between">
-                    <span className="text-slate-600">Overtime & Field Pay</span>
-                    <span className="font-mono font-semibold">
-                      ₹{selectedSlip.earnings.overtime.toLocaleString('en-IN')}
-                    </span>
-                  </div>
-                )}
-                {(selectedSlip.earnings?.bonus || 0) > 0 && (
-                  <div className="p-2 flex justify-between">
-                    <span className="text-slate-600">Performance Bonus</span>
-                    <span className="font-mono font-semibold">
-                      ₹{selectedSlip.earnings.bonus.toLocaleString('en-IN')}
-                    </span>
-                  </div>
-                )}
+                {Array.isArray(selectedSlip.bonuses) &&
+                  selectedSlip.bonuses.map((b: any, idx: number) => (
+                    <div key={`b-${idx}`} className="p-2 flex justify-between">
+                      <span className="text-slate-600">{b.label || 'Bonus'}</span>
+                      <span className="font-mono font-semibold">
+                        ₹{(Number(b.amount) || 0).toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                  ))}
               </div>
               <div className="bg-emerald-50/70 p-2.5 border-t border-emerald-200 flex justify-between font-bold text-emerald-950">
                 <span>GROSS EARNINGS:</span>
@@ -389,45 +403,50 @@ const MySalarySlip = () => {
                 <span>AMOUNT (₹)</span>
               </div>
               <div className="divide-y divide-slate-100 text-xs">
-                {(selectedSlip.deductions?.epf || 0) > 0 && (
-                  <div className="p-2 flex justify-between">
-                    <span className="text-slate-600">Provident Fund (EPF)</span>
-                    <span className="font-mono font-semibold text-rose-700">
-                      ₹{selectedSlip.deductions.epf.toLocaleString('en-IN')}
-                    </span>
-                  </div>
-                )}
-                {(selectedSlip.deductions?.esi || 0) > 0 && (
-                  <div className="p-2 flex justify-between">
-                    <span className="text-slate-600">ESI Contribution</span>
-                    <span className="font-mono font-semibold text-rose-700">
-                      ₹{selectedSlip.deductions.esi.toLocaleString('en-IN')}
-                    </span>
-                  </div>
-                )}
-                {(selectedSlip.deductions?.professionalTax || 0) > 0 && (
-                  <div className="p-2 flex justify-between">
-                    <span className="text-slate-600">Professional Tax (PT)</span>
-                    <span className="font-mono font-semibold text-rose-700">
-                      ₹{selectedSlip.deductions.professionalTax.toLocaleString('en-IN')}
-                    </span>
-                  </div>
-                )}
-                {(selectedSlip.deductions?.tds || 0) > 0 && (
-                  <div className="p-2 flex justify-between">
-                    <span className="text-slate-600">TDS / Income Tax</span>
-                    <span className="font-mono font-semibold text-rose-700">
-                      ₹{selectedSlip.deductions.tds.toLocaleString('en-IN')}
-                    </span>
-                  </div>
-                )}
-                {(selectedSlip.deductions?.advance || 0) > 0 && (
-                  <div className="p-2 flex justify-between">
-                    <span className="text-slate-600">Advance / Loan Recovery</span>
-                    <span className="font-mono font-semibold text-rose-700">
-                      ₹{selectedSlip.deductions.advance.toLocaleString('en-IN')}
-                    </span>
-                  </div>
+                {Array.isArray(selectedSlip.deductions) && selectedSlip.deductions.length > 0 ? (
+                  selectedSlip.deductions.map((d: any, idx: number) => (
+                    <div key={idx} className="p-2 flex justify-between">
+                      <span className="text-slate-600">{d.label || d.key}</span>
+                      <span className="font-mono font-semibold text-rose-700">
+                        ₹{(Number(d.amount) || 0).toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <>
+                    {(selectedSlip.deductions?.epf || 0) > 0 && (
+                      <div className="p-2 flex justify-between">
+                        <span className="text-slate-600">Provident Fund (EPF)</span>
+                        <span className="font-mono font-semibold text-rose-700">
+                          ₹{selectedSlip.deductions.epf.toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                    )}
+                    {(selectedSlip.deductions?.esi || 0) > 0 && (
+                      <div className="p-2 flex justify-between">
+                        <span className="text-slate-600">ESI Contribution</span>
+                        <span className="font-mono font-semibold text-rose-700">
+                          ₹{selectedSlip.deductions.esi.toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                    )}
+                    {(selectedSlip.deductions?.professionalTax || 0) > 0 && (
+                      <div className="p-2 flex justify-between">
+                        <span className="text-slate-600">Professional Tax (PT)</span>
+                        <span className="font-mono font-semibold text-rose-700">
+                          ₹{selectedSlip.deductions.professionalTax.toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                    )}
+                    {(selectedSlip.deductions?.tds || 0) > 0 && (
+                      <div className="p-2 flex justify-between">
+                        <span className="text-slate-600">TDS / Income Tax</span>
+                        <span className="font-mono font-semibold text-rose-700">
+                          ₹{selectedSlip.deductions.tds.toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
               <div className="bg-rose-50/70 p-2.5 border-t border-rose-200 flex justify-between font-bold text-rose-950">
@@ -451,22 +470,22 @@ const MySalarySlip = () => {
               </div>
               <div className="text-xs text-slate-600 italic mt-0.5">
                 <span className="font-bold not-italic text-slate-800">In Words:</span>{' '}
-                {selectedSlip.amountInWords || numberToWordsINR(selectedSlip.netPayable || 0)}
+                {selectedSlip.amountInWords || numberToWordsINR(selectedSlip.netSalary || selectedSlip.netPayable || 0)}
               </div>
               <div className="text-[10px] text-slate-500 font-mono mt-1">
                 Disbursal Mode:{' '}
                 <span className="font-semibold text-slate-700">
-                  {selectedSlip.bankDetails?.paymentMode || 'Bank Transfer (NEFT/RTGS)'}
+                  {selectedSlip.bankDetails?.paymentMode || selectedSlip.paymentMode || 'Bank Transfer (NEFT/RTGS)'}
                 </span>
               </div>
             </div>
 
             <div className="text-right">
               <div className="text-2xl font-black font-mono tracking-tight" style={{ color: primaryColor }}>
-                ₹{(selectedSlip.netPayable || 0).toLocaleString('en-IN')}
+                ₹{(selectedSlip.netSalary || selectedSlip.netPayable || 0).toLocaleString('en-IN')}
               </div>
               <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-full border border-emerald-200">
-                {selectedSlip.paymentStatus || 'Disbursed & Audited'}
+                {selectedSlip.paymentStatus || selectedSlip.status || 'Disbursed & Audited'}
               </span>
             </div>
           </div>

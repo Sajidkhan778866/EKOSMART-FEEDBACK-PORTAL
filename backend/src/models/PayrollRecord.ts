@@ -17,33 +17,32 @@ export interface IPayrollRecord extends Document {
   payPeriod: string; // e.g. "September 2026"
   payMonth: number; // 1-12
   payYear: number;
+  month?: string;
+  year?: number;
   payDate: Date;
   effectiveDate: Date;
   totalWorkingDays: number;
+  workingDays?: number;
   paidDays: number;
+  presentDays?: number;
   leaveDays: number;
+  overtimeHours?: number;
   basicSalary: number;
   allowances: ISalaryComponent[];
   deductions: ISalaryComponent[];
   bonuses: ISalaryComponent[];
   otherEarnings: ISalaryComponent[];
+  earnings?: any;
+  deductionsSummary?: any;
   grossEarnings: number;
   totalDeductions: number;
   netSalary: number;
+  netPayable?: number;
   amountInWords: string;
   paymentMode: string;
-  paymentStatus: 'Paid' | 'Processed' | 'Pending';
-  bankDetails: {
-    bankName?: string;
-    accountNumber?: string;
-    ifscCode?: string;
-    branch?: string;
-    upiId?: string;
-    pan?: string;
-    uan?: string;
-    pfNumber?: string;
-    esicNumber?: string;
-  };
+  paymentStatus: string;
+  status?: string;
+  bankDetails: any;
   authorizedBy: string;
   notes?: string;
   isPublishedToEmployee: boolean;
@@ -55,15 +54,16 @@ export interface IPayrollRecord extends Document {
   }>;
   createdAt: Date;
   updatedAt: Date;
+  [key: string]: any;
 }
 
 const salaryComponentSchema = new Schema(
   {
-    key: { type: String, required: true },
-    label: { type: String, required: true },
-    amount: { type: Number, required: true, default: 0 },
+    key: { type: String, default: 'item' },
+    label: { type: String, default: 'Item' },
+    amount: { type: Number, default: 0 },
   },
-  { _id: false }
+  { _id: false, strict: false }
 );
 
 const payrollRecordSchema = new Schema(
@@ -76,18 +76,25 @@ const payrollRecordSchema = new Schema(
     designation: { type: String, default: 'Service Engineer' },
     division: { type: String, default: 'Showroom' },
     payPeriod: { type: String, required: true, index: true },
-    payMonth: { type: Number, required: true },
-    payYear: { type: Number, required: true },
+    payMonth: { type: Number, default: 1 },
+    payYear: { type: Number, default: 2026 },
+    month: { type: String, default: '' },
+    year: { type: Number, default: 2026 },
     payDate: { type: Date, default: Date.now },
     effectiveDate: { type: Date, default: Date.now },
     totalWorkingDays: { type: Number, default: 30 },
+    workingDays: { type: Number, default: 30 },
     paidDays: { type: Number, default: 30 },
+    presentDays: { type: Number, default: 30 },
     leaveDays: { type: Number, default: 0 },
+    overtimeHours: { type: Number, default: 0 },
     basicSalary: { type: Number, required: true, default: 0 },
     allowances: [salaryComponentSchema],
     deductions: [salaryComponentSchema],
     bonuses: [salaryComponentSchema],
     otherEarnings: [salaryComponentSchema],
+    earnings: { type: Schema.Types.Mixed, default: {} },
+    deductionsSummary: { type: Schema.Types.Mixed, default: {} },
     grossEarnings: { type: Number, required: true, default: 0 },
     totalDeductions: { type: Number, required: true, default: 0 },
     netSalary: { type: Number, required: true, default: 0 },
@@ -95,10 +102,10 @@ const payrollRecordSchema = new Schema(
     paymentMode: { type: String, default: 'Bank Transfer' },
     paymentStatus: {
       type: String,
-      enum: ['Paid', 'Processed', 'Pending'],
       default: 'Paid',
       index: true,
     },
+    status: { type: String, default: 'Issued' },
     bankDetails: {
       bankName: { type: String, default: '' },
       accountNumber: { type: String, default: '' },
@@ -106,23 +113,26 @@ const payrollRecordSchema = new Schema(
       branch: { type: String, default: '' },
       upiId: { type: String, default: '' },
       pan: { type: String, default: '' },
+      panNumber: { type: String, default: '' },
       uan: { type: String, default: '' },
+      uanNumber: { type: String, default: '' },
       pfNumber: { type: String, default: '' },
       esicNumber: { type: String, default: '' },
+      paymentMode: { type: String, default: 'Bank Transfer' },
     },
     authorizedBy: { type: String, default: 'HR & Finance Director' },
     notes: { type: String, default: '' },
     isPublishedToEmployee: { type: Boolean, default: true },
     history: [
       {
-        action: { type: String, required: true },
+        action: { type: String, default: 'Generated' },
         updatedBy: { type: String, default: 'Admin' },
         updatedAt: { type: Date, default: Date.now },
         remarks: { type: String, default: '' },
       },
     ],
   },
-  { timestamps: true }
+  { timestamps: true, strict: false }
 );
 
 export const PayrollRecord = mongoose.model<IPayrollRecord>('PayrollRecord', payrollRecordSchema);
