@@ -174,14 +174,48 @@ const MySalarySlip = () => {
                 type="button"
                 onClick={handlePrint}
                 className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-md shadow-emerald-950/20"
+                title="Print official payslip or choose 'Save as PDF' in the print dialog"
               >
                 <Printer size={14} />
-                <span>Print Official Payslip</span>
+                <span>Print / Save PDF</span>
               </button>
             </>
           )}
         </div>
       </div>
+
+      {/* Embedded Print Isolation Style */}
+      <style>{`
+        @media print {
+          @page {
+            size: A4 portrait;
+            margin: 8mm;
+          }
+          body * {
+            visibility: hidden !important;
+          }
+          #printable-payslip,
+          #printable-payslip * {
+            visibility: visible !important;
+          }
+          #printable-payslip {
+            position: fixed !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 20px !important;
+            border: 2px solid ${primaryColor} !important;
+            border-radius: 12px !important;
+            box-shadow: none !important;
+            background: #ffffff !important;
+            color: #0f172a !important;
+            z-index: 999999 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+        }
+      `}</style>
 
       {loading ? (
         <div className="bg-white p-16 rounded-3xl border border-slate-200 shadow-sm flex flex-col items-center justify-center text-slate-400 space-y-3">

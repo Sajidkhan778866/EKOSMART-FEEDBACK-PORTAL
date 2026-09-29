@@ -75,18 +75,30 @@ export const Reports = () => {
       const res = await axios.get(`${API_BASE_URL}/complaints/admin`, { params });
       if (res.data.success) {
         const allComplaints = res.data.data || [];
-        // Filter by assignedTo matching current user, or user's authorized divisions
-        const userDivisions = Array.isArray(user?.division)
-          ? user.division
-          : typeof user?.division === 'string'
-          ? [user.division]
-          : ['Battery', 'Showroom', 'Rental', 'Spare Parts'];
-        const userEmpId = user?.employeeId;
+        const userEmpId = (user?.employeeId || '').trim().toLowerCase();
+        const userUserId = (user?._id || (user as any)?.id || '').toString();
+        const userName = (user?.name || '').trim().toLowerCase();
+        const userEmail = (user?.email || '').trim().toLowerCase();
+        const userMobile = (user?.mobile || '').trim().replace(/\D/g, '');
 
+        // Strictly show tickets assigned to this employee
         const filtered = allComplaints.filter((c: any) => {
-          const isAssignedToMe = c.assignedTo?.employeeId === userEmpId || c.assignedTo?._id === user?._id;
-          const isInMyDivision = userDivisions.includes(c.division);
-          return isAssignedToMe || isInMyDivision;
+          if (!c.assignedTo) return false;
+
+          const assignedEmpId = (c.assignedTo?.employeeId || '').trim().toLowerCase();
+          const assignedId = (c.assignedTo?._id || c.assignedTo?.id || c.assignedTo || '').toString();
+          const assignedName = (c.assignedTo?.name || (typeof c.assignedTo === 'string' ? c.assignedTo : '')).trim().toLowerCase();
+          const assignedEmail = (c.assignedTo?.email || '').trim().toLowerCase();
+          const assignedMobile = (c.assignedTo?.mobile || '').trim().replace(/\D/g, '');
+
+          const isAssignedToMe =
+            (userEmpId && assignedEmpId === userEmpId) ||
+            (userUserId && assignedId === userUserId) ||
+            (userName && (assignedName === userName || assignedName.includes(userName))) ||
+            (userEmail && assignedEmail === userEmail) ||
+            (userMobile && assignedMobile && assignedMobile === userMobile);
+
+          return isAssignedToMe;
         });
 
         setComplaints(filtered);
