@@ -196,6 +196,12 @@ export const employeeApi = {
   delete: (id: string) => apiClient.delete(`/admin/employees/${id}`),
   export: (params?: any) => apiClient.get('/admin/employees/export', { params, responseType: 'blob' }),
   getTasks: (id: string) => apiClient.get(`/admin/employees/${id}/tasks`),
+  getSalary: (id: string) => apiClient.get(`/admin/employees/${id}/salary`),
+  updateSalary: (id: string, salaryStructure: any) => apiClient.put(`/admin/employees/${id}/salary`, { salaryStructure }),
+  generatePayslip: (id: string, data: any) => apiClient.post(`/admin/employees/${id}/generate-payslip`, data),
+  getPayslips: (id: string, params?: any) => apiClient.get(`/admin/employees/${id}/payslips`, { params }),
+  getAllPayslips: (params?: any) => apiClient.get('/admin/employees/payslips/all', { params }),
+  deletePayslip: (payslipId: string) => apiClient.delete(`/admin/employees/payslips/${payslipId}`),
 };
 
 export const complaintTypeApi = {
@@ -212,6 +218,7 @@ export const complaintApi = {
     apiClient.post(`/complaints/admin/${id}/assign`, { employeeId }),
   updateStatus: (id: string, status: string, priority?: string, remarks?: any) =>
     apiClient.patch(`/complaints/admin/${id}/status`, { status, priority, ...remarks }),
+  export: (params?: any) => apiClient.get('/complaints/export', { params, responseType: 'blob' }),
 };
 
 export const warrantyApi = {
@@ -229,7 +236,7 @@ export const formApi = {
 };
 
 export const dashboardApi = {
-  getStats: () => apiClient.get('/dashboard/admin'),
+  getStats: (params?: any) => apiClient.get('/dashboard/admin', { params }),
   getCurrentApplications: (params?: any) => apiClient.get('/dashboard/current-applications', { params }),
 };
 
@@ -244,6 +251,8 @@ export const contentApi = {
 };
 
 export const stockApi = {
+  getConfig: () => apiClient.get('/stock/config'),
+  updateConfig: (data: any) => apiClient.put('/stock/config', data),
   getAll: (params?: any) => apiClient.get('/stock', { params }),
   getById: (id: string) => apiClient.get(`/stock/${id}`),
   getBySerial: (serial: string) => apiClient.get(`/stock/serial/${encodeURIComponent(serial)}`),

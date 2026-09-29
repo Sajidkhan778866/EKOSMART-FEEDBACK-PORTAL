@@ -22,6 +22,7 @@ import { billingApi, stockApi, billTemplateApi } from '../api/client';
 import ScannerModal from '../components/ScannerModal';
 import BillTemplateDesigner, { type IBillTemplate, normalizeTemplate } from '../components/BillTemplateDesigner';
 import ErrorBoundary from '../components/ErrorBoundary';
+import { DateRangeFilter, type DateRangeState } from '../components/DateRangeFilter';
 
 export interface IBillLineItem {
   productId: string;
@@ -70,6 +71,9 @@ const BillingManager = () => {
   const [search, setSearch] = useState('');
   const [paymentStatusFilter, setPaymentStatusFilter] = useState('All');
   const [meta, setMeta] = useState({ totalRecords: 0, totalRevenue: 0 });
+
+  // Date Filter
+  const [dateRange, setDateRange] = useState<DateRangeState>({ filter: 'all' });
 
   // Soft-Coded Active Template State for Invoices
   const [activeTemplate, setActiveTemplate] = useState<IBillTemplate | null>(null);
@@ -125,7 +129,7 @@ const BillingManager = () => {
   useEffect(() => {
     fetchBills();
     fetchActiveTemplate();
-  }, [paymentStatusFilter]);
+  }, [paymentStatusFilter, dateRange]);
 
   const fetchActiveTemplate = async () => {
     try {
@@ -146,6 +150,9 @@ const BillingManager = () => {
       const res = await billingApi.getAll({
         search: search.trim() || undefined,
         paymentStatus: paymentStatusFilter !== 'All' ? paymentStatusFilter : undefined,
+        dateFilter: dateRange.filter,
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
       });
       if (res.data?.success) {
         setBills(res.data.data || []);
@@ -498,32 +505,39 @@ const BillingManager = () => {
           </div>
 
           {/* Filter and Search Bar */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-3 justify-between items-stretch md:items-center">
-            <div className="flex-1 relative">
-              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && fetchBills()}
-                placeholder="Search by Invoice Number, Customer Name, or Phone..."
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-              />
-            </div>
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+            <DateRangeFilter
+              value={dateRange}
+              onChange={setDateRange}
+            />
 
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5">
-                <CreditCard size={14} className="text-slate-500" />
-                <select
-                  value={paymentStatusFilter}
-                  onChange={(e) => setPaymentStatusFilter(e.target.value)}
-                  className="bg-transparent text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer"
-                >
-                  <option value="All">All Payment Status</option>
-                  <option value="Paid">Paid</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Partial">Partial</option>
-                </select>
+            <div className="flex flex-col md:flex-row gap-3 justify-between items-stretch md:items-center pt-1 border-t border-slate-100">
+              <div className="flex-1 relative">
+                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && fetchBills()}
+                  placeholder="Search by Invoice Number, Customer Name, or Phone..."
+                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5">
+                  <CreditCard size={14} className="text-slate-500" />
+                  <select
+                    value={paymentStatusFilter}
+                    onChange={(e) => setPaymentStatusFilter(e.target.value)}
+                    className="bg-transparent text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer"
+                  >
+                    <option value="All">All Payment Status</option>
+                    <option value="Paid">Paid</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Partial">Partial</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>

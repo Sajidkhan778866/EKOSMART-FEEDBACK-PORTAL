@@ -7,9 +7,14 @@ import {
   Loader2,
   AlertCircle,
   Eye,
+  Download,
+  Clock,
+  Archive,
+  RefreshCw,
 } from 'lucide-react';
 import { complaintApi, employeeApi, formApi } from '../api/client';
 import { TicketDetailModal } from '../components/TicketDetailModal';
+import { DateRangeFilter, type DateRangeState } from '../components/DateRangeFilter';
 
 interface ComplaintItem {
   _id: string;
@@ -30,11 +35,18 @@ interface ComplaintItem {
     designation: string;
   };
   createdAt: string;
+  updatedAt?: string;
+  resolvedAt?: string;
 }
 
 const Complaints = () => {
   const [complaints, setComplaints] = useState<ComplaintItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'active' | 'resolved'>('active');
+
+  // Date Filters (Default ALL for full records, or TODAY if preferred)
+  const [dateRange, setDateRange] = useState<DateRangeState>({ filter: 'all' });
+
   const [divisionFilter, setDivisionFilter] = useState('');
   const [availableDivisions, setAvailableDivisions] = useState<string[]>([
     'Battery',
@@ -46,6 +58,7 @@ const Complaints = () => {
   ]);
   const [statusFilter, setStatusFilter] = useState('');
   const [search, setSearch] = useState('');
+  const [exporting, setExporting] = useState(false);
 
   // Ticket Dossier Modal
   const [selectedTicketIdOrNumber, setSelectedTicketIdOrNumber] = useState<string | null>(null);
@@ -61,15 +74,19 @@ const Complaints = () => {
     try {
       setLoading(true);
       const res = await complaintApi.getAll({
+        scope: activeTab, // 'active' or 'resolved'
         division: divisionFilter || undefined,
         status: statusFilter || undefined,
         search: search || undefined,
+        dateFilter: dateRange.filter,
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
       });
       if (res.data.success) {
         setComplaints(res.data.data);
       }
     } catch (err) {
-      console.error(err);
+      console.error('Error fetching complaints:', err);
     } finally {
       setLoading(false);
     }
@@ -88,14 +105,41 @@ const Complaints = () => {
 
   useEffect(() => {
     fetchComplaints();
-  }, [divisionFilter, statusFilter]);
+  }, [activeTab, divisionFilter, statusFilter, dateRange]);
+
+  const handleExportComplaints = async () => {
+    try {
+      setExporting(true);
+      const res = await complaintApi.export({
+        scope: activeTab,
+        division: divisionFilter || undefined,
+        status: statusFilter || undefined,
+        search: search || undefined,
+        dateFilter: dateRange.filter,
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
+      });
+      const blob = new Blob([res.data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `complaints-${activeTab}-${dateRange.filter.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to export complaints:', err);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const openAssignModal = async (complaint: ComplaintItem) => {
     setSelectedComplaint(complaint);
     setSelectedEmployeeId(complaint.assignedTo?._id || '');
     setAssignMessage('');
     try {
-      // Fetch ONLY employees eligible for this complaint's division
       const res = await employeeApi.getEligible(complaint.division);
       if (res.data.success) {
         setEligibleEmployees(res.data.data);
@@ -136,52 +180,133 @@ const Complaints = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Complaint Tracker</h1>
-          <p className="text-slate-500 text-sm">Monitor, assign, and resolve customer service tickets</p>
+          <h1 className="text-2xl font-bold text-slate-800">Complaint Tracker & History Archive</h1>
+          <p className="text-slate-500 text-sm">
+            Monitor active service tickets, assign field engineers, and inspect resolved historical records.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={fetchComplaints}
+            className="p-2 bg-white hover:bg-slate-50 text-slate-600 rounded-xl border border-slate-200 transition cursor-pointer shadow-xs"
+            title="Refresh Complaints"
+          >
+            <RefreshCw size={16} />
+          </button>
+
+          <button
+            type="button"
+            disabled={exporting}
+            onClick={handleExportComplaints}
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-md cursor-pointer disabled:opacity-50"
+          >
+            {exporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+            <span>Export {activeTab === 'active' ? 'Active' : 'Resolved'} (CSV)</span>
+          </button>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 justify-between items-center">
-        <div className="relative w-full md:w-96">
-          <input
-            type="text"
-            placeholder="Search ticket number, customer name..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+      {/* Tabs: Active Complaints vs Resolved & Closed History */}
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab('active');
+            setStatusFilter('');
+          }}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+            activeTab === 'active'
+              ? 'bg-slate-900 text-white shadow-md'
+              : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+          }`}
+        >
+          <Clock size={15} className={activeTab === 'active' ? 'text-amber-400' : 'text-slate-400'} />
+          <span>Active Complaints Queue</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab('resolved');
+            setStatusFilter('');
+          }}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+            activeTab === 'resolved'
+              ? 'bg-slate-900 text-white shadow-md'
+              : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+          }`}
+        >
+          <Archive size={15} className={activeTab === 'resolved' ? 'text-emerald-400' : 'text-slate-400'} />
+          <span>Resolved & Closed History Archive</span>
+        </button>
+      </div>
+
+      {/* Top Filter Bar: Date Range + Search + Dropdown Filters */}
+      <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+        {/* Date Range Filter */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          <DateRangeFilter
+            value={dateRange}
+            onChange={setDateRange}
           />
-          <Search size={18} className="absolute left-3 top-2.5 text-slate-400" />
         </div>
 
-        <div className="flex gap-3 w-full md:w-auto">
-          <select
-            value={divisionFilter}
-            onChange={(e) => setDivisionFilter(e.target.value)}
-            className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-700"
-          >
-            <option value="">All Divisions</option>
-            {availableDivisions.map((d) => (
-              <option key={d} value={d}>{d}</option>
-            ))}
-          </select>
+        {/* Search and Dropdowns */}
+        <div className="flex flex-col md:flex-row gap-3 justify-between items-center">
+          <div className="relative w-full md:w-96">
+            <input
+              type="text"
+              placeholder="Search ticket #, customer mobile, name..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && fetchComplaints()}
+              className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-xs bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+            <Search size={16} className="absolute left-3 top-2.5 text-slate-400" />
+          </div>
 
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-700"
-          >
-            <option value="">All Statuses</option>
-            <option value="New">New</option>
-            <option value="Pending">Pending</option>
-            <option value="Assigned">Assigned</option>
-            <option value="In Progress">In Progress</option>
-            <option value="Resolved">Resolved</option>
-            <option value="Closed">Closed</option>
-            <option value="Rejected">Rejected</option>
-          </select>
+          <div className="flex gap-2 w-full md:w-auto flex-wrap">
+            <select
+              value={divisionFilter}
+              onChange={(e) => setDivisionFilter(e.target.value)}
+              className="px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white text-slate-700 font-semibold cursor-pointer"
+            >
+              <option value="">All Service Divisions</option>
+              {availableDivisions.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white text-slate-700 font-semibold cursor-pointer"
+            >
+              <option value="">
+                {activeTab === 'active' ? 'All Active Statuses' : 'All Resolved Statuses'}
+              </option>
+              {activeTab === 'active' ? (
+                <>
+                  <option value="New">New</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Assigned">Assigned</option>
+                  <option value="In Progress">In Progress</option>
+                </>
+              ) : (
+                <>
+                  <option value="Resolved">Resolved</option>
+                  <option value="Closed">Closed</option>
+                  <option value="Rejected">Rejected</option>
+                </>
+              )}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -189,26 +314,36 @@ const Complaints = () => {
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         {loading ? (
           <div className="py-20 flex flex-col items-center justify-center text-slate-400">
-            <Loader2 size={36} className="animate-spin text-green-600 mb-3" />
-            <p className="text-sm font-medium">Loading complaints...</p>
+            <Loader2 size={36} className="animate-spin text-emerald-600 mb-3" />
+            <p className="text-sm font-medium">Loading {activeTab === 'active' ? 'active' : 'historical'} complaints...</p>
           </div>
         ) : complaints.length === 0 ? (
-          <div className="py-20 text-center text-slate-400">
-            <ClipboardList size={48} className="mx-auto mb-3 opacity-50" />
-            <p className="text-base font-semibold text-slate-700">No complaints found</p>
-            <p className="text-xs text-slate-400 mt-1">New customer complaints will appear here.</p>
+          <div className="py-20 text-center text-slate-400 space-y-2">
+            {activeTab === 'active' ? (
+              <ClipboardList size={44} className="mx-auto opacity-40 text-slate-400" />
+            ) : (
+              <Archive size={44} className="mx-auto opacity-40 text-slate-400" />
+            )}
+            <p className="text-base font-bold text-slate-700">
+              {activeTab === 'active' ? 'No Active Complaints' : 'No Resolved Records Found'}
+            </p>
+            <p className="text-xs text-slate-400">
+              {activeTab === 'active'
+                ? 'All customer complaints have been resolved or closed.'
+                : 'Resolved complaints and historical work orders will be archived here.'}
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  <th className="py-4 px-6">Ticket Number</th>
-                  <th className="py-4 px-6">Customer</th>
-                  <th className="py-4 px-6">Division / Type</th>
-                  <th className="py-4 px-6">Status</th>
-                  <th className="py-4 px-6">Assigned Engineer</th>
-                  <th className="py-4 px-6 text-right">Actions</th>
+                <tr className="bg-slate-50 border-b border-slate-200 font-bold text-slate-500 uppercase tracking-wider text-[11px]">
+                  <th className="py-3.5 px-6">Ticket Details</th>
+                  <th className="py-3.5 px-6">Customer</th>
+                  <th className="py-3.5 px-6">Division & Category</th>
+                  <th className="py-3.5 px-6">Status</th>
+                  <th className="py-3.5 px-6">Assigned Engineer</th>
+                  <th className="py-3.5 px-6 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -220,12 +355,12 @@ const Complaints = () => {
                         className="group flex flex-col text-left cursor-pointer"
                         title="Click to view full problem dossier"
                       >
-                        <span className="font-mono font-bold text-slate-800 text-sm group-hover:text-green-600 group-hover:underline flex items-center gap-1.5">
+                        <span className="font-mono font-bold text-slate-800 text-sm group-hover:text-emerald-600 group-hover:underline flex items-center gap-1.5">
                           <span>{c.ticketNumber}</span>
-                          <Eye size={13} className="text-slate-400 group-hover:text-green-600" />
+                          <Eye size={13} className="text-slate-400 group-hover:text-emerald-600" />
                         </span>
                         <span className="text-[11px] text-slate-400 mt-0.5">
-                          {new Date(c.createdAt).toLocaleDateString()}
+                          Registered: {new Date(c.createdAt).toLocaleDateString('en-IN')}
                         </span>
                       </button>
                     </td>
@@ -237,11 +372,11 @@ const Complaints = () => {
 
                     <td className="py-4 px-6">
                       <div className="space-y-1">
-                        <span className="font-semibold text-xs bg-slate-100 text-slate-800 px-2.5 py-1 rounded-full border border-slate-200 inline-block">
+                        <span className="font-bold text-xs bg-slate-100 text-slate-800 px-2.5 py-0.5 rounded-md border border-slate-200 inline-block">
                           {c.division}
                         </span>
                         {c.complaintType && (
-                          <span className="text-[11px] text-slate-500 block truncate max-w-[150px]">
+                          <span className="text-[11px] text-slate-500 block truncate max-w-[160px]">
                             {c.complaintType}
                           </span>
                         )}
@@ -258,7 +393,7 @@ const Complaints = () => {
                             : c.status === 'In Progress'
                             ? 'bg-purple-100 text-purple-800 border-purple-300'
                             : c.status === 'Rejected'
-                            ? 'bg-red-100 text-red-800 border-red-300'
+                            ? 'bg-rose-100 text-rose-800 border-rose-300'
                             : c.status === 'Assigned'
                             ? 'bg-blue-100 text-blue-800 border-blue-300'
                             : 'bg-amber-100 text-amber-800 border-amber-300'
@@ -294,14 +429,14 @@ const Complaints = () => {
                           className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer"
                           title="View Full Dossier"
                         >
-                          <Eye size={14} />
-                          <span>View</span>
+                          <Eye size={13} />
+                          <span>Dossier</span>
                         </button>
                         <button
                           onClick={() => openAssignModal(c)}
-                          className="bg-slate-100 hover:bg-green-600 hover:text-white text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                          className="bg-slate-100 hover:bg-emerald-600 hover:text-white text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer"
                         >
-                          <UserCheck size={14} />
+                          <UserCheck size={13} />
                           <span>{c.assignedTo ? 'Reassign' : 'Assign'}</span>
                         </button>
                       </div>
@@ -318,7 +453,7 @@ const Complaints = () => {
       {selectedComplaint && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between border-b-4 border-green-600">
+            <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between border-b-4 border-emerald-600">
               <div>
                 <h3 className="font-bold text-base">Assign Complaint</h3>
                 <p className="text-slate-400 text-xs font-mono">{selectedComplaint.ticketNumber}</p>
@@ -339,8 +474,16 @@ const Complaints = () => {
                 </div>
               )}
               <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-1">
-                <p><span className="text-slate-400">Division:</span> <span className="font-bold text-green-700">{selectedComplaint.division}</span></p>
-                <p><span className="text-slate-400">Customer:</span> <span className="font-semibold text-slate-800">{selectedComplaint.customer?.name} ({selectedComplaint.customer?.mobile})</span></p>
+                <p>
+                  <span className="text-slate-400">Division:</span>{' '}
+                  <span className="font-bold text-emerald-700">{selectedComplaint.division}</span>
+                </p>
+                <p>
+                  <span className="text-slate-400">Customer:</span>{' '}
+                  <span className="font-semibold text-slate-800">
+                    {selectedComplaint.customer?.name} ({selectedComplaint.customer?.mobile})
+                  </span>
+                </p>
               </div>
 
               <div>
@@ -356,7 +499,7 @@ const Complaints = () => {
                     required
                     value={selectedEmployeeId}
                     onChange={(e) => setSelectedEmployeeId(e.target.value)}
-                    className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   >
                     <option value="">-- Choose Authorized Employee --</option>
                     {eligibleEmployees.map((emp) => (
@@ -372,14 +515,14 @@ const Complaints = () => {
                 <button
                   type="button"
                   onClick={() => setSelectedComplaint(null)}
-                  className="px-4 py-2 border border-slate-300 text-slate-700 rounded-xl text-xs font-semibold hover:bg-slate-50"
+                  className="px-4 py-2 border border-slate-300 text-slate-700 rounded-xl text-xs font-semibold hover:bg-slate-50 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={assigning || eligibleEmployees.length === 0}
-                  className="px-5 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold shadow transition flex items-center gap-1.5 disabled:opacity-50"
+                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
                 >
                   {assigning ? <Loader2 size={14} className="animate-spin" /> : <UserCheck size={14} />}
                   <span>Confirm Assignment</span>

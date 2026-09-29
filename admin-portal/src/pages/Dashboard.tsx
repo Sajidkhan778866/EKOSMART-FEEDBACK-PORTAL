@@ -17,7 +17,6 @@ import {
 import {
   ClipboardList,
   CheckCircle,
-  Clock,
   AlertCircle,
   Search,
   UserCheck,
@@ -25,11 +24,13 @@ import {
   ExternalLink,
   RefreshCw,
   Phone,
-  Calendar,
   Layers,
+  ShoppingBag,
+  Users,
 } from 'lucide-react';
 import { dashboardApi, complaintApi, employeeApi, complaintTypeApi, formApi } from '../api/client';
 import { TicketDetailModal } from '../components/TicketDetailModal';
+import { DateRangeFilter, type DateRangeState } from '../components/DateRangeFilter';
 
 interface ComplaintItem {
   _id: string;
@@ -54,6 +55,23 @@ interface ComplaintItem {
 }
 
 interface DashboardStats {
+  filter?: string;
+  dateRange?: { startDate?: string; endDate?: string };
+  todayStats?: {
+    complaints: number;
+    newComplaints: number;
+    pendingComplaints: number;
+    assignedComplaints: number;
+    inProgressComplaints: number;
+    resolvedComplaints: number;
+    closedComplaints: number;
+    resolvedAndClosed: number;
+    customers: number;
+    bills: number;
+    revenue: number;
+    warranties: number;
+    stockMovements: number;
+  };
   totalComplaints: number;
   pendingComplaints: number;
   assignedComplaints: number;
@@ -64,22 +82,35 @@ interface DashboardStats {
   activeEmployees: number;
   totalCustomers: number;
   totalWarranties: number;
+  billsCount?: number;
+  totalRevenue?: number;
+  stockMovementsCount?: number;
   activeWarranties: number;
   expiringWarranties: number;
   expiredWarranties: number;
+  allTimeStats?: {
+    totalComplaints: number;
+    totalCustomers: number;
+    totalEmployees: number;
+    activeEmployees: number;
+    totalWarranties: number;
+    activeWarranties: number;
+    totalRevenue: number;
+    totalStockItems: number;
+  };
   divisionBreakdown: { name: string; complaints: number }[];
   warrantyBreakdown: { name: string; value: number; color: string }[];
-  weeklyActivity?: { name: string; date?: string; complaints: number; warranties: number }[];
+  weeklyActivity?: { name: string; date?: string; complaints: number; warranties: number; bills?: number }[];
 }
 
 const fallbackWeeklyActivity = [
-  { name: 'Mon', warranties: 12, complaints: 8 },
-  { name: 'Tue', warranties: 19, complaints: 15 },
-  { name: 'Wed', warranties: 15, complaints: 10 },
-  { name: 'Thu', warranties: 22, complaints: 12 },
-  { name: 'Fri', warranties: 25, complaints: 18 },
-  { name: 'Sat', warranties: 30, complaints: 25 },
-  { name: 'Sun', warranties: 18, complaints: 14 },
+  { name: 'Mon', warranties: 12, complaints: 8, bills: 4 },
+  { name: 'Tue', warranties: 19, complaints: 15, bills: 7 },
+  { name: 'Wed', warranties: 15, complaints: 10, bills: 6 },
+  { name: 'Thu', warranties: 22, complaints: 12, bills: 9 },
+  { name: 'Fri', warranties: 25, complaints: 18, bills: 12 },
+  { name: 'Sat', warranties: 30, complaints: 25, bills: 15 },
+  { name: 'Sun', warranties: 18, complaints: 14, bills: 5 },
 ];
 
 const fallbackPieData = [
@@ -96,6 +127,7 @@ const fallbackBarData = [
 ];
 
 const Dashboard = () => {
+  const [dateRange, setDateRange] = useState<DateRangeState>({ filter: 'today' });
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [complaints, setComplaints] = useState<ComplaintItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -137,7 +169,11 @@ const Dashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const res = await dashboardApi.getStats();
+      const res = await dashboardApi.getStats({
+        dateFilter: dateRange.filter,
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
+      });
       if (res.data.success && res.data.data) {
         setStats(res.data.data);
       }
@@ -208,7 +244,7 @@ const Dashboard = () => {
   useEffect(() => {
     fetchDashboardData();
     fetchEmployeesList();
-  }, []);
+  }, [dateRange]);
 
   useEffect(() => {
     fetchComplaintTypes();
@@ -226,6 +262,7 @@ const Dashboard = () => {
     startDate,
     endDate,
     searchQuery,
+    dateRange,
   ]);
 
   const openAssignModal = async (complaint: ComplaintItem) => {
@@ -262,11 +299,18 @@ const Dashboard = () => {
     }
   };
 
-  // Safe fallback metrics
-  const totalComplaintsCount = stats?.totalComplaints ?? 124;
-  const resolvedComplaintsCount = stats?.resolvedComplaints ?? 89;
-  const pendingComplaintsCount = stats?.pendingComplaints ?? 12;
-  const expiringWarrantiesCount = stats?.expiringWarranties ?? 23;
+  // Range and Today Metrics
+  const rangeComplaints = stats?.todayStats?.complaints ?? stats?.totalComplaints ?? 0;
+  const rangeResolved = stats?.todayStats?.resolvedAndClosed ?? (stats?.resolvedComplaints || 0);
+  const rangePending = stats?.todayStats?.pendingComplaints ?? (stats?.pendingComplaints || 0);
+  const rangeCustomers = stats?.todayStats?.customers ?? (stats?.totalCustomers || 0);
+  const rangeRevenue = stats?.todayStats?.revenue ?? (stats?.totalRevenue || 0);
+  const rangeBills = stats?.todayStats?.bills ?? (stats?.billsCount || 0);
+  const rangeWarranties = stats?.todayStats?.warranties ?? (stats?.totalWarranties || 0);
+  const rangeStockMovements = stats?.todayStats?.stockMovements ?? (stats?.stockMovementsCount || 0);
+
+  // All Time Stats
+  const allTimeComplaints = stats?.allTimeStats?.totalComplaints ?? 124;
 
   const weeklyLineData =
     stats?.weeklyActivity && stats.weeklyActivity.length > 0 && stats.weeklyActivity.some(d => d.complaints > 0 || d.warranties > 0)
@@ -335,85 +379,96 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+      {/* Top Header with DateRangeFilter (Default: Today) */}
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-white p-4 md:p-5 rounded-2xl border border-slate-200 shadow-xs">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Analytics Dashboard</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-black text-slate-800 tracking-tight">Analytics Dashboard</h1>
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">
+              Live Feed
+            </span>
+          </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Real-time complaint tracking, warranty diagnostics, and engineer allocation metrics.
+            Real-time complaint tracking, billing revenue, stock operations, and engineer allocation metrics.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Top Date Filter with Today as default */}
+          <DateRangeFilter value={dateRange} onChange={setDateRange} />
+
           <button
             onClick={() => {
               fetchDashboardData();
               fetchComplaints();
             }}
-            className="p-2 bg-white text-slate-600 hover:text-slate-900 border border-slate-200 rounded-lg shadow-xs hover:bg-slate-50 transition cursor-pointer"
+            className="p-2 bg-white text-slate-600 hover:text-slate-900 border border-slate-200 rounded-xl shadow-xs hover:bg-slate-50 transition cursor-pointer"
             title="Refresh Dashboard"
           >
-            <RefreshCw size={15} className={loading ? 'animate-spin text-green-600' : ''} />
+            <RefreshCw size={15} className={loading ? 'animate-spin text-emerald-600' : ''} />
           </button>
-          <div className="bg-white px-4 py-2 rounded-lg shadow-xs border border-slate-200 text-xs text-slate-600 font-semibold flex items-center gap-2">
-            <Calendar size={14} className="text-slate-400" />
-            <span>Last 30 Days</span>
-          </div>
         </div>
       </div>
 
       {/* ============================================================ */}
-      {/* 4 TOP KPI METRICS CARDS (EXACT MATCH WITH SCREENSHOT)         */}
+      {/* 6 TOP KPI METRICS CARDS (ACTIVE DATE RANGE: TODAY DEFAULT)    */}
       {/* ============================================================ */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {/* Card 1: Total Complaints */}
-        <div className="bg-white p-5 rounded-2xl shadow-xs border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: Complaints in Period */}
+        <div className="bg-white p-5 rounded-2xl shadow-xs border border-slate-200 flex items-center gap-4 hover:shadow-md transition">
           <div className="w-13 h-13 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center flex-shrink-0">
             <ClipboardList size={26} />
           </div>
           <div>
-            <h3 className="text-slate-500 text-xs font-semibold">Total Complaints</h3>
-            <p className="text-3xl font-extrabold text-slate-800 tracking-tight mt-0.5">
-              {totalComplaintsCount}
+            <div className="flex items-center gap-1.5">
+              <h3 className="text-slate-500 text-xs font-semibold">Complaints ({dateRange.filter.toUpperCase()})</h3>
+            </div>
+            <p className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight mt-0.5">
+              {rangeComplaints}
             </p>
+            <span className="text-[10px] text-slate-400">All-time: {allTimeComplaints} total</span>
           </div>
         </div>
 
-        {/* Card 2: Resolved */}
-        <div className="bg-white p-5 rounded-2xl shadow-xs border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
-          <div className="w-13 h-13 bg-green-50 text-green-600 rounded-2xl flex items-center justify-center flex-shrink-0">
+        {/* Card 2: Resolved & Closed in Period */}
+        <div className="bg-white p-5 rounded-2xl shadow-xs border border-slate-200 flex items-center gap-4 hover:shadow-md transition">
+          <div className="w-13 h-13 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center flex-shrink-0">
             <CheckCircle size={26} />
           </div>
           <div>
-            <h3 className="text-slate-500 text-xs font-semibold">Resolved</h3>
-            <p className="text-3xl font-extrabold text-slate-800 tracking-tight mt-0.5">
-              {resolvedComplaintsCount}
+            <h3 className="text-slate-500 text-xs font-semibold">Resolved & Closed</h3>
+            <p className="text-2xl md:text-3xl font-black text-emerald-700 tracking-tight mt-0.5">
+              {rangeResolved}
             </p>
+            <span className="text-[10px] text-amber-600 font-semibold">{rangePending} pending assignment</span>
           </div>
         </div>
 
-        {/* Card 3: Pending Assignment */}
-        <div className="bg-white p-5 rounded-2xl shadow-xs border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
-          <div className="w-13 h-13 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center flex-shrink-0">
-            <Clock size={26} />
+        {/* Card 3: Showroom Billing & Revenue in Period */}
+        <div className="bg-white p-5 rounded-2xl shadow-xs border border-slate-200 flex items-center gap-4 hover:shadow-md transition">
+          <div className="w-13 h-13 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center flex-shrink-0">
+            <ShoppingBag size={26} />
           </div>
           <div>
-            <h3 className="text-slate-500 text-xs font-semibold">Pending Assignment</h3>
-            <p className="text-3xl font-extrabold text-slate-800 tracking-tight mt-0.5">
-              {pendingComplaintsCount}
+            <h3 className="text-slate-500 text-xs font-semibold">Billed Revenue</h3>
+            <p className="text-2xl md:text-3xl font-black text-purple-700 tracking-tight mt-0.5">
+              ₹{rangeRevenue.toLocaleString('en-IN')}
             </p>
+            <span className="text-[10px] text-slate-400">{rangeBills} bills generated</span>
           </div>
         </div>
 
-        {/* Card 4: Expiring Warranties */}
-        <div className="bg-white p-5 rounded-2xl shadow-xs border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
-          <div className="w-13 h-13 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center flex-shrink-0">
-            <AlertCircle size={26} />
+        {/* Card 4: Customers & Warranties Registered */}
+        <div className="bg-white p-5 rounded-2xl shadow-xs border border-slate-200 flex items-center gap-4 hover:shadow-md transition">
+          <div className="w-13 h-13 bg-teal-50 text-teal-600 rounded-2xl flex items-center justify-center flex-shrink-0">
+            <Users size={26} />
           </div>
           <div>
-            <h3 className="text-slate-500 text-xs font-semibold">Expiring Warranties</h3>
-            <p className="text-3xl font-extrabold text-slate-800 tracking-tight mt-0.5">
-              {expiringWarrantiesCount}
+            <h3 className="text-slate-500 text-xs font-semibold">New Customers</h3>
+            <p className="text-2xl md:text-3xl font-black text-teal-700 tracking-tight mt-0.5">
+              {rangeCustomers}
             </p>
+            <span className="text-[10px] text-slate-400">{rangeWarranties} warranties • {rangeStockMovements} stock mov.</span>
           </div>
         </div>
       </div>

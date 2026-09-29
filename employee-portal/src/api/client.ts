@@ -166,14 +166,22 @@ apiClient.interceptors.response.use(
 export const empAuthApi = {
   login: (employeeId: string, password: string) =>
     apiClient.post('/auth/employee/login', { employeeId, password }),
-  getDashboard: (employeeId: string) =>
-    apiClient.get(`/dashboard/employee/${employeeId}`),
+  getDashboard: (employeeId: string, params?: any) =>
+    apiClient.get(`/dashboard/employee/${employeeId}`, { params }),
+};
+
+export const employeeApi = {
+  getMe: () => apiClient.get('/auth/me'),
+  getMyPayslips: (params?: any) => apiClient.get('/employees/me/payslips', { params }),
+  getMyPayslipById: (id: string) => apiClient.get(`/employees/me/payslips/${id}`),
 };
 
 export const complaintApi = {
+  getAll: (params?: any) => apiClient.get('/complaints', { params }),
   getById: (id: string) => apiClient.get(`/complaints/${id}`),
   updateStatus: (id: string, status: string, priority?: string, remarks?: any) =>
     apiClient.patch(`/complaints/admin/${id}/status`, { status, priority, ...remarks }),
+  export: (params?: any) => apiClient.get('/complaints/export', { params, responseType: 'blob' }),
 };
 
 export const contentApi = {
@@ -181,10 +189,12 @@ export const contentApi = {
 };
 
 export const stockApi = {
+  getConfig: () => apiClient.get('/stock/config'),
   getAll: (params?: any) => apiClient.get('/stock', { params }),
   getById: (id: string) => apiClient.get(`/stock/${id}`),
   getBySerial: (serial: string) => apiClient.get(`/stock/serial/${encodeURIComponent(serial)}`),
   recordMovement: (data: any) => apiClient.post('/stock/movement', data),
+  getMovements: (params?: any) => apiClient.get('/stock/movements/audit', { params }),
 };
 
 export const billingApi = {
@@ -206,4 +216,3 @@ export const customerApi = {
 export const billTemplateApi = {
   getActive: (type?: string) => apiClient.get('/billing/template', { params: { type } }),
 };
-

@@ -3,7 +3,9 @@ import bcrypt from 'bcrypt';
 import mongoose from 'mongoose';
 import { Employee } from '../models/Employee';
 import { Complaint } from '../models/Complaint';
+import { PayrollRecord } from '../models/PayrollRecord';
 import { generateBarcodeSVG } from '../utils/barcode';
+import { applyDateFilterToQuery } from '../utils/dateRange';
 
 // Normalize helper for division, permissions, warrantyAccess, certificates
 const parseJsonOrValue = (val: any, fallback: any = null) => {
@@ -597,3 +599,455 @@ export const exportEmployees = async (req: Request, res: Response) => {
     });
   }
 };
+
+// Number to Words Converter for Indian Rupee Payslips
+export const convertNumberToWords = (num: number): string => {
+  if (!num || isNaN(num)) return 'Zero Rupees Only';
+  const a = ['', 'One ', 'Two ', 'Three ', 'Four ', 'Five ', 'Six ', 'Seven ', 'Eight ', 'Nine ', 'Ten ', 'Eleven ', 'Twelve ', 'Thirteen ', 'Fourteen ', 'Fifteen ', 'Sixteen ', 'Seventeen ', 'Eighteen ', 'Nineteen '];
+  const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+  const inWords = (n: number): string => {
+    if (n < 20) return a[n];
+    const digit = n % 10;
+    if (n < 100) return b[Math.floor(n / 10)] + (digit ? '-' + a[digit] : ' ');
+    if (n < 1000) return a[Math.floor(n / 100)] + 'Hundred ' + (n % 100 === 0 ? '' : 'and ' + inWords(n % 100));
+    if (n < 100000) return inWords(Math.floor(n / 1000)) + 'Thousand ' + (n % 1000 !== 0 ? inWords(n % 1000) : '');
+    if (n < 10000000) return inWords(Math.floor(n / 100000)) + 'Lakh ' + (n % 100000 !== 0 ? inWords(n % 100000) : '');
+    return inWords(Math.floor(n / 10000000)) + 'Crore ' + (n % 10000000 !== 0 ? inWords(n % 10000000) : '');
+  };
+
+  const integerPart = Math.floor(Math.abs(num));
+  const words = inWords(integerPart).trim();
+  return words ? `${words} Rupees Only` : 'Zero Rupees Only';
+};
+
+// ============================================================================
+// SALARY & PAYSLIP CONTROLLERS (INDIVIDUAL & SOFT-CODED)
+// ============================================================================
+
+// GET /api/v1/employees/:id/salary - Get individual employee's salary structure
+export const getEmployeeSalary = async (req: Request, res: Response) => {
+  try {
+    const id = String(req.params.id);
+    let employee = null;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      employee = await Employee.findById(id);
+    }
+    if (!employee) {
+      employee = await Employee.findOne({ employeeId: id });
+    }
+    if (!employee) {
+      return res.status(404).json({ success: false, message: 'Employee not found' });
+    }
+
+    const defaultSalaryStructure = {
+      basicSalary: 25000,
+      allowances: [
+        { key: 'hra', label: 'House Rent Allowance (HRA)', amount: 10000 },
+        { key: 'conveyance', label: 'Conveyance Allowance', amount: 3000 },
+        { key: 'special', label: 'Special / Performance Allowance', amount: 5000 },
+      ],
+      deductions: [
+        { key: 'pf', label: 'Provident Fund (EPF 12%)', amount: 1800 },
+        { key: 'esi', label: 'ESI Contribution', amount: 500 },
+        { key: 'pt', label: 'Professional Tax (PT)', amount: 200 },
+      ],
+      bonuses: [],
+      bankDetails: {
+        bankName: 'HDFC Bank Ltd',
+        accountNumber: '',
+        ifscCode: 'HDFC0001234',
+        branch: 'Kota Industrial Area',
+        upiId: '',
+        pan: '',
+        uan: '',
+        pfNumber: '',
+        esicNumber: '',
+      },
+      effectiveDate: employee.createdAt || new Date(),
+    };
+
+    const salaryStructure = employee.salaryStructure || defaultSalaryStructure;
+
+    // Fetch recent payslips for this employee
+    const recentPayslips = await PayrollRecord.find({
+      $or: [{ employee: employee._id }, { employeeId: employee.employeeId }],
+    }).sort({ payYear: -1, payMonth: -1 }).limit(12);
+
+    res.json({
+      success: true,
+      data: {
+        employee: {
+          _id: employee._id,
+          employeeId: employee.employeeId,
+          name: employee.name,
+          department: employee.department,
+          designation: employee.designation,
+          division: employee.division,
+          mobile: employee.mobile,
+          email: employee.email,
+        },
+        salaryStructure,
+        recentPayslips,
+      },
+    });
+  } catch (error: any) {
+    console.error('Error fetching employee salary:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch salary details', error: error.message });
+  }
+};
+
+// PUT /api/v1/employees/:id/salary - Update employee's salary structure (Admin only)
+export const updateEmployeeSalary = async (req: Request, res: Response) => {
+  try {
+    const id = String(req.params.id);
+    const { salaryStructure } = req.body;
+
+    if (!salaryStructure) {
+      return res.status(400).json({ success: false, message: 'Salary structure payload is required.' });
+    }
+
+    let employee = null;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      employee = await Employee.findById(id);
+    }
+    if (!employee) {
+      employee = await Employee.findOne({ employeeId: id });
+    }
+    if (!employee) {
+      return res.status(404).json({ success: false, message: 'Employee not found' });
+    }
+
+    employee.salaryStructure = {
+      basicSalary: Number(salaryStructure.basicSalary) || 0,
+      allowances: Array.isArray(salaryStructure.allowances) ? salaryStructure.allowances : [],
+      deductions: Array.isArray(salaryStructure.deductions) ? salaryStructure.deductions : [],
+      bonuses: Array.isArray(salaryStructure.bonuses) ? salaryStructure.bonuses : [],
+      bankDetails: salaryStructure.bankDetails || {},
+      effectiveDate: salaryStructure.effectiveDate ? new Date(salaryStructure.effectiveDate) : new Date(),
+      notes: salaryStructure.notes || '',
+    };
+
+    await employee.save();
+
+    res.json({
+      success: true,
+      message: `Salary structure for ${employee.name} updated successfully.`,
+      data: employee.salaryStructure,
+    });
+  } catch (error: any) {
+    console.error('Error updating employee salary:', error);
+    res.status(500).json({ success: false, message: 'Failed to update salary structure', error: error.message });
+  }
+};
+
+// POST /api/v1/employees/:id/generate-payslip - Generate official monthly payslip (Admin)
+export const generateEmployeePayslip = async (req: Request, res: Response) => {
+  try {
+    const id = String(req.params.id);
+    const {
+      payMonth, // 1 - 12
+      payYear, // e.g. 2026
+      payPeriod, // e.g. "September 2026"
+      totalWorkingDays,
+      paidDays,
+      leaveDays,
+      basicSalary,
+      allowances,
+      deductions,
+      bonuses,
+      otherEarnings,
+      paymentMode,
+      paymentStatus,
+      bankDetails,
+      authorizedBy,
+      notes,
+      isPublishedToEmployee,
+    } = req.body;
+
+    let employee = null;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      employee = await Employee.findById(id);
+    }
+    if (!employee) {
+      employee = await Employee.findOne({ employeeId: id });
+    }
+    if (!employee) {
+      return res.status(404).json({ success: false, message: 'Employee not found' });
+    }
+
+    const monthNum = Number(payMonth) || new Date().getMonth() + 1;
+    const yearNum = Number(payYear) || new Date().getFullYear();
+    const periodStr = payPeriod || `${new Date(yearNum, monthNum - 1).toLocaleString('default', { month: 'long' })} ${yearNum}`;
+
+    const base = Number(basicSalary) !== undefined ? Number(basicSalary) : (employee.salaryStructure?.basicSalary || 25000);
+    const allowList = Array.isArray(allowances) ? allowances : (employee.salaryStructure?.allowances || []);
+    const dedList = Array.isArray(deductions) ? deductions : (employee.salaryStructure?.deductions || []);
+    const bonusList = Array.isArray(bonuses) ? bonuses : (employee.salaryStructure?.bonuses || []);
+    const otherList = Array.isArray(otherEarnings) ? otherEarnings : [];
+
+    const totalAllowances = allowList.reduce((acc: number, a: any) => acc + (Number(a.amount) || 0), 0);
+    const totalBonuses = bonusList.reduce((acc: number, b: any) => acc + (Number(b.amount) || 0), 0);
+    const totalOther = otherList.reduce((acc: number, o: any) => acc + (Number(o.amount) || 0), 0);
+    const grossEarnings = base + totalAllowances + totalBonuses + totalOther;
+
+    const totalDeductions = dedList.reduce((acc: number, d: any) => acc + (Number(d.amount) || 0), 0);
+    const netSalary = Math.max(0, grossEarnings - totalDeductions);
+    const amountInWords = convertNumberToWords(netSalary);
+
+    // Generate unique payslip number
+    const dateCode = `${yearNum}${monthNum.toString().padStart(2, '0')}`;
+    const randSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const payslipNumber = `EBS-PAY-${employee.employeeId}-${dateCode}-${randSuffix}`;
+
+    const adminUser = (req as any).user;
+    const adminName = adminUser?.name || 'Admin';
+
+    // Create persistent historical payroll record
+    const payslip = await PayrollRecord.create({
+      payslipNumber,
+      employeeId: employee.employeeId,
+      employee: employee._id,
+      employeeName: employee.name,
+      department: employee.department || 'Technical',
+      designation: employee.designation || 'Staff',
+      division: (employee.division && employee.division[0]) || employee.department || 'Kota Plant',
+      payPeriod: periodStr,
+      payMonth: monthNum,
+      payYear: yearNum,
+      payDate: new Date(),
+      effectiveDate: new Date(),
+      totalWorkingDays: Number(totalWorkingDays) || 30,
+      paidDays: Number(paidDays) !== undefined ? Number(paidDays) : 30,
+      leaveDays: Number(leaveDays) || 0,
+      basicSalary: base,
+      allowances: allowList,
+      deductions: dedList,
+      bonuses: bonusList,
+      otherEarnings: otherList,
+      grossEarnings,
+      totalDeductions,
+      netSalary,
+      amountInWords,
+      paymentMode: paymentMode || 'Bank Transfer',
+      paymentStatus: paymentStatus || 'Paid',
+      bankDetails: bankDetails || employee.salaryStructure?.bankDetails || {},
+      authorizedBy: authorizedBy || 'HR & Finance Director',
+      notes: notes || '',
+      isPublishedToEmployee: isPublishedToEmployee !== false,
+      history: [
+        {
+          action: 'Created & Published',
+          updatedBy: adminName,
+          updatedAt: new Date(),
+          remarks: `Payslip generated for ${periodStr}`,
+        },
+      ],
+    });
+
+    res.status(201).json({
+      success: true,
+      message: `Payslip generated successfully for ${employee.name} (${periodStr}).`,
+      data: payslip,
+    });
+  } catch (error: any) {
+    console.error('Error generating payslip:', error);
+    res.status(500).json({ success: false, message: 'Failed to generate payslip', error: error.message });
+  }
+};
+
+// GET /api/v1/employees/:id/payslips - Get payslip history for a single employee (Admin)
+export const getEmployeePayslips = async (req: Request, res: Response) => {
+  try {
+    const id = String(req.params.id);
+    let employee = null;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      employee = await Employee.findById(id);
+    }
+    if (!employee) {
+      employee = await Employee.findOne({ employeeId: id });
+    }
+    if (!employee) {
+      return res.status(404).json({ success: false, message: 'Employee not found' });
+    }
+
+    const { dateFilter, startDate, endDate, year } = req.query;
+    const query: any = {
+      $or: [{ employee: employee._id }, { employeeId: employee.employeeId }],
+    };
+
+    if (year) query.payYear = Number(year);
+    applyDateFilterToQuery(query, 'payDate', dateFilter as string, startDate as string, endDate as string);
+
+    const payslips = await PayrollRecord.find(query).sort({ payYear: -1, payMonth: -1, createdAt: -1 });
+
+    res.json({
+      success: true,
+      data: payslips,
+      employee: {
+        _id: employee._id,
+        employeeId: employee.employeeId,
+        name: employee.name,
+      },
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: 'Failed to fetch payslips', error: error.message });
+  }
+};
+
+// GET /api/v1/employees/payslips/all - List all payslips across employees (Admin)
+export const getAllPayslips = async (req: Request, res: Response) => {
+  try {
+    const { department, paymentStatus, search, dateFilter, startDate, endDate, year, limit } = req.query;
+    const query: any = {};
+
+    if (department && department !== 'All') query.department = department;
+    if (paymentStatus && paymentStatus !== 'All') query.paymentStatus = paymentStatus;
+    if (year) query.payYear = Number(year);
+
+    applyDateFilterToQuery(query, 'payDate', dateFilter as string, startDate as string, endDate as string);
+
+    if (search) {
+      const s = (search as string).trim();
+      query.$or = [
+        { employeeName: { $regex: s, $options: 'i' } },
+        { employeeId: { $regex: s, $options: 'i' } },
+        { payslipNumber: { $regex: s, $options: 'i' } },
+        { payPeriod: { $regex: s, $options: 'i' } },
+      ];
+    }
+
+    const max = Math.min(200, Number(limit) || 100);
+    const payslips = await PayrollRecord.find(query).sort({ createdAt: -1 }).limit(max);
+
+    const totalDisbursed = payslips.reduce((acc, p) => acc + (p.netSalary || 0), 0);
+
+    res.json({
+      success: true,
+      data: payslips,
+      meta: {
+        totalRecords: payslips.length,
+        totalDisbursed,
+      },
+    });
+  } catch (error: any) {
+    console.error('Failed to get all payslips:', error);
+    res.status(500).json({ success: false, message: 'Failed to retrieve payslip list', error: error.message });
+  }
+};
+
+// GET /api/v1/employees/me/payslips - Employee self-service: View own payslips only
+export const getMyPayslips = async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'Unauthorized. Please login.' });
+    }
+
+    // Resolve employee
+    let employee = null;
+    if (user.employeeId) {
+      employee = await Employee.findOne({ employeeId: user.employeeId });
+    }
+    if (!employee && user.id && mongoose.Types.ObjectId.isValid(user.id)) {
+      employee = await Employee.findById(user.id);
+    }
+    if (!employee && user.email) {
+      employee = await Employee.findOne({ email: user.email });
+    }
+
+    if (!employee) {
+      return res.status(404).json({ success: false, message: 'Employee profile not found' });
+    }
+
+    const { dateFilter, startDate, endDate, year } = req.query;
+    const query: any = {
+      $or: [{ employee: employee._id }, { employeeId: employee.employeeId }],
+      isPublishedToEmployee: true,
+    };
+
+    if (year) query.payYear = Number(year);
+    applyDateFilterToQuery(query, 'payDate', dateFilter as string, startDate as string, endDate as string);
+
+    const payslips = await PayrollRecord.find(query).sort({ payYear: -1, payMonth: -1, createdAt: -1 });
+
+    res.json({
+      success: true,
+      data: payslips,
+      employee: {
+        _id: employee._id,
+        employeeId: employee.employeeId,
+        name: employee.name,
+        department: employee.department,
+        designation: employee.designation,
+        division: employee.division,
+      },
+    });
+  } catch (error: any) {
+    console.error('Error fetching my payslips:', error);
+    res.status(500).json({ success: false, message: 'Failed to retrieve your salary slips', error: error.message });
+  }
+};
+
+// GET /api/v1/employees/me/payslips/:id - Get specific payslip with authorization
+export const getMyPayslipById = async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    const payslipId = String(req.params.id);
+
+    let payslip = null;
+    if (mongoose.Types.ObjectId.isValid(payslipId)) {
+      payslip = await PayrollRecord.findById(payslipId);
+    }
+    if (!payslip) {
+      payslip = await PayrollRecord.findOne({ payslipNumber: payslipId });
+    }
+
+    if (!payslip) {
+      return res.status(404).json({ success: false, message: 'Payslip record not found' });
+    }
+
+    // Role check: If not Admin, ensure the payslip belongs to this employee
+    const userRole = (user?.role || '').toUpperCase();
+    const isAdmin = ['ADMIN', 'SUPER_ADMIN', 'SUPERADMIN', 'MANAGER'].includes(userRole);
+
+    if (!isAdmin) {
+      const matchEmpId = user.employeeId && user.employeeId === payslip.employeeId;
+      const matchObjId = user.id && user.id === payslip.employee?.toString();
+      if (!matchEmpId && !matchObjId) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied: You can only view your own salary slips.',
+        });
+      }
+    }
+
+    res.json({ success: true, data: payslip });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: 'Failed to fetch payslip details', error: error.message });
+  }
+};
+
+// DELETE /api/v1/employees/payslips/:payslipId - Delete a payslip (Admin only)
+export const deletePayslip = async (req: Request, res: Response) => {
+  try {
+    const rawPayslipId = req.params.payslipId;
+    const payslipId = String(Array.isArray(rawPayslipId) ? rawPayslipId[0] : rawPayslipId || '');
+    let deleted = null;
+    if (mongoose.Types.ObjectId.isValid(payslipId)) {
+      deleted = await PayrollRecord.findByIdAndDelete(payslipId);
+    }
+    if (!deleted) {
+      deleted = await PayrollRecord.findOneAndDelete({ payslipNumber: payslipId });
+    }
+
+    if (!deleted) {
+      return res.status(404).json({ success: false, message: 'Payslip not found' });
+    }
+
+    res.json({ success: true, message: 'Payslip record deleted successfully' });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: 'Failed to delete payslip', error: error.message });
+  }
+};
+

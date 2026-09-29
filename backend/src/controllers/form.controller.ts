@@ -8,19 +8,15 @@ const extractDivisionFromCard = (c: any): string[] => {
   const list: string[] = [];
   if (c.section && c.section !== 'General' && c.section.trim()) {
     list.push(c.section.trim());
-  }
-  if (c.linkUrl && c.linkUrl.includes('division=')) {
+  } else if (c.linkUrl && c.linkUrl.includes('division=')) {
     try {
       const match = c.linkUrl.match(/division=([^&]+)/);
       if (match && match[1]) {
         list.push(decodeURIComponent(match[1]).trim());
       }
     } catch {}
-  }
-  if (c.section === 'General' || !c.section) {
-    if (c.title && c.title.trim()) {
-      list.push(c.title.trim());
-    }
+  } else if (c.title && c.title.trim()) {
+    list.push(c.title.trim());
   }
   return list;
 };

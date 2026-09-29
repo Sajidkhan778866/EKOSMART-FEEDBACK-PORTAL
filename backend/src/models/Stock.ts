@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IStockHistory {
-  operation: 'Received' | 'Sold' | 'Issued' | 'Returned' | 'Transferred' | 'Adjusted';
+  operation: string;
   quantity: number;
   referenceNumber?: string;
   employeeName?: string;
@@ -13,20 +13,34 @@ export interface IStockHistory {
 export interface IStock extends Document {
   productId: string;
   productName: string;
-  category: 'Battery' | 'Spare Parts' | 'Scooter' | 'Charger' | 'Accessory' | 'Other';
+  category: string;
   modelNumber?: string;
   serialNumber?: string;
   batterySerialNumber?: string;
   quantity: number;
+  availableQuantity: number;
+  soldQuantity: number;
+  reservedQuantity: number;
   totalReceived: number;
   totalSold: number;
-  reservedQuantity: number;
   unitPrice: number;
   mrp: number;
   location: string;
-  status: 'In Stock' | 'Sold' | 'Reserved' | 'Under Service' | 'Defective' | 'Returned';
+  status: string;
   specifications?: Record<string, any>;
+  attributes?: Record<string, any>;
+  customFields?: Record<string, any>;
+  purchaseInfo?: {
+    supplier?: string;
+    purchaseDate?: Date;
+    invoiceNumber?: string;
+    purchaseCost?: number;
+  };
   warrantyPeriodMonths?: number;
+  warrantyInfo?: {
+    warrantyPeriodMonths?: number;
+    terms?: string;
+  };
   history: IStockHistory[];
   createdAt: Date;
   updatedAt: Date;
@@ -34,11 +48,7 @@ export interface IStock extends Document {
 
 const stockHistorySchema = new Schema(
   {
-    operation: {
-      type: String,
-      enum: ['Received', 'Sold', 'Issued', 'Returned', 'Transferred', 'Adjusted'],
-      required: true,
-    },
+    operation: { type: String, required: true },
     quantity: { type: Number, required: true },
     referenceNumber: { type: String, default: '' },
     employeeName: { type: String, default: '' },
@@ -55,7 +65,6 @@ const stockSchema = new Schema(
     productName: { type: String, required: true, index: true },
     category: {
       type: String,
-      enum: ['Battery', 'Spare Parts', 'Scooter', 'Charger', 'Accessory', 'Other'],
       default: 'Battery',
       index: true,
     },
@@ -63,23 +72,36 @@ const stockSchema = new Schema(
     serialNumber: { type: String, default: '', index: true },
     batterySerialNumber: { type: String, default: '', index: true },
     quantity: { type: Number, required: true, default: 1 },
+    availableQuantity: { type: Number, default: 1 },
+    soldQuantity: { type: Number, default: 0 },
+    reservedQuantity: { type: Number, default: 0 },
     totalReceived: { type: Number, default: 1 },
     totalSold: { type: Number, default: 0 },
-    reservedQuantity: { type: Number, default: 0 },
     unitPrice: { type: Number, required: true, default: 0 },
     mrp: { type: Number, required: true, default: 0 },
     location: { type: String, default: 'Kota Central Plant', index: true },
     status: {
       type: String,
-      enum: ['In Stock', 'Sold', 'Reserved', 'Under Service', 'Defective', 'Returned'],
       default: 'In Stock',
       index: true,
     },
     specifications: { type: Schema.Types.Mixed, default: {} },
+    attributes: { type: Schema.Types.Mixed, default: {} },
+    customFields: { type: Schema.Types.Mixed, default: {} },
+    purchaseInfo: {
+      supplier: { type: String, default: '' },
+      purchaseDate: { type: Date },
+      invoiceNumber: { type: String, default: '' },
+      purchaseCost: { type: Number, default: 0 },
+    },
     warrantyPeriodMonths: { type: Number, default: 36 },
+    warrantyInfo: {
+      warrantyPeriodMonths: { type: Number, default: 36 },
+      terms: { type: String, default: '' },
+    },
     history: [stockHistorySchema],
   },
-  { timestamps: true }
+  { timestamps: true, strict: false }
 );
 
 export const Stock = mongoose.model<IStock>('Stock', stockSchema);

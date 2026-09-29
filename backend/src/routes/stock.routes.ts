@@ -1,5 +1,7 @@
 import express from 'express';
 import {
+  getStockConfig,
+  updateStockConfig,
   getAllStock,
   getStockById,
   getStockBySerial,
@@ -12,6 +14,10 @@ import {
 import { protect, checkPermission, authorize } from '../middleware/auth';
 
 const router = express.Router();
+
+// Soft-coded configuration
+router.get('/config', protect, checkPermission('stock:view', 'stock:manage'), getStockConfig);
+router.put('/config', protect, authorize('ADMIN', 'SUPER_ADMIN', 'MANAGER'), updateStockConfig);
 
 // Scanner & Audit routes (accessible by stock viewers, managers, and billing cashiers)
 router.get('/serial/:serial', protect, checkPermission('stock:view', 'stock:manage', 'billing:create'), getStockBySerial);

@@ -1,39 +1,96 @@
 import { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import { Complaint } from '../models/Complaint';
 import { Warranty } from '../models/Warranty';
 import { Employee } from '../models/Employee';
 import { Customer } from '../models/Customer';
+import { Bill } from '../models/Bill';
+import { StockMovement } from '../models/StockMovement';
+import { Stock } from '../models/Stock';
+import { getDateFilterBounds, applyDateFilterToQuery } from '../utils/dateRange';
 
-export const getAdminDashboardStats = async (_req: Request, res: Response) => {
+export const getAdminDashboardStats = async (req: Request, res: Response) => {
   try {
-    const totalComplaints = await Complaint.countDocuments();
-    const newComplaints = await Complaint.countDocuments({ status: 'New' });
-    const pendingComplaints = await Complaint.countDocuments({ status: { $in: ['Pending', 'New'] } });
-    const assignedComplaints = await Complaint.countDocuments({ status: 'Assigned' });
-    const inProgressComplaints = await Complaint.countDocuments({ status: 'In Progress' });
-    const resolvedComplaints = await Complaint.countDocuments({ status: 'Resolved' });
-    const closedComplaints = await Complaint.countDocuments({ status: 'Closed' });
-    const rejectedComplaints = await Complaint.countDocuments({ status: 'Rejected' });
+    const { dateFilter = 'today', startDate, endDate } = req.query;
+    const { startDate: start, endDate: end } = getDateFilterBounds(
+      dateFilter as string,
+      startDate as string,
+      endDate as string
+    );
 
-    const totalEmployees = await Employee.countDocuments();
-    const activeEmployees = await Employee.countDocuments({ status: 'Active' });
+    const dateQuery: any = {};
+    if (start || end) {
+      dateQuery.createdAt = {};
+      if (start) dateQuery.createdAt.$gte = start;
+      if (end) dateQuery.createdAt.$lte = end;
+    }
 
-    const totalCustomers = await Customer.countDocuments();
+    // Filtered counts for selected date range (default TODAY)
+    const [
+      rangeComplaints,
+      rangeNewComplaints,
+      rangePendingComplaints,
+      rangeAssignedComplaints,
+      rangeInProgressComplaints,
+      rangeResolvedComplaints,
+      rangeClosedComplaints,
+      rangeCustomers,
+      rangeBills,
+      rangeWarranties,
+      rangeStockMovements,
+    ] = await Promise.all([
+      Complaint.countDocuments(dateQuery),
+      Complaint.countDocuments({ ...dateQuery, status: 'New' }),
+      Complaint.countDocuments({ ...dateQuery, status: { $in: ['Pending', 'New'] } }),
+      Complaint.countDocuments({ ...dateQuery, status: 'Assigned' }),
+      Complaint.countDocuments({ ...dateQuery, status: 'In Progress' }),
+      Complaint.countDocuments({ ...dateQuery, status: 'Resolved' }),
+      Complaint.countDocuments({ ...dateQuery, status: 'Closed' }),
+      Customer.countDocuments(dateQuery),
+      Bill.find(dateQuery).select('grandTotal paymentStatus'),
+      Warranty.countDocuments(dateQuery),
+      StockMovement.countDocuments(dateQuery),
+    ]);
 
-    const totalWarranties = await Warranty.countDocuments();
-    const activeWarranties = await Warranty.countDocuments({ status: 'Active' });
-    const expiringWarranties = await Warranty.countDocuments({ status: 'Expiring Soon' });
-    const expiredWarranties = await Warranty.countDocuments({ status: 'Expired' });
+    const rangeRevenue = rangeBills.reduce((acc, b) => acc + (b.grandTotal || 0), 0);
 
-    // Division breakdown
-    const batteryComplaints = await Complaint.countDocuments({ division: 'Battery' });
-    const rentalComplaints = await Complaint.countDocuments({ division: 'Rental' });
-    const showroomComplaints = await Complaint.countDocuments({ division: 'Showroom' });
-    const sparePartsComplaints = await Complaint.countDocuments({ division: 'Spare Parts' });
-    const warrantyComplaints = await Complaint.countDocuments({ division: 'Warranty' });
-    const plantComplaints = await Complaint.countDocuments({ division: 'Plant' });
+    // Cumulative / All-Time Counts
+    const [
+      totalComplaints,
+      totalEmployees,
+      activeEmployees,
+      totalCustomers,
+      totalWarranties,
+      activeWarranties,
+      expiringWarranties,
+      expiredWarranties,
+      allBills,
+      totalStockItems,
+    ] = await Promise.all([
+      Complaint.countDocuments(),
+      Employee.countDocuments(),
+      Employee.countDocuments({ status: 'Active' }),
+      Customer.countDocuments(),
+      Warranty.countDocuments(),
+      Warranty.countDocuments({ status: 'Active' }),
+      Warranty.countDocuments({ status: 'Expiring Soon' }),
+      Warranty.countDocuments({ status: 'Expired' }),
+      Bill.find().select('grandTotal'),
+      Stock.countDocuments(),
+    ]);
 
-    // Calculate last 7 days activity
+    const totalRevenue = allBills.reduce((acc, b) => acc + (b.grandTotal || 0), 0);
+
+    // Division breakdown for the selected date range
+    const divisions = ['Battery', 'Rental', 'Showroom', 'Spare Parts', 'Warranty', 'Plant'];
+    const divisionBreakdown = await Promise.all(
+      divisions.map(async (div) => {
+        const count = await Complaint.countDocuments({ ...dateQuery, division: div });
+        return { name: div, complaints: count };
+      })
+    );
+
+    // 7-day Activity Chart
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const now = new Date();
     const weeklyActivity = [];
@@ -45,23 +102,23 @@ export const getAdminDashboardStats = async (_req: Request, res: Response) => {
       nextD.setDate(nextD.getDate() + 1);
 
       const dayName = days[d.getDay()];
-      const complaintsCount = await Complaint.countDocuments({
-        createdAt: { $gte: d, $lt: nextD },
-      });
-      const warrantiesCount = await Warranty.countDocuments({
-        createdAt: { $gte: d, $lt: nextD },
-      });
+      const [cCount, wCount, bCount] = await Promise.all([
+        Complaint.countDocuments({ createdAt: { $gte: d, $lt: nextD } }),
+        Warranty.countDocuments({ createdAt: { $gte: d, $lt: nextD } }),
+        Bill.countDocuments({ createdAt: { $gte: d, $lt: nextD } }),
+      ]);
 
       weeklyActivity.push({
         name: dayName,
         date: d.toISOString().split('T')[0],
-        complaints: complaintsCount,
-        warranties: warrantiesCount,
+        complaints: cCount,
+        warranties: wCount,
+        bills: bCount,
       });
     }
 
-    // Fetch latest complaints for dashboard feed
-    const recentComplaints = await Complaint.find()
+    // Recent complaints feed
+    const recentComplaints = await Complaint.find(dateQuery)
       .populate('customer', 'customerId name mobile email address')
       .populate('assignedTo', 'employeeId name designation division mobile photoUrl')
       .sort({ createdAt: -1 })
@@ -70,31 +127,61 @@ export const getAdminDashboardStats = async (_req: Request, res: Response) => {
     res.json({
       success: true,
       data: {
-        totalComplaints,
-        newComplaints,
-        pendingComplaints,
-        assignedComplaints,
-        inProgressComplaints,
-        resolvedComplaints,
-        closedComplaints,
-        rejectedComplaints,
+        filter: dateFilter,
+        dateRange: {
+          startDate: start,
+          endDate: end,
+        },
+        // Active Date Range Stats (Default TODAY)
+        todayStats: {
+          complaints: rangeComplaints,
+          newComplaints: rangeNewComplaints,
+          pendingComplaints: rangePendingComplaints,
+          assignedComplaints: rangeAssignedComplaints,
+          inProgressComplaints: rangeInProgressComplaints,
+          resolvedComplaints: rangeResolvedComplaints,
+          closedComplaints: rangeClosedComplaints,
+          resolvedAndClosed: rangeResolvedComplaints + rangeClosedComplaints,
+          customers: rangeCustomers,
+          bills: rangeBills.length,
+          revenue: rangeRevenue,
+          warranties: rangeWarranties,
+          stockMovements: rangeStockMovements,
+        },
+        // Range metrics
+        totalComplaints: rangeComplaints,
+        newComplaints: rangeNewComplaints,
+        pendingComplaints: rangePendingComplaints,
+        assignedComplaints: rangeAssignedComplaints,
+        inProgressComplaints: rangeInProgressComplaints,
+        resolvedComplaints: rangeResolvedComplaints,
+        closedComplaints: rangeClosedComplaints,
+        totalCustomers: rangeCustomers,
+        totalWarranties: rangeWarranties,
+        billsCount: rangeBills.length,
+        totalRevenue: rangeRevenue,
+        stockMovementsCount: rangeStockMovements,
+
+        // All Time Cumulative Overview
+        allTimeStats: {
+          totalComplaints,
+          totalCustomers,
+          totalEmployees,
+          activeEmployees,
+          totalWarranties,
+          activeWarranties,
+          totalRevenue,
+          totalStockItems,
+        },
+
         totalEmployees,
         activeEmployees,
-        totalCustomers,
-        totalWarranties,
         activeWarranties,
         expiringWarranties,
         expiredWarranties,
         weeklyActivity,
         recentComplaints,
-        divisionBreakdown: [
-          { name: 'Battery', complaints: batteryComplaints },
-          { name: 'Rental', complaints: rentalComplaints },
-          { name: 'Showroom', complaints: showroomComplaints },
-          { name: 'Spare Parts', complaints: sparePartsComplaints },
-          { name: 'Warranty', complaints: warrantyComplaints },
-          { name: 'Plant', complaints: plantComplaints },
-        ].filter(d => d.complaints > 0 || ['Battery', 'Rental', 'Showroom', 'Spare Parts'].includes(d.name)),
+        divisionBreakdown,
         warrantyBreakdown: [
           { name: 'Active', value: activeWarranties, color: '#3b82f6' },
           { name: 'Expiring Soon', value: expiringWarranties, color: '#f59e0b' },
@@ -102,8 +189,9 @@ export const getAdminDashboardStats = async (_req: Request, res: Response) => {
         ],
       },
     });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to fetch dashboard stats' });
+  } catch (error: any) {
+    console.error('Error fetching admin dashboard stats:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch dashboard stats', error: error.message });
   }
 };
 
@@ -117,6 +205,7 @@ export const getCurrentApplications = async (req: Request, res: Response) => {
       status,
       assignedTo,
       priority,
+      dateFilter,
       startDate,
       endDate,
       search,
@@ -147,15 +236,7 @@ export const getCurrentApplications = async (req: Request, res: Response) => {
       query.assignedTo = assignedTo;
     }
 
-    if (startDate || endDate) {
-      query.createdAt = {};
-      if (startDate) query.createdAt.$gte = new Date(startDate as string);
-      if (endDate) {
-        const e = new Date(endDate as string);
-        e.setHours(23, 59, 59, 999);
-        query.createdAt.$lte = e;
-      }
-    }
+    applyDateFilterToQuery(query, 'createdAt', dateFilter as string, startDate as string, endDate as string);
 
     if (search) {
       query.$or = [
@@ -194,29 +275,67 @@ export const getCurrentApplications = async (req: Request, res: Response) => {
   }
 };
 
+// GET /api/v1/dashboard/employee/:employeeId
 export const getEmployeeDashboardStats = async (req: Request, res: Response) => {
   try {
-    const { employeeId } = req.params;
-    const employee = await Employee.findOne({ employeeId });
+    const rawEmployeeId = req.params.employeeId;
+    const employeeId = String(Array.isArray(rawEmployeeId) ? rawEmployeeId[0] : rawEmployeeId || '');
+    const { dateFilter = 'today', startDate, endDate } = req.query;
+
+    let employee = null;
+    if (mongoose.Types.ObjectId.isValid(employeeId)) {
+      employee = await Employee.findById(employeeId);
+    }
+    if (!employee) {
+      employee = await Employee.findOne({ employeeId });
+    }
     if (!employee) {
       return res.status(404).json({ success: false, message: 'Employee not found' });
     }
 
-    const assignedComplaints = await Complaint.countDocuments({ assignedTo: employee._id });
-    const pendingComplaints = await Complaint.countDocuments({ assignedTo: employee._id, status: { $in: ['Assigned', 'Pending', 'New'] } });
-    const inProgressComplaints = await Complaint.countDocuments({ assignedTo: employee._id, status: 'In Progress' });
-    const resolvedComplaints = await Complaint.countDocuments({ assignedTo: employee._id, status: 'Resolved' });
+    const { startDate: start, endDate: end } = getDateFilterBounds(
+      dateFilter as string,
+      startDate as string,
+      endDate as string
+    );
 
-    const recentAssignments = await Complaint.find({ assignedTo: employee._id })
+    const baseQuery: any = { assignedTo: employee._id };
+    const dateQuery: any = { ...baseQuery };
+    if (start || end) {
+      dateQuery.updatedAt = {};
+      if (start) dateQuery.updatedAt.$gte = start;
+      if (end) dateQuery.updatedAt.$lte = end;
+    }
+
+    // Range-filtered metrics
+    const [assignedComplaints, pendingComplaints, inProgressComplaints, resolvedComplaints] =
+      await Promise.all([
+        Complaint.countDocuments(dateQuery),
+        Complaint.countDocuments({ ...dateQuery, status: { $in: ['Assigned', 'Pending', 'New'] } }),
+        Complaint.countDocuments({ ...dateQuery, status: 'In Progress' }),
+        Complaint.countDocuments({ ...dateQuery, status: { $in: ['Resolved', 'Closed'] } }),
+      ]);
+
+    // All-time totals
+    const totalAllTime = await Complaint.countDocuments(baseQuery);
+    const resolvedAllTime = await Complaint.countDocuments({ ...baseQuery, status: { $in: ['Resolved', 'Closed'] } });
+
+    const recentAssignments = await Complaint.find(baseQuery)
       .populate('customer', 'customerId name mobile email address')
       .populate('assignedTo', 'employeeId name designation division photoUrl')
-      .sort({ updatedAt: -1 })
+      .sort({ updatedAt: -1, createdAt: -1 })
       .limit(20);
 
     res.json({
       success: true,
       data: {
+        filter: dateFilter,
+        dateRange: {
+          startDate: start,
+          endDate: end,
+        },
         employee: {
+          _id: employee._id,
           name: employee.name,
           employeeId: employee.employeeId,
           department: employee.department,
@@ -231,12 +350,16 @@ export const getEmployeeDashboardStats = async (req: Request, res: Response) => 
           pendingComplaints,
           inProgressComplaints,
           resolvedComplaints,
+          totalAllTime,
+          resolvedAllTime,
         },
         recentAssignments,
       },
     });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to fetch employee dashboard data' });
+  } catch (error: any) {
+    console.error('Error fetching employee dashboard data:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch employee dashboard data', error: error.message });
   }
 };
+
 

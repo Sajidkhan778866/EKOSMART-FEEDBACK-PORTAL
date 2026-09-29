@@ -7,6 +7,7 @@ import { StockMovement } from '../models/StockMovement';
 import { Warranty } from '../models/Warranty';
 import { Content } from '../models/Content';
 import { BillTemplate } from '../models/BillTemplate';
+import { applyDateFilterToQuery } from '../utils/dateRange';
 
 // Default Showroom Bill Template
 export const defaultBillTemplate = {
@@ -523,11 +524,13 @@ export const deleteBillTemplate = async (req: Request, res: Response) => {
 // GET /api/v1/billing - List bills
 export const getAllBills = async (req: Request, res: Response) => {
   try {
-    const { search, paymentStatus, showroom, page, limit } = req.query;
+    const { search, paymentStatus, showroom, dateFilter, startDate, endDate, page, limit } = req.query;
     const query: any = {};
 
     if (paymentStatus && paymentStatus !== 'All') query.paymentStatus = paymentStatus;
     if (showroom && showroom !== 'All') query.showroom = showroom;
+
+    applyDateFilterToQuery(query, 'createdAt', dateFilter as string, startDate as string, endDate as string);
 
     if (search) {
       const s = (search as string).trim();

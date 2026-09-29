@@ -6,6 +6,7 @@ import {
   getComplaintById,
   assignComplaint,
   updateComplaintStatus,
+  exportComplaints,
 } from '../controllers/complaint.controller';
 
 const router = express.Router();
@@ -17,6 +18,7 @@ router.get('/public/track/:ticketNumber', trackPublicComplaint);
 // Admin / Employee routes
 router.get('/', getAdminComplaints);
 router.get('/admin', getAdminComplaints);
+router.get('/export', exportComplaints);
 router.get('/ticket/:ticketNumber', getComplaintById);
 router.get('/admin/:id', getComplaintById);
 router.get('/:id', getComplaintById);

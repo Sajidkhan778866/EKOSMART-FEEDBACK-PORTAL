@@ -43,6 +43,26 @@ export interface IWarrantyAccess {
   permissions: IWarrantyPermissions;
 }
 
+export interface ISalaryStructure {
+  basicSalary: number;
+  allowances: Array<{ key: string; label: string; amount: number }>;
+  deductions: Array<{ key: string; label: string; amount: number }>;
+  bonuses: Array<{ key: string; label: string; amount: number }>;
+  bankDetails?: {
+    bankName?: string;
+    accountNumber?: string;
+    ifscCode?: string;
+    branch?: string;
+    upiId?: string;
+    pan?: string;
+    uan?: string;
+    pfNumber?: string;
+    esicNumber?: string;
+  };
+  effectiveDate?: Date;
+  notes?: string;
+}
+
 export interface IEmployee extends Document {
   employeeId: string;
   name: string;
@@ -62,6 +82,7 @@ export interface IEmployee extends Document {
   certificates?: ICertificate[];
   issuedItems?: IIssuedItem[];
   warrantyAccess?: IWarrantyAccess;
+  salaryStructure?: ISalaryStructure;
   status: 'Active' | 'Inactive';
   createdAt: Date;
   updatedAt: Date;
@@ -147,6 +168,25 @@ const employeeSchema = new Schema(
         customerRecords: { type: Boolean, default: false },
         voidWarranty: { type: Boolean, default: false },
       },
+    },
+    salaryStructure: {
+      basicSalary: { type: Number, default: 0 },
+      allowances: { type: Array, default: [] },
+      deductions: { type: Array, default: [] },
+      bonuses: { type: Array, default: [] },
+      bankDetails: {
+        bankName: { type: String, default: '' },
+        accountNumber: { type: String, default: '' },
+        ifscCode: { type: String, default: '' },
+        branch: { type: String, default: '' },
+        upiId: { type: String, default: '' },
+        pan: { type: String, default: '' },
+        uan: { type: String, default: '' },
+        pfNumber: { type: String, default: '' },
+        esicNumber: { type: String, default: '' },
+      },
+      effectiveDate: { type: Date, default: Date.now },
+      notes: { type: String, default: '' },
     },
     status: { type: String, enum: ['Active', 'Inactive'], default: 'Active' },
   },

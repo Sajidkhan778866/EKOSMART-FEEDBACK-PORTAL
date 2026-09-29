@@ -314,11 +314,17 @@ const Home = () => {
       });
   }, []);
 
-  const uniqueSections = Array.from(new Set(cards.map((c) => c.section || 'General')));
+  // Deduplicate and sort cards by order, showing only visible ones
+  const visibleCards = cards
+    .filter((c) => c.isVisible !== false)
+    .filter((card, index, self) => index === self.findIndex((t) => (t.id && card.id ? t.id === card.id : t.title.toLowerCase() === card.title.toLowerCase())))
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+  const uniqueSections = Array.from(new Set(visibleCards.map((c) => c.section || 'General')));
   const filteredCards =
     selectedSection === 'all'
-      ? cards
-      : cards.filter((c) => (c.section || 'General').toLowerCase() === selectedSection.toLowerCase());
+      ? visibleCards
+      : visibleCards.filter((c) => (c.section || 'General').toLowerCase() === selectedSection.toLowerCase());
 
   return (
     <div className="space-y-12 -mt-8">

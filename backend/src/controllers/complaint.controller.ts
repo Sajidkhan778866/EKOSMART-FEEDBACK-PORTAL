@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import { Complaint } from '../models/Complaint';
 import { Customer } from '../models/Customer';
 import { Employee } from '../models/Employee';
+import { applyDateFilterToQuery } from '../utils/dateRange';
 
 const DIVISION_PREFIXES: Record<string, string> = {
   Battery: 'BAT',
@@ -205,26 +206,108 @@ export const trackPublicComplaint = async (req: Request, res: Response) => {
 // GET /api/v1/complaints/admin OR /api/v1/tickets
 export const getAdminComplaints = async (req: Request, res: Response) => {
   try {
-    const { division, status, priority, complaintType, assignedTo, search, startDate, endDate } = req.query;
+    const { tab, scope, division, status, priority, complaintType, assignedTo, search, dateFilter, startDate, endDate } = req.query;
     const query: any = {};
 
     if (division && division !== 'All') query.division = division;
-    if (status && status !== 'All') query.status = status;
+
+    // Handle Tab/Scope Filtering: 'active' vs 'resolved' vs 'all'
+    const activeTab = (tab || scope || '').toString().toLowerCase();
+    if (status && status !== 'All') {
+      query.status = status;
+    } else if (activeTab === 'active') {
+      query.status = { $in: ['New', 'Pending', 'Assigned', 'In Progress'] };
+    } else if (activeTab === 'resolved' || activeTab === 'closed' || activeTab === 'history') {
+      query.status = { $in: ['Resolved', 'Closed'] };
+    }
+
     if (priority && priority !== 'All') query.priority = priority;
     if (complaintType && complaintType !== 'All') query.complaintType = complaintType;
     if (assignedTo && assignedTo !== 'All') query.assignedTo = assignedTo;
 
-    if (startDate || endDate) {
-      query.createdAt = {};
-      if (startDate) {
-        query.createdAt.$gte = new Date(startDate as string);
+    applyDateFilterToQuery(query, 'createdAt', dateFilter as string, startDate as string, endDate as string);
+
+    if (search) {
+      const searchStr = (search as string).trim();
+      const matchingCustomers = await Customer.find({
+        $or: [
+          { name: { $regex: searchStr, $options: 'i' } },
+          { mobile: { $regex: searchStr, $options: 'i' } },
+          { email: { $regex: searchStr, $options: 'i' } },
+          { customerId: { $regex: searchStr, $options: 'i' } },
+        ],
+      }).select('_id');
+      const customerIds = matchingCustomers.map((c) => c._id);
+
+      const searchConditions: any[] = [
+        { ticketNumber: { $regex: searchStr, $options: 'i' } },
+        { complaintType: { $regex: searchStr, $options: 'i' } },
+        { description: { $regex: searchStr, $options: 'i' } },
+        { division: { $regex: searchStr, $options: 'i' } },
+        { status: { $regex: searchStr, $options: 'i' } },
+        { priority: { $regex: searchStr, $options: 'i' } },
+      ];
+
+      if (customerIds.length > 0) {
+        searchConditions.push({ customer: { $in: customerIds } });
       }
-      if (endDate) {
-        const e = new Date(endDate as string);
-        e.setHours(23, 59, 59, 999);
-        query.createdAt.$lte = e;
-      }
+
+      query.$or = searchConditions;
     }
+
+    const complaints = await Complaint.find(query)
+      .populate('customer', 'customerId name mobile email address customerType')
+      .populate('assignedTo', 'employeeId name designation division mobile photoUrl')
+      .sort({ createdAt: -1 });
+
+    // Calculate active vs resolved counts for fast tab badge rendering
+    const baseCountQuery: any = {};
+    if (division && division !== 'All') baseCountQuery.division = division;
+    applyDateFilterToQuery(baseCountQuery, 'createdAt', dateFilter as string, startDate as string, endDate as string);
+
+    const [activeCount, resolvedCount, allCount] = await Promise.all([
+      Complaint.countDocuments({ ...baseCountQuery, status: { $in: ['New', 'Pending', 'Assigned', 'In Progress'] } }),
+      Complaint.countDocuments({ ...baseCountQuery, status: { $in: ['Resolved', 'Closed'] } }),
+      Complaint.countDocuments(baseCountQuery),
+    ]);
+
+    res.json({
+      success: true,
+      data: complaints,
+      meta: {
+        total: complaints.length,
+        activeCount,
+        resolvedCount,
+        allCount,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to fetch complaints' });
+  }
+};
+
+// GET /api/v1/complaints/export - Export complaints to CSV / Excel
+export const exportComplaints = async (req: Request, res: Response) => {
+  try {
+    const { tab, scope, division, status, priority, complaintType, assignedTo, search, dateFilter, startDate, endDate } = req.query;
+    const query: any = {};
+
+    if (division && division !== 'All') query.division = division;
+
+    const activeTab = (tab || scope || '').toString().toLowerCase();
+    if (status && status !== 'All') {
+      query.status = status;
+    } else if (activeTab === 'active') {
+      query.status = { $in: ['New', 'Pending', 'Assigned', 'In Progress'] };
+    } else if (activeTab === 'resolved' || activeTab === 'closed' || activeTab === 'history') {
+      query.status = { $in: ['Resolved', 'Closed'] };
+    }
+
+    if (priority && priority !== 'All') query.priority = priority;
+    if (complaintType && complaintType !== 'All') query.complaintType = complaintType;
+    if (assignedTo && assignedTo !== 'All') query.assignedTo = assignedTo;
+
+    applyDateFilterToQuery(query, 'createdAt', dateFilter as string, startDate as string, endDate as string);
 
     if (search) {
       const searchStr = (search as string).trim();
@@ -256,12 +339,58 @@ export const getAdminComplaints = async (req: Request, res: Response) => {
 
     const complaints = await Complaint.find(query)
       .populate('customer', 'customerId name mobile email address')
-      .populate('assignedTo', 'employeeId name designation division mobile photoUrl')
+      .populate('assignedTo', 'employeeId name designation division')
       .sort({ createdAt: -1 });
 
-    res.json({ success: true, data: complaints });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to fetch complaints' });
+    const headers = [
+      'Ticket Number',
+      'Division',
+      'Complaint Type',
+      'Status',
+      'Priority',
+      'Customer Name',
+      'Customer Mobile',
+      'Customer Email',
+      'Assigned Engineer',
+      'Engineer ID',
+      'Description',
+      'Resolution Details',
+      'Created Date',
+      'Last Updated',
+    ];
+
+    const escapeCsv = (str: any) => {
+      if (str === null || str === undefined) return '""';
+      const s = String(str).replace(/"/g, '""');
+      return `"${s}"`;
+    };
+
+    const rows = complaints.map((c: any) => [
+      escapeCsv(c.ticketNumber),
+      escapeCsv(c.division),
+      escapeCsv(c.complaintType),
+      escapeCsv(c.status),
+      escapeCsv(c.priority),
+      escapeCsv(c.customer?.name || ''),
+      escapeCsv(c.customer?.mobile || ''),
+      escapeCsv(c.customer?.email || ''),
+      escapeCsv(c.assignedTo?.name || 'Unassigned'),
+      escapeCsv(c.assignedTo?.employeeId || ''),
+      escapeCsv(c.description || c.formData?.complaintDescription || ''),
+      escapeCsv(c.remarks?.resolutionDetails || c.remarks?.admin || ''),
+      escapeCsv(c.createdAt ? new Date(c.createdAt).toLocaleString() : ''),
+      escapeCsv(c.updatedAt ? new Date(c.updatedAt).toLocaleString() : ''),
+    ].join(','));
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
+    const filename = `Ekosmart_Complaints_Export_${new Date().toISOString().slice(0, 10)}.csv`;
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.status(200).send(csvContent);
+  } catch (error: any) {
+    console.error('Error exporting complaints:', error);
+    res.status(500).json({ success: false, message: 'Failed to export complaints' });
   }
 };
 

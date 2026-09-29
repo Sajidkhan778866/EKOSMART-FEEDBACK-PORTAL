@@ -2,16 +2,51 @@ import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import { Stock, IStock } from '../models/Stock';
 import { StockMovement } from '../models/StockMovement';
+import { StockConfig } from '../models/StockConfig';
+import { applyDateFilterToQuery } from '../utils/dateRange';
 
-// GET /api/v1/stock - List stock with filters
+// GET /api/v1/stock/config - Get soft-coded stock configuration
+export const getStockConfig = async (req: Request, res: Response) => {
+  try {
+    let config = await StockConfig.findOne({ key: 'global_stock_config' });
+    if (!config) {
+      config = await StockConfig.create({ key: 'global_stock_config' });
+    }
+    res.json({ success: true, data: config });
+  } catch (error: any) {
+    console.error('Failed to fetch stock config:', error);
+    res.status(500).json({ success: false, message: 'Failed to retrieve stock configuration', error: error.message });
+  }
+};
+
+// PUT /api/v1/stock/config - Update soft-coded stock configuration
+export const updateStockConfig = async (req: Request, res: Response) => {
+  try {
+    const updates = req.body;
+    let config = await StockConfig.findOneAndUpdate(
+      { key: 'global_stock_config' },
+      { $set: updates },
+      { new: true, upsert: true, setDefaultsOnInsert: true }
+    );
+    res.json({ success: true, message: 'Stock configuration updated successfully', data: config });
+  } catch (error: any) {
+    console.error('Failed to update stock config:', error);
+    res.status(500).json({ success: false, message: 'Failed to update stock configuration', error: error.message });
+  }
+};
+
+// GET /api/v1/stock - List stock with filters and date range
 export const getAllStock = async (req: Request, res: Response) => {
   try {
-    const { category, location, status, search, limit, page } = req.query;
+    const { category, location, status, search, dateFilter, startDate, endDate, limit, page } = req.query;
     const query: any = {};
 
     if (category && category !== 'All') query.category = category;
     if (location && location !== 'All') query.location = location;
     if (status && status !== 'All') query.status = status;
+
+    // Apply standard date filter on createdAt / updatedAt
+    applyDateFilterToQuery(query, 'createdAt', dateFilter as string, startDate as string, endDate as string);
 
     if (search) {
       const searchStr = (search as string).trim();
@@ -24,21 +59,25 @@ export const getAllStock = async (req: Request, res: Response) => {
       ];
     }
 
-    const items = await Stock.find(query).sort({ updatedAt: -1 });
+    const items = await Stock.find(query).sort({ updatedAt: -1, createdAt: -1 });
 
     // Summary statistics
-    const totalItems = items.reduce((acc, curr) => acc + (curr.quantity || 0), 0);
+    const totalQuantity = items.reduce((acc, curr) => acc + (curr.quantity || 0), 0);
     const inStockCount = items.filter((i) => i.status === 'In Stock').length;
     const soldCount = items.filter((i) => i.status === 'Sold').length;
+    const reservedCount = items.filter((i) => i.status === 'Reserved').length;
+    const totalValuation = items.reduce((acc, curr) => acc + ((curr.quantity || 0) * (curr.unitPrice || 0)), 0);
 
     res.json({
       success: true,
       data: items,
       meta: {
         totalRecords: items.length,
-        totalQuantity: totalItems,
+        totalQuantity,
         inStockCount,
         soldCount,
+        reservedCount,
+        totalValuation,
       },
     });
   } catch (error: any) {
@@ -119,6 +158,10 @@ export const createStock = async (req: Request, res: Response) => {
       location,
       status,
       specifications,
+      attributes,
+      customFields,
+      purchaseInfo,
+      warrantyInfo,
       warrantyPeriodMonths,
       notes,
     } = req.body;
@@ -171,6 +214,7 @@ export const createStock = async (req: Request, res: Response) => {
       serialNumber: cleanSerial,
       batterySerialNumber: cleanBatSerial,
       quantity: qty,
+      availableQuantity: qty,
       totalReceived: qty,
       totalSold: 0,
       reservedQuantity: 0,
@@ -179,7 +223,11 @@ export const createStock = async (req: Request, res: Response) => {
       location: location || 'Kota Central Plant Store',
       status: status || 'In Stock',
       specifications: specifications || {},
+      attributes: attributes || {},
+      customFields: customFields || {},
+      purchaseInfo: purchaseInfo || {},
       warrantyPeriodMonths: Number(warrantyPeriodMonths) || (category === 'Battery' ? 36 : 12),
+      warrantyInfo: warrantyInfo || { warrantyPeriodMonths: Number(warrantyPeriodMonths) || (category === 'Battery' ? 36 : 12) },
       history: [initialHistory],
     });
 
@@ -334,15 +382,18 @@ export const recordStockMovement = async (req: Request, res: Response) => {
 // GET /api/v1/stock/movements/audit - List audit movements
 export const getStockMovements = async (req: Request, res: Response) => {
   try {
-    const { movementType, productId, limit } = req.query;
+    const { movementType, productId, dateFilter, startDate, endDate, limit } = req.query;
     const query: any = {};
     if (movementType && movementType !== 'All') query.movementType = movementType;
     if (productId) query.productId = productId;
 
-    const max = Math.min(100, Number(limit) || 50);
+    // Apply date range filter
+    applyDateFilterToQuery(query, 'createdAt', dateFilter as string, startDate as string, endDate as string);
+
+    const max = Math.min(200, Number(limit) || 100);
     const movements = await StockMovement.find(query).sort({ createdAt: -1 }).limit(max);
 
-    res.json({ success: true, data: movements });
+    res.json({ success: true, data: movements, count: movements.length });
   } catch (error: any) {
     res.status(500).json({ success: false, message: 'Failed to fetch stock movements', error: error.message });
   }

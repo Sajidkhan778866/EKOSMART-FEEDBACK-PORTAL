@@ -1,12 +1,15 @@
 import { Request, Response } from 'express';
 import { Customer } from '../models/Customer';
+import { applyDateFilterToQuery } from '../utils/dateRange';
 
 export const getCustomers = async (req: Request, res: Response) => {
   try {
-    const { customerType, search } = req.query;
+    const { customerType, search, dateFilter, startDate, endDate } = req.query;
     const query: any = {};
 
-    if (customerType) query.customerType = customerType;
+    if (customerType && customerType !== 'All') query.customerType = customerType;
+    applyDateFilterToQuery(query, 'createdAt', dateFilter as string, startDate as string, endDate as string);
+
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
@@ -17,7 +20,7 @@ export const getCustomers = async (req: Request, res: Response) => {
     }
 
     const customers = await Customer.find(query).sort({ createdAt: -1 });
-    res.json({ success: true, data: customers });
+    res.json({ success: true, data: customers, count: customers.length });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to fetch customers' });
   }
