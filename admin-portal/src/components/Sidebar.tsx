@@ -12,6 +12,7 @@ import {
   LogOut,
   Package,
   Receipt,
+  Coins,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { EbsLogo } from './EbsLogo';
@@ -30,6 +31,7 @@ const Sidebar = ({ onClose }: SidebarProps) => {
     { name: 'Stock Inventory', path: '/stock', icon: <Package size={18} /> },
     { name: 'Showroom Billing', path: '/billing', icon: <Receipt size={18} /> },
     { name: 'Employees', path: '/employees', icon: <Users size={18} /> },
+    { name: 'Customer Wallets', path: '/wallet', icon: <Coins size={18} /> },
     { name: 'Complaints', path: '/complaints', icon: <ClipboardList size={18} /> },
     { name: 'Warranty', path: '/warranty', icon: <ShieldCheck size={18} /> },
     { name: 'Customers', path: '/customers', icon: <UserCheck size={18} /> },

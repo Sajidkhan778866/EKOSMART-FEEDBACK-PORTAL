@@ -20,6 +20,8 @@ import {
   CheckCircle2,
   ChevronDown,
   ExternalLink,
+  Coins,
+  Gift,
 } from 'lucide-react';
 import { EbsLogo } from '../components/EbsLogo';
 import { API_BASE, resolveImageUrl } from '../config/api';
@@ -566,6 +568,48 @@ const Home = () => {
               </div>
             );
           })}
+        </div>
+      </section>
+
+      {/* Ekosmart Customer Wallet & Referral Rewards Banner */}
+      <section className="max-w-6xl mx-auto px-4">
+        <div className="bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/5 rounded-3xl p-6 md:p-8 border-2 border-amber-300 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-600 to-amber-400 text-white flex items-center justify-center shadow-lg flex-shrink-0">
+              <Coins size={28} className="animate-pulse" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="bg-amber-200 text-amber-950 font-black text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  Customer Rewards
+                </span>
+                <span className="text-xs font-bold text-amber-800">1 Coin = ₹1 Store Credit</span>
+              </div>
+              <h3 className="text-lg md:text-xl font-black text-amber-950">
+                Ekosmart Digital Wallet & Referral Coins
+              </h3>
+              <p className="text-xs text-amber-900/80 max-w-xl">
+                Earn <strong>+500 Welcome Coins</strong> on registration, <strong>+500 Purchase Coins</strong> on showroom billing, and <strong>+100 Coins</strong> per verified friend referral!
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+            <Link
+              to="/customer/wallet"
+              className="flex-1 md:flex-initial px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-black rounded-2xl text-xs transition shadow-md flex items-center justify-center gap-2"
+            >
+              <Coins size={15} />
+              <span>Open My Wallet</span>
+            </Link>
+            <Link
+              to="/customer/referrals"
+              className="flex-1 md:flex-initial px-4 py-2.5 bg-white hover:bg-amber-50 text-amber-900 font-bold rounded-2xl text-xs transition border border-amber-300 shadow-xs flex items-center justify-center gap-1.5"
+            >
+              <Gift size={15} className="text-purple-600" />
+              <span>Refer & Earn</span>
+            </Link>
+          </div>
         </div>
       </section>
 

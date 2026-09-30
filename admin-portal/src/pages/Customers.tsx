@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import {
   Users,
   Search,
@@ -44,8 +45,26 @@ interface CustomerItem {
   createdAt: string;
 }
 
-export default function Customers() {
-  const [activeTab, setActiveTab] = useState<'directory' | 'referrals' | 'wallet'>('directory');
+interface CustomersProps {
+  defaultTab?: 'directory' | 'referrals' | 'wallet';
+}
+
+export default function Customers({ defaultTab }: CustomersProps) {
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const tabParam = (searchParams.get('tab') as 'directory' | 'referrals' | 'wallet') || defaultTab;
+  const isWalletRoute = location.pathname.includes('/wallet');
+  const [activeTab, setActiveTab] = useState<'directory' | 'referrals' | 'wallet'>(
+    isWalletRoute ? 'wallet' : (tabParam || 'directory')
+  );
+
+  useEffect(() => {
+    if (isWalletRoute) {
+      setActiveTab('wallet');
+    } else if (tabParam) {
+      setActiveTab(tabParam);
+    }
+  }, [location.pathname, searchParams, isWalletRoute, tabParam]);
 
   // Customer Directory State
   const [customers, setCustomers] = useState<CustomerItem[]>([]);

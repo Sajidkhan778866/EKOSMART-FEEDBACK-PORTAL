@@ -69,7 +69,7 @@ export interface IBill {
   createdAt: string;
 }
 
-const PAYMENT_MODES = ['UPI', 'Cash', 'Card', 'Bank Transfer', 'Finance', 'Credit'];
+const PAYMENT_MODES = ['UPI', 'Cash', 'Wallet', 'Card', 'Bank Transfer', 'Finance', 'Credit'];
 const SHOWROOMS = ['Main Showroom Counter', 'Kota Plant Store Counter', 'Service Center Desk'];
 
 const BillingManager = () => {

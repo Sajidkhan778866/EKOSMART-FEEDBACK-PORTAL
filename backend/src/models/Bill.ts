@@ -29,7 +29,7 @@ export interface IBill extends Document {
   discountTotal: number;
   taxTotal: number;
   grandTotal: number;
-  paymentMode: 'Cash' | 'UPI' | 'Card' | 'Bank Transfer' | 'Finance' | 'Credit';
+  paymentMode: 'Cash' | 'UPI' | 'Wallet' | 'Card' | 'Bank Transfer' | 'Finance' | 'Credit';
   paymentStatus: 'Paid' | 'Pending' | 'Partial';
   showroom: string;
   employeeId?: string;
@@ -87,7 +87,7 @@ const billSchema = new Schema(
     grandTotal: { type: Number, required: true, default: 0 },
     paymentMode: {
       type: String,
-      enum: ['Cash', 'UPI', 'Card', 'Bank Transfer', 'Finance', 'Credit'],
+      enum: ['Cash', 'UPI', 'Wallet', 'Card', 'Bank Transfer', 'Finance', 'Credit'],
       default: 'UPI',
     },
     paymentStatus: {

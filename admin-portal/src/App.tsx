@@ -63,6 +63,7 @@ function App() {
             <Route path="warranty" element={<Warranty />} />
             <Route path="forms" element={<Forms />} />
             <Route path="customers" element={<Customers />} />
+            <Route path="wallet" element={<Customers defaultTab="wallet" />} />
             <Route path="cms" element={<ContentManager />} />
             <Route path="reports" element={<Reports />} />
             <Route path="settings" element={<Settings />} />

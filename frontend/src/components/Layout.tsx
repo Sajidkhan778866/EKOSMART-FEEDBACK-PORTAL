@@ -153,9 +153,9 @@ const Layout = () => {
             </NavLink>
           </div>
 
-          {/* Desktop Navigation Links - Cleaned to ONLY Home */}
+          {/* Desktop Navigation Links */}
           <nav className="hidden md:block">
-            <ul className="flex items-center space-x-6 text-sm font-bold text-slate-800">
+            <ul className="flex items-center space-x-5 text-xs font-bold text-slate-800">
               <li>
                 <NavLink
                   to="/"
@@ -165,8 +165,43 @@ const Layout = () => {
                       : 'hover:text-emerald-700 flex items-center gap-1.5 transition font-bold'
                   }
                 >
-                  <Home size={16} className="text-emerald-600" />
+                  <Home size={15} className="text-emerald-600" />
                   <span>Home</span>
+                </NavLink>
+              </li>
+
+              {/* Customer Wallet Option */}
+              <li>
+                <NavLink
+                  to="/customer/wallet"
+                  className={({ isActive }) =>
+                    isActive
+                      ? 'text-amber-800 bg-amber-100/80 border border-amber-300 px-3 py-1.5 rounded-xl flex items-center gap-1.5 font-bold shadow-xs'
+                      : 'text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition font-bold shadow-xs'
+                  }
+                >
+                  <Coins size={15} className="text-amber-600 animate-pulse" />
+                  <span>Wallet & Coins</span>
+                  {isAuthenticated && (
+                    <span className="bg-amber-200 text-amber-950 text-[10px] px-1.5 py-0.5 rounded-md font-black">
+                      {customer?.walletBalance ?? 0}
+                    </span>
+                  )}
+                </NavLink>
+              </li>
+
+              {/* Refer & Earn (+500 Coins) Option */}
+              <li>
+                <NavLink
+                  to="/customer/referrals"
+                  className={({ isActive }) =>
+                    isActive
+                      ? 'text-purple-800 bg-purple-100/80 border border-purple-300 px-3 py-1.5 rounded-xl flex items-center gap-1.5 font-bold shadow-xs'
+                      : 'text-purple-900 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition font-bold shadow-xs'
+                  }
+                >
+                  <Gift size={15} className="text-purple-600" />
+                  <span>Refer & Earn (+500)</span>
                 </NavLink>
               </li>
 
@@ -207,7 +242,7 @@ const Layout = () => {
                         className="flex items-center gap-2 px-4 py-2 hover:bg-slate-50 text-slate-700"
                       >
                         <Coins size={14} className="text-amber-500" />
-                        <span>My Wallet</span>
+                        <span>My Wallet ({customer.walletBalance || 0} Coins)</span>
                       </Link>
                       <Link
                         to="/customer/referrals"
@@ -255,7 +290,7 @@ const Layout = () => {
                     className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
                   >
                     <User size={13} />
-                    <span>Account</span>
+                    <span>Account / Login</span>
                   </Link>
                 </li>
               )}
