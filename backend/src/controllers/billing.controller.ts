@@ -601,6 +601,7 @@ export const createBill = async (req: Request, res: Response) => {
       paymentStatus,
       showroom,
       notes,
+      referralCode,
     } = req.body;
 
     if (!customerName || !customerMobile) {
@@ -875,7 +876,133 @@ export const createBill = async (req: Request, res: Response) => {
       console.warn('Purchase reward processing error:', rewErr.message);
     }
 
-    // 7. Create and Save Bill
+    // 7. Referral Code Handling & Referrer Reward Processing
+    let referralCodeUsed = '';
+    let referralCoinsAwarded = 0;
+
+    try {
+      let settings = await ReferralSettings.findOne({ key: 'global_referral_settings' });
+      const referrerBonus = settings?.referrerReward || 100;
+      const cleanRef = (referralCode || '').toString().trim().toUpperCase();
+
+      if (cleanRef) {
+        const referrerCustomer = await Customer.findOne({ referralCode: cleanRef });
+        if (referrerCustomer && referrerCustomer._id.toString() !== customer._id.toString()) {
+          referralCodeUsed = cleanRef;
+          if (!customer.referredBy) {
+            customer.referredBy = cleanRef;
+            customer.referrerCustomerId = referrerCustomer._id;
+            await customer.save();
+          }
+
+          // Check if referral was already recorded between these two
+          const existingRefRecord = await Referral.findOne({
+            referrer: referrerCustomer._id,
+            referredCustomer: customer._id,
+          });
+
+          if (!existingRefRecord && referrerBonus > 0) {
+            const refBalBefore = referrerCustomer.walletBalance || 0;
+            referrerCustomer.walletBalance = refBalBefore + referrerBonus;
+            referrerCustomer.totalEarnedCoins = (referrerCustomer.totalEarnedCoins || 0) + referrerBonus;
+            await referrerCustomer.save();
+
+            await WalletTransaction.create({
+              transactionId: `WTX-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
+              customer: referrerCustomer._id,
+              customerId: referrerCustomer.customerId,
+              customerName: referrerCustomer.name,
+              customerEmail: referrerCustomer.email,
+              customerMobile: referrerCustomer.mobile,
+              type: 'Credit',
+              category: 'Referrer Reward',
+              amount: referrerBonus,
+              balanceBefore: refBalBefore,
+              balanceAfter: referrerCustomer.walletBalance,
+              description: `Referral reward: Referred friend ${customer.name} billed under invoice ${invoiceNumber}`,
+              reference: invoiceNumber,
+              referenceType: 'Bill',
+              status: 'Completed',
+            });
+
+            await Referral.create({
+              referralId: `REF-${Date.now().toString().slice(-6)}-${Math.random().toString(36).substring(2, 5).toUpperCase()}`,
+              referrer: referrerCustomer._id,
+              referrerId: referrerCustomer.customerId,
+              referrerName: referrerCustomer.name,
+              referrerEmail: referrerCustomer.email || '',
+              referrerMobile: referrerCustomer.mobile || '',
+              referrerCode: referrerCustomer.referralCode,
+              referredCustomer: customer._id,
+              referredCustomerId: customer.customerId,
+              referredCustomerName: customer.name,
+              referredCustomerEmail: customer.email || '',
+              referredCustomerMobile: customer.mobile || '',
+              referredCustomerCode: customer.referralCode || '',
+              rewardAmountReferrer: referrerBonus,
+              rewardAmountReferred: settings?.newCustomerReward || 500,
+              qualificationPurchase: invoiceNumber,
+              rewardedAt: new Date(),
+              status: 'Completed',
+            });
+
+            referralCoinsAwarded = referrerBonus;
+          }
+        }
+      }
+
+      // Also check if customer had a pending referral registered previously
+      if (!referralCodeUsed) {
+        const pendingReferral: any = await Referral.findOne({
+          $or: [
+            { referredCustomer: customer._id },
+            { referredCustomerMobile: customer.mobile },
+            { referredCustomerEmail: customer.email },
+          ].filter(Boolean),
+          status: 'Pending',
+        });
+
+        if (pendingReferral) {
+          const referrerCustomer = await Customer.findById(pendingReferral.referrer);
+          if (referrerCustomer && referrerBonus > 0) {
+            const refBalBefore = referrerCustomer.walletBalance || 0;
+            referrerCustomer.walletBalance = refBalBefore + referrerBonus;
+            referrerCustomer.totalEarnedCoins = (referrerCustomer.totalEarnedCoins || 0) + referrerBonus;
+            await referrerCustomer.save();
+
+            await WalletTransaction.create({
+              transactionId: `WTX-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
+              customer: referrerCustomer._id,
+              customerId: referrerCustomer.customerId,
+              customerName: referrerCustomer.name,
+              customerEmail: referrerCustomer.email,
+              customerMobile: referrerCustomer.mobile,
+              type: 'Credit',
+              category: 'Referrer Reward',
+              amount: referrerBonus,
+              balanceBefore: refBalBefore,
+              balanceAfter: referrerCustomer.walletBalance,
+              description: `Referral reward: Friend ${customer.name} completed qualifying purchase (${invoiceNumber})`,
+              reference: invoiceNumber,
+              referenceType: 'Bill',
+              status: 'Completed',
+            });
+          }
+
+          pendingReferral.status = 'Completed';
+          pendingReferral.qualificationPurchase = invoiceNumber;
+          pendingReferral.rewardedAt = new Date();
+          await pendingReferral.save();
+
+          referralCodeUsed = pendingReferral.referrerCode || '';
+          referralCoinsAwarded = referrerBonus;
+        }
+      }
+    } catch (refErr: any) {
+      console.warn('Referral processing notice:', refErr.message);
+    }
+
+    // 8. Create and Save Bill
     const newBill = await Bill.create({
       invoiceNumber,
       customer: customer._id,
@@ -908,65 +1035,19 @@ export const createBill = async (req: Request, res: Response) => {
       warrantyGenerated: warrantyIds.length > 0,
       warrantyIds,
       purchaseRewardAwarded,
-      rewardCoinsAwarded,
+      rewardCoinsAwarded: rewardCoinsAwarded || (purchaseRewardAwarded ? 500 : 0),
+      referralCodeUsed,
+      referralCoinsAwarded,
     });
-
-    // 8. Process Referral Qualification & Referrer Reward
-    try {
-      const pendingReferral: any = await Referral.findOne({
-        $or: [
-          { referredCustomer: customer._id },
-          { referredCustomerMobile: customer.mobile },
-          { referredCustomerEmail: customer.email },
-        ].filter(Boolean),
-        status: 'Pending',
-      });
-
-      if (pendingReferral) {
-        let settings = await ReferralSettings.findOne({ key: 'global_referral_settings' });
-        const referrerBonus = settings?.referrerReward || 100;
-        const referrerCustomer = await Customer.findById(pendingReferral.referrer);
-
-        if (referrerCustomer && referrerBonus > 0) {
-          const refBalBefore = referrerCustomer.walletBalance || 0;
-          referrerCustomer.walletBalance = refBalBefore + referrerBonus;
-          referrerCustomer.totalEarnedCoins = (referrerCustomer.totalEarnedCoins || 0) + referrerBonus;
-          await referrerCustomer.save();
-
-          await WalletTransaction.create({
-            transactionId: `WTX-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
-            customer: referrerCustomer._id,
-            customerId: referrerCustomer.customerId,
-            customerName: referrerCustomer.name,
-            customerEmail: referrerCustomer.email,
-            customerMobile: referrerCustomer.mobile,
-            type: 'Credit',
-            category: 'Referrer Reward',
-            amount: referrerBonus,
-            balanceBefore: refBalBefore,
-            balanceAfter: referrerCustomer.walletBalance,
-            description: `Referral reward: Friend ${customer.name} completed qualifying purchase (${invoiceNumber})`,
-            reference: invoiceNumber,
-            referenceType: 'Bill',
-            status: 'Completed',
-          });
-        }
-
-        pendingReferral.status = 'Completed';
-        pendingReferral.qualificationPurchase = newBill._id.toString();
-        pendingReferral.rewardedAt = new Date();
-        await pendingReferral.save();
-      }
-    } catch (refErr: any) {
-      console.warn('Referral qualification processing notice:', refErr.message);
-    }
 
     res.status(201).json({
       success: true,
-      message: `Showroom Bill and Invoices generated successfully.${rewardCoinsAwarded > 0 ? ` +${rewardCoinsAwarded} Purchase Coins credited to customer wallet.` : ''}`,
+      message: `Showroom Bill and Invoices generated successfully.${rewardCoinsAwarded > 0 ? ` +${rewardCoinsAwarded} Purchase Coins credited to customer wallet.` : ''}${referralCoinsAwarded > 0 ? ` +${referralCoinsAwarded} Referral Coins awarded to referrer (${referralCodeUsed}).` : ''}`,
       data: newBill,
       warrantiesGenerated: warrantyIds,
       rewardCoinsAwarded,
+      referralCodeUsed,
+      referralCoinsAwarded,
     });
   } catch (error: any) {
     console.error('Failed to create bill:', error);
@@ -1027,6 +1108,8 @@ export const exportBills = async (req: Request, res: Response) => {
       'Payment Mode',
       'Payment Status',
       'Warranty Linked',
+      'Purchase Reward Coins',
+      'Referral Code Used',
     ];
 
     const escapeCsv = (str: any) => {
@@ -1057,6 +1140,8 @@ export const exportBills = async (req: Request, res: Response) => {
         escapeCsv(b.paymentMode || ''),
         escapeCsv(b.paymentStatus || ''),
         escapeCsv(b.warrantyGenerated ? 'Yes' : 'No'),
+        escapeCsv(b.rewardCoinsAwarded || (b.purchaseRewardAwarded ? 500 : 0)),
+        escapeCsv(b.referralCodeUsed || 'N/A'),
       ].join(',');
     });
 

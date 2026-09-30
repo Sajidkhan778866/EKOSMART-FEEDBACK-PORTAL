@@ -14,6 +14,8 @@ import {
   Scan,
   Trash2,
   Download,
+  Coins,
+  Gift,
 } from 'lucide-react';
 import { billingApi, stockApi, billTemplateApi } from '../api/client';
 import ScannerModal from '../components/ScannerModal';
@@ -53,6 +55,10 @@ export interface IBill {
   employeeName?: string;
   warrantyGenerated: boolean;
   warrantyIds?: string[];
+  purchaseRewardAwarded?: boolean;
+  rewardCoinsAwarded?: number;
+  referralCodeUsed?: string;
+  referralCoinsAwarded?: number;
   notes?: string;
   createdAt: string;
 }
@@ -89,6 +95,7 @@ const Billing = () => {
     paymentMode: 'UPI',
     paymentStatus: 'Paid' as 'Paid' | 'Pending' | 'Partial',
     showroom: 'Main Showroom Counter',
+    referralCode: '',
     notes: '',
   });
 
@@ -439,6 +446,7 @@ const Billing = () => {
                   <th className="p-4">Items / Pack #</th>
                   <th className="p-4">Grand Total</th>
                   <th className="p-4">Payment</th>
+                  <th className="p-4">Wallet & Referral Coins</th>
                   <th className="p-4">Warranty</th>
                   <th className="p-4 text-right">View</th>
                 </tr>
@@ -483,6 +491,21 @@ const Billing = () => {
                       >
                         {bill.paymentMode} • {bill.paymentStatus}
                       </span>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex flex-col gap-1">
+                        <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-900 border border-amber-200 px-2.5 py-1 rounded-xl text-xs font-black shadow-xs w-fit">
+                          <Coins size={13} className="text-amber-600" />
+                          <span>+{bill.rewardCoinsAwarded || (bill.purchaseRewardAwarded ? 500 : 500)} Coins</span>
+                        </span>
+                        {bill.referralCodeUsed && (
+                          <span className="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-lg text-[10px] font-bold font-mono w-fit">
+                            <Gift size={11} className="text-indigo-500" />
+                            <span>Ref: {bill.referralCodeUsed}</span>
+                            {bill.referralCoinsAwarded ? <span className="text-indigo-900 font-semibold">(+{bill.referralCoinsAwarded})</span> : null}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="p-4">
                       {bill.warrantyGenerated ? (
@@ -567,6 +590,38 @@ const Billing = () => {
                       placeholder="Kota, Rajasthan"
                       className="w-full p-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                     />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                  <div>
+                    <label className="block text-slate-600 font-bold mb-1 flex items-center gap-1">
+                      <Gift size={12} className="text-indigo-600" />
+                      <span>Referral Code (Optional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={customerForm.referralCode}
+                      onChange={(e) => setCustomerForm({ ...customerForm, referralCode: e.target.value.toUpperCase() })}
+                      placeholder="e.g. EKO7A9B"
+                      className="w-full p-2 bg-white border border-indigo-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono uppercase text-xs"
+                    />
+                  </div>
+                  <div className="sm:col-span-2 flex items-center">
+                    <div className="w-full p-2.5 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/80 rounded-xl flex items-center justify-between gap-2 text-amber-900 text-[11px]">
+                      <div className="flex items-center gap-2">
+                        <Coins size={16} className="text-amber-600 flex-shrink-0" />
+                        <div>
+                          <span className="font-bold">Customer Wallet Reward:</span>{' '}
+                          <span className="font-black text-amber-950">+500 Purchase Coins</span> will be credited automatically.
+                        </div>
+                      </div>
+                      {customerForm.referralCode && (
+                        <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-md font-mono text-[10px] font-bold">
+                          Referral Linked
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -893,6 +948,22 @@ const Billing = () => {
                 >
                   Grand Total: ₹{selectedBill.grandTotal.toLocaleString('en-IN')}
                 </div>
+              </div>
+
+              {/* Customer Wallet Reward Stamp */}
+              <div className="p-2.5 bg-amber-50 rounded-xl border border-amber-200 flex items-center justify-between text-amber-900 text-[11px]">
+                <div className="flex items-center gap-2">
+                  <Coins size={16} className="text-amber-600 flex-shrink-0" />
+                  <div>
+                    <span className="font-bold">Customer Reward Coins Credited:</span>{' '}
+                    <span className="font-black text-amber-950">+{selectedBill.rewardCoinsAwarded || (selectedBill.purchaseRewardAwarded ? 500 : 500)} Coins</span> into customer digital wallet.
+                  </div>
+                </div>
+                {selectedBill.referralCodeUsed && (
+                  <div className="flex items-center gap-1 text-[10px] font-mono font-bold bg-amber-100 text-amber-900 px-2 py-0.5 rounded-md border border-amber-300">
+                    <Gift size={11} /> Ref: {selectedBill.referralCodeUsed}
+                  </div>
+                )}
               </div>
 
               {/* Footer Note */}

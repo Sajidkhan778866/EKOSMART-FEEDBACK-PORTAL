@@ -46,6 +46,8 @@ export interface IBill extends Document {
   warrantyIds?: string[];
   purchaseRewardAwarded: boolean;
   rewardCoinsAwarded: number;
+  referralCodeUsed?: string;
+  referralCoinsAwarded?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -110,6 +112,8 @@ const billSchema = new Schema(
     warrantyIds: [{ type: String }],
     purchaseRewardAwarded: { type: Boolean, default: false },
     rewardCoinsAwarded: { type: Number, default: 0 },
+    referralCodeUsed: { type: String, default: '' },
+    referralCoinsAwarded: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
