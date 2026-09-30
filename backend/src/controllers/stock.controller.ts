@@ -152,9 +152,16 @@ export const createStock = async (req: Request, res: Response) => {
       modelNumber,
       serialNumber,
       batterySerialNumber,
+      images,
+      photoUrl,
+      billUrls,
+      billPages,
+      description,
       quantity,
+      purchasePrice,
       unitPrice,
       mrp,
+      gstRate,
       location,
       status,
       specifications,
@@ -206,6 +213,17 @@ export const createStock = async (req: Request, res: Response) => {
       date: new Date(),
     };
 
+    const imageList = Array.isArray(images) ? images : (photoUrl ? [photoUrl] : []);
+    const billList = Array.isArray(billUrls) ? billUrls : (purchaseInfo?.billUrls || []);
+    const formattedBillPages = Array.isArray(billPages) && billPages.length > 0
+      ? billPages
+      : billList.map((url: string, i: number) => ({
+          pageNumber: i + 1,
+          url,
+          name: `Bill Page ${i + 1}`,
+          fileType: url.startsWith('data:application/pdf') ? 'pdf' : 'image',
+        }));
+
     const newStock = await Stock.create({
       productId: pid,
       productName: productName.trim(),
@@ -213,19 +231,29 @@ export const createStock = async (req: Request, res: Response) => {
       modelNumber: modelNumber ? modelNumber.trim() : '',
       serialNumber: cleanSerial,
       batterySerialNumber: cleanBatSerial,
+      images: imageList,
+      photoUrl: photoUrl || (imageList[0] || ''),
+      billUrls: billList,
+      billPages: formattedBillPages,
+      description: description ? description.trim() : '',
       quantity: qty,
       availableQuantity: qty,
       totalReceived: qty,
       totalSold: 0,
       reservedQuantity: 0,
+      purchasePrice: Number(purchasePrice) || 0,
       unitPrice: Number(unitPrice) || 0,
       mrp: Number(mrp) || Number(unitPrice) || 0,
+      gstRate: Number(gstRate) !== undefined ? Number(gstRate) : 18,
       location: location || 'Kota Central Plant Store',
       status: status || 'In Stock',
       specifications: specifications || {},
       attributes: attributes || {},
       customFields: customFields || {},
-      purchaseInfo: purchaseInfo || {},
+      purchaseInfo: {
+        ...(purchaseInfo || {}),
+        billUrls: billList,
+      },
       warrantyPeriodMonths: Number(warrantyPeriodMonths) || (category === 'Battery' ? 36 : 12),
       warrantyInfo: warrantyInfo || { warrantyPeriodMonths: Number(warrantyPeriodMonths) || (category === 'Battery' ? 36 : 12) },
       history: [initialHistory],
@@ -269,6 +297,15 @@ export const updateStock = async (req: Request, res: Response) => {
     const { id } = req.params;
     const updates = { ...req.body };
     delete updates.history; // Protect history from raw overwrite
+
+    if (Array.isArray(updates.billUrls) && (!updates.billPages || updates.billPages.length === 0)) {
+      updates.billPages = updates.billUrls.map((url: string, i: number) => ({
+        pageNumber: i + 1,
+        url,
+        name: `Bill Page ${i + 1}`,
+        fileType: url.startsWith('data:application/pdf') ? 'pdf' : 'image',
+      }));
+    }
 
     const stock = await Stock.findByIdAndUpdate(id, updates, { new: true });
     if (!stock) {

@@ -6,6 +6,8 @@ export interface IBillItem {
   category: string;
   productSerial?: string;
   batterySerial?: string;
+  productImage?: string;
+  images?: string[];
   quantity: number;
   unitPrice: number;
   discount: number;
@@ -33,8 +35,17 @@ export interface IBill extends Document {
   employeeId?: string;
   employeeName?: string;
   notes?: string;
+  billUrls?: string[];
+  attachments?: Array<{
+    pageNumber: number;
+    url: string;
+    name?: string;
+    fileType?: string;
+  }>;
   warrantyGenerated: boolean;
   warrantyIds?: string[];
+  purchaseRewardAwarded: boolean;
+  rewardCoinsAwarded: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -46,6 +57,8 @@ const billItemSchema = new Schema(
     category: { type: String, default: 'Battery' },
     productSerial: { type: String, default: '' },
     batterySerial: { type: String, default: '' },
+    productImage: { type: String, default: '' },
+    images: [{ type: String }],
     quantity: { type: Number, required: true, default: 1 },
     unitPrice: { type: Number, required: true, default: 0 },
     discount: { type: Number, default: 0 },
@@ -84,8 +97,19 @@ const billSchema = new Schema(
     employeeId: { type: String, default: '' },
     employeeName: { type: String, default: '' },
     notes: { type: String, default: '' },
+    billUrls: [{ type: String }],
+    attachments: [
+      {
+        pageNumber: { type: Number, default: 1 },
+        url: { type: String, required: true },
+        name: { type: String, default: '' },
+        fileType: { type: String, default: 'image' },
+      },
+    ],
     warrantyGenerated: { type: Boolean, default: false },
     warrantyIds: [{ type: String }],
+    purchaseRewardAwarded: { type: Boolean, default: false },
+    rewardCoinsAwarded: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

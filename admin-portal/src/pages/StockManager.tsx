@@ -18,8 +18,17 @@ import {
   Camera,
   Sliders,
   Download,
+  Image as ImageIcon,
+  Upload,
+  FileText,
+  Eye,
+  ChevronLeft,
+  ChevronRight,
+  ZoomIn,
+  ZoomOut,
+  FilePlus,
 } from 'lucide-react';
-import { stockApi } from '../api/client';
+import { stockApi, resolveImageUrl } from '../api/client';
 import ScannerModal from '../components/ScannerModal';
 import { DateRangeFilter, type DateRangeState } from '../components/DateRangeFilter';
 
@@ -68,9 +77,28 @@ export interface IStockItem {
   totalReceived: number;
   totalSold: number;
   unitPrice: number;
+  purchasePrice?: number;
   mrp: number;
+  gstRate?: number;
   location: string;
   status: string;
+  images?: string[];
+  photoUrl?: string;
+  billUrls?: string[];
+  billPages?: Array<{
+    pageNumber: number;
+    url: string;
+    name?: string;
+    fileType?: string;
+  }>;
+  purchaseInfo?: {
+    supplier?: string;
+    purchaseDate?: string;
+    invoiceNumber?: string;
+    purchaseCost?: number;
+    billUrls?: string[];
+  };
+  description?: string;
   specifications?: Record<string, any>;
   attributes?: Record<string, any>;
   customFields?: Record<string, any>;
@@ -302,6 +330,170 @@ const StockManager = () => {
     fetchStock();
   };
 
+  const [imageInput, setImageInput] = useState('');
+  const [billInput, setBillInput] = useState('');
+
+  // Bill Viewer Modal State
+  const [showBillViewerModal, setShowBillViewerModal] = useState(false);
+  const [viewerPages, setViewerPages] = useState<Array<{ pageNumber: number; url: string; name?: string; fileType?: string }>>([]);
+  const [viewerTitle, setViewerTitle] = useState('');
+  const [activeViewerPageIndex, setActiveViewerPageIndex] = useState(0);
+  const [viewerZoom, setViewerZoom] = useState(1);
+
+  const addImageUrlToForm = () => {
+    if (!imageInput.trim()) return;
+    setFormData((prev: any) => ({
+      ...prev,
+      images: [...(prev.images || []), imageInput.trim()],
+      photoUrl: prev.photoUrl || imageInput.trim(),
+    }));
+    setImageInput('');
+  };
+
+  const removeImageFromForm = (idx: number) => {
+    setFormData((prev: any) => {
+      const filtered = (prev.images || []).filter((_: any, i: number) => i !== idx);
+      return {
+        ...prev,
+        images: filtered,
+        photoUrl: filtered[0] || '',
+      };
+    });
+  };
+
+  const handleStockImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const base64 = ev.target?.result as string;
+        if (base64) {
+          setFormData((prev: any) => ({
+            ...prev,
+            images: [...(prev.images || []), base64],
+            photoUrl: prev.photoUrl || base64,
+          }));
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Multi-Page Bill Handlers
+  const addBillUrlToForm = () => {
+    if (!billInput.trim()) return;
+    const url = billInput.trim();
+    setFormData((prev: any) => {
+      const updatedUrls = [...(prev.billUrls || []), url];
+      const updatedPages = [
+        ...(prev.billPages || []),
+        {
+          pageNumber: (prev.billPages?.length || 0) + 1,
+          url,
+          name: `Bill Page ${(prev.billPages?.length || 0) + 1}`,
+          fileType: url.toLowerCase().endsWith('.pdf') || url.startsWith('data:application/pdf') ? 'pdf' : 'image',
+        },
+      ];
+      return {
+        ...prev,
+        billUrls: updatedUrls,
+        billPages: updatedPages,
+      };
+    });
+    setBillInput('');
+  };
+
+  const removeBillPage = (idx: number) => {
+    setFormData((prev: any) => {
+      const filteredPages = (prev.billPages || [])
+        .filter((_: any, i: number) => i !== idx)
+        .map((page: any, newIdx: number) => ({
+          ...page,
+          pageNumber: newIdx + 1,
+          name: `Bill Page ${newIdx + 1}`,
+        }));
+      const filteredUrls = filteredPages.map((p: any) => p.url);
+      return {
+        ...prev,
+        billUrls: filteredUrls,
+        billPages: filteredPages,
+      };
+    });
+  };
+
+  const moveBillPage = (idx: number, direction: 'up' | 'down') => {
+    setFormData((prev: any) => {
+      const pages = [...(prev.billPages || [])];
+      const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+      if (targetIdx < 0 || targetIdx >= pages.length) return prev;
+      const temp = pages[idx];
+      pages[idx] = pages[targetIdx];
+      pages[targetIdx] = temp;
+      const reindexed = pages.map((p, i) => ({
+        ...p,
+        pageNumber: i + 1,
+        name: `Bill Page ${i + 1}`,
+      }));
+      return {
+        ...prev,
+        billUrls: reindexed.map((p) => p.url),
+        billPages: reindexed,
+      };
+    });
+  };
+
+  const handleBillUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const base64 = ev.target?.result as string;
+        if (base64) {
+          setFormData((prev: any) => {
+            const isPdf = file.type === 'application/pdf' || base64.startsWith('data:application/pdf');
+            const newPage = {
+              pageNumber: (prev.billPages?.length || 0) + 1,
+              url: base64,
+              name: file.name || `Bill Page ${(prev.billPages?.length || 0) + 1}`,
+              fileType: isPdf ? 'pdf' : 'image',
+            };
+            const updatedPages = [...(prev.billPages || []), newPage];
+            const updatedUrls = [...(prev.billUrls || []), base64];
+            return {
+              ...prev,
+              billUrls: updatedUrls,
+              billPages: updatedPages,
+            };
+          });
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const openBillViewer = (item: IStockItem | any, title?: string) => {
+    const pages = item.billPages && item.billPages.length > 0
+      ? item.billPages
+      : (item.billUrls || item.purchaseInfo?.billUrls || []).map((url: string, i: number) => ({
+          pageNumber: i + 1,
+          url,
+          name: `Bill Page ${i + 1}`,
+          fileType: url.startsWith('data:application/pdf') || url.toLowerCase().endsWith('.pdf') ? 'pdf' : 'image',
+        }));
+
+    if (pages.length === 0) {
+      showAlert('error', 'No bill document pages attached to this stock record.');
+      return;
+    }
+    setViewerPages(pages);
+    setViewerTitle(title || item.productName || 'Stock Purchase Bill');
+    setActiveViewerPageIndex(0);
+    setViewerZoom(1);
+    setShowBillViewerModal(true);
+  };
+
   const openAddModal = () => {
     const defaultLocation = config.locations[0] || 'Kota Central Plant Store';
     const defaultCategory = config.categories[0] || 'Battery';
@@ -314,18 +506,37 @@ const StockManager = () => {
       batterySerialNumber: '',
       quantity: 1,
       unitPrice: 25000,
+      purchasePrice: 20000,
       mrp: 28000,
+      gstRate: 18,
       location: defaultLocation,
       status: 'In Stock',
       warrantyPeriodMonths: 36,
+      images: [],
+      photoUrl: '',
+      billUrls: [],
+      billPages: [],
+      description: '',
       customFields: {},
       notes: '',
     });
+    setImageInput('');
+    setBillInput('');
     setShowAddModal(true);
   };
 
   const openEditModal = (item: IStockItem) => {
     setSelectedStock(item);
+    const existingBillUrls = item.billUrls || item.purchaseInfo?.billUrls || [];
+    const existingBillPages = item.billPages && item.billPages.length > 0
+      ? item.billPages
+      : existingBillUrls.map((url: string, i: number) => ({
+          pageNumber: i + 1,
+          url,
+          name: `Bill Page ${i + 1}`,
+          fileType: url.startsWith('data:application/pdf') ? 'pdf' : 'image',
+        }));
+
     setFormData({
       productId: item.productId,
       productName: item.productName,
@@ -335,13 +546,22 @@ const StockManager = () => {
       batterySerialNumber: item.batterySerialNumber || '',
       quantity: item.quantity,
       unitPrice: item.unitPrice,
-      mrp: item.mrp,
+      purchasePrice: item.purchasePrice || 0,
+      mrp: item.mrp || 0,
+      gstRate: item.gstRate || 18,
       location: item.location,
       status: item.status,
       warrantyPeriodMonths: item.warrantyPeriodMonths,
+      images: item.images || (item.photoUrl ? [item.photoUrl] : []),
+      photoUrl: item.photoUrl || (item.images?.[0] || ''),
+      billUrls: existingBillUrls,
+      billPages: existingBillPages,
+      description: item.description || '',
       customFields: item.customFields || {},
       notes: '',
     });
+    setImageInput('');
+    setBillInput('');
     setShowEditModal(true);
   };
 
@@ -762,11 +982,38 @@ const StockManager = () => {
                 stockList.map((item) => (
                   <tr key={item._id} className="hover:bg-slate-50/70 transition">
                     <td className="p-4">
-                      <div className="font-mono text-[11px] text-emerald-700 font-bold">{item.productId}</div>
-                      <div className="font-extrabold text-slate-800 text-sm mt-0.5">{item.productName}</div>
-                      {item.modelNumber && (
-                        <div className="text-[10px] text-slate-400 font-medium">Model: {item.modelNumber}</div>
-                      )}
+                      <div className="flex items-center gap-3">
+                        {item.images && item.images.length > 0 ? (
+                          <img
+                            src={resolveImageUrl(item.images[0])}
+                            alt={item.productName}
+                            className="w-10 h-10 object-cover rounded-xl border border-slate-200 shadow-xs flex-shrink-0"
+                            onError={(e) => {
+                              (e.target as HTMLElement).style.display = 'none';
+                            }}
+                          />
+                        ) : item.photoUrl ? (
+                          <img
+                            src={resolveImageUrl(item.photoUrl)}
+                            alt={item.productName}
+                            className="w-10 h-10 object-cover rounded-xl border border-slate-200 shadow-xs flex-shrink-0"
+                            onError={(e) => {
+                              (e.target as HTMLElement).style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 border border-slate-200 flex-shrink-0">
+                            <Package size={18} />
+                          </div>
+                        )}
+                        <div>
+                          <div className="font-mono text-[11px] text-emerald-700 font-bold">{item.productId}</div>
+                          <div className="font-extrabold text-slate-800 text-sm mt-0.5">{item.productName}</div>
+                          {item.modelNumber && (
+                            <div className="text-[10px] text-slate-400 font-medium">Model: {item.modelNumber}</div>
+                          )}
+                        </div>
+                      </div>
                     </td>
 
                     <td className="p-4">
@@ -829,6 +1076,17 @@ const StockManager = () => {
 
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">
+                        {((item.billPages && item.billPages.length > 0) || (item.billUrls && item.billUrls.length > 0) || (item.purchaseInfo?.billUrls && item.purchaseInfo.billUrls.length > 0)) && (
+                          <button
+                            onClick={() => openBillViewer(item, `${item.productName} — Supplier Purchase Bill`)}
+                            className="p-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                            title="View Attached Multi-Page Supplier Bill"
+                          >
+                            <FileText size={13} />
+                            <span>Bill ({item.billPages?.length || item.billUrls?.length || item.purchaseInfo?.billUrls?.length || 1}p)</span>
+                          </button>
+                        )}
+
                         <button
                           onClick={() => openMovementModal(item)}
                           className="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer"
@@ -1207,13 +1465,47 @@ const StockManager = () => {
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Unit Selling Price (₹)</label>
+                  <label className="block font-bold text-slate-700 mb-1">Selling Rate / Unit Price (₹) *</label>
                   <input
                     type="number"
                     min={0}
                     required
                     value={formData.unitPrice}
                     onChange={(e) => setFormData({ ...formData, unitPrice: Number(e.target.value) })}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Selling Price (MRP ₹)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={formData.mrp}
+                    onChange={(e) => setFormData({ ...formData, mrp: Number(e.target.value) })}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Purchase Cost (₹)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={formData.purchasePrice}
+                    onChange={(e) => setFormData({ ...formData, purchasePrice: Number(e.target.value) })}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">GST Rate (%)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={formData.gstRate}
+                    onChange={(e) => setFormData({ ...formData, gstRate: Number(e.target.value) })}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold"
                   />
                 </div>
@@ -1258,6 +1550,182 @@ const StockManager = () => {
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold"
                   />
                 </div>
+              </div>
+
+              {/* Product Photos Section */}
+              <div className="pt-3 border-t border-slate-100 space-y-2.5">
+                <label className="block font-bold text-slate-700">
+                  <div className="flex items-center gap-1.5">
+                    <ImageIcon size={14} className="text-emerald-600" />
+                    <span>Product Images (Multi-Image Support)</span>
+                  </div>
+                </label>
+                
+                {formData.images && formData.images.length > 0 && (
+                  <div className="flex flex-wrap gap-2.5 p-2.5 bg-slate-50 rounded-2xl border border-slate-200">
+                    {formData.images.map((imgUrl: string, idx: number) => (
+                      <div key={idx} className="relative group w-16 h-16 rounded-xl overflow-hidden border border-slate-300 shadow-xs bg-white">
+                        <img src={resolveImageUrl(imgUrl)} alt="Thumbnail" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => removeImageFromForm(idx)}
+                          className="absolute inset-0 bg-red-600/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-xs font-bold"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    type="text"
+                    value={imageInput}
+                    onChange={(e) => setImageInput(e.target.value)}
+                    placeholder="Enter Image URL (https://...)..."
+                    className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                  />
+                  <button
+                    type="button"
+                    onClick={addImageUrlToForm}
+                    className="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition"
+                  >
+                    Add URL
+                  </button>
+                  <label className="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1">
+                    <Upload size={13} />
+                    <span>Upload File</span>
+                    <input type="file" multiple accept="image/*" onChange={handleStockImageUpload} className="hidden" />
+                  </label>
+                </div>
+              </div>
+
+              {/* Purchase Bill / Supplier Invoice (Multi-Page Support) */}
+              <div className="pt-3 border-t border-slate-100 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="block font-bold text-slate-700">
+                    <div className="flex items-center gap-1.5">
+                      <FileText size={14} className="text-blue-600" />
+                      <span>Purchase Bill / Invoice (Upload 1 or More Pages)</span>
+                    </div>
+                  </label>
+                  <span className="text-[10px] text-blue-600 bg-blue-50 border border-blue-200 font-bold px-2 py-0.5 rounded-full">
+                    {formData.billPages?.length || 0} Page(s) Uploaded
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  Upload multiple pages of supplier tax invoice, delivery challan, or purchase bill (Images or PDFs).
+                </p>
+
+                {formData.billPages && formData.billPages.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 bg-blue-50/40 rounded-2xl border border-blue-200/80">
+                    {formData.billPages.map((page: any, idx: number) => (
+                      <div
+                        key={idx}
+                        className="relative group bg-white p-2 rounded-xl border border-blue-200 shadow-xs flex flex-col justify-between space-y-1.5"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="px-2 py-0.5 bg-blue-600 text-white text-[10px] font-black rounded-md">
+                            Page {idx + 1}
+                          </span>
+                          <div className="flex items-center gap-1">
+                            {idx > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => moveBillPage(idx, 'up')}
+                                className="p-1 hover:bg-slate-100 text-slate-500 rounded"
+                                title="Move Left"
+                              >
+                                <ChevronLeft size={12} />
+                              </button>
+                            )}
+                            {idx < (formData.billPages.length - 1) && (
+                              <button
+                                type="button"
+                                onClick={() => moveBillPage(idx, 'down')}
+                                className="p-1 hover:bg-slate-100 text-slate-500 rounded"
+                                title="Move Right"
+                              >
+                                <ChevronRight size={12} />
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => removeBillPage(idx)}
+                              className="p-1 hover:bg-red-50 text-red-500 rounded"
+                              title="Delete Page"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div
+                          onClick={() => {
+                            setViewerPages(formData.billPages);
+                            setViewerTitle(`${formData.productName || 'New Item'} — Purchase Bill`);
+                            setActiveViewerPageIndex(idx);
+                            setViewerZoom(1);
+                            setShowBillViewerModal(true);
+                          }}
+                          className="w-full h-20 rounded-lg overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center cursor-pointer relative group/preview"
+                        >
+                          {page.fileType === 'pdf' || page.url.startsWith('data:application/pdf') ? (
+                            <div className="text-center p-2">
+                              <FileText size={28} className="text-red-500 mx-auto" />
+                              <span className="text-[9px] font-mono text-slate-600 block truncate max-w-[80px] mt-1">PDF Doc</span>
+                            </div>
+                          ) : (
+                            <img src={resolveImageUrl(page.url)} alt={`Page ${idx + 1}`} className="w-full h-full object-cover" />
+                          )}
+                          <div className="absolute inset-0 bg-slate-900/60 text-white opacity-0 group-hover/preview:opacity-100 flex items-center justify-center gap-1 transition text-[10px] font-bold">
+                            <Eye size={12} />
+                            <span>Preview</span>
+                          </div>
+                        </div>
+
+                        <span className="text-[10px] text-slate-500 truncate font-mono block">
+                          {page.name || `Page ${idx + 1}`}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    type="text"
+                    value={billInput}
+                    onChange={(e) => setBillInput(e.target.value)}
+                    placeholder="Enter Bill Page URL (https://...)..."
+                    className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                  />
+                  <button
+                    type="button"
+                    onClick={addBillUrlToForm}
+                    className="px-3 py-2 bg-blue-800 hover:bg-blue-900 text-white rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1"
+                  >
+                    <Plus size={13} />
+                    <span>Add Page URL</span>
+                  </button>
+                  <label className="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-300 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1">
+                    <FilePlus size={13} />
+                    <span>Upload Bill Page(s)</span>
+                    <input type="file" multiple accept="image/*,application/pdf" onChange={handleBillUpload} className="hidden" />
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Product Description & Technical Notes</label>
+                <textarea
+                  rows={2}
+                  value={formData.description || ''}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="e.g. High-performance prismatic cell pack with built-in smart BMS..."
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                />
               </div>
 
               {/* Dynamic Custom Fields Section */}
@@ -1409,11 +1877,45 @@ const StockManager = () => {
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Unit Rate (₹)</label>
+                  <label className="block font-bold text-slate-700 mb-1">Selling Rate / Unit Rate (₹)</label>
                   <input
                     type="number"
                     value={formData.unitPrice}
                     onChange={(e) => setFormData({ ...formData, unitPrice: Number(e.target.value) })}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Selling Price (MRP ₹)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={formData.mrp}
+                    onChange={(e) => setFormData({ ...formData, mrp: Number(e.target.value) })}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Purchase Cost (₹)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={formData.purchasePrice}
+                    onChange={(e) => setFormData({ ...formData, purchasePrice: Number(e.target.value) })}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">GST Rate (%)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={formData.gstRate}
+                    onChange={(e) => setFormData({ ...formData, gstRate: Number(e.target.value) })}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold"
                   />
                 </div>
@@ -1447,6 +1949,182 @@ const StockManager = () => {
                     ))}
                   </select>
                 </div>
+              </div>
+
+              {/* Product Photos Section */}
+              <div className="pt-3 border-t border-slate-100 space-y-2.5">
+                <label className="block font-bold text-slate-700">
+                  <div className="flex items-center gap-1.5">
+                    <ImageIcon size={14} className="text-emerald-600" />
+                    <span>Product Images (Multi-Image Support)</span>
+                  </div>
+                </label>
+                
+                {formData.images && formData.images.length > 0 && (
+                  <div className="flex flex-wrap gap-2.5 p-2.5 bg-slate-50 rounded-2xl border border-slate-200">
+                    {formData.images.map((imgUrl: string, idx: number) => (
+                      <div key={idx} className="relative group w-16 h-16 rounded-xl overflow-hidden border border-slate-300 shadow-xs bg-white">
+                        <img src={resolveImageUrl(imgUrl)} alt="Thumbnail" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => removeImageFromForm(idx)}
+                          className="absolute inset-0 bg-red-600/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-xs font-bold"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    type="text"
+                    value={imageInput}
+                    onChange={(e) => setImageInput(e.target.value)}
+                    placeholder="Enter Image URL (https://...)..."
+                    className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                  />
+                  <button
+                    type="button"
+                    onClick={addImageUrlToForm}
+                    className="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition"
+                  >
+                    Add URL
+                  </button>
+                  <label className="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1">
+                    <Upload size={13} />
+                    <span>Upload File</span>
+                    <input type="file" multiple accept="image/*" onChange={handleStockImageUpload} className="hidden" />
+                  </label>
+                </div>
+              </div>
+
+              {/* Purchase Bill / Supplier Invoice (Multi-Page Support) */}
+              <div className="pt-3 border-t border-slate-100 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="block font-bold text-slate-700">
+                    <div className="flex items-center gap-1.5">
+                      <FileText size={14} className="text-blue-600" />
+                      <span>Purchase Bill / Invoice (Upload 1 or More Pages)</span>
+                    </div>
+                  </label>
+                  <span className="text-[10px] text-blue-600 bg-blue-50 border border-blue-200 font-bold px-2 py-0.5 rounded-full">
+                    {formData.billPages?.length || 0} Page(s) Uploaded
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  Upload multiple pages of supplier tax invoice, delivery challan, or purchase bill (Images or PDFs).
+                </p>
+
+                {formData.billPages && formData.billPages.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 bg-blue-50/40 rounded-2xl border border-blue-200/80">
+                    {formData.billPages.map((page: any, idx: number) => (
+                      <div
+                        key={idx}
+                        className="relative group bg-white p-2 rounded-xl border border-blue-200 shadow-xs flex flex-col justify-between space-y-1.5"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="px-2 py-0.5 bg-blue-600 text-white text-[10px] font-black rounded-md">
+                            Page {idx + 1}
+                          </span>
+                          <div className="flex items-center gap-1">
+                            {idx > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => moveBillPage(idx, 'up')}
+                                className="p-1 hover:bg-slate-100 text-slate-500 rounded"
+                                title="Move Left"
+                              >
+                                <ChevronLeft size={12} />
+                              </button>
+                            )}
+                            {idx < (formData.billPages.length - 1) && (
+                              <button
+                                type="button"
+                                onClick={() => moveBillPage(idx, 'down')}
+                                className="p-1 hover:bg-slate-100 text-slate-500 rounded"
+                                title="Move Right"
+                              >
+                                <ChevronRight size={12} />
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => removeBillPage(idx)}
+                              className="p-1 hover:bg-red-50 text-red-500 rounded"
+                              title="Delete Page"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div
+                          onClick={() => {
+                            setViewerPages(formData.billPages);
+                            setViewerTitle(`${formData.productName || selectedStock?.productName} — Purchase Bill`);
+                            setActiveViewerPageIndex(idx);
+                            setViewerZoom(1);
+                            setShowBillViewerModal(true);
+                          }}
+                          className="w-full h-20 rounded-lg overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center cursor-pointer relative group/preview"
+                        >
+                          {page.fileType === 'pdf' || page.url.startsWith('data:application/pdf') ? (
+                            <div className="text-center p-2">
+                              <FileText size={28} className="text-red-500 mx-auto" />
+                              <span className="text-[9px] font-mono text-slate-600 block truncate max-w-[80px] mt-1">PDF Doc</span>
+                            </div>
+                          ) : (
+                            <img src={resolveImageUrl(page.url)} alt={`Page ${idx + 1}`} className="w-full h-full object-cover" />
+                          )}
+                          <div className="absolute inset-0 bg-slate-900/60 text-white opacity-0 group-hover/preview:opacity-100 flex items-center justify-center gap-1 transition text-[10px] font-bold">
+                            <Eye size={12} />
+                            <span>Preview</span>
+                          </div>
+                        </div>
+
+                        <span className="text-[10px] text-slate-500 truncate font-mono block">
+                          {page.name || `Page ${idx + 1}`}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    type="text"
+                    value={billInput}
+                    onChange={(e) => setBillInput(e.target.value)}
+                    placeholder="Enter Bill Page URL (https://...)..."
+                    className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                  />
+                  <button
+                    type="button"
+                    onClick={addBillUrlToForm}
+                    className="px-3 py-2 bg-blue-800 hover:bg-blue-900 text-white rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1"
+                  >
+                    <Plus size={13} />
+                    <span>Add Page URL</span>
+                  </button>
+                  <label className="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-300 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1">
+                    <FilePlus size={13} />
+                    <span>Upload Bill Page(s)</span>
+                    <input type="file" multiple accept="image/*,application/pdf" onChange={handleBillUpload} className="hidden" />
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Product Description & Technical Notes</label>
+                <textarea
+                  rows={2}
+                  value={formData.description || ''}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="e.g. High-performance prismatic cell pack with built-in smart BMS..."
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                />
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
@@ -1634,6 +2312,133 @@ const StockManager = () => {
             : 'Scan Product / Battery Pack Barcode'
         }
       />
+
+      {/* ========================================================================= */}
+      {/* 7. MULTI-PAGE BILL VIEWER MODAL                                           */}
+      {/* ========================================================================= */}
+      {showBillViewerModal && viewerPages.length > 0 && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-4xl w-full max-h-[95vh] flex flex-col overflow-hidden shadow-2xl">
+            {/* Header */}
+            <div className="p-4 bg-slate-800 border-b border-slate-700 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-xl">
+                  <FileText size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white tracking-wide">{viewerTitle}</h3>
+                  <p className="text-[11px] text-slate-400 font-mono">
+                    Page {activeViewerPageIndex + 1} of {viewerPages.length} • {viewerPages[activeViewerPageIndex]?.name || 'Document Page'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 bg-slate-950 px-2 py-1 rounded-xl border border-slate-700 text-xs">
+                  <button
+                    onClick={() => setViewerZoom((z) => Math.max(0.5, z - 0.25))}
+                    className="p-1 hover:bg-slate-800 text-slate-300 rounded cursor-pointer"
+                    title="Zoom Out"
+                  >
+                    <ZoomOut size={14} />
+                  </button>
+                  <span className="font-mono text-[10px] text-slate-300 px-1 font-bold">{Math.round(viewerZoom * 100)}%</span>
+                  <button
+                    onClick={() => setViewerZoom((z) => Math.min(3, z + 0.25))}
+                    className="p-1 hover:bg-slate-800 text-slate-300 rounded cursor-pointer"
+                    title="Zoom In"
+                  >
+                    <ZoomIn size={14} />
+                  </button>
+                </div>
+
+                <a
+                  href={resolveImageUrl(viewerPages[activeViewerPageIndex]?.url || '')}
+                  target="_blank"
+                  rel="noreferrer"
+                  download={`bill-page-${activeViewerPageIndex + 1}`}
+                  className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1"
+                  title="Open Original / Download"
+                >
+                  <Eye size={14} />
+                  <span className="hidden sm:inline">Open</span>
+                </a>
+
+                <button
+                  onClick={() => setShowBillViewerModal(false)}
+                  className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Document Canvas Body */}
+            <div className="flex-1 bg-slate-950 p-4 overflow-auto flex items-center justify-center min-h-[400px]">
+              {viewerPages[activeViewerPageIndex]?.fileType === 'pdf' ||
+              viewerPages[activeViewerPageIndex]?.url?.startsWith('data:application/pdf') ? (
+                <div className="w-full h-full min-h-[500px] flex flex-col items-center justify-center space-y-4">
+                  <iframe
+                    src={viewerPages[activeViewerPageIndex]?.url}
+                    title="PDF Document"
+                    className="w-full h-[550px] rounded-xl border border-slate-800 bg-white"
+                  />
+                </div>
+              ) : (
+                <div
+                  className="transition-transform duration-200 flex items-center justify-center"
+                  style={{ transform: `scale(${viewerZoom})` }}
+                >
+                  <img
+                    src={resolveImageUrl(viewerPages[activeViewerPageIndex]?.url || '')}
+                    alt={`Page ${activeViewerPageIndex + 1}`}
+                    className="max-h-[65vh] w-auto object-contain rounded-xl shadow-2xl border border-slate-800 bg-slate-900"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Footer Navigation Strip */}
+            <div className="p-3 bg-slate-800 border-t border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <button
+                  disabled={activeViewerPageIndex === 0}
+                  onClick={() => setActiveViewerPageIndex((p) => Math.max(0, p - 1))}
+                  className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 disabled:opacity-30 disabled:hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                >
+                  <ChevronLeft size={14} />
+                  <span>Previous Page</span>
+                </button>
+                <button
+                  disabled={activeViewerPageIndex === viewerPages.length - 1}
+                  onClick={() => setActiveViewerPageIndex((p) => Math.min(viewerPages.length - 1, p + 1))}
+                  className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 disabled:opacity-30 disabled:hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                >
+                  <span>Next Page</span>
+                  <ChevronRight size={14} />
+                </button>
+              </div>
+
+              {/* Thumbnail Strip */}
+              <div className="flex items-center gap-2 overflow-x-auto max-w-full py-1">
+                {viewerPages.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setActiveViewerPageIndex(idx)}
+                    className={`px-3 py-1 rounded-lg text-xs font-mono font-bold transition cursor-pointer flex items-center gap-1 ${
+                      activeViewerPageIndex === idx
+                        ? 'bg-blue-600 text-white shadow-md'
+                        : 'bg-slate-950/60 hover:bg-slate-700 text-slate-400'
+                    }`}
+                  >
+                    <span>Page {idx + 1}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

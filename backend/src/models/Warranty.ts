@@ -7,6 +7,13 @@ export interface IWarranty extends Document {
   product: string;
   serialNumber: string;
   billNumber: string;
+  billUrls?: string[];
+  billDocuments?: Array<{
+    pageNumber: number;
+    url: string;
+    name?: string;
+    fileType?: string;
+  }>;
   purchaseDate: Date;
   warrantyStartDate: Date;
   warrantyExpiryDate: Date;
@@ -29,6 +36,15 @@ const warrantySchema = new Schema(
     product: { type: String, required: true },
     serialNumber: { type: String, required: true },
     billNumber: { type: String, required: true },
+    billUrls: [{ type: String }],
+    billDocuments: [
+      {
+        pageNumber: { type: Number, default: 1 },
+        url: { type: String, required: true },
+        name: { type: String, default: '' },
+        fileType: { type: String, default: 'image' },
+      },
+    ],
     purchaseDate: { type: Date, required: true },
     warrantyStartDate: { type: Date, required: true },
     warrantyExpiryDate: { type: Date, required: true },

@@ -243,8 +243,17 @@ export const dashboardApi = {
 
 export const customerApi = {
   getAll: (params?: any) => apiClient.get('/customers', { params }),
+  getById: (id: string) => apiClient.get(`/customers/${id}`),
   create: (data: any) => apiClient.post('/customers', data),
+  update: (id: string, data: any) => apiClient.put(`/customers/${id}`, data),
+  adjustWallet: (id: string, data: any) => apiClient.post(`/customers/${id}/wallet/adjust`, data),
   export: (params?: any) => apiClient.get('/customers/export/csv', { params, responseType: 'blob' }),
+  getReferralSettings: () => apiClient.get('/customers/referral-settings'),
+  updateReferralSettings: (data: any) => apiClient.put('/customers/referral-settings', data),
+  getAllReferrals: (params?: any) => apiClient.get('/customers/referrals/all', { params }),
+  exportReferrals: (params?: any) => apiClient.get('/customers/referrals/export/csv', { params, responseType: 'blob' }),
+  getAllWalletTransactions: (params?: any) => apiClient.get('/customers/wallet-transactions/all', { params }),
+  exportWalletTransactions: (params?: any) => apiClient.get('/customers/wallet/export/csv', { params, responseType: 'blob' }),
 };
 
 export const contentApi = {

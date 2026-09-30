@@ -128,6 +128,8 @@ export const registerPublicWarranty = async (req: Request, res: Response) => {
       product,
       serialNumber,
       billNumber,
+      billUrls,
+      billDocuments,
       purchaseDate,
       durationMonths,
       formData,
@@ -181,6 +183,16 @@ export const registerPublicWarranty = async (req: Request, res: Response) => {
       status = 'Expiring Soon';
     }
 
+    const billList = Array.isArray(billUrls) ? billUrls : [];
+    const formattedDocs = Array.isArray(billDocuments) && billDocuments.length > 0
+      ? billDocuments
+      : billList.map((url: string, i: number) => ({
+          pageNumber: i + 1,
+          url,
+          name: `Invoice Page ${i + 1}`,
+          fileType: url.startsWith('data:application/pdf') ? 'pdf' : 'image',
+        }));
+
     const warranty = await Warranty.create({
       warrantyNumber,
       category,
@@ -188,6 +200,8 @@ export const registerPublicWarranty = async (req: Request, res: Response) => {
       product: product.trim(),
       serialNumber: serialNumber.trim(),
       billNumber: billNumber.trim(),
+      billUrls: billList,
+      billDocuments: formattedDocs,
       purchaseDate: pDate,
       warrantyStartDate: startDate,
       warrantyExpiryDate: expiryDate,

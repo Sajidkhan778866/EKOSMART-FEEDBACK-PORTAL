@@ -13,6 +13,13 @@ export interface IComplaint extends Document {
   division: string;
   complaintType?: string;
   description?: string;
+  billUrls?: string[];
+  attachments?: Array<{
+    pageNumber: number;
+    url: string;
+    name?: string;
+    fileType?: string;
+  }>;
   formData: any;
   status: 'New' | 'Pending' | 'Assigned' | 'In Progress' | 'Resolved' | 'Closed' | 'Rejected';
   priority: 'Low' | 'Medium' | 'High' | 'Urgent';
@@ -38,6 +45,15 @@ const complaintSchema = new Schema(
     },
     complaintType: { type: String, default: '' },
     description: { type: String, default: '' },
+    billUrls: [{ type: String }],
+    attachments: [
+      {
+        pageNumber: { type: Number, default: 1 },
+        url: { type: String, required: true },
+        name: { type: String, default: '' },
+        fileType: { type: String, default: 'image' },
+      },
+    ],
     formData: { type: Schema.Types.Mixed },
     status: { 
       type: String, 

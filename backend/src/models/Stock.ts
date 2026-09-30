@@ -17,14 +17,19 @@ export interface IStock extends Document {
   modelNumber?: string;
   serialNumber?: string;
   batterySerialNumber?: string;
+  images?: string[];
+  photoUrl?: string;
+  description?: string;
   quantity: number;
   availableQuantity: number;
   soldQuantity: number;
   reservedQuantity: number;
   totalReceived: number;
   totalSold: number;
+  purchasePrice?: number;
   unitPrice: number;
   mrp: number;
+  gstRate?: number;
   location: string;
   status: string;
   specifications?: Record<string, any>;
@@ -35,7 +40,15 @@ export interface IStock extends Document {
     purchaseDate?: Date;
     invoiceNumber?: string;
     purchaseCost?: number;
+    billUrls?: string[];
   };
+  billUrls?: string[];
+  billPages?: Array<{
+    pageNumber: number;
+    url: string;
+    name?: string;
+    fileType?: string;
+  }>;
   warrantyPeriodMonths?: number;
   warrantyInfo?: {
     warrantyPeriodMonths?: number;
@@ -71,14 +84,19 @@ const stockSchema = new Schema(
     modelNumber: { type: String, default: '' },
     serialNumber: { type: String, default: '', index: true },
     batterySerialNumber: { type: String, default: '', index: true },
+    images: [{ type: String }],
+    photoUrl: { type: String, default: '' },
+    description: { type: String, default: '' },
     quantity: { type: Number, required: true, default: 1 },
     availableQuantity: { type: Number, default: 1 },
     soldQuantity: { type: Number, default: 0 },
     reservedQuantity: { type: Number, default: 0 },
     totalReceived: { type: Number, default: 1 },
     totalSold: { type: Number, default: 0 },
+    purchasePrice: { type: Number, default: 0 },
     unitPrice: { type: Number, required: true, default: 0 },
     mrp: { type: Number, required: true, default: 0 },
+    gstRate: { type: Number, default: 18 },
     location: { type: String, default: 'Kota Central Plant', index: true },
     status: {
       type: String,
@@ -93,7 +111,17 @@ const stockSchema = new Schema(
       purchaseDate: { type: Date },
       invoiceNumber: { type: String, default: '' },
       purchaseCost: { type: Number, default: 0 },
+      billUrls: [{ type: String }],
     },
+    billUrls: [{ type: String }],
+    billPages: [
+      {
+        pageNumber: { type: Number, default: 1 },
+        url: { type: String, required: true },
+        name: { type: String, default: '' },
+        fileType: { type: String, default: 'image' },
+      },
+    ],
     warrantyPeriodMonths: { type: Number, default: 36 },
     warrantyInfo: {
       warrantyPeriodMonths: { type: Number, default: 36 },

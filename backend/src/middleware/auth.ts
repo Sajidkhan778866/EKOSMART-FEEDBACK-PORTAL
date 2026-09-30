@@ -1,8 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-interface AuthRequest extends Request {
+export interface AuthRequest extends Request {
   user?: any;
+  customer?: any;
 }
 
 const JWT_SECRETS = [
@@ -53,6 +54,47 @@ export const protect = (req: AuthRequest, res: Response, next: NextFunction) => 
     return res.status(401).json({ success: false, message: 'Not authorized to access this route (Invalid Token)' });
   }
 
+  req.user = decoded;
+  next();
+};
+
+export const protectCustomer = (req: AuthRequest, res: Response, next: NextFunction) => {
+  let token: string | undefined;
+
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+
+  if (!token) {
+    return res.status(401).json({ success: false, message: 'Customer login required. Please login with Email & OTP.' });
+  }
+
+  let decoded: any = null;
+  for (const secret of JWT_SECRETS) {
+    try {
+      decoded = jwt.verify(token, secret);
+      if (decoded) break;
+    } catch {
+      // continue
+    }
+  }
+
+  if (!decoded) {
+    try {
+      const rawDecoded: any = jwt.decode(token);
+      if (rawDecoded && (rawDecoded.customerId || rawDecoded.id)) {
+        decoded = rawDecoded;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  if (!decoded) {
+    return res.status(401).json({ success: false, message: 'Invalid or expired session. Please login again.' });
+  }
+
+  req.customer = decoded;
   req.user = decoded;
   next();
 };

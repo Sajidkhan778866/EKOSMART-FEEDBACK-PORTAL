@@ -5,8 +5,15 @@ import {
   Loader2,
   FileSpreadsheet,
   RotateCcw,
+  FileText,
+  Eye,
+  ChevronLeft,
+  ChevronRight,
+  ZoomIn,
+  ZoomOut,
+  X,
 } from 'lucide-react';
-import { warrantyApi } from '../api/client';
+import { warrantyApi, resolveImageUrl } from '../api/client';
 import { DateRangeFilter, type DateRangeState } from '../components/DateRangeFilter';
 
 interface WarrantyItem {
@@ -16,6 +23,13 @@ interface WarrantyItem {
   product: string;
   serialNumber: string;
   billNumber: string;
+  billUrls?: string[];
+  billDocuments?: Array<{
+    pageNumber: number;
+    url: string;
+    name?: string;
+    fileType?: string;
+  }>;
   purchaseDate: string;
   warrantyExpiryDate: string;
   status: 'Active' | 'Expiring Soon' | 'Expired';
@@ -35,6 +49,33 @@ const Warranty = () => {
   const [search, setSearch] = useState('');
   const [dateRange, setDateRange] = useState<DateRangeState>({ filter: 'all' });
   const [exporting, setExporting] = useState(false);
+
+  // Bill Viewer Modal State
+  const [showBillViewerModal, setShowBillViewerModal] = useState(false);
+  const [viewerPages, setViewerPages] = useState<Array<{ pageNumber: number; url: string; name?: string; fileType?: string }>>([]);
+  const [viewerTitle, setViewerTitle] = useState('');
+  const [activeViewerPageIndex, setActiveViewerPageIndex] = useState(0);
+  const [viewerZoom, setViewerZoom] = useState(1);
+
+  const openBillViewer = (w: WarrantyItem) => {
+    let pages: Array<{ pageNumber: number; url: string; name?: string; fileType?: string }> = [];
+    if (w.billDocuments && w.billDocuments.length > 0) {
+      pages = w.billDocuments;
+    } else if (w.billUrls && w.billUrls.length > 0) {
+      pages = w.billUrls.map((url, idx) => ({
+        pageNumber: idx + 1,
+        url,
+        name: `Page ${idx + 1}`,
+        fileType: url.toLowerCase().endsWith('.pdf') || url.startsWith('data:application/pdf') ? 'pdf' : 'image',
+      }));
+    }
+    if (pages.length === 0) return;
+    setViewerPages(pages);
+    setViewerTitle(`Invoice / Warranty Doc — ${w.warrantyNumber} (${w.customer?.name || 'Customer'})`);
+    setActiveViewerPageIndex(0);
+    setViewerZoom(1);
+    setShowBillViewerModal(true);
+  };
 
   const fetchWarranties = async () => {
     try {
@@ -267,58 +308,207 @@ const Warranty = () => {
                   <th className="py-4 px-6">Warranty Number</th>
                   <th className="py-4 px-6">Customer</th>
                   <th className="py-4 px-6">Product & Serial</th>
+                  <th className="py-4 px-6">Bill / Invoice</th>
                   <th className="py-4 px-6">Category</th>
                   <th className="py-4 px-6">Expiry Date</th>
                   <th className="py-4 px-6">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {warranties.map((w) => (
-                  <tr key={w._id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-4 px-6 font-mono font-bold text-emerald-800">
-                      {w.warrantyNumber}
-                    </td>
+                {warranties.map((w) => {
+                  const hasBillFiles = Boolean(
+                    (w.billDocuments && w.billDocuments.length > 0) ||
+                    (w.billUrls && w.billUrls.length > 0)
+                  );
+                  const pageCount = w.billDocuments?.length || w.billUrls?.length || 0;
 
-                    <td className="py-4 px-6">
-                      <p className="font-semibold text-slate-800">{w.customer?.name || 'Customer'}</p>
-                      <p className="text-[11px] text-slate-500">{w.customer?.mobile}</p>
-                    </td>
+                  return (
+                    <tr key={w._id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="py-4 px-6 font-mono font-bold text-emerald-800">
+                        {w.warrantyNumber}
+                      </td>
 
-                    <td className="py-4 px-6">
-                      <p className="font-bold text-slate-800">{w.product}</p>
-                      <p className="text-[11px] font-mono text-slate-500">S/N: {w.serialNumber}</p>
-                    </td>
+                      <td className="py-4 px-6">
+                        <p className="font-semibold text-slate-800">{w.customer?.name || 'Customer'}</p>
+                        <p className="text-[11px] text-slate-500">{w.customer?.mobile}</p>
+                      </td>
 
-                    <td className="py-4 px-6">
-                      <span className="font-semibold text-[11px] bg-slate-100 text-slate-800 px-2.5 py-1 rounded-full border border-slate-200">
-                        {w.category}
-                      </span>
-                    </td>
+                      <td className="py-4 px-6">
+                        <p className="font-bold text-slate-800">{w.product}</p>
+                        <p className="text-[11px] font-mono text-slate-500">S/N: {w.serialNumber}</p>
+                      </td>
 
-                    <td className="py-4 px-6 text-slate-700 font-medium">
-                      {w.warrantyExpiryDate ? new Date(w.warrantyExpiryDate).toLocaleDateString('en-IN') : '-'}
-                    </td>
+                      <td className="py-4 px-6">
+                        <p className="font-mono text-slate-800 font-semibold">{w.billNumber || '-'}</p>
+                        {hasBillFiles && (
+                          <button
+                            type="button"
+                            onClick={() => openBillViewer(w)}
+                            className="mt-1 inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-[10px] font-bold cursor-pointer transition shadow-xs"
+                            title="View Attached Multi-Page Bill / Invoice"
+                          >
+                            <FileText size={12} className="text-emerald-700" />
+                            <span>Bill ({pageCount}p)</span>
+                          </button>
+                        )}
+                      </td>
 
-                    <td className="py-4 px-6">
-                      <span
-                        className={`inline-block px-2.5 py-1 rounded-full text-[11px] font-bold ${
-                          w.status === 'Active'
-                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                            : w.status === 'Expiring Soon'
-                            ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                            : 'bg-rose-100 text-rose-800 border border-rose-200'
-                        }`}
-                      >
-                        {w.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                      <td className="py-4 px-6">
+                        <span className="font-semibold text-[11px] bg-slate-100 text-slate-800 px-2.5 py-1 rounded-full border border-slate-200">
+                          {w.category}
+                        </span>
+                      </td>
+
+                      <td className="py-4 px-6 text-slate-700 font-medium">
+                        {w.warrantyExpiryDate ? new Date(w.warrantyExpiryDate).toLocaleDateString('en-IN') : '-'}
+                      </td>
+
+                      <td className="py-4 px-6">
+                        <span
+                          className={`inline-block px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                            w.status === 'Active'
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                              : w.status === 'Expiring Soon'
+                              ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                              : 'bg-rose-100 text-rose-800 border border-rose-200'
+                          }`}
+                        >
+                          {w.status}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         )}
       </div>
+
+      {/* Multi-Page Bill Viewer Modal */}
+      {showBillViewerModal && viewerPages.length > 0 && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]">
+            {/* Modal Header */}
+            <div className="p-4 bg-slate-800/80 border-b border-slate-700 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-emerald-500/20 text-emerald-400 rounded-xl border border-emerald-500/30">
+                  <FileText size={20} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-sm">{viewerTitle}</h3>
+                  <p className="text-[11px] text-slate-400 font-mono">
+                    Page {activeViewerPageIndex + 1} of {viewerPages.length} • {viewerPages[activeViewerPageIndex]?.name || 'Document Page'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 bg-slate-950 px-2 py-1 rounded-xl border border-slate-700 text-xs">
+                  <button
+                    onClick={() => setViewerZoom((z) => Math.max(0.5, z - 0.25))}
+                    className="p-1 hover:bg-slate-800 text-slate-300 rounded cursor-pointer"
+                    title="Zoom Out"
+                  >
+                    <ZoomOut size={14} />
+                  </button>
+                  <span className="font-mono text-[10px] text-slate-300 px-1 font-bold">{Math.round(viewerZoom * 100)}%</span>
+                  <button
+                    onClick={() => setViewerZoom((z) => Math.min(3, z + 0.25))}
+                    className="p-1 hover:bg-slate-800 text-slate-300 rounded cursor-pointer"
+                    title="Zoom In"
+                  >
+                    <ZoomIn size={14} />
+                  </button>
+                </div>
+
+                <a
+                  href={resolveImageUrl(viewerPages[activeViewerPageIndex]?.url || '')}
+                  target="_blank"
+                  rel="noreferrer"
+                  download={`warranty-bill-page-${activeViewerPageIndex + 1}`}
+                  className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1"
+                  title="Open Original / Download"
+                >
+                  <Eye size={14} />
+                  <span className="hidden sm:inline">Open</span>
+                </a>
+
+                <button
+                  onClick={() => setShowBillViewerModal(false)}
+                  className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Document Canvas Body */}
+            <div className="flex-1 bg-slate-950 p-4 overflow-auto flex items-center justify-center min-h-[400px]">
+              {viewerPages[activeViewerPageIndex]?.fileType === 'pdf' ||
+              viewerPages[activeViewerPageIndex]?.url?.startsWith('data:application/pdf') ? (
+                <div className="w-full h-full min-h-[500px] flex flex-col items-center justify-center space-y-4">
+                  <iframe
+                    src={viewerPages[activeViewerPageIndex]?.url}
+                    title="PDF Document"
+                    className="w-full h-[550px] rounded-xl border border-slate-800 bg-white"
+                  />
+                </div>
+              ) : (
+                <div
+                  className="transition-transform duration-200 flex items-center justify-center"
+                  style={{ transform: `scale(${viewerZoom})` }}
+                >
+                  <img
+                    src={resolveImageUrl(viewerPages[activeViewerPageIndex]?.url || '')}
+                    alt={`Page ${activeViewerPageIndex + 1}`}
+                    className="max-h-[65vh] w-auto object-contain rounded-xl shadow-2xl border border-slate-800 bg-slate-900"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Footer Navigation Strip */}
+            <div className="p-3 bg-slate-800 border-t border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <button
+                  disabled={activeViewerPageIndex === 0}
+                  onClick={() => setActiveViewerPageIndex((p) => Math.max(0, p - 1))}
+                  className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 disabled:opacity-30 disabled:hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                >
+                  <ChevronLeft size={14} />
+                  <span>Previous Page</span>
+                </button>
+                <button
+                  disabled={activeViewerPageIndex === viewerPages.length - 1}
+                  onClick={() => setActiveViewerPageIndex((p) => Math.min(viewerPages.length - 1, p + 1))}
+                  className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 disabled:opacity-30 disabled:hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                >
+                  <span>Next Page</span>
+                  <ChevronRight size={14} />
+                </button>
+              </div>
+
+              {/* Thumbnail Strip */}
+              <div className="flex items-center gap-2 overflow-x-auto max-w-full py-1">
+                {viewerPages.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setActiveViewerPageIndex(idx)}
+                    className={`px-3 py-1 rounded-lg text-xs font-mono font-bold transition cursor-pointer flex items-center gap-1 ${
+                      activeViewerPageIndex === idx
+                        ? 'bg-emerald-600 text-white shadow-md'
+                        : 'bg-slate-950/60 hover:bg-slate-700 text-slate-400'
+                    }`}
+                  >
+                    <span>Page {idx + 1}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

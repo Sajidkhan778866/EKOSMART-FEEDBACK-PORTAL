@@ -16,7 +16,12 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { EbsLogo } from './EbsLogo';
 
-const Sidebar = () => {
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+const Sidebar = ({ onClose }: SidebarProps) => {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
 
@@ -40,10 +45,19 @@ const Sidebar = () => {
   };
 
   return (
-    <div className="w-64 text-white min-h-screen flex flex-col flex-shrink-0" style={{ backgroundColor: '#111827' }}>
-      {/* Brand Header with Official EBS Logo */}
-      <div className="p-5 border-b border-slate-800">
+    <div className="w-64 text-white min-h-screen flex flex-col flex-shrink-0 shadow-2xl" style={{ backgroundColor: '#111827' }}>
+      {/* Brand Header with Official EBS Logo and Mobile Close */}
+      <div className="p-4 border-b border-slate-800 flex items-center justify-between">
         <EbsLogo variant="battery" size="sm" showText={true} />
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl md:hidden transition cursor-pointer"
+            title="Close Menu"
+          >
+            ✕
+          </button>
+        )}
       </div>
 
       {/* Navigation List */}
@@ -52,6 +66,7 @@ const Sidebar = () => {
           <NavLink
             key={item.name}
             to={item.path}
+            onClick={() => onClose?.()}
             className={({ isActive }) =>
               `flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all font-medium text-xs ${
                 isActive
@@ -67,7 +82,7 @@ const Sidebar = () => {
       </nav>
 
       {/* User Info & Logout */}
-      <div className="p-4 border-t border-slate-800 space-y-3">
+      <div className="p-4 border-t border-slate-800 space-y-3 bg-slate-950/40">
         <div className="px-2">
           <p className="text-xs font-bold text-slate-200">{user?.name || 'Super Admin'}</p>
           <p className="text-[11px] text-slate-400 font-mono">{user?.email || 'admin@ekosmart.com'}</p>

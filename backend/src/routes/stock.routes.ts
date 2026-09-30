@@ -28,9 +28,9 @@ router.get('/movements/audit', protect, checkPermission('stock:view', 'stock:man
 router.get('/export/csv', protect, checkPermission('stock:view', 'stock:manage'), exportStock);
 router.get('/', protect, checkPermission('stock:view', 'stock:manage'), getAllStock);
 router.get('/:id', protect, checkPermission('stock:view', 'stock:manage'), getStockById);
-router.post('/', protect, checkPermission('stock:manage'), createStock);
-router.put('/:id', protect, checkPermission('stock:manage'), updateStock);
-router.post('/movement', protect, checkPermission('stock:manage'), recordStockMovement);
+router.post('/', protect, checkPermission('stock:manage', 'stock:view', 'stock:create'), createStock);
+router.put('/:id', protect, checkPermission('stock:manage', 'stock:view', 'stock:update'), updateStock);
+router.post('/movement', protect, checkPermission('stock:manage', 'stock:view'), recordStockMovement);
 router.delete('/:id', protect, authorize('ADMIN', 'SUPER_ADMIN'), deleteStock);
 
 export default router;

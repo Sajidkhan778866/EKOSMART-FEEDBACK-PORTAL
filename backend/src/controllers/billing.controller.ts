@@ -7,6 +7,10 @@ import { StockMovement } from '../models/StockMovement';
 import { Warranty } from '../models/Warranty';
 import { Content } from '../models/Content';
 import { BillTemplate } from '../models/BillTemplate';
+import { WalletTransaction } from '../models/WalletTransaction';
+import { ReferralSettings } from '../models/ReferralSettings';
+import { Referral } from '../models/Referral';
+import { generateUniqueReferralCode } from './customer.controller';
 import { applyDateFilterToQuery } from '../utils/dateRange';
 
 // Default Showroom Bill Template
@@ -612,6 +616,7 @@ export const createBill = async (req: Request, res: Response) => {
     if (!customer) {
       const count = await Customer.countDocuments();
       const customerId = `CUST-${(count + 1).toString().padStart(5, '0')}`;
+      const referralCode = await generateUniqueReferralCode();
       customer = await Customer.create({
         customerId,
         name: customerName.trim(),
@@ -622,20 +627,24 @@ export const createBill = async (req: Request, res: Response) => {
         state: state || 'Rajasthan',
         customerType: 'Showroom',
         source: 'Showroom Billing Counter',
+        referralCode,
+        walletBalance: 0,
+        totalEarnedCoins: 0,
+        isVerified: true,
+        status: 'Active',
       });
     } else {
       if (customerAddress && !customer.address) customer.address = customerAddress.trim();
       if (customerEmail && !customer.email) customer.email = customerEmail.trim();
+      if (!customer.referralCode) {
+        customer.referralCode = await generateUniqueReferralCode();
+      }
       await customer.save();
     }
 
     // 2. Fetch soft-coded invoice prefix from active template or CMS
     let invoicePrefix = 'EBS-INV';
     try {
-      const activeTemplate = await BillTemplate.findOne({ isActive: true });
-      if (activeTemplate?.company?.name) {
-        // Can derive prefix or use CMS billingConfig
-      }
       const cmsContent = await Content.findOne({ key: 'global_cms' });
       if (cmsContent?.billingConfig?.invoicePrefix) {
         invoicePrefix = cmsContent.billingConfig.invoicePrefix;
@@ -646,42 +655,64 @@ export const createBill = async (req: Request, res: Response) => {
 
     const invoiceNumber = await generateInvoiceNumber(invoicePrefix);
 
-    // 3. Process line items and compute totals
+    // 3. Process line items, verify images and compute totals
     let subtotal = 0;
     let discountTotal = 0;
     let taxTotal = 0;
     let grandTotal = 0;
 
-    const processedItems = items.map((item: any) => {
-      const qty = Math.max(1, Number(item.quantity) || 1);
-      const unitPrice = Number(item.unitPrice) || 0;
-      const discount = Number(item.discount) || 0;
-      const taxRate = Number(item.taxRate) !== undefined ? Number(item.taxRate) : 18;
+    const processedItems = await Promise.all(
+      items.map(async (item: any) => {
+        const qty = Math.max(1, Number(item.quantity) || 1);
+        const unitPrice = Number(item.unitPrice) || 0;
+        const discount = Number(item.discount) || 0;
+        const taxRate = Number(item.taxRate) !== undefined ? Number(item.taxRate) : 18;
 
-      const lineGross = qty * unitPrice - discount;
-      const lineTax = (lineGross * taxRate) / 100;
-      const lineTotal = lineGross + lineTax;
+        const lineGross = qty * unitPrice - discount;
+        const lineTax = (lineGross * taxRate) / 100;
+        const lineTotal = lineGross + lineTax;
 
-      subtotal += qty * unitPrice;
-      discountTotal += discount;
-      taxTotal += lineTax;
-      grandTotal += lineTotal;
+        subtotal += qty * unitPrice;
+        discountTotal += discount;
+        taxTotal += lineTax;
+        grandTotal += lineTotal;
 
-      return {
-        productId: item.productId || `PRD-${Date.now().toString().slice(-4)}`,
-        productName: item.productName || 'EV Battery / Accessory',
-        category: item.category || 'Battery',
-        productSerial: (item.productSerial || item.serialNumber || '').trim(),
-        batterySerial: (item.batterySerial || item.batterySerialNumber || '').trim(),
-        quantity: qty,
-        unitPrice,
-        discount,
-        taxRate,
-        taxAmount: Math.round(lineTax * 100) / 100,
-        totalAmount: Math.round(lineTotal * 100) / 100,
-        warrantyPeriodMonths: Number(item.warrantyPeriodMonths) !== undefined ? Number(item.warrantyPeriodMonths) : 36,
-      };
-    });
+        let pImg = item.productImage || item.photoUrl || '';
+        let itemImages = Array.isArray(item.images) ? item.images : [];
+
+        // Check stock if photo is missing
+        if (!pImg || itemImages.length === 0) {
+          const matchStock = await Stock.findOne({
+            $or: [
+              item.productSerial ? { serialNumber: item.productSerial } : null,
+              item.batterySerial ? { batterySerialNumber: item.batterySerial } : null,
+              item.productId ? { productId: item.productId } : null,
+            ].filter(Boolean) as any,
+          });
+          if (matchStock) {
+            if (!pImg) pImg = matchStock.photoUrl || (matchStock.images && matchStock.images[0]) || '';
+            if (itemImages.length === 0 && matchStock.images) itemImages = matchStock.images;
+          }
+        }
+
+        return {
+          productId: item.productId || `PRD-${Date.now().toString().slice(-4)}`,
+          productName: item.productName || 'EV Battery / Accessory',
+          category: item.category || 'Battery',
+          productSerial: (item.productSerial || item.serialNumber || '').trim(),
+          batterySerial: (item.batterySerial || item.batterySerialNumber || '').trim(),
+          productImage: pImg,
+          images: itemImages,
+          quantity: qty,
+          unitPrice,
+          discount,
+          taxRate,
+          taxAmount: Math.round(lineTax * 100) / 100,
+          totalAmount: Math.round(lineTotal * 100) / 100,
+          warrantyPeriodMonths: Number(item.warrantyPeriodMonths) !== undefined ? Number(item.warrantyPeriodMonths) : 36,
+        };
+      })
+    );
 
     const employeeUser = (req as any).user;
     const employeeId = employeeUser?.employeeId || employeeUser?.id || '';
@@ -784,7 +815,67 @@ export const createBill = async (req: Request, res: Response) => {
       }
     }
 
-    // 6. Create and Save Bill
+    // 6. Process Purchase Reward for Customer Wallet
+    let rewardCoinsAwarded = 0;
+    let purchaseRewardAwarded = false;
+
+    try {
+      let settings = await ReferralSettings.findOne({ key: 'global_referral_settings' });
+      if (!settings) {
+        settings = await ReferralSettings.create({
+          key: 'global_referral_settings',
+          enabled: true,
+          newCustomerReward: 500,
+          referrerReward: 100,
+          purchaseReward: 500,
+          qualifyingMinPurchase: 0,
+        });
+      }
+
+      const purchaseCoins = settings.purchaseReward || 500;
+      const minQualifying = settings.qualifyingMinPurchase || 0;
+
+      if (settings.enabled && purchaseCoins > 0 && grandTotal >= minQualifying) {
+        // Prevent duplicate reward for same invoice
+        const existingReward = await WalletTransaction.findOne({
+          customer: customer._id,
+          reference: invoiceNumber,
+          category: 'Purchase Reward',
+        });
+
+        if (!existingReward) {
+          const balBefore = customer.walletBalance || 0;
+          customer.walletBalance = balBefore + purchaseCoins;
+          customer.totalEarnedCoins = (customer.totalEarnedCoins || 0) + purchaseCoins;
+          await customer.save();
+
+          await WalletTransaction.create({
+            transactionId: `WTX-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
+            customer: customer._id,
+            customerId: customer.customerId,
+            customerName: customer.name,
+            customerEmail: customer.email,
+            customerMobile: customer.mobile,
+            type: 'Credit',
+            category: 'Purchase Reward',
+            amount: purchaseCoins,
+            balanceBefore: balBefore,
+            balanceAfter: customer.walletBalance,
+            description: `Purchase reward coins for showroom invoice ${invoiceNumber} (Total: ₹${grandTotal.toFixed(2)})`,
+            reference: invoiceNumber,
+            referenceType: 'Bill',
+            status: 'Completed',
+          });
+
+          rewardCoinsAwarded = purchaseCoins;
+          purchaseRewardAwarded = true;
+        }
+      }
+    } catch (rewErr: any) {
+      console.warn('Purchase reward processing error:', rewErr.message);
+    }
+
+    // 7. Create and Save Bill
     const newBill = await Bill.create({
       invoiceNumber,
       customer: customer._id,
@@ -803,15 +894,79 @@ export const createBill = async (req: Request, res: Response) => {
       employeeId,
       employeeName,
       notes: notes || '',
+      billUrls: Array.isArray(req.body.billUrls) ? req.body.billUrls : [],
+      attachments: Array.isArray(req.body.attachments)
+        ? req.body.attachments
+        : (Array.isArray(req.body.billUrls)
+            ? req.body.billUrls.map((url: string, i: number) => ({
+                pageNumber: i + 1,
+                url,
+                name: `Attachment Page ${i + 1}`,
+                fileType: url.startsWith('data:application/pdf') ? 'pdf' : 'image',
+              }))
+            : []),
       warrantyGenerated: warrantyIds.length > 0,
       warrantyIds,
+      purchaseRewardAwarded,
+      rewardCoinsAwarded,
     });
+
+    // 8. Process Referral Qualification & Referrer Reward
+    try {
+      const pendingReferral: any = await Referral.findOne({
+        $or: [
+          { referredCustomer: customer._id },
+          { referredCustomerMobile: customer.mobile },
+          { referredCustomerEmail: customer.email },
+        ].filter(Boolean),
+        status: 'Pending',
+      });
+
+      if (pendingReferral) {
+        let settings = await ReferralSettings.findOne({ key: 'global_referral_settings' });
+        const referrerBonus = settings?.referrerReward || 100;
+        const referrerCustomer = await Customer.findById(pendingReferral.referrer);
+
+        if (referrerCustomer && referrerBonus > 0) {
+          const refBalBefore = referrerCustomer.walletBalance || 0;
+          referrerCustomer.walletBalance = refBalBefore + referrerBonus;
+          referrerCustomer.totalEarnedCoins = (referrerCustomer.totalEarnedCoins || 0) + referrerBonus;
+          await referrerCustomer.save();
+
+          await WalletTransaction.create({
+            transactionId: `WTX-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
+            customer: referrerCustomer._id,
+            customerId: referrerCustomer.customerId,
+            customerName: referrerCustomer.name,
+            customerEmail: referrerCustomer.email,
+            customerMobile: referrerCustomer.mobile,
+            type: 'Credit',
+            category: 'Referrer Reward',
+            amount: referrerBonus,
+            balanceBefore: refBalBefore,
+            balanceAfter: referrerCustomer.walletBalance,
+            description: `Referral reward: Friend ${customer.name} completed qualifying purchase (${invoiceNumber})`,
+            reference: invoiceNumber,
+            referenceType: 'Bill',
+            status: 'Completed',
+          });
+        }
+
+        pendingReferral.status = 'Completed';
+        pendingReferral.qualificationPurchase = newBill._id.toString();
+        pendingReferral.rewardedAt = new Date();
+        await pendingReferral.save();
+      }
+    } catch (refErr: any) {
+      console.warn('Referral qualification processing notice:', refErr.message);
+    }
 
     res.status(201).json({
       success: true,
-      message: 'Showroom Bill and Invoices generated successfully.',
+      message: `Showroom Bill and Invoices generated successfully.${rewardCoinsAwarded > 0 ? ` +${rewardCoinsAwarded} Purchase Coins credited to customer wallet.` : ''}`,
       data: newBill,
       warrantiesGenerated: warrantyIds,
+      rewardCoinsAwarded,
     });
   } catch (error: any) {
     console.error('Failed to create bill:', error);
