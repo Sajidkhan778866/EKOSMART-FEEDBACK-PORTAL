@@ -35,6 +35,9 @@ export interface IBillTemplate {
   softBillEmailConfig?: {
     enabled?: boolean;
     autoEmailCustomer?: boolean;
+    rewardCoins?: number;
+    welcomeCoins?: number;
+    referrerCoins?: number;
     emailSubject?: string;
     emailHeading?: string;
     emailMatter?: string;
@@ -553,11 +556,14 @@ export const normalizeTemplate = (tpl?: any): IBillTemplate => {
   const softBillEmailConfig = {
     enabled: tpl.softBillEmailConfig?.enabled !== undefined ? Boolean(tpl.softBillEmailConfig.enabled) : true,
     autoEmailCustomer: tpl.softBillEmailConfig?.autoEmailCustomer !== undefined ? Boolean(tpl.softBillEmailConfig.autoEmailCustomer) : true,
+    rewardCoins: Number(tpl.softBillEmailConfig?.rewardCoins) !== undefined && !isNaN(Number(tpl.softBillEmailConfig?.rewardCoins)) ? Number(tpl.softBillEmailConfig?.rewardCoins) : 500,
+    welcomeCoins: Number(tpl.softBillEmailConfig?.welcomeCoins) !== undefined && !isNaN(Number(tpl.softBillEmailConfig?.welcomeCoins)) ? Number(tpl.softBillEmailConfig?.welcomeCoins) : 500,
+    referrerCoins: Number(tpl.softBillEmailConfig?.referrerCoins) !== undefined && !isNaN(Number(tpl.softBillEmailConfig?.referrerCoins)) ? Number(tpl.softBillEmailConfig?.referrerCoins) : 100,
     emailSubject: tpl.softBillEmailConfig?.emailSubject || 'Official EKOSMART GST Tax Invoice & Soft Copy - {{invoiceNumber}}',
     emailHeading: tpl.softBillEmailConfig?.emailHeading || 'Showroom Retail Soft Copy Tax Invoice',
-    emailMatter: tpl.softBillEmailConfig?.emailMatter || 'Dear {{customerName}},\n\nThank you for choosing EKOSMART Clean Energy & Green Mobility. Please find your official GST Tax Invoice, Warranty Certificate registration, and exclusive Customer Referral Code details attached below.\n\nYour Unique Referral Code is: {{referralCode}}\nShare this code with your friends and family so they receive +500 Welcome Coins, and you receive +100 Referral Coins on their qualifying purchase!',
+    emailMatter: tpl.softBillEmailConfig?.emailMatter || 'Dear {{customerName}},\n\nThank you for choosing EKOSMART Clean Energy & Green Mobility. Please find your official GST Tax Invoice, Warranty Certificate registration, and exclusive Customer Referral Code details attached below.\n\nYour Unique Referral Code is: {{referralCode}}\nShare this code with your friends and family so they receive {{welcomeCoins}} Coins, and you earn {{referrerCoins}} Coins on their qualifying purchase!',
     referralBoxTitle: tpl.softBillEmailConfig?.referralBoxTitle || 'Ekosmart Referral & Rewards Program',
-    referralBoxMessage: tpl.softBillEmailConfig?.referralBoxMessage || 'Give ₹500, Get ₹100. Share your referral code {{referralCode}} with friends & earn unlimited store credit!',
+    referralBoxMessage: tpl.softBillEmailConfig?.referralBoxMessage || 'Share your referral code {{referralCode}} with friends & earn {{coins}} Coins on every qualifying purchase!',
     footerHelplineText: tpl.softBillEmailConfig?.footerHelplineText || 'For billing assistance or warranty queries, contact Kota Helpline: +91 8949049003 | support@ekosmartdrive.in',
     showReferralCode: tpl.softBillEmailConfig?.showReferralCode !== undefined ? Boolean(tpl.softBillEmailConfig.showReferralCode) : true,
     showCoinsSummary: tpl.softBillEmailConfig?.showCoinsSummary !== undefined ? Boolean(tpl.softBillEmailConfig.showCoinsSummary) : true,
@@ -1753,6 +1759,90 @@ export const BillTemplateDesigner: React.FC<BillTemplateDesignerProps> = ({
                 </div>
               </div>
 
+              {/* Soft-Coded Coins Configuration */}
+              <div className="p-4 bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl border-2 border-amber-300 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-amber-950 font-black text-xs">
+                    <Coins size={16} className="text-amber-600 fill-amber-600" />
+                    <span>Soft-Coded Referral Coins Parameters (🪙 Coins Only)</span>
+                  </div>
+                  <span className="text-[10px] font-bold text-amber-800 bg-amber-200/80 px-2 py-0.5 rounded-full">
+                    Editable Tokens
+                  </span>
+                </div>
+                <p className="text-[11px] text-amber-900 leading-relaxed">
+                  Only digital wallet coins are shown to customers in soft bills and referral banners. You can edit default coin reward amounts below:
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                  <div className="bg-white p-3 rounded-xl border border-amber-200 shadow-2xs space-y-1">
+                    <label className="block text-[11px] font-bold text-amber-950">
+                      Purchase Coins (🪙)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={currentTemplate.softBillEmailConfig?.rewardCoins ?? 500}
+                      onChange={(e) =>
+                        setCurrentTemplate({
+                          ...currentTemplate,
+                          softBillEmailConfig: {
+                            ...currentTemplate.softBillEmailConfig,
+                            rewardCoins: Number(e.target.value) || 0,
+                          },
+                        })
+                      }
+                      className="w-full p-2 border border-amber-300 rounded-lg text-xs font-black text-amber-900 bg-amber-50/40"
+                    />
+                    <span className="text-[9px] font-mono text-slate-500 block">Token: {"{{coins}}"} / {"{{rewardCoins}}"}</span>
+                  </div>
+
+                  <div className="bg-white p-3 rounded-xl border border-amber-200 shadow-2xs space-y-1">
+                    <label className="block text-[11px] font-bold text-amber-950">
+                      Welcome Bonus Coins (🪙)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={currentTemplate.softBillEmailConfig?.welcomeCoins ?? 500}
+                      onChange={(e) =>
+                        setCurrentTemplate({
+                          ...currentTemplate,
+                          softBillEmailConfig: {
+                            ...currentTemplate.softBillEmailConfig,
+                            welcomeCoins: Number(e.target.value) || 0,
+                          },
+                        })
+                      }
+                      className="w-full p-2 border border-amber-300 rounded-lg text-xs font-black text-amber-900 bg-amber-50/40"
+                    />
+                    <span className="text-[9px] font-mono text-slate-500 block">Token: {"{{welcomeCoins}}"}</span>
+                  </div>
+
+                  <div className="bg-white p-3 rounded-xl border border-amber-200 shadow-2xs space-y-1">
+                    <label className="block text-[11px] font-bold text-amber-950">
+                      Referrer Bonus Coins (🪙)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={currentTemplate.softBillEmailConfig?.referrerCoins ?? 100}
+                      onChange={(e) =>
+                        setCurrentTemplate({
+                          ...currentTemplate,
+                          softBillEmailConfig: {
+                            ...currentTemplate.softBillEmailConfig,
+                            referrerCoins: Number(e.target.value) || 0,
+                          },
+                        })
+                      }
+                      className="w-full p-2 border border-amber-300 rounded-lg text-xs font-black text-amber-900 bg-amber-50/40"
+                    />
+                    <span className="text-[9px] font-mono text-slate-500 block">Token: {"{{referrerCoins}}"}</span>
+                  </div>
+                </div>
+              </div>
+
               {/* Subject Line */}
               <div>
                 <label className="block text-slate-700 font-bold mb-1">Email Subject Line</label>
@@ -1819,6 +1909,9 @@ export const BillTemplateDesigner: React.FC<BillTemplateDesignerProps> = ({
                 <div className="mt-1.5 p-2.5 bg-slate-100 rounded-xl border border-slate-200 text-[11px] text-slate-600">
                   <span className="font-bold text-slate-800 block mb-1">Available Placeholder Tokens:</span>
                   <div className="flex flex-wrap gap-1.5 font-mono text-[10px]">
+                    <span className="px-1.5 py-0.5 bg-amber-100 border border-amber-300 rounded text-amber-900 font-bold">{"{{coins}}"}</span>
+                    <span className="px-1.5 py-0.5 bg-amber-100 border border-amber-300 rounded text-amber-900 font-bold">{"{{welcomeCoins}}"}</span>
+                    <span className="px-1.5 py-0.5 bg-amber-100 border border-amber-300 rounded text-amber-900 font-bold">{"{{referrerCoins}}"}</span>
                     <span className="px-1.5 py-0.5 bg-white border border-slate-300 rounded text-emerald-800">{"{{customerName}}"}</span>
                     <span className="px-1.5 py-0.5 bg-white border border-slate-300 rounded text-emerald-800">{"{{invoiceNumber}}"}</span>
                     <span className="px-1.5 py-0.5 bg-white border border-slate-300 rounded text-emerald-800">{"{{referralCode}}"}</span>
@@ -1832,7 +1925,7 @@ export const BillTemplateDesigner: React.FC<BillTemplateDesignerProps> = ({
               <div className="p-3.5 bg-amber-50/60 rounded-xl border border-amber-200 space-y-2">
                 <div className="flex items-center gap-1.5 font-bold text-amber-900">
                   <Gift size={14} className="text-amber-600" />
-                  <span>Referral Code Banner in Soft Bill</span>
+                  <span>Referral Code Banner in Soft Bill (Only Coins)</span>
                 </div>
 
                 <div>
@@ -1868,7 +1961,7 @@ export const BillTemplateDesigner: React.FC<BillTemplateDesignerProps> = ({
                         },
                       })
                     }
-                    placeholder="Give ₹500, Get ₹100. Share your referral code {{referralCode}} with friends & earn unlimited store credit!"
+                    placeholder="Share your referral code {{referralCode}} with friends & earn {{coins}} Coins on every qualifying purchase!"
                     className="w-full p-2 bg-white border border-amber-300 rounded-xl text-xs"
                   />
                 </div>
@@ -2192,10 +2285,14 @@ export const BillTemplateDesigner: React.FC<BillTemplateDesignerProps> = ({
                   {/* Soft Coded Matter Body */}
                   <div className="p-5 space-y-4">
                     <div className="bg-slate-50 border-l-4 border-emerald-600 p-4 rounded-r-xl text-slate-700 text-xs leading-relaxed whitespace-pre-line">
-                      {(currentTemplate.softBillEmailConfig?.emailMatter || 'Dear {{customerName}},\n\nThank you for choosing EKOSMART Clean Energy & Green Mobility. Please find attached below your official Soft Copy GST Tax Invoice, Warranty Certificate registration, and exclusive Customer Referral Code.')
+                      {(currentTemplate.softBillEmailConfig?.emailMatter || 'Dear {{customerName}},\n\nThank you for choosing EKOSMART Clean Energy & Green Mobility. Please find attached below your official Soft Copy GST Tax Invoice, Warranty Certificate registration, and exclusive Customer Referral Code.\n\nYour Unique Referral Code is: {{referralCode}}\nShare this code with your friends & family so they receive {{welcomeCoins}} Coins, and you earn {{referrerCoins}} Coins on their qualifying purchase!')
                         .replace(/\{\{customerName\}\}/g, sampleBill.customerName)
                         .replace(/\{\{invoiceNumber\}\}/g, sampleBill.invoiceNumber)
                         .replace(/\{\{referralCode\}\}/g, 'EKO89A4')
+                        .replace(/\{\{coins\}\}/g, String(currentTemplate.softBillEmailConfig?.rewardCoins ?? 500))
+                        .replace(/\{\{rewardCoins\}\}/g, String(currentTemplate.softBillEmailConfig?.rewardCoins ?? 500))
+                        .replace(/\{\{welcomeCoins\}\}/g, String(currentTemplate.softBillEmailConfig?.welcomeCoins ?? 500))
+                        .replace(/\{\{referrerCoins\}\}/g, String(currentTemplate.softBillEmailConfig?.referrerCoins ?? 100))
                         .replace(/\{\{grandTotal\}\}/g, `₹${sampleBill.grandTotal.toLocaleString('en-IN')}`)
                         .replace(/\{\{showroom\}\}/g, sampleBill.showroom)}
                     </div>
@@ -2290,12 +2387,17 @@ export const BillTemplateDesigner: React.FC<BillTemplateDesignerProps> = ({
                           EKO89A4
                         </div>
                         <p className="text-xs text-amber-900 max-w-md mx-auto">
-                          {(currentTemplate.softBillEmailConfig?.referralBoxMessage || 'Give ₹500, Get ₹100. Share your referral code {{referralCode}} with friends & earn unlimited store credit!').replace('{{referralCode}}', 'EKO89A4')}
+                          {(currentTemplate.softBillEmailConfig?.referralBoxMessage || 'Share your referral code {{referralCode}} with friends & earn {{coins}} Coins on every qualifying purchase!')
+                            .replace('{{referralCode}}', 'EKO89A4')
+                            .replace(/\{\{coins\}\}/g, String(currentTemplate.softBillEmailConfig?.rewardCoins ?? 500))
+                            .replace(/\{\{rewardCoins\}\}/g, String(currentTemplate.softBillEmailConfig?.rewardCoins ?? 500))
+                            .replace(/\{\{welcomeCoins\}\}/g, String(currentTemplate.softBillEmailConfig?.welcomeCoins ?? 500))
+                            .replace(/\{\{referrerCoins\}\}/g, String(currentTemplate.softBillEmailConfig?.referrerCoins ?? 100))}
                         </p>
                         {currentTemplate.softBillEmailConfig?.showCoinsSummary !== false && (
                           <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100/80 text-amber-900 font-bold rounded-lg text-[11px]">
                             <Coins size={14} className="text-amber-700" />
-                            <span>+500 Purchase Coins Credited to Customer Digital Wallet</span>
+                            <span>+{currentTemplate.softBillEmailConfig?.rewardCoins ?? 500} Coins Credited to Customer Digital Wallet</span>
                           </div>
                         )}
                       </div>

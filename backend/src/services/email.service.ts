@@ -15,13 +15,14 @@ export interface ISoftBillEmailParams {
   bill: any;
   customer?: any;
   referralCode?: string;
+  coinsAwarded?: number;
   customMatter?: string;
   customSubject?: string;
   templateConfig?: any;
 }
 
 export const sendInvoiceSoftCopyEmail = async (params: ISoftBillEmailParams): Promise<{ success: boolean; message: string }> => {
-  const { to, bill, customer, referralCode, customMatter, customSubject, templateConfig } = params;
+  const { to, bill, customer, referralCode, coinsAwarded, customMatter, customSubject, templateConfig } = params;
 
   if (!to || !to.includes('@')) {
     return { success: false, message: 'Valid recipient email address is required.' };
@@ -40,12 +41,14 @@ export const sendInvoiceSoftCopyEmail = async (params: ISoftBillEmailParams): Pr
   const paymentMode = bill.paymentMode || 'UPI';
   const paymentStatus = bill.paymentStatus || 'Paid';
   const showroom = bill.showroom || 'Ekosmart Showroom Counter';
-  const rewardCoins = bill.rewardCoinsAwarded || 500;
+  const rewardCoins = coinsAwarded !== undefined ? Number(coinsAwarded) : (bill.rewardCoinsAwarded || templateConfig?.softBillEmailConfig?.rewardCoins || 500);
+  const welcomeCoins = templateConfig?.softBillEmailConfig?.welcomeCoins || 500;
+  const referrerCoins = templateConfig?.softBillEmailConfig?.referrerCoins || 100;
 
   const subject = customSubject || templateConfig?.softBillEmailConfig?.emailSubject?.replace('{{invoiceNumber}}', invoiceNumber) || `Official EKOSMART Showroom GST Tax Invoice & Soft Copy - ${invoiceNumber}`;
   
   const rawMatter = customMatter || templateConfig?.softBillEmailConfig?.emailMatter || 
-    `Dear {{customerName}},\n\nThank you for choosing EKOSMART Clean Energy & Green Mobility. Please find attached below your official Soft Copy GST Tax Invoice, Warranty Certificate registration, and exclusive Customer Referral Code.\n\nYour Unique Referral Code is {{referralCode}}. Share this code with friends & family so they receive +500 Welcome Coins, and you earn +100 Referral Coins on their qualifying purchase!`;
+    `Dear {{customerName}},\n\nThank you for choosing EKOSMART Clean Energy & Green Mobility. Please find attached below your official Soft Copy GST Tax Invoice, Warranty Certificate registration, and exclusive Customer Referral Code.\n\nYour Unique Referral Code is: {{referralCode}}\nShare this code with your friends & family so they receive {{welcomeCoins}} Coins, and you earn {{referrerCoins}} Coins on their qualifying purchase!`;
 
   const parsedMatter = rawMatter
     .replace(/\{\{customerName\}\}/g, customerName)
@@ -53,6 +56,10 @@ export const sendInvoiceSoftCopyEmail = async (params: ISoftBillEmailParams): Pr
     .replace(/\{\{referralCode\}\}/g, refCode)
     .replace(/\{\{grandTotal\}\}/g, `₹${grandTotal}`)
     .replace(/\{\{showroom\}\}/g, showroom)
+    .replace(/\{\{coins\}\}/g, String(rewardCoins))
+    .replace(/\{\{rewardCoins\}\}/g, String(rewardCoins))
+    .replace(/\{\{welcomeCoins\}\}/g, String(welcomeCoins))
+    .replace(/\{\{referrerCoins\}\}/g, String(referrerCoins))
     .replace(/\n/g, '<br/>');
 
   const itemsHtml = (bill.items || [])
@@ -208,13 +215,13 @@ export const sendInvoiceSoftCopyEmail = async (params: ISoftBillEmailParams): Pr
                   ${refCode}
                 </div>
                 <p style="margin: 4px 0 0 0; font-size: 12px; color: #92400e; line-height: 1.4;">
-                  Share this code with friends & colleagues. When they register, they get <strong>500 Welcome Coins</strong> and you get <strong>100 Coins</strong> on their purchase!
+                  Share this code with friends & colleagues. When they register, they get <strong>${welcomeCoins} Welcome Coins</strong> and you get <strong>${referrerCoins} Referral Coins</strong> on their purchase!
                 </p>
                 ${
                   rewardCoins > 0
                     ? `
                   <div style="margin-top: 10px; font-size: 11px; font-weight: bold; color: #b45309; background-color: #fef9c3; padding: 4px 10px; border-radius: 6px; display: inline-block;">
-                    🪙 +${rewardCoins} Purchase Coins Credited to Your EKOSMART Digital Wallet
+                    🪙 +${rewardCoins} Coins Credited to Your EKOSMART Digital Wallet
                   </div>
                 `
                     : ''

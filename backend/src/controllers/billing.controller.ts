@@ -137,11 +137,14 @@ export const defaultBillTemplate = {
   softBillEmailConfig: {
     enabled: true,
     autoEmailCustomer: true,
+    rewardCoins: 500,
+    welcomeCoins: 500,
+    referrerCoins: 100,
     emailSubject: 'Official EKOSMART GST Tax Invoice & Soft Copy - {{invoiceNumber}}',
     emailHeading: 'Showroom Retail Soft Copy Tax Invoice',
-    emailMatter: 'Dear {{customerName}},\n\nThank you for choosing EKOSMART Clean Energy & Green Mobility. Please find your official GST Tax Invoice, Warranty Certificate registration, and exclusive Customer Referral Code details attached below.\n\nYour Unique Referral Code is: {{referralCode}}\nShare this code with your friends and family so they receive +500 Welcome Coins, and you receive +100 Referral Coins on their qualifying purchase!',
+    emailMatter: 'Dear {{customerName}},\n\nThank you for choosing EKOSMART Clean Energy & Green Mobility. Please find your official GST Tax Invoice, Warranty Certificate registration, and exclusive Customer Referral Code details attached below.\n\nYour Unique Referral Code is: {{referralCode}}\nShare this code with your friends and family so they receive {{welcomeCoins}} Coins, and you earn {{referrerCoins}} Coins on their qualifying purchase!',
     referralBoxTitle: 'Ekosmart Referral & Rewards Program',
-    referralBoxMessage: 'Give ₹500, Get ₹100. Share your referral code {{referralCode}} with friends & earn unlimited store credit!',
+    referralBoxMessage: 'Share your referral code {{referralCode}} with friends & earn {{coins}} Coins on every qualifying purchase!',
     footerHelplineText: 'For billing assistance or warranty queries, contact Kota Helpline: +91 8949049003 | support@ekosmartdrive.in',
     showReferralCode: true,
     showCoinsSummary: true,
@@ -1103,7 +1106,7 @@ export const createBill = async (req: Request, res: Response) => {
 export const sendBillEmail = async (req: Request, res: Response) => {
   try {
     const id = String(req.params.id || '');
-    const { recipientEmail, customMatter, customSubject } = req.body;
+    const { recipientEmail, customMatter, customSubject, coinsAwarded } = req.body;
 
     let bill = null;
     if (mongoose.Types.ObjectId.isValid(id)) {
@@ -1122,6 +1125,10 @@ export const sendBillEmail = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'A valid recipient email address is required.' });
     }
 
+    if (coinsAwarded !== undefined && !isNaN(Number(coinsAwarded))) {
+      bill.rewardCoinsAwarded = Number(coinsAwarded);
+    }
+
     // Get active template config for matter/branding
     const activeTemplate = await BillTemplate.findOne({
       $or: [{ templateType: 'Showroom' }, { type: 'Showroom' }],
@@ -1133,6 +1140,7 @@ export const sendBillEmail = async (req: Request, res: Response) => {
       bill,
       customer: bill.customer,
       referralCode: (bill.customer as any)?.referralCode || bill.referralCodeUsed,
+      coinsAwarded: coinsAwarded !== undefined ? Number(coinsAwarded) : bill.rewardCoinsAwarded,
       customMatter,
       customSubject,
       templateConfig: activeTemplate || defaultBillTemplate,

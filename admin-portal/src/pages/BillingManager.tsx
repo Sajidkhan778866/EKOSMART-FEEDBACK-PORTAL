@@ -48,6 +48,7 @@ export interface IBillLineItem {
 export interface IBill {
   _id: string;
   invoiceNumber: string;
+  customer?: any;
   customerName: string;
   customerMobile: string;
   customerEmail?: string;
@@ -107,6 +108,7 @@ const BillingManager = () => {
     recipientEmail: '',
     customSubject: '',
     customMatter: '',
+    coinsAwarded: 500,
   });
   const [sendingEmail, setSendingEmail] = useState(false);
 
@@ -437,15 +439,27 @@ const BillingManager = () => {
 
   const openEmailModal = (bill: IBill) => {
     setEmailModalBill(bill);
+    const coins = bill.rewardCoinsAwarded || activeTemplate?.softBillEmailConfig?.rewardCoins || 500;
+    const welcomeCoins = activeTemplate?.softBillEmailConfig?.welcomeCoins || 500;
+    const referrerCoins = activeTemplate?.softBillEmailConfig?.referrerCoins || 100;
+    const refCode = bill.referralCodeUsed || (bill.customer as any)?.referralCode || 'EKO' + Math.random().toString(36).substring(2, 6).toUpperCase();
+
     const defaultSubject = (activeTemplate?.softBillEmailConfig?.emailSubject || 'Official EKOSMART GST Tax Invoice & Soft Copy - {{invoiceNumber}}')
       .replace('{{invoiceNumber}}', bill.invoiceNumber);
-    const defaultMatter = activeTemplate?.softBillEmailConfig?.emailMatter ||
-      `Dear {{customerName}},\n\nThank you for choosing EKOSMART Clean Energy & Green Mobility. Please find attached below your official Soft Copy GST Tax Invoice, Warranty Certificate registration, and exclusive Customer Referral Code.\n\nYour Unique Referral Code is: {{referralCode}}\nShare this code with your friends and family so they receive +500 Welcome Coins, and you earn +100 Referral Coins on their qualifying purchase!`;
+
+    const defaultMatter = (activeTemplate?.softBillEmailConfig?.emailMatter ||
+      `Dear {{customerName}},\n\nThank you for choosing EKOSMART Clean Energy & Green Mobility. Please find attached below your official Soft Copy GST Tax Invoice, Warranty Certificate registration, and exclusive Customer Referral Code.\n\nYour Unique Referral Code is: {{referralCode}}\nShare this code with your friends and family so they receive {{welcomeCoins}} Coins, and you earn {{referrerCoins}} Coins on their qualifying purchase!`)
+      .replace(/\{\{coins\}\}/g, String(coins))
+      .replace(/\{\{rewardCoins\}\}/g, String(coins))
+      .replace(/\{\{welcomeCoins\}\}/g, String(welcomeCoins))
+      .replace(/\{\{referrerCoins\}\}/g, String(referrerCoins))
+      .replace(/\{\{referralCode\}\}/g, refCode);
 
     setEmailForm({
       recipientEmail: bill.customerEmail || '',
       customSubject: defaultSubject,
       customMatter: defaultMatter,
+      coinsAwarded: coins,
     });
     setShowEmailModal(true);
   };
@@ -460,9 +474,12 @@ const BillingManager = () => {
 
     try {
       setSendingEmail(true);
-      const res = await billingApi.sendEmail(emailModalBill._id, emailForm);
+      const res = await billingApi.sendEmail(emailModalBill._id, {
+        ...emailForm,
+        coinsAwarded: Number(emailForm.coinsAwarded) || 0,
+      });
       if (res.data?.success) {
-        showAlert('success', `Soft copy invoice and referral code emailed successfully to ${emailForm.recipientEmail}`);
+        showAlert('success', `Soft copy invoice and referral code (${emailForm.coinsAwarded} Coins) emailed successfully to ${emailForm.recipientEmail}`);
         setShowEmailModal(false);
         fetchBills();
       }
@@ -1437,6 +1454,40 @@ const BillingManager = () => {
                 </div>
               </div>
 
+              {/* Editable Soft-Coded Coins Field */}
+              <div className="p-3.5 bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl border border-amber-200 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                    <Coins size={15} className="text-amber-600 fill-amber-600" />
+                    <span>Reward & Referral Coins (🪙 Only Coins - Soft-Coded & Editable)</span>
+                  </label>
+                  <span className="text-[10px] font-mono font-bold text-amber-800 bg-amber-200/70 px-2 py-0.5 rounded-full">
+                    Token: {"{{coins}}"}
+                  </span>
+                </div>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    required
+                    value={emailForm.coinsAwarded}
+                    onChange={(e) => {
+                      const newCoins = Number(e.target.value) || 0;
+                      setEmailForm((prev) => ({
+                        ...prev,
+                        coinsAwarded: newCoins,
+                      }));
+                    }}
+                    placeholder="500"
+                    className="w-full pl-9 pr-3 py-2 bg-white border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-none font-black text-amber-900 text-sm"
+                  />
+                  <Coins size={16} className="absolute left-3 top-2.5 text-amber-500 fill-amber-500" />
+                </div>
+                <p className="text-[10px] text-amber-800">
+                  🪙 Only coins will be shown to the customer in their soft copy receipt and digital wallet rewards.
+                </p>
+              </div>
+
               <div>
                 <label className="block text-slate-700 font-bold mb-1">Customer Email Address *</label>
                 <input
@@ -1468,9 +1519,14 @@ const BillingManager = () => {
                   onChange={(e) => setEmailForm({ ...emailForm, customMatter: e.target.value })}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none text-xs leading-relaxed"
                 />
-                <span className="text-[10px] text-slate-400 mt-0.5 block">
-                  Tokens like <code className="text-emerald-700">{"{{customerName}}"}</code> and <code className="text-emerald-700">{"{{referralCode}}"}</code> will be auto-replaced before dispatch.
-                </span>
+                <div className="flex flex-wrap items-center gap-1.5 mt-1.5 text-[10px] text-slate-500">
+                  <span className="font-bold text-slate-700">Tokens:</span>
+                  <code className="text-amber-800 bg-amber-100 px-1 py-0.5 rounded font-bold">{"{{coins}}"}</code>
+                  <code className="text-amber-800 bg-amber-100 px-1 py-0.5 rounded font-bold">{"{{welcomeCoins}}"}</code>
+                  <code className="text-amber-800 bg-amber-100 px-1 py-0.5 rounded font-bold">{"{{referrerCoins}}"}</code>
+                  <code className="text-emerald-700 bg-emerald-50 px-1 py-0.5 rounded">{"{{referralCode}}"}</code>
+                  <code className="text-emerald-700 bg-emerald-50 px-1 py-0.5 rounded">{"{{customerName}}"}</code>
+                </div>
               </div>
 
               <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
