@@ -552,35 +552,77 @@ const PRESET_COLORS = [
   { name: 'Violet Royal', hex: '#7c3aed' },
 ];
 
-export const BillTemplateDesigner: React.FC = () => {
-  const [templates, setTemplates] = useState<IBillTemplate[]>(DEFAULT_TEMPLATES.map(normalizeTemplate));
+export interface BillTemplateDesignerProps {
+  initialType?: 'Showroom' | 'Plant' | 'Rental' | 'Warranty' | 'Salary' | 'Custom';
+  restrictType?: 'Salary' | 'Billing';
+}
+
+export const BillTemplateDesigner: React.FC<BillTemplateDesignerProps> = ({
+  initialType,
+  restrictType,
+}) => {
+  const [templates, setTemplates] = useState<IBillTemplate[]>(() => {
+    const list = DEFAULT_TEMPLATES.map(normalizeTemplate);
+    if (restrictType === 'Salary') {
+      return list.filter((t) => t.type === 'Salary');
+    }
+    if (restrictType === 'Billing') {
+      return list.filter((t) => t.type !== 'Salary');
+    }
+    return list;
+  });
   const [activeTemplateIndex, setActiveTemplateIndex] = useState(0);
-  const [currentTemplate, setCurrentTemplate] = useState<IBillTemplate>(normalizeTemplate(DEFAULT_TEMPLATES[0]));
-  const [activeTab, setActiveTab] = useState<'company' | 'customer' | 'columns' | 'salary' | 'totals' | 'footer' | 'theme'>('company');
+  const [currentTemplate, setCurrentTemplate] = useState<IBillTemplate>(() => {
+    if (restrictType === 'Salary' || initialType === 'Salary') {
+      return normalizeTemplate(DEFAULT_TEMPLATES.find((t) => t.type === 'Salary') || DEFAULT_TEMPLATES[1]);
+    }
+    return normalizeTemplate(DEFAULT_TEMPLATES[0]);
+  });
+  const [activeTab, setActiveTab] = useState<'company' | 'customer' | 'columns' | 'salary' | 'totals' | 'footer' | 'theme'>(
+    restrictType === 'Salary' || initialType === 'Salary' ? 'salary' : 'company'
+  );
   const [saving, setSaving] = useState(false);
   const [alertMsg, setAlertMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
     fetchTemplates();
-  }, []);
+  }, [restrictType]);
 
   const fetchTemplates = async () => {
     try {
       const res = await billTemplateApi.getAll();
+      let normalized: IBillTemplate[] = [];
       if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
-        const normalized = res.data.data.map(normalizeTemplate);
-        setTemplates(normalized);
-        const activeIdx = normalized.findIndex((t: IBillTemplate) => t.isActive);
-        const chosenIdx = activeIdx >= 0 ? activeIdx : 0;
-        setActiveTemplateIndex(chosenIdx);
-        setCurrentTemplate(normalized[chosenIdx]);
+        normalized = res.data.data.map(normalizeTemplate);
       } else {
-        setTemplates(DEFAULT_TEMPLATES.map(normalizeTemplate));
-        setCurrentTemplate(normalizeTemplate(DEFAULT_TEMPLATES[0]));
+        normalized = DEFAULT_TEMPLATES.map(normalizeTemplate);
+      }
+
+      if (restrictType === 'Salary') {
+        normalized = normalized.filter((t) => t.type === 'Salary');
+        if (normalized.length === 0) {
+          normalized = [normalizeTemplate(DEFAULT_TEMPLATES.find((t) => t.type === 'Salary') || DEFAULT_TEMPLATES[1])];
+        }
+      } else if (restrictType === 'Billing') {
+        normalized = normalized.filter((t) => t.type !== 'Salary');
+      }
+
+      setTemplates(normalized);
+      const activeIdx = normalized.findIndex((t: IBillTemplate) => t.isActive);
+      const chosenIdx = activeIdx >= 0 ? activeIdx : 0;
+      setActiveTemplateIndex(chosenIdx);
+      if (normalized[chosenIdx]) {
+        setCurrentTemplate(normalized[chosenIdx]);
       }
     } catch {
-      setTemplates(DEFAULT_TEMPLATES.map(normalizeTemplate));
-      setCurrentTemplate(normalizeTemplate(DEFAULT_TEMPLATES[0]));
+      let defaults = DEFAULT_TEMPLATES.map(normalizeTemplate);
+      if (restrictType === 'Salary') {
+        defaults = defaults.filter((t) => t.type === 'Salary');
+      } else if (restrictType === 'Billing') {
+        defaults = defaults.filter((t) => t.type !== 'Salary');
+      }
+      setTemplates(defaults);
+      setCurrentTemplate(defaults[0]);
     }
   };
 

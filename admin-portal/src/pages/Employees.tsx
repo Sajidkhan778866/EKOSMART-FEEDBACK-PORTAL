@@ -33,6 +33,7 @@ import { employeeApi, formApi, contentApi, resolveImageUrl } from '../api/client
 
 import { IdCardModal } from '../components/IdCardModal';
 import { SalarySlipModal } from '../components/SalarySlipModal';
+import { BillTemplateDesigner } from '../components/BillTemplateDesigner';
 
 export interface ICertificate {
   id?: string;
@@ -189,6 +190,7 @@ const defaultWarrantyAccess: IWarrantyAccess = {
 };
 
 const Employees = () => {
+  const [activeTab, setActiveTab] = useState<'directory' | 'salary_template'>('directory');
   const [employees, setEmployees] = useState<EmployeeItem[]>([]);
   const [availableDivisions, setAvailableDivisions] = useState<string[]>(DEFAULT_DIVISIONS);
   const [availableDepartments, setAvailableDepartments] = useState<string[]>(DEFAULT_DEPARTMENTS);
@@ -1052,37 +1054,79 @@ const Employees = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header & Export / Add Employee Bar */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-            <Users className="text-green-600" />
-            Staff & Employee Management
-          </h1>
-          <p className="text-slate-500 text-sm mt-1">
-            Manage service engineers, technical certificates, assigned tasks & work orders, warranty permissions, and credentials.
-          </p>
-        </div>
+      {/* Top Header & Navigation Tabs */}
+      <div className="flex border-b border-slate-200 bg-white p-1.5 rounded-2xl shadow-xs gap-2">
+        <button
+          type="button"
+          onClick={() => setActiveTab('directory')}
+          className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 cursor-pointer ${
+            activeTab === 'directory'
+              ? 'bg-emerald-700 text-white shadow-md shadow-emerald-950/20'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          }`}
+        >
+          <Users size={16} />
+          <span>Staff & Employee Directory ({employees.length})</span>
+        </button>
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleExportCsv}
-            disabled={exporting}
-            className="flex items-center gap-2 px-4 py-2.5 border border-slate-300 hover:bg-slate-50 rounded-xl text-slate-700 text-xs font-semibold transition cursor-pointer"
-          >
-            {exporting ? <Loader2 size={16} className="animate-spin" /> : <FileSpreadsheet size={16} />}
-            <span>Export Excel</span>
-          </button>
-
-          <button
-            onClick={openAddModal}
-            className="flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer"
-          >
-            <Plus size={16} />
-            <span>Add Employee</span>
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setActiveTab('salary_template')}
+          className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 cursor-pointer ${
+            activeTab === 'salary_template'
+              ? 'bg-emerald-700 text-white shadow-md shadow-emerald-950/20'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          }`}
+        >
+          <FileSpreadsheet size={16} />
+          <span>Soft-Coded Payslip / Salary Template Designer</span>
+        </button>
       </div>
+
+      {/* TAB 1: STAFF DIRECTORY */}
+      {activeTab === 'directory' && (
+        <>
+          {/* Header & Export / Add Employee Bar */}
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                <Users className="text-green-600" />
+                Staff & Employee Management
+              </h1>
+              <p className="text-slate-500 text-sm mt-1">
+                Manage service engineers, technical certificates, assigned tasks & work orders, warranty permissions, and credentials.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => setActiveTab('salary_template')}
+                className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+                title="Design & Customize Soft-Coded Employee Salary Slip Template"
+              >
+                <FileSpreadsheet size={16} className="text-emerald-700" />
+                <span>Salary Template</span>
+              </button>
+
+              <button
+                onClick={handleExportCsv}
+                disabled={exporting}
+                className="flex items-center gap-2 px-4 py-2.5 border border-slate-300 hover:bg-slate-50 rounded-xl text-slate-700 text-xs font-semibold transition cursor-pointer"
+              >
+                {exporting ? <Loader2 size={16} className="animate-spin" /> : <FileSpreadsheet size={16} />}
+                <span>Export Excel</span>
+              </button>
+
+              <button
+                onClick={openAddModal}
+                className="flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer"
+              >
+                <Plus size={16} />
+                <span>Add Employee</span>
+              </button>
+            </div>
+          </div>
 
       {/* Success Notification Banner */}
       {successBanner && (
@@ -1401,6 +1445,15 @@ const Employees = () => {
           </div>
         )}
       </div>
+        </>
+      )}
+
+      {/* TAB 2: SOFT-CODED SALARY TEMPLATE DESIGNER */}
+      {activeTab === 'salary_template' && (
+        <div className="space-y-4">
+          <BillTemplateDesigner restrictType="Salary" initialType="Salary" />
+        </div>
+      )}
 
       {/* COMPREHENSIVE ADD / EDIT EMPLOYEE MODAL */}
       {showModal && (

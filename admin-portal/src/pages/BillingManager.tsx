@@ -716,7 +716,7 @@ const BillingManager = () => {
       {/* TAB 2: SOFT-CODED BILL TEMPLATE DESIGNER */}
       {activeTab === 'designer' && (
         <ErrorBoundary fallbackTitle="Soft-Coded Bill Template Designer">
-          <BillTemplateDesigner />
+          <BillTemplateDesigner restrictType="Billing" />
         </ErrorBoundary>
       )}
 
