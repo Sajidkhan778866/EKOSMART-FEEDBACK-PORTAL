@@ -1093,8 +1093,13 @@ const Billing = () => {
                   <div className="text-[11px] text-emerald-700">{emailModalBill.customerName} ({emailModalBill.customerMobile})</div>
                 </div>
                 <div className="text-right">
-                  <div className="text-[10px] font-bold text-emerald-800 uppercase">Amount</div>
-                  <div className="text-base font-black text-emerald-900 font-mono">₹{emailModalBill.grandTotal.toLocaleString('en-IN')}</div>
+                  <div className="text-[10px] font-bold text-amber-800 uppercase flex items-center justify-end gap-1">
+                    <Coins size={13} className="text-amber-600 fill-amber-600" />
+                    <span>Reward Coins</span>
+                  </div>
+                  <div className="text-base font-black text-amber-900 font-mono">
+                    🪙 {emailForm.coinsAwarded || emailModalBill.rewardCoinsAwarded || 500} Coins
+                  </div>
                 </div>
               </div>
 
