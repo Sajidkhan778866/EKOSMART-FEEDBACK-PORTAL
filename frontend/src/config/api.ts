@@ -72,7 +72,7 @@ export const ADMIN_PORTAL_URL =
   window.location.hostname &&
   window.location.hostname !== 'localhost' &&
   window.location.hostname !== '127.0.0.1'
-    ? `${window.location.protocol}//${window.location.hostname}:5001`
+    ? 'https://ekosmartadminportal.vercel.app'
     : 'http://localhost:5001');
 
 export const EMPLOYEE_PORTAL_URL =
@@ -81,7 +81,7 @@ export const EMPLOYEE_PORTAL_URL =
   window.location.hostname &&
   window.location.hostname !== 'localhost' &&
   window.location.hostname !== '127.0.0.1'
-    ? `${window.location.protocol}//${window.location.hostname}:5002`
+    ? 'https://ekosmartemployeeportal.vercel.app'
     : 'http://localhost:5002');
 
 /**

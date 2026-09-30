@@ -53,7 +53,14 @@ import { contentApi, API_BASE_URL, resolveImageUrl } from '../api/client';
 
 
 
-const FRONTEND_URL = import.meta.env.VITE_FRONTEND_URL || 'http://localhost:5003';
+const FRONTEND_URL =
+  import.meta.env.VITE_FRONTEND_URL ||
+  (typeof window !== 'undefined' &&
+  window.location.hostname &&
+  window.location.hostname !== 'localhost' &&
+  window.location.hostname !== '127.0.0.1'
+    ? 'https://ekosmartcustomersite.vercel.app'
+    : 'http://localhost:5003');
 
 interface IServiceCard {
   id: string;
