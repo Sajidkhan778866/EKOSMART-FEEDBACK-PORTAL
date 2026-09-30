@@ -34,6 +34,7 @@ export interface IBillTemplate extends Document {
   salaryConfig?: any;
   warrantyConfig?: any;
   totalsConfig?: any;
+  softBillEmailConfig?: any;
   footer?: any;
   theme?: any;
   createdAt: Date;
@@ -89,6 +90,7 @@ const billTemplateSchema = new Schema(
     salaryConfig: { type: Schema.Types.Mixed },
     warrantyConfig: { type: Schema.Types.Mixed },
     totalsConfig: { type: Schema.Types.Mixed },
+    softBillEmailConfig: { type: Schema.Types.Mixed },
     footer: { type: Schema.Types.Mixed },
     theme: { type: Schema.Types.Mixed },
   },

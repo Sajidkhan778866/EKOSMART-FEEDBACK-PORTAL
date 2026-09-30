@@ -48,6 +48,9 @@ export interface IBill extends Document {
   rewardCoinsAwarded: number;
   referralCodeUsed?: string;
   referralCoinsAwarded?: number;
+  softCopyEmailed?: boolean;
+  softCopyEmailedAt?: Date;
+  softCopyRecipient?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -114,6 +117,9 @@ const billSchema = new Schema(
     rewardCoinsAwarded: { type: Number, default: 0 },
     referralCodeUsed: { type: String, default: '' },
     referralCoinsAwarded: { type: Number, default: 0 },
+    softCopyEmailed: { type: Boolean, default: false },
+    softCopyEmailedAt: { type: Date },
+    softCopyRecipient: { type: String, default: '' },
   },
   { timestamps: true }
 );

@@ -204,6 +204,7 @@ export const billingApi = {
   getAll: (params?: any) => apiClient.get('/billing', { params }),
   getById: (id: string) => apiClient.get(`/billing/${id}`),
   create: (data: any) => apiClient.post('/billing', data),
+  sendEmail: (id: string, data?: any) => apiClient.post(`/billing/${id}/email`, data),
   export: (params?: any) => apiClient.get('/billing/export/csv', { params, responseType: 'blob' }),
 };
 

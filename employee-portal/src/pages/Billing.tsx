@@ -16,6 +16,8 @@ import {
   Download,
   Coins,
   Gift,
+  Mail,
+  Send,
 } from 'lucide-react';
 import { billingApi, stockApi, billTemplateApi } from '../api/client';
 import ScannerModal from '../components/ScannerModal';
@@ -59,6 +61,9 @@ export interface IBill {
   rewardCoinsAwarded?: number;
   referralCodeUsed?: string;
   referralCoinsAwarded?: number;
+  softCopyEmailed?: boolean;
+  softCopyEmailedAt?: string;
+  softCopyRecipient?: string;
   notes?: string;
   createdAt: string;
 }
@@ -83,6 +88,16 @@ const Billing = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [selectedBill, setSelectedBill] = useState<IBill | null>(null);
+
+  // Email Soft Copy Modal State
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailModalBill, setEmailModalBill] = useState<IBill | null>(null);
+  const [emailForm, setEmailForm] = useState({
+    recipientEmail: '',
+    customSubject: '',
+    customMatter: '',
+  });
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   // New Invoice Form
   const [customerForm, setCustomerForm] = useState({
@@ -349,6 +364,44 @@ const Billing = () => {
     setShowInvoiceModal(true);
   };
 
+  const openEmailModal = (bill: IBill) => {
+    setEmailModalBill(bill);
+    const defaultSubject = (activeTemplate?.softBillEmailConfig?.emailSubject || 'Official EKOSMART GST Tax Invoice & Soft Copy - {{invoiceNumber}}')
+      .replace('{{invoiceNumber}}', bill.invoiceNumber);
+    const defaultMatter = activeTemplate?.softBillEmailConfig?.emailMatter ||
+      `Dear {{customerName}},\n\nThank you for choosing EKOSMART Clean Energy & Green Mobility. Please find attached below your official Soft Copy GST Tax Invoice, Warranty Certificate registration, and exclusive Customer Referral Code.\n\nYour Unique Referral Code is: {{referralCode}}\nShare this code with your friends and family so they receive +500 Welcome Coins, and you earn +100 Referral Coins on their qualifying purchase!`;
+
+    setEmailForm({
+      recipientEmail: bill.customerEmail || '',
+      customSubject: defaultSubject,
+      customMatter: defaultMatter,
+    });
+    setShowEmailModal(true);
+  };
+
+  const handleSendEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!emailModalBill) return;
+    if (!emailForm.recipientEmail || !emailForm.recipientEmail.includes('@')) {
+      showAlert('error', 'Please enter a valid recipient email address.');
+      return;
+    }
+
+    try {
+      setSendingEmail(true);
+      const res = await billingApi.sendEmail(emailModalBill._id, emailForm);
+      if (res.data?.success) {
+        showAlert('success', `Soft copy invoice and referral code emailed successfully to ${emailForm.recipientEmail}`);
+        setShowEmailModal(false);
+        fetchBills();
+      }
+    } catch (err: any) {
+      showAlert('error', err.response?.data?.message || 'Failed to send soft copy email');
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
@@ -446,9 +499,9 @@ const Billing = () => {
                   <th className="p-4">Items / Pack #</th>
                   <th className="p-4">Grand Total</th>
                   <th className="p-4">Payment</th>
-                  <th className="p-4">Wallet & Referral Coins</th>
+                  <th className="p-4">Referral & Soft Copy</th>
                   <th className="p-4">Warranty</th>
-                  <th className="p-4 text-right">View</th>
+                  <th className="p-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -494,16 +547,29 @@ const Billing = () => {
                     </td>
                     <td className="p-4">
                       <div className="flex flex-col gap-1">
-                        <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-900 border border-amber-200 px-2.5 py-1 rounded-xl text-xs font-black shadow-xs w-fit">
-                          <Coins size={13} className="text-amber-600" />
-                          <span>+{bill.rewardCoinsAwarded || (bill.purchaseRewardAwarded ? 500 : 500)} Coins</span>
-                        </span>
-                        {bill.referralCodeUsed && (
-                          <span className="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-lg text-[10px] font-bold font-mono w-fit">
-                            <Gift size={11} className="text-indigo-500" />
+                        {bill.referralCodeUsed ? (
+                          <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-lg text-[10px] font-bold font-mono w-fit">
+                            <Gift size={11} className="text-emerald-600" />
                             <span>Ref: {bill.referralCodeUsed}</span>
-                            {bill.referralCoinsAwarded ? <span className="text-indigo-900 font-semibold">(+{bill.referralCoinsAwarded})</span> : null}
                           </span>
+                        ) : (
+                          <span className="text-slate-400 text-[10px] font-medium">Direct Sale</span>
+                        )}
+
+                        {bill.softCopyEmailed ? (
+                          <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-lg text-[10px] font-semibold w-fit">
+                            <Mail size={10} className="text-blue-600" />
+                            <span>Soft Copy Emailed</span>
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => openEmailModal(bill)}
+                            className="inline-flex items-center gap-1 bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-0.5 rounded-lg text-[10px] font-semibold w-fit cursor-pointer transition"
+                          >
+                            <Mail size={10} className="text-slate-500" />
+                            <span>Email Soft Bill</span>
+                          </button>
                         )}
                       </div>
                     </td>
@@ -518,13 +584,22 @@ const Billing = () => {
                       )}
                     </td>
                     <td className="p-4 text-right">
-                      <button
-                        onClick={() => viewInvoice(bill)}
-                        title="View / Print Tax Invoice"
-                        className="p-1.5 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition cursor-pointer"
-                      >
-                        <Eye size={16} />
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => openEmailModal(bill)}
+                          title="Email Soft Copy Invoice & Referral"
+                          className="p-1.5 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition cursor-pointer"
+                        >
+                          <Mail size={16} />
+                        </button>
+                        <button
+                          onClick={() => viewInvoice(bill)}
+                          title="View / Print Tax Invoice"
+                          className="p-1.5 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition cursor-pointer"
+                        >
+                          <Eye size={16} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -972,6 +1047,94 @@ const Billing = () => {
                   'Thank you for choosing EKOSMART Clean Energy & Green Mobility!'}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* EMAIL SOFT COPY & REFERRAL CODE MODAL */}
+      {showEmailModal && emailModalBill && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-slate-100 my-8">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-2 text-slate-800 font-black text-base">
+                <Mail size={20} className="text-emerald-600" />
+                <span>Email Soft Copy Invoice & Referral Code</span>
+              </div>
+              <button
+                onClick={() => setShowEmailModal(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSendEmail} className="py-4 space-y-4 text-xs">
+              <div className="bg-emerald-50/60 p-3.5 rounded-2xl border border-emerald-100 flex items-center justify-between">
+                <div>
+                  <div className="text-[10px] font-bold text-emerald-800 uppercase">Selected Invoice</div>
+                  <div className="text-sm font-black text-emerald-950 font-mono">{emailModalBill.invoiceNumber}</div>
+                  <div className="text-[11px] text-emerald-700">{emailModalBill.customerName} ({emailModalBill.customerMobile})</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-[10px] font-bold text-emerald-800 uppercase">Amount</div>
+                  <div className="text-base font-black text-emerald-900 font-mono">₹{emailModalBill.grandTotal.toLocaleString('en-IN')}</div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Customer Email Address *</label>
+                <input
+                  type="email"
+                  required
+                  value={emailForm.recipientEmail}
+                  onChange={(e) => setEmailForm({ ...emailForm, recipientEmail: e.target.value })}
+                  placeholder="e.g. customer@example.com"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none font-semibold text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Email Subject Line</label>
+                <input
+                  type="text"
+                  required
+                  value={emailForm.customSubject}
+                  onChange={(e) => setEmailForm({ ...emailForm, customSubject: e.target.value })}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Custom Message / Matter (Soft-Coded)</label>
+                <textarea
+                  rows={5}
+                  value={emailForm.customMatter}
+                  onChange={(e) => setEmailForm({ ...emailForm, customMatter: e.target.value })}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none text-xs leading-relaxed"
+                />
+                <span className="text-[10px] text-slate-400 mt-0.5 block">
+                  Tokens like <code className="text-emerald-700">{"{{customerName}}"}</code> and <code className="text-emerald-700">{"{{referralCode}}"}</code> will be auto-replaced before dispatch.
+                </span>
+              </div>
+
+              <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowEmailModal(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={sendingEmail}
+                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-md disabled:opacity-50"
+                >
+                  <Send size={14} />
+                  <span>{sendingEmail ? 'Dispatching Soft Bill...' : 'Send Soft Copy Email'}</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

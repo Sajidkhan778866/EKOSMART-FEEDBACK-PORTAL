@@ -18,6 +18,9 @@ import {
   Sparkles,
   Briefcase,
   FileSpreadsheet,
+  Mail,
+  Gift,
+  Coins,
 } from 'lucide-react';
 import { billTemplateApi } from '../api/client';
 
@@ -29,6 +32,19 @@ export interface IBillTemplate {
   templateType?: 'Showroom' | 'Plant' | 'Rental' | 'Warranty' | 'Salary' | 'Custom';
   isActive: boolean;
   isDefault?: boolean;
+  softBillEmailConfig?: {
+    enabled?: boolean;
+    autoEmailCustomer?: boolean;
+    emailSubject?: string;
+    emailHeading?: string;
+    emailMatter?: string;
+    referralBoxTitle?: string;
+    referralBoxMessage?: string;
+    footerHelplineText?: string;
+    showReferralCode?: boolean;
+    showCoinsSummary?: boolean;
+    showWarrantyBadge?: boolean;
+  };
   companyProfile: {
     businessName: string;
     tagline?: string;
@@ -269,6 +285,19 @@ export const DEFAULT_TEMPLATES: IBillTemplate[] = [
       showWatermark: true,
       watermarkText: 'ORIGINAL TAX INVOICE',
       borderStyle: 'rounded',
+    },
+    softBillEmailConfig: {
+      enabled: true,
+      autoEmailCustomer: true,
+      emailSubject: 'Official EKOSMART GST Tax Invoice & Soft Copy - {{invoiceNumber}}',
+      emailHeading: 'Showroom Retail Soft Copy Tax Invoice',
+      emailMatter: 'Dear {{customerName}},\n\nThank you for choosing EKOSMART Clean Energy & Green Mobility. Please find your official GST Tax Invoice, Warranty Certificate registration, and exclusive Customer Referral Code details attached below.\n\nYour Unique Referral Code is: {{referralCode}}\nShare this code with your friends and family so they receive +500 Welcome Coins, and you receive +100 Referral Coins on their qualifying purchase!',
+      referralBoxTitle: 'Ekosmart Referral & Rewards Program',
+      referralBoxMessage: 'Give ₹500, Get ₹100. Share your referral code {{referralCode}} with friends & earn unlimited store credit!',
+      footerHelplineText: 'For billing assistance or warranty queries, contact Kota Helpline: +91 8949049003 | support@ekosmartdrive.in',
+      showReferralCode: true,
+      showCoinsSummary: true,
+      showWarrantyBadge: true,
     },
   },
   {
@@ -521,6 +550,20 @@ export const normalizeTemplate = (tpl?: any): IBillTemplate => {
     borderStyle: (tpl.theme?.borderStyle as 'rounded' | 'sharp' | 'minimal') || 'rounded',
   };
 
+  const softBillEmailConfig = {
+    enabled: tpl.softBillEmailConfig?.enabled !== undefined ? Boolean(tpl.softBillEmailConfig.enabled) : true,
+    autoEmailCustomer: tpl.softBillEmailConfig?.autoEmailCustomer !== undefined ? Boolean(tpl.softBillEmailConfig.autoEmailCustomer) : true,
+    emailSubject: tpl.softBillEmailConfig?.emailSubject || 'Official EKOSMART GST Tax Invoice & Soft Copy - {{invoiceNumber}}',
+    emailHeading: tpl.softBillEmailConfig?.emailHeading || 'Showroom Retail Soft Copy Tax Invoice',
+    emailMatter: tpl.softBillEmailConfig?.emailMatter || 'Dear {{customerName}},\n\nThank you for choosing EKOSMART Clean Energy & Green Mobility. Please find your official GST Tax Invoice, Warranty Certificate registration, and exclusive Customer Referral Code details attached below.\n\nYour Unique Referral Code is: {{referralCode}}\nShare this code with your friends and family so they receive +500 Welcome Coins, and you receive +100 Referral Coins on their qualifying purchase!',
+    referralBoxTitle: tpl.softBillEmailConfig?.referralBoxTitle || 'Ekosmart Referral & Rewards Program',
+    referralBoxMessage: tpl.softBillEmailConfig?.referralBoxMessage || 'Give ₹500, Get ₹100. Share your referral code {{referralCode}} with friends & earn unlimited store credit!',
+    footerHelplineText: tpl.softBillEmailConfig?.footerHelplineText || 'For billing assistance or warranty queries, contact Kota Helpline: +91 8949049003 | support@ekosmartdrive.in',
+    showReferralCode: tpl.softBillEmailConfig?.showReferralCode !== undefined ? Boolean(tpl.softBillEmailConfig.showReferralCode) : true,
+    showCoinsSummary: tpl.softBillEmailConfig?.showCoinsSummary !== undefined ? Boolean(tpl.softBillEmailConfig.showCoinsSummary) : true,
+    showWarrantyBadge: tpl.softBillEmailConfig?.showWarrantyBadge !== undefined ? Boolean(tpl.softBillEmailConfig.showWarrantyBadge) : true,
+  };
+
   return {
     _id: tpl._id,
     name: tpl.name || tpl.templateName || (isSalary ? 'Employee Official Salary Slip' : 'Showroom Tax Invoice'),
@@ -529,6 +572,7 @@ export const normalizeTemplate = (tpl?: any): IBillTemplate => {
     templateType,
     isActive: Boolean(tpl.isActive),
     isDefault: Boolean(tpl.isDefault),
+    softBillEmailConfig,
     companyProfile,
     header,
     customerFields,
@@ -578,9 +622,10 @@ export const BillTemplateDesigner: React.FC<BillTemplateDesignerProps> = ({
     }
     return normalizeTemplate(DEFAULT_TEMPLATES[0]);
   });
-  const [activeTab, setActiveTab] = useState<'company' | 'customer' | 'columns' | 'salary' | 'totals' | 'footer' | 'theme'>(
+  const [activeTab, setActiveTab] = useState<'company' | 'customer' | 'columns' | 'salary' | 'totals' | 'footer' | 'theme' | 'email'>(
     restrictType === 'Salary' || initialType === 'Salary' ? 'salary' : 'company'
   );
+  const [previewMode, setPreviewMode] = useState<'invoice' | 'softEmail'>('invoice');
   const [saving, setSaving] = useState(false);
   const [alertMsg, setAlertMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -1028,6 +1073,18 @@ export const BillTemplateDesigner: React.FC<BillTemplateDesignerProps> = ({
               <ShieldCheck size={14} />
               <span>Terms & Bank</span>
             </button>
+            {!isSalaryTemplate && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('email')}
+                className={`flex-1 py-2 px-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                  activeTab === 'email' ? 'bg-white text-emerald-800 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Mail size={14} />
+                <span>Email & Matter</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setActiveTab('theme')}
@@ -1655,6 +1712,189 @@ export const BillTemplateDesigner: React.FC<BillTemplateDesignerProps> = ({
               </div>
             </div>
           )}
+
+          {/* TAB 7: Soft Bill Email Template & Matter Configuration */}
+          {activeTab === 'email' && !isSalaryTemplate && (
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4 text-xs">
+              <div className="flex justify-between items-center">
+                <h3 className="font-black text-sm text-slate-800 flex items-center gap-2">
+                  <Mail size={16} className="text-emerald-600" />
+                  <span>Soft Copy Tax Invoice Email Template & Matter</span>
+                </h3>
+                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-bold text-[10px] rounded-full">
+                  Soft-Coded
+                </span>
+              </div>
+
+              {/* Auto Email Toggle */}
+              <div className="p-3.5 bg-emerald-50/60 rounded-xl border border-emerald-200 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="autoEmailToggle"
+                    checked={currentTemplate.softBillEmailConfig?.autoEmailCustomer !== false}
+                    onChange={(e) =>
+                      setCurrentTemplate({
+                        ...currentTemplate,
+                        softBillEmailConfig: {
+                          ...currentTemplate.softBillEmailConfig,
+                          autoEmailCustomer: e.target.checked,
+                        },
+                      })
+                    }
+                    className="rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                  />
+                  <label htmlFor="autoEmailToggle" className="cursor-pointer">
+                    <div className="font-bold text-emerald-950">Auto-Email Customer on Billing</div>
+                    <div className="text-[11px] text-emerald-700">
+                      When an invoice is generated with a valid customer email, dispatch soft bill & referral code automatically.
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Subject Line */}
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Email Subject Line</label>
+                <input
+                  type="text"
+                  value={currentTemplate.softBillEmailConfig?.emailSubject || ''}
+                  onChange={(e) =>
+                    setCurrentTemplate({
+                      ...currentTemplate,
+                      softBillEmailConfig: {
+                        ...currentTemplate.softBillEmailConfig,
+                        emailSubject: e.target.value,
+                      },
+                    })
+                  }
+                  placeholder="Official EKOSMART GST Tax Invoice & Soft Copy - {{invoiceNumber}}"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
+                />
+                <span className="text-[10px] text-slate-400 mt-1 block">
+                  Placeholder tag: <code className="text-emerald-700 bg-emerald-50 px-1 py-0.5 rounded font-mono">{"{{invoiceNumber}}"}</code>
+                </span>
+              </div>
+
+              {/* Email Heading */}
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Invoice Header Title in Email</label>
+                <input
+                  type="text"
+                  value={currentTemplate.softBillEmailConfig?.emailHeading || ''}
+                  onChange={(e) =>
+                    setCurrentTemplate({
+                      ...currentTemplate,
+                      softBillEmailConfig: {
+                        ...currentTemplate.softBillEmailConfig,
+                        emailHeading: e.target.value,
+                      },
+                    })
+                  }
+                  placeholder="Showroom Retail Soft Copy Tax Invoice"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
+                />
+              </div>
+
+              {/* Custom Matter / Message Body */}
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="block text-slate-700 font-bold">Customer Greeting & Soft Bill Matter</label>
+                  <span className="text-[10px] text-slate-400">Personalized Message</span>
+                </div>
+                <textarea
+                  rows={6}
+                  value={currentTemplate.softBillEmailConfig?.emailMatter || ''}
+                  onChange={(e) =>
+                    setCurrentTemplate({
+                      ...currentTemplate,
+                      softBillEmailConfig: {
+                        ...currentTemplate.softBillEmailConfig,
+                        emailMatter: e.target.value,
+                      },
+                    })
+                  }
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl leading-relaxed text-xs"
+                />
+                <div className="mt-1.5 p-2.5 bg-slate-100 rounded-xl border border-slate-200 text-[11px] text-slate-600">
+                  <span className="font-bold text-slate-800 block mb-1">Available Placeholder Tokens:</span>
+                  <div className="flex flex-wrap gap-1.5 font-mono text-[10px]">
+                    <span className="px-1.5 py-0.5 bg-white border border-slate-300 rounded text-emerald-800">{"{{customerName}}"}</span>
+                    <span className="px-1.5 py-0.5 bg-white border border-slate-300 rounded text-emerald-800">{"{{invoiceNumber}}"}</span>
+                    <span className="px-1.5 py-0.5 bg-white border border-slate-300 rounded text-emerald-800">{"{{referralCode}}"}</span>
+                    <span className="px-1.5 py-0.5 bg-white border border-slate-300 rounded text-emerald-800">{"{{grandTotal}}"}</span>
+                    <span className="px-1.5 py-0.5 bg-white border border-slate-300 rounded text-emerald-800">{"{{showroom}}"}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Referral Promotion Card Matter */}
+              <div className="p-3.5 bg-amber-50/60 rounded-xl border border-amber-200 space-y-2">
+                <div className="flex items-center gap-1.5 font-bold text-amber-900">
+                  <Gift size={14} className="text-amber-600" />
+                  <span>Referral Code Banner in Soft Bill</span>
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Referral Box Title</label>
+                  <input
+                    type="text"
+                    value={currentTemplate.softBillEmailConfig?.referralBoxTitle || ''}
+                    onChange={(e) =>
+                      setCurrentTemplate({
+                        ...currentTemplate,
+                        softBillEmailConfig: {
+                          ...currentTemplate.softBillEmailConfig,
+                          referralBoxTitle: e.target.value,
+                        },
+                      })
+                    }
+                    placeholder="Ekosmart Referral & Rewards Program"
+                    className="w-full p-2 bg-white border border-amber-300 rounded-xl text-xs font-semibold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Referral Promotion Matter</label>
+                  <input
+                    type="text"
+                    value={currentTemplate.softBillEmailConfig?.referralBoxMessage || ''}
+                    onChange={(e) =>
+                      setCurrentTemplate({
+                        ...currentTemplate,
+                        softBillEmailConfig: {
+                          ...currentTemplate.softBillEmailConfig,
+                          referralBoxMessage: e.target.value,
+                        },
+                      })
+                    }
+                    placeholder="Give ₹500, Get ₹100. Share your referral code {{referralCode}} with friends & earn unlimited store credit!"
+                    className="w-full p-2 bg-white border border-amber-300 rounded-xl text-xs"
+                  />
+                </div>
+              </div>
+
+              {/* Footer Helpline */}
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Support & Helpline Text</label>
+                <input
+                  type="text"
+                  value={currentTemplate.softBillEmailConfig?.footerHelplineText || ''}
+                  onChange={(e) =>
+                    setCurrentTemplate({
+                      ...currentTemplate,
+                      softBillEmailConfig: {
+                        ...currentTemplate.softBillEmailConfig,
+                        footerHelplineText: e.target.value,
+                      },
+                    })
+                  }
+                  placeholder="Helpline: +91 8949049003 | support@ekosmartdrive.in"
+                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right Side: LIVE REAL-TIME BILL OR SALARY SLIP PREVIEW */}
@@ -1663,10 +1903,37 @@ export const BillTemplateDesigner: React.FC<BillTemplateDesignerProps> = ({
             <div className="flex items-center gap-2 text-xs font-bold">
               <Eye size={16} className="text-emerald-400" />
               <span>
-                {isSalaryTemplate ? 'Real-Time Employee Salary Slip Preview' : 'Real-Time Live Invoice Preview'}
+                {isSalaryTemplate
+                  ? 'Real-Time Employee Salary Slip Preview'
+                  : previewMode === 'softEmail'
+                  ? 'Soft Copy Email HTML Live Preview'
+                  : 'Real-Time Live Invoice Slip Preview'}
               </span>
             </div>
             <div className="flex items-center gap-2">
+              {!isSalaryTemplate && (
+                <div className="flex items-center bg-white/10 p-0.5 rounded-lg text-[11px] font-bold">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewMode('invoice')}
+                    className={`px-2 py-1 rounded-md transition cursor-pointer ${
+                      previewMode === 'invoice' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    Slip
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewMode('softEmail')}
+                    className={`px-2 py-1 rounded-md transition cursor-pointer flex items-center gap-1 ${
+                      previewMode === 'softEmail' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    <Mail size={11} />
+                    <span>Soft Bill</span>
+                  </button>
+                </div>
+              )}
               <button
                 type="button"
                 onClick={() => window.print()}
@@ -1869,6 +2136,176 @@ export const BillTemplateDesigner: React.FC<BillTemplateDesignerProps> = ({
                   <div className="pt-6">
                     <div className="border-t border-slate-300 w-36 text-center text-[10px] font-bold text-slate-700">
                       {currentTemplate.footer?.signatoryName || 'Authorized Signatory'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : previewMode === 'softEmail' ? (
+            /* SOFT COPY EMAIL TEMPLATE LIVE PREVIEW */
+            <div className="bg-white rounded-2xl border-2 border-emerald-600 shadow-xl overflow-hidden font-sans text-xs">
+              {/* Fake Email Client Chrome Header */}
+              <div className="bg-slate-100 p-3 border-b border-slate-200 text-[11px] space-y-1 text-slate-600">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <span className="font-bold text-slate-700">From:</span> EKOSMART Billing Counter &lt;support@ekosmartdrive.in&gt;
+                  </div>
+                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-bold rounded-md text-[10px]">
+                    Live Email Mockup
+                  </span>
+                </div>
+                <div>
+                  <span className="font-bold text-slate-700">To:</span> {sampleBill.customerName} &lt;{sampleBill.customerEmail}&gt;
+                </div>
+                <div>
+                  <span className="font-bold text-slate-700">Subject:</span>{' '}
+                  <span className="font-semibold text-slate-900">
+                    {(currentTemplate.softBillEmailConfig?.emailSubject || 'Official EKOSMART GST Tax Invoice & Soft Copy - {{invoiceNumber}}').replace('{{invoiceNumber}}', sampleBill.invoiceNumber)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Email Content Body Preview */}
+              <div className="p-4 sm:p-6 bg-slate-50 space-y-4">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                  {/* Email Banner */}
+                  <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-5 text-white flex justify-between items-start">
+                    <div>
+                      <h2 className="text-base font-black text-emerald-400">
+                        {currentTemplate.companyProfile?.businessName || 'EKOSMART EV BATTERY SOLUTION'}
+                      </h2>
+                      <p className="text-[10px] text-slate-300">
+                        {currentTemplate.companyProfile?.tagline || 'Clean Energy & Smart Electric Mobility'}
+                      </p>
+                      <p className="text-[9px] text-slate-400 font-mono mt-0.5">
+                        GSTIN: {currentTemplate.companyProfile?.gstin || '08DTUPM4205B1Z0'}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className="inline-block bg-emerald-600 text-white font-mono font-bold text-[11px] px-2.5 py-1 rounded-lg">
+                        {sampleBill.invoiceNumber}
+                      </span>
+                      <p className="text-[10px] text-slate-400 mt-1">Date: {sampleBill.date}</p>
+                    </div>
+                  </div>
+
+                  {/* Soft Coded Matter Body */}
+                  <div className="p-5 space-y-4">
+                    <div className="bg-slate-50 border-l-4 border-emerald-600 p-4 rounded-r-xl text-slate-700 text-xs leading-relaxed whitespace-pre-line">
+                      {(currentTemplate.softBillEmailConfig?.emailMatter || 'Dear {{customerName}},\n\nThank you for choosing EKOSMART Clean Energy & Green Mobility. Please find attached below your official Soft Copy GST Tax Invoice, Warranty Certificate registration, and exclusive Customer Referral Code.')
+                        .replace(/\{\{customerName\}\}/g, sampleBill.customerName)
+                        .replace(/\{\{invoiceNumber\}\}/g, sampleBill.invoiceNumber)
+                        .replace(/\{\{referralCode\}\}/g, 'EKO89A4')
+                        .replace(/\{\{grandTotal\}\}/g, `₹${sampleBill.grandTotal.toLocaleString('en-IN')}`)
+                        .replace(/\{\{showroom\}\}/g, sampleBill.showroom)}
+                    </div>
+
+                    {/* Customer & Invoice Meta */}
+                    <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs">
+                      <div>
+                        <div className="text-[10px] font-bold text-slate-400 uppercase">Customer:</div>
+                        <div className="font-bold text-slate-900 text-sm">{sampleBill.customerName}</div>
+                        <div className="text-slate-600 font-mono text-[11px]">📱 {sampleBill.customerMobile}</div>
+                        <div className="text-slate-500 text-[10px]">{sampleBill.customerAddress}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[10px] font-bold text-slate-400 uppercase">Payment Details:</div>
+                        <span className="inline-block bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded text-[11px] mt-1">
+                          {sampleBill.paymentMode} • {sampleBill.paymentStatus}
+                        </span>
+                        <div className="text-slate-500 text-[10px] mt-1">Counter: {sampleBill.showroom}</div>
+                      </div>
+                    </div>
+
+                    {/* Line Items Table */}
+                    <div className="border border-slate-200 rounded-xl overflow-hidden">
+                      <table className="w-full text-xs text-left">
+                        <thead className="bg-slate-100 text-slate-600 font-bold border-b border-slate-200 text-[11px]">
+                          <tr>
+                            <th className="p-2.5">Product Description</th>
+                            <th className="p-2.5">Battery / Serial #</th>
+                            <th className="p-2.5 text-center">Qty</th>
+                            <th className="p-2.5 text-right">Rate</th>
+                            <th className="p-2.5 text-right">Total</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {sampleBill.items.map((it, idx) => (
+                            <tr key={idx}>
+                              <td className="p-2.5 font-bold text-slate-800">{it.productName}</td>
+                              <td className="p-2.5 font-mono text-emerald-700 font-semibold">{it.batterySerial}</td>
+                              <td className="p-2.5 text-center">{it.quantity}</td>
+                              <td className="p-2.5 text-right">₹{it.unitPrice.toLocaleString('en-IN')}</td>
+                              <td className="p-2.5 text-right font-bold text-slate-900">₹{it.totalAmount.toLocaleString('en-IN')}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Totals and Warranty Badge */}
+                    <div className="flex justify-between items-start pt-2">
+                      <div className="space-y-2">
+                        {currentTemplate.softBillEmailConfig?.showWarrantyBadge !== false && (
+                          <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-900 flex items-center gap-2 max-w-xs">
+                            <ShieldCheck size={20} className="text-emerald-600 shrink-0" />
+                            <div>
+                              <div className="font-bold text-[11px]">Official EBS Warranty Included</div>
+                              <div className="text-[10px] text-emerald-700">
+                                Warranty serials linked directly with technical service depots.
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="w-48 text-right space-y-1 text-xs">
+                        <div className="flex justify-between text-slate-500">
+                          <span>Subtotal:</span>
+                          <span className="font-mono">₹{sampleBill.subtotal.toLocaleString('en-IN')}</span>
+                        </div>
+                        <div className="flex justify-between text-slate-500">
+                          <span>Discount:</span>
+                          <span className="font-mono text-emerald-600">-₹{sampleBill.discountTotal.toLocaleString('en-IN')}</span>
+                        </div>
+                        <div className="flex justify-between text-slate-500">
+                          <span>GST Tax (18%):</span>
+                          <span className="font-mono">₹{(sampleBill.cgst + sampleBill.sgst).toLocaleString('en-IN')}</span>
+                        </div>
+                        <div className="flex justify-between font-black text-sm text-slate-900 pt-1.5 border-t border-slate-200">
+                          <span>Grand Total:</span>
+                          <span className="text-emerald-700 font-mono">₹{sampleBill.grandTotal.toLocaleString('en-IN')}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Referral & Wallet Promo Box */}
+                    {currentTemplate.softBillEmailConfig?.showReferralCode !== false && (
+                      <div className="p-4 bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl border-2 border-dashed border-amber-300 text-center space-y-2">
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-amber-900 flex items-center justify-center gap-1.5">
+                          <Gift size={15} className="text-amber-600" />
+                          <span>{currentTemplate.softBillEmailConfig?.referralBoxTitle || 'Ekosmart Referral & Rewards Program'}</span>
+                        </div>
+                        <div className="inline-block px-4 py-1.5 bg-white border border-amber-300 rounded-xl shadow-xs font-mono font-black text-xl text-amber-950 tracking-widest">
+                          EKO89A4
+                        </div>
+                        <p className="text-xs text-amber-900 max-w-md mx-auto">
+                          {(currentTemplate.softBillEmailConfig?.referralBoxMessage || 'Give ₹500, Get ₹100. Share your referral code {{referralCode}} with friends & earn unlimited store credit!').replace('{{referralCode}}', 'EKO89A4')}
+                        </p>
+                        {currentTemplate.softBillEmailConfig?.showCoinsSummary !== false && (
+                          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100/80 text-amber-900 font-bold rounded-lg text-[11px]">
+                            <Coins size={14} className="text-amber-700" />
+                            <span>+500 Purchase Coins Credited to Customer Digital Wallet</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Footer Contact */}
+                    <div className="bg-slate-900 text-slate-400 p-4 rounded-xl text-center text-[10px] space-y-1">
+                      <p className="text-white font-bold">{currentTemplate.companyProfile?.businessName}</p>
+                      <p>{currentTemplate.companyProfile?.address}</p>
+                      <p className="text-emerald-400 font-semibold">{currentTemplate.softBillEmailConfig?.footerHelplineText}</p>
                     </div>
                   </div>
                 </div>

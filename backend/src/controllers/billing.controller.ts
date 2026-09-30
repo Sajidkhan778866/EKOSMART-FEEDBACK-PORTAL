@@ -12,6 +12,7 @@ import { ReferralSettings } from '../models/ReferralSettings';
 import { Referral } from '../models/Referral';
 import { generateUniqueReferralCode } from './customer.controller';
 import { applyDateFilterToQuery } from '../utils/dateRange';
+import { sendInvoiceSoftCopyEmail } from '../services/email.service';
 
 // Default Showroom Bill Template
 export const defaultBillTemplate = {
@@ -132,6 +133,19 @@ export const defaultBillTemplate = {
     showBarcode: true,
     showQrCode: true,
     footerNote: 'Thank you for choosing EKOSMART Clean Energy & Green Mobility!',
+  },
+  softBillEmailConfig: {
+    enabled: true,
+    autoEmailCustomer: true,
+    emailSubject: 'Official EKOSMART GST Tax Invoice & Soft Copy - {{invoiceNumber}}',
+    emailHeading: 'Showroom Retail Soft Copy Tax Invoice',
+    emailMatter: 'Dear {{customerName}},\n\nThank you for choosing EKOSMART Clean Energy & Green Mobility. Please find your official GST Tax Invoice, Warranty Certificate registration, and exclusive Customer Referral Code details attached below.\n\nYour Unique Referral Code is: {{referralCode}}\nShare this code with your friends and family so they receive +500 Welcome Coins, and you receive +100 Referral Coins on their qualifying purchase!',
+    referralBoxTitle: 'Ekosmart Referral & Rewards Program',
+    referralBoxMessage: 'Give ₹500, Get ₹100. Share your referral code {{referralCode}} with friends & earn unlimited store credit!',
+    footerHelplineText: 'For billing assistance or warranty queries, contact Kota Helpline: +91 8949049003 | support@ekosmartdrive.in',
+    showReferralCode: true,
+    showCoinsSummary: true,
+    showWarrantyBadge: true,
   },
   theme: {
     primaryColor: '#059669',
@@ -1040,6 +1054,36 @@ export const createBill = async (req: Request, res: Response) => {
       referralCoinsAwarded,
     });
 
+    // 9. Automatically dispatch Soft Copy Tax Invoice & Referral Code via email
+    const targetEmail = (customerEmail || customer.email || '').trim();
+    if (targetEmail && targetEmail.includes('@')) {
+      try {
+        const activeTemplate = await BillTemplate.findOne({
+          $or: [{ templateType: 'Showroom' }, { type: 'Showroom' }],
+          isActive: true,
+        });
+
+        if (activeTemplate?.softBillEmailConfig?.enabled !== false && activeTemplate?.softBillEmailConfig?.autoEmailCustomer !== false) {
+          sendInvoiceSoftCopyEmail({
+            to: targetEmail,
+            bill: newBill,
+            customer,
+            referralCode: customer.referralCode || referralCodeUsed,
+            templateConfig: activeTemplate || defaultBillTemplate,
+          }).then(async (result) => {
+            if (result.success) {
+              newBill.softCopyEmailed = true;
+              newBill.softCopyEmailedAt = new Date();
+              newBill.softCopyRecipient = targetEmail;
+              await newBill.save().catch(() => {});
+            }
+          }).catch((err) => console.warn('Auto soft copy email dispatch notice:', err.message));
+        }
+      } catch (emErr: any) {
+        console.warn('Auto-email soft copy trigger notice:', emErr.message);
+      }
+    }
+
     res.status(201).json({
       success: true,
       message: `Showroom Bill and Invoices generated successfully.${rewardCoinsAwarded > 0 ? ` +${rewardCoinsAwarded} Purchase Coins credited to customer wallet.` : ''}${referralCoinsAwarded > 0 ? ` +${referralCoinsAwarded} Referral Coins awarded to referrer (${referralCodeUsed}).` : ''}`,
@@ -1052,6 +1096,67 @@ export const createBill = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('Failed to create bill:', error);
     res.status(500).json({ success: false, message: error.message || 'Failed to generate showroom bill' });
+  }
+};
+
+// POST /api/v1/billing/:id/email - Send or resend invoice soft copy via email
+export const sendBillEmail = async (req: Request, res: Response) => {
+  try {
+    const id = String(req.params.id || '');
+    const { recipientEmail, customMatter, customSubject } = req.body;
+
+    let bill = null;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      bill = await Bill.findById(id).populate('customer');
+    }
+    if (!bill) {
+      bill = await Bill.findOne({ invoiceNumber: id }).populate('customer');
+    }
+
+    if (!bill) {
+      return res.status(404).json({ success: false, message: 'Invoice not found' });
+    }
+
+    const emailTo = recipientEmail || bill.customerEmail || (bill.customer as any)?.email;
+    if (!emailTo || !emailTo.includes('@')) {
+      return res.status(400).json({ success: false, message: 'A valid recipient email address is required.' });
+    }
+
+    // Get active template config for matter/branding
+    const activeTemplate = await BillTemplate.findOne({
+      $or: [{ templateType: 'Showroom' }, { type: 'Showroom' }],
+      isActive: true,
+    });
+
+    const emailResult = await sendInvoiceSoftCopyEmail({
+      to: emailTo,
+      bill,
+      customer: bill.customer,
+      referralCode: (bill.customer as any)?.referralCode || bill.referralCodeUsed,
+      customMatter,
+      customSubject,
+      templateConfig: activeTemplate || defaultBillTemplate,
+    });
+
+    if (emailResult.success) {
+      bill.softCopyEmailed = true;
+      bill.softCopyEmailedAt = new Date();
+      bill.softCopyRecipient = emailTo;
+      await bill.save();
+    }
+
+    res.json({
+      success: emailResult.success,
+      message: emailResult.message,
+      data: {
+        softCopyEmailed: bill.softCopyEmailed,
+        softCopyEmailedAt: bill.softCopyEmailedAt,
+        softCopyRecipient: bill.softCopyRecipient,
+      },
+    });
+  } catch (error: any) {
+    console.error('Failed to send invoice email:', error);
+    res.status(500).json({ success: false, message: error.message || 'Failed to send invoice email' });
   }
 };
 
