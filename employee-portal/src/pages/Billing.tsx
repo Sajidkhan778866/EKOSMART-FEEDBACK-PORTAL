@@ -60,6 +60,7 @@ export interface IBill {
   warrantyIds?: string[];
   purchaseRewardAwarded?: boolean;
   rewardCoinsAwarded?: number;
+  customerReferralCode?: string;
   referralCodeUsed?: string;
   referralCoinsAwarded?: number;
   softCopyEmailed?: boolean;
@@ -371,7 +372,7 @@ const Billing = () => {
     const coins = bill.rewardCoinsAwarded || activeTemplate?.softBillEmailConfig?.rewardCoins || 500;
     const welcomeCoins = activeTemplate?.softBillEmailConfig?.welcomeCoins || 500;
     const referrerCoins = activeTemplate?.softBillEmailConfig?.referrerCoins || 100;
-    const refCode = bill.referralCodeUsed || (bill.customer as any)?.referralCode || 'EKO' + Math.random().toString(36).substring(2, 6).toUpperCase();
+    const refCode = (bill.customer as any)?.referralCode || bill.customerReferralCode || bill.referralCodeUsed || 'EKO' + Math.random().toString(36).substring(2, 6).toUpperCase();
 
     const defaultSubject = (activeTemplate?.softBillEmailConfig?.emailSubject || 'Official EKOSMART GST Tax Invoice & Soft Copy - {{invoiceNumber}}')
       .replace('{{invoiceNumber}}', bill.invoiceNumber);

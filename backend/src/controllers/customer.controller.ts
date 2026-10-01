@@ -116,7 +116,9 @@ export const sendRegisterOtp = async (req: Request, res: Response) => {
     let cleanReferral = '';
     if (referralCode && String(referralCode).trim()) {
       cleanReferral = String(referralCode).trim().toUpperCase();
-      const referrer = await Customer.findOne({ referralCode: cleanReferral });
+      const referrer = await Customer.findOne({
+        referralCode: { $regex: new RegExp(`^${cleanReferral}$`, 'i') },
+      });
       if (!referrer) {
         return res.status(400).json({
           success: false,
@@ -215,7 +217,9 @@ export const verifyRegisterOtp = async (req: Request, res: Response) => {
 
     // Check referral validity
     if (finalReferralCode && settings.enabled) {
-      referrerDoc = await Customer.findOne({ referralCode: finalReferralCode });
+      referrerDoc = await Customer.findOne({
+        referralCode: { $regex: new RegExp(`^${finalReferralCode}$`, 'i') },
+      });
       if (referrerDoc) {
         initialBalance = settings.newCustomerReward || 500;
         initialEarned = settings.newCustomerReward || 500;
@@ -589,6 +593,11 @@ export const getMyWallet = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'Customer not found.' });
     }
 
+    if (!customer.referralCode) {
+      customer.referralCode = await generateUniqueReferralCode();
+      await customer.save();
+    }
+
     const { limit, dateFilter, startDate, endDate } = req.query;
     const query: any = {
       $or: [{ customer: customer._id }, { customerId: customer.customerId }],
@@ -629,6 +638,11 @@ export const getMyReferrals = async (req: Request, res: Response) => {
 
     if (!customer) {
       return res.status(404).json({ success: false, message: 'Customer not found.' });
+    }
+
+    if (!customer.referralCode) {
+      customer.referralCode = await generateUniqueReferralCode();
+      await customer.save();
     }
 
     const referrals = await Referral.find({ referrer: customer._id }).sort({ createdAt: -1 });
@@ -953,7 +967,7 @@ export const getCustomerById = async (req: Request, res: Response) => {
 // POST /api/v1/customers - Admin: Add Customer
 export const createCustomer = async (req: Request, res: Response) => {
   try {
-    const { name, mobile, email, address, city, state, customerType, source, initialCoins } = req.body;
+    const { name, mobile, email, address, city, state, customerType, source, initialCoins, referralCodeUsed } = req.body;
     if (!name || !mobile) {
       return res.status(400).json({ success: false, message: 'Name and Mobile are required' });
     }
@@ -966,7 +980,22 @@ export const createCustomer = async (req: Request, res: Response) => {
     const customerCount = await Customer.countDocuments();
     const customerId = `CUST-${(customerCount + 1).toString().padStart(5, '0')}`;
     const referralCode = await generateUniqueReferralCode();
-    const coins = Number(initialCoins) || 0;
+    let coins = Number(initialCoins) || 0;
+
+    const settings = await getActiveReferralSettings();
+    let referrerDoc: any = null;
+    const cleanRef = (referralCodeUsed || '').toString().trim().toUpperCase();
+
+    if (cleanRef && settings.enabled) {
+      referrerDoc = await Customer.findOne({
+        referralCode: { $regex: new RegExp(`^${cleanRef}$`, 'i') },
+      });
+      if (referrerDoc) {
+        if (coins === 0) {
+          coins = settings.newCustomerReward || 500;
+        }
+      }
+    }
 
     const customer = await Customer.create({
       customerId,
@@ -979,6 +1008,8 @@ export const createCustomer = async (req: Request, res: Response) => {
       customerType: customerType || 'General',
       source: source || 'Admin Portal',
       referralCode,
+      referredBy: referrerDoc ? referrerDoc.referralCode : '',
+      referrerCustomerId: referrerDoc ? referrerDoc._id : undefined,
       walletBalance: coins,
       totalEarnedCoins: coins,
       isVerified: true,
@@ -994,15 +1025,65 @@ export const createCustomer = async (req: Request, res: Response) => {
         customerEmail: customer.email,
         customerMobile: customer.mobile,
         type: 'Credit',
-        category: 'Admin Adjustment',
+        category: referrerDoc ? 'Welcome Reward' : 'Admin Adjustment',
         amount: coins,
         balanceBefore: 0,
         balanceAfter: coins,
-        description: 'Initial coins credited by Admin',
-        reference: 'ADMIN_INIT',
-        referenceType: 'Admin',
+        description: referrerDoc
+          ? `Welcome reward via referral code ${referrerDoc.referralCode}`
+          : 'Initial coins credited by Admin',
+        reference: referrerDoc ? referrerDoc.referralCode : 'ADMIN_INIT',
+        referenceType: referrerDoc ? 'Referral' : 'Admin',
         status: 'Completed',
       });
+    }
+
+    // Award Referrer bonus if valid referrer
+    if (referrerDoc && settings.enabled) {
+      const referrerReward = settings.referrerReward || 100;
+      if (referrerReward > 0) {
+        const refBalBefore = referrerDoc.walletBalance || 0;
+        referrerDoc.walletBalance = refBalBefore + referrerReward;
+        referrerDoc.totalEarnedCoins = (referrerDoc.totalEarnedCoins || 0) + referrerReward;
+        await referrerDoc.save();
+
+        await WalletTransaction.create({
+          transactionId: `WTX-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
+          customer: referrerDoc._id,
+          customerId: referrerDoc.customerId,
+          customerName: referrerDoc.name,
+          customerEmail: referrerDoc.email,
+          customerMobile: referrerDoc.mobile,
+          type: 'Credit',
+          category: 'Referrer Reward',
+          amount: referrerReward,
+          balanceBefore: refBalBefore,
+          balanceAfter: referrerDoc.walletBalance,
+          description: `Referral reward for inviting friend ${customer.name} (${customer.customerId})`,
+          reference: customer.customerId,
+          referenceType: 'Referral',
+          status: 'Completed',
+        });
+
+        await Referral.create({
+          referralId: `REF-${Date.now().toString().slice(-6)}-${Math.random().toString(36).substring(2, 5).toUpperCase()}`,
+          referrer: referrerDoc._id,
+          referrerId: referrerDoc.customerId,
+          referrerName: referrerDoc.name,
+          referrerEmail: referrerDoc.email || '',
+          referrerMobile: referrerDoc.mobile || '',
+          referrerCode: referrerDoc.referralCode,
+          referredCustomer: customer._id,
+          referredCustomerId: customer.customerId,
+          referredCustomerName: customer.name,
+          referredCustomerEmail: customer.email || '',
+          referredCustomerMobile: customer.mobile || '',
+          referredCustomerCode: customer.referralCode,
+          rewardAmountReferrer: referrerReward,
+          rewardAmountReferred: coins,
+          status: 'Completed',
+        });
+      }
     }
 
     res.status(201).json({ success: true, message: 'Customer created successfully', data: customer });

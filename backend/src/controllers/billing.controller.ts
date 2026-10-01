@@ -903,11 +903,13 @@ export const createBill = async (req: Request, res: Response) => {
       const cleanRef = (referralCode || '').toString().trim().toUpperCase();
 
       if (cleanRef) {
-        const referrerCustomer = await Customer.findOne({ referralCode: cleanRef });
+        const referrerCustomer = await Customer.findOne({
+          referralCode: { $regex: new RegExp(`^${cleanRef}$`, 'i') },
+        });
         if (referrerCustomer && referrerCustomer._id.toString() !== customer._id.toString()) {
-          referralCodeUsed = cleanRef;
+          referralCodeUsed = referrerCustomer.referralCode || cleanRef;
           if (!customer.referredBy) {
-            customer.referredBy = cleanRef;
+            customer.referredBy = referrerCustomer.referralCode || cleanRef;
             customer.referrerCustomerId = referrerCustomer._id;
             await customer.save();
           }
@@ -1053,6 +1055,7 @@ export const createBill = async (req: Request, res: Response) => {
       warrantyIds,
       purchaseRewardAwarded,
       rewardCoinsAwarded: rewardCoinsAwarded || (purchaseRewardAwarded ? 500 : 0),
+      customerReferralCode: customer.referralCode || '',
       referralCodeUsed,
       referralCoinsAwarded,
     });
@@ -1071,7 +1074,7 @@ export const createBill = async (req: Request, res: Response) => {
             to: targetEmail,
             bill: newBill,
             customer,
-            referralCode: customer.referralCode || referralCodeUsed,
+            referralCode: customer.referralCode || newBill.customerReferralCode,
             templateConfig: activeTemplate || defaultBillTemplate,
           }).then(async (result) => {
             if (result.success) {
@@ -1135,11 +1138,25 @@ export const sendBillEmail = async (req: Request, res: Response) => {
       isActive: true,
     });
 
+    // Resolve customer document to ensure referralCode is available
+    let customerDoc = bill.customer;
+    if (!customerDoc || !customerDoc.referralCode) {
+      customerDoc = await Customer.findOne({
+        $or: [
+          bill.customer && mongoose.Types.ObjectId.isValid(bill.customer) ? { _id: bill.customer } : null,
+          bill.customerMobile ? { mobile: bill.customerMobile } : null,
+          bill.customerEmail ? { email: bill.customerEmail } : null,
+        ].filter(Boolean) as any,
+      });
+    }
+
+    const refCode = (customerDoc as any)?.referralCode || bill.customerReferralCode || bill.referralCodeUsed || 'EKO' + Math.random().toString(36).substring(2, 7).toUpperCase();
+
     const emailResult = await sendInvoiceSoftCopyEmail({
       to: emailTo,
       bill,
-      customer: bill.customer,
-      referralCode: (bill.customer as any)?.referralCode || bill.referralCodeUsed,
+      customer: customerDoc || bill.customer,
+      referralCode: refCode,
       coinsAwarded: coinsAwarded !== undefined ? Number(coinsAwarded) : bill.rewardCoinsAwarded,
       customMatter,
       customSubject,

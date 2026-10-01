@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useCustomerAuth } from '../context/CustomerAuthContext';
 import {
   User,
@@ -19,6 +19,7 @@ import {
 
 export default function CustomerRegister() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { sendRegisterOtp, verifyRegisterOtp } = useCustomerAuth();
 
   const [step, setStep] = useState<1 | 2 | 3>(1); // 1: Info Form, 2: OTP Entry, 3: Success Screen
@@ -38,6 +39,17 @@ export default function CustomerRegister() {
   const [debugOtp, setDebugOtp] = useState<string | null>(null);
   const [newCustomerInfo, setNewCustomerInfo] = useState<any>(null);
   const [copied, setCopied] = useState(false);
+
+  // Auto-detect referral code from URL params (?ref=..., ?referral=..., ?code=...)
+  useEffect(() => {
+    const refParam = searchParams.get('ref') || searchParams.get('referral') || searchParams.get('code');
+    if (refParam && refParam.trim()) {
+      setFormData((prev) => ({
+        ...prev,
+        referralCode: refParam.trim().toUpperCase(),
+      }));
+    }
+  }, [searchParams]);
 
   // Step 1: Send Registration OTP
   const handleSendOtp = async (e: React.FormEvent) => {
@@ -224,9 +236,16 @@ export default function CustomerRegister() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Referral Code (Optional)
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Referral Code (Optional)
+                </label>
+                {formData.referralCode && (
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <Sparkles size={11} /> +500 Welcome Coins Applied
+                  </span>
+                )}
+              </div>
               <div className="relative">
                 <Gift className="absolute left-3.5 top-3.5 text-amber-500" size={17} />
                 <input
@@ -238,7 +257,9 @@ export default function CustomerRegister() {
                 />
               </div>
               <p className="text-[11px] text-slate-500 mt-1">
-                Have a friend's code? Enter it to receive instant 500 Welcome Coins!
+                {formData.referralCode
+                  ? 'Referral bonus active! You will receive 500 Welcome Coins upon OTP verification.'
+                  : 'Have a friend\'s code? Enter it to receive instant 500 Welcome Coins!'}
               </p>
             </div>
 
