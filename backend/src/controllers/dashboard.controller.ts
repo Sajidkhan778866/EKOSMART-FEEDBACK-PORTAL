@@ -332,6 +332,33 @@ export const getEmployeeDashboardStats = async (req: Request, res: Response) => 
       };
     }
 
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    // Active queue: Unresolved tickets (any date) OR tickets touched/created Today
+    const activeQuery: any = {
+      $and: [
+        baseQuery,
+        {
+          $or: [
+            { status: { $in: ['New', 'Pending', 'Assigned', 'In Progress'] } },
+            { createdAt: { $gte: todayStart, $lte: todayEnd } },
+            { updatedAt: { $gte: todayStart, $lte: todayEnd } },
+          ],
+        },
+      ],
+    };
+
+    // Closed / Resolved history: tickets that are resolved/closed/rejected
+    const closedQuery: any = {
+      $and: [
+        baseQuery,
+        { status: { $in: ['Resolved', 'Closed', 'Rejected'] } },
+      ],
+    };
+
     // Range-filtered metrics
     const [assignedComplaints, pendingComplaints, inProgressComplaints, resolvedComplaints] =
       await Promise.all([
@@ -341,27 +368,50 @@ export const getEmployeeDashboardStats = async (req: Request, res: Response) => 
         Complaint.countDocuments({ ...dateQuery, status: { $in: ['Resolved', 'Closed'] } }),
       ]);
 
-    // All-time totals
+    // All-time & Queue totals
     const totalAllTime = await Complaint.countDocuments(baseQuery);
-    const resolvedAllTime = await Complaint.countDocuments({ ...baseQuery, status: { $in: ['Resolved', 'Closed'] } });
-    const pendingAllTime = await Complaint.countDocuments({ ...baseQuery, status: { $in: ['Assigned', 'Pending', 'New'] } });
+    const resolvedAllTime = await Complaint.countDocuments(closedQuery);
+    const unresolvedAllTime = await Complaint.countDocuments({ ...baseQuery, status: { $in: ['Assigned', 'Pending', 'New', 'In Progress'] } });
     const inProgressAllTime = await Complaint.countDocuments({ ...baseQuery, status: 'In Progress' });
+    const todayTotal = await Complaint.countDocuments({
+      $and: [
+        baseQuery,
+        {
+          $or: [
+            { createdAt: { $gte: todayStart, $lte: todayEnd } },
+            { updatedAt: { $gte: todayStart, $lte: todayEnd } },
+          ],
+        },
+      ],
+    });
 
-    // Period assignments
+    // 1. Active & Today's Queue (DEFAULT)
+    const activeAssignments = await Complaint.find(activeQuery)
+      .populate('customer', 'customerId name mobile email address')
+      .populate('assignedTo', 'employeeId name designation division photoUrl')
+      .sort({ updatedAt: -1, createdAt: -1 })
+      .limit(100);
+
+    // 2. Closed / Resolved History (shown on clicking)
+    const closedAssignments = await Complaint.find(closedQuery)
+      .populate('customer', 'customerId name mobile email address')
+      .populate('assignedTo', 'employeeId name designation division photoUrl')
+      .sort({ updatedAt: -1, createdAt: -1 })
+      .limit(100);
+
+    // 3. Period assignments (matching date filter)
     const periodAssignments = await Complaint.find(dateQuery)
       .populate('customer', 'customerId name mobile email address')
       .populate('assignedTo', 'employeeId name designation division photoUrl')
       .sort({ updatedAt: -1, createdAt: -1 })
-      .limit(50);
+      .limit(100);
 
-    // All-time assignments
+    // 4. All-time assignments
     const allTimeAssignments = await Complaint.find(baseQuery)
       .populate('customer', 'customerId name mobile email address')
       .populate('assignedTo', 'employeeId name designation division photoUrl')
       .sort({ updatedAt: -1, createdAt: -1 })
-      .limit(50);
-
-    const recentAssignments = periodAssignments.length > 0 ? periodAssignments : allTimeAssignments;
+      .limit(100);
 
     res.json({
       success: true,
@@ -389,12 +439,17 @@ export const getEmployeeDashboardStats = async (req: Request, res: Response) => 
           resolvedComplaints,
           totalAllTime,
           resolvedAllTime,
-          pendingAllTime,
+          unresolvedAllTime,
           inProgressAllTime,
+          todayTotal,
+          activeQueueCount: activeAssignments.length,
+          closedQueueCount: closedAssignments.length,
         },
+        activeAssignments,
+        closedAssignments,
         periodAssignments,
         allTimeAssignments,
-        recentAssignments,
+        recentAssignments: activeAssignments.length > 0 ? activeAssignments : allTimeAssignments,
       },
     });
   } catch (error: any) {

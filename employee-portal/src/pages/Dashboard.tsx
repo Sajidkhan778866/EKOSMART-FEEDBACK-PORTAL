@@ -62,7 +62,7 @@ const Dashboard = () => {
     );
   }
 
-  const [viewTab, setViewTab] = useState<'period' | 'all'>('all');
+  const [filterTab, setFilterTab] = useState<'active' | 'inProgress' | 'closed' | 'all'>('active');
 
   const employee = data?.employee || user;
   const stats = data?.stats || {
@@ -72,27 +72,57 @@ const Dashboard = () => {
     resolvedComplaints: 0,
     totalAllTime: 0,
     resolvedAllTime: 0,
-    pendingAllTime: 0,
+    unresolvedAllTime: 0,
     inProgressAllTime: 0,
+    todayTotal: 0,
+    activeQueueCount: 0,
+    closedQueueCount: 0,
   };
 
-  const periodTickets = data?.periodAssignments || [];
-  const allTimeTickets = data?.allTimeAssignments || data?.recentAssignments || [];
-  const displayedTickets = viewTab === 'period' ? periodTickets : allTimeTickets;
+  const allTickets: any[] = data?.allTimeAssignments || data?.recentAssignments || [];
+  
+  const unresolvedAllTimeCount = (st: any, all: any[]) =>
+    st.unresolvedAllTime ??
+    all.filter((c: any) => ['New', 'Pending', 'Assigned', 'In Progress'].includes(c.status)).length;
+  
+  // 1. Active Queue: Today's complaints + All Unresolved complaints
+  const activeTickets: any[] = (data?.activeAssignments && data.activeAssignments.length > 0)
+    ? data.activeAssignments
+    : allTickets.filter((c: any) => {
+        const isUnresolved = ['New', 'Pending', 'Assigned', 'In Progress'].includes(c.status);
+        const isToday = new Date(c.updatedAt || c.createdAt).toDateString() === new Date().toDateString();
+        return isUnresolved || isToday;
+      });
 
-  const dateLabel = PRESET_LABELS[dateRange.filter] || 'Period';
+  // 2. Closed / Resolved complaints (Shown on clicking only)
+  const closedTickets: any[] = (data?.closedAssignments && data.closedAssignments.length > 0)
+    ? data.closedAssignments
+    : allTickets.filter((c: any) => ['Resolved', 'Closed', 'Rejected'].includes(c.status));
+
+  // 3. In Progress complaints
+  const inProgressTickets: any[] = allTickets.filter((c: any) => c.status === 'In Progress');
+
+  const displayedTickets =
+    filterTab === 'active'
+      ? activeTickets
+      : filterTab === 'inProgress'
+      ? inProgressTickets
+      : filterTab === 'closed'
+      ? closedTickets
+      : allTickets;
 
   return (
     <div className="space-y-6 max-w-7xl pb-12">
       {/* Top Filter Bar: Date Range (Defaults to TODAY) */}
       <div className="bg-white p-4 rounded-3xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-3">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">Metrics Scope:</span>
+          <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+            Metrics Scope ({PRESET_LABELS[dateRange.filter] || 'Period'}):
+          </span>
           <DateRangeFilter
             value={dateRange}
             onChange={(newRange) => {
               setDateRange(newRange);
-              if (newRange.filter === 'all') setViewTab('all');
             }}
           />
         </div>
@@ -176,54 +206,88 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* KPI Cards (Filtered by Selected Date Preset) */}
+      {/* KPI Cards (Interactive Quick Toggles) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: Today & Active Queue */}
         <div
-          onClick={() => setViewTab(dateRange.filter === 'all' ? 'all' : 'period')}
-          className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex items-center gap-4 border-t-4 border-t-slate-700 cursor-pointer hover:shadow-md transition"
+          onClick={() => {
+            setFilterTab('active');
+            const el = document.getElementById('assigned-table-section');
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+          }}
+          className={`p-5 rounded-3xl shadow-sm border transition cursor-pointer ${
+            filterTab === 'active'
+              ? 'bg-emerald-50/70 border-emerald-400 ring-2 ring-emerald-500/20 shadow-md'
+              : 'bg-white border-slate-100 hover:shadow-md'
+          } flex items-center gap-4 border-t-4 border-t-slate-700`}
         >
           <div className="p-3.5 bg-slate-100 text-slate-700 rounded-2xl">
             <ClipboardList size={22} />
           </div>
           <div>
             <h3 className="text-slate-500 text-[11px] font-bold uppercase tracking-wider">
-              {dateRange.filter === 'today' ? "Today's Work Orders" : 'Assigned in Period'}
+              Today & Unresolved
             </h3>
-            <p className="text-2xl font-black text-slate-800 mt-0.5">{stats.assignedComplaints}</p>
-            <span className="text-[10px] text-slate-400">
-              Total in queue: <strong className="text-slate-700">{stats.totalAllTime || allTimeTickets.length}</strong>
+            <p className="text-2xl font-black text-slate-800 mt-0.5">{activeTickets.length}</p>
+            <span className="text-[10px] text-slate-500">
+              Active Queue ({unresolvedAllTimeCount(stats, allTickets)} Unresolved)
             </span>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex items-center gap-4 border-t-4 border-t-amber-500">
+        {/* Card 2: In Progress */}
+        <div
+          onClick={() => {
+            setFilterTab('inProgress');
+            const el = document.getElementById('assigned-table-section');
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+          }}
+          className={`p-5 rounded-3xl shadow-sm border transition cursor-pointer ${
+            filterTab === 'inProgress'
+              ? 'bg-amber-50/70 border-amber-400 ring-2 ring-amber-500/20 shadow-md'
+              : 'bg-white border-slate-100 hover:shadow-md'
+          } flex items-center gap-4 border-t-4 border-t-amber-500`}
+        >
           <div className="p-3.5 bg-amber-50 text-amber-600 rounded-2xl">
             <Clock size={22} />
           </div>
           <div>
             <h3 className="text-slate-500 text-[11px] font-bold uppercase tracking-wider">In Progress</h3>
-            <p className="text-2xl font-black text-amber-700 mt-0.5">{stats.inProgressComplaints}</p>
+            <p className="text-2xl font-black text-amber-700 mt-0.5">{inProgressTickets.length}</p>
             <span className="text-[10px] text-amber-600 font-semibold">
-              Active: {stats.inProgressAllTime ?? stats.inProgressComplaints}
+              Active investigations
             </span>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex items-center gap-4 border-t-4 border-t-emerald-500">
+        {/* Card 3: Closed / Resolved (Click to Show Closed History) */}
+        <div
+          onClick={() => {
+            setFilterTab('closed');
+            const el = document.getElementById('assigned-table-section');
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+          }}
+          className={`p-5 rounded-3xl shadow-sm border transition cursor-pointer ${
+            filterTab === 'closed'
+              ? 'bg-purple-50/70 border-purple-400 ring-2 ring-purple-500/20 shadow-md'
+              : 'bg-white border-slate-100 hover:shadow-md'
+          } flex items-center gap-4 border-t-4 border-t-emerald-500`}
+        >
           <div className="p-3.5 bg-emerald-50 text-emerald-600 rounded-2xl">
             <CheckCircle size={22} />
           </div>
           <div>
             <h3 className="text-slate-500 text-[11px] font-bold uppercase tracking-wider">
-              {dateRange.filter === 'today' ? 'Resolved Today' : 'Resolved in Period'}
+              Resolved & Closed
             </h3>
-            <p className="text-2xl font-black text-emerald-700 mt-0.5">{stats.resolvedComplaints}</p>
-            <span className="text-[10px] text-emerald-600 font-semibold">
-              All-Time: {stats.resolvedAllTime || stats.resolvedComplaints} closed
+            <p className="text-2xl font-black text-emerald-700 mt-0.5">{closedTickets.length}</p>
+            <span className="text-[10px] text-emerald-700 font-bold underline">
+              Click to view {closedTickets.length} closed
             </span>
           </div>
         </div>
 
+        {/* Card 4: Official Remuneration */}
         <Link
           to="/salary"
           className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex items-center gap-4 border-t-4 border-t-teal-500 hover:shadow-md transition group cursor-pointer"
@@ -272,7 +336,7 @@ const Dashboard = () => {
 
         <button
           onClick={() => {
-            setViewTab('all');
+            setFilterTab('active');
             const el = document.getElementById('assigned-table-section');
             if (el) el.scrollIntoView({ behavior: 'smooth' });
           }}
@@ -282,8 +346,8 @@ const Dashboard = () => {
             <ClipboardList size={20} />
           </div>
           <div>
-            <h4 className="text-xs font-bold text-slate-800">Tickets Queue</h4>
-            <p className="text-[10px] text-slate-400">{allTimeTickets.length} Assigned Service Logs</p>
+            <h4 className="text-xs font-bold text-slate-800">Active Queue</h4>
+            <p className="text-[10px] text-slate-400">{activeTickets.length} Today & Unresolved</p>
           </div>
         </button>
 
@@ -303,70 +367,105 @@ const Dashboard = () => {
 
       {/* Assigned Tickets Table */}
       <div id="assigned-table-section" className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
-            <h2 className="text-base font-bold text-slate-800">Assigned Service Work Orders</h2>
-            <p className="text-xs text-slate-400">Customer tickets assigned to your engineer queue</p>
+            <h2 className="text-base font-bold text-slate-800">Service Work Orders Queue</h2>
+            <p className="text-xs text-slate-400">
+              {filterTab === 'active'
+                ? "Today's work orders & all unresolved tickets requiring action"
+                : filterTab === 'closed'
+                ? "Completed & resolved customer service dossiers"
+                : filterTab === 'inProgress'
+                ? "Active investigations currently underway"
+                : "Complete assigned history"}
+            </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* View Mode Switcher */}
-            <div className="bg-slate-100 p-1 rounded-xl flex items-center text-xs font-bold">
-              <button
-                type="button"
-                onClick={() => setViewTab('period')}
-                className={`px-3 py-1.5 rounded-lg transition ${
-                  viewTab === 'period'
-                    ? 'bg-white text-emerald-800 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                {dateLabel} ({periodTickets.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewTab('all')}
-                className={`px-3 py-1.5 rounded-lg transition ${
-                  viewTab === 'all'
-                    ? 'bg-white text-emerald-800 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                All-Time ({allTimeTickets.length})
-              </button>
-            </div>
+          {/* Interactive Queue Filter Tabs */}
+          <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl text-xs font-bold">
+            <button
+              type="button"
+              onClick={() => setFilterTab('active')}
+              className={`px-3 py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1.5 ${
+                filterTab === 'active'
+                  ? 'bg-white text-emerald-800 shadow-xs ring-1 ring-emerald-500/20'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <span>⚡ Today & Unresolved</span>
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${filterTab === 'active' ? 'bg-emerald-100 text-emerald-800 font-black' : 'bg-slate-200 text-slate-700'}`}>
+                {activeTickets.length}
+              </span>
+            </button>
 
-            <span className="text-xs font-bold bg-slate-100 text-slate-700 px-3 py-1.5 rounded-xl">
-              {displayedTickets.length} Listed
-            </span>
+            <button
+              type="button"
+              onClick={() => setFilterTab('inProgress')}
+              className={`px-3 py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1.5 ${
+                filterTab === 'inProgress'
+                  ? 'bg-white text-amber-800 shadow-xs ring-1 ring-amber-500/20'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <span>⏳ In Progress</span>
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${filterTab === 'inProgress' ? 'bg-amber-100 text-amber-800 font-black' : 'bg-slate-200 text-slate-700'}`}>
+                {inProgressTickets.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setFilterTab('closed')}
+              className={`px-3 py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1.5 ${
+                filterTab === 'closed'
+                  ? 'bg-white text-purple-800 shadow-xs ring-1 ring-purple-500/20'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <span>✅ Closed / Resolved</span>
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${filterTab === 'closed' ? 'bg-purple-100 text-purple-800 font-black' : 'bg-slate-200 text-slate-700'}`}>
+                {closedTickets.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setFilterTab('all')}
+              className={`px-3 py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1.5 ${
+                filterTab === 'all'
+                  ? 'bg-white text-slate-900 shadow-xs ring-1 ring-slate-400/20'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <span>📋 All ({allTickets.length})</span>
+            </button>
           </div>
         </div>
 
-        {/* Informative alert when period has 0 but all-time has items */}
-        {viewTab === 'period' && periodTickets.length === 0 && allTimeTickets.length > 0 && (
-          <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900 flex items-center justify-between gap-3">
-            <span>
-              ℹ️ No new work orders logged for <strong>{dateLabel}</strong>. You have <strong>{allTimeTickets.length} service tickets</strong> in your overall all-time queue.
-            </span>
-            <button
-              onClick={() => setViewTab('all')}
-              className="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-bold text-[11px] whitespace-nowrap cursor-pointer transition"
-            >
-              View All {allTimeTickets.length} Tickets
-            </button>
-          </div>
-        )}
-
+        {/* Empty state when active is 0 */}
         {displayedTickets.length === 0 ? (
-          <div className="py-12 text-center text-slate-400 space-y-2">
-            <UserCheck size={36} className="mx-auto mb-2 opacity-40" />
-            <p className="text-sm font-semibold">No service tickets found for {viewTab === 'period' ? dateLabel : 'All-Time'}.</p>
-            {viewTab === 'period' && allTimeTickets.length > 0 && (
+          <div className="py-12 text-center text-slate-400 space-y-3 bg-slate-50/60 rounded-2xl border border-dashed border-slate-200">
+            <UserCheck size={36} className="mx-auto text-emerald-600 opacity-80" />
+            <div>
+              <p className="text-sm font-bold text-slate-800">
+                {filterTab === 'active'
+                  ? '🎉 All caught up! No unresolved complaints pending for Today.'
+                  : `No tickets found in "${filterTab}" queue.`}
+              </p>
+              {filterTab === 'active' && closedTickets.length > 0 && (
+                <p className="text-xs text-slate-500 mt-1">
+                  You have <strong>{closedTickets.length} resolved / closed tickets</strong> in your work history.
+                </p>
+              )}
+            </div>
+            {closedTickets.length > 0 && filterTab !== 'closed' && (
               <button
-                onClick={() => setViewTab('all')}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition cursor-pointer"
+                type="button"
+                onClick={() => setFilterTab('closed')}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer inline-flex items-center gap-1.5"
               >
-                Show All {allTimeTickets.length} Assigned Tickets
+                <CheckCircle size={14} />
+                <span>View Closed & Resolved History ({closedTickets.length} Tickets)</span>
               </button>
             )}
           </div>
