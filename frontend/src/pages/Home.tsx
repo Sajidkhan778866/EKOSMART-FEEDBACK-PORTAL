@@ -297,6 +297,27 @@ const Home = () => {
   const [hero, setHero] = useState<HeroContent>(defaultHero);
   const [cards, setCards] = useState<ServiceCard[]>(defaultCards);
   const [selectedSection, setSelectedSection] = useState<string>('all');
+  const [referralSettings, setReferralSettings] = useState<{
+    enabled: boolean;
+    welcomeRewardCoins: number;
+    batteryCoins: number;
+    showroomCoins: number;
+    referrerReward: number;
+    newCustomerReward: number;
+    serviceReward: number;
+    serviceRedemptionValue: number;
+    coinConversionRate: number;
+  }>({
+    enabled: true,
+    welcomeRewardCoins: 0,
+    batteryCoins: 500,
+    showroomCoins: 250,
+    referrerReward: 500,
+    newCustomerReward: 500,
+    serviceReward: 250,
+    serviceRedemptionValue: 200,
+    coinConversionRate: 1,
+  });
 
   useEffect(() => {
     fetch(`${API_BASE}/content/public`)
@@ -308,6 +329,12 @@ const Home = () => {
           }
           if (data.data.serviceCards && Array.isArray(data.data.serviceCards)) {
             setCards(data.data.serviceCards);
+          }
+          if (data.data.referralSettings) {
+            setReferralSettings((prev) => ({
+              ...prev,
+              ...data.data.referralSettings,
+            }));
           }
         }
       })
@@ -583,13 +610,15 @@ const Home = () => {
                 <span className="bg-amber-200 text-amber-950 font-black text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider">
                   Customer Rewards
                 </span>
-                <span className="text-xs font-bold text-amber-800">1 Coin = ₹1 Store Credit</span>
+                <span className="text-xs font-bold text-amber-800">
+                  1 Coin = ₹{referralSettings.coinConversionRate || 1} Store Credit
+                </span>
               </div>
               <h3 className="text-lg md:text-xl font-black text-amber-950">
                 Ekosmart Digital Wallet & Referral Coins
               </h3>
               <p className="text-xs text-amber-900/80 max-w-xl">
-                Earn <strong>Reward Coins</strong> on every showroom purchase & battery billing, and <strong>Referral Bonus Coins</strong> on friend purchases!
+                Earn <strong className="font-bold text-amber-950">+{referralSettings.batteryCoins || 500} Coins</strong> on EV Battery purchases, <strong className="font-bold text-amber-950">+{referralSettings.showroomCoins || 250} Coins</strong> on Showroom billing, and <strong className="font-bold text-amber-950">+{referralSettings.referrerReward || 500} Coins</strong> on friend referrals!
               </p>
             </div>
           </div>
@@ -607,7 +636,7 @@ const Home = () => {
               className="flex-1 md:flex-initial px-4 py-2.5 bg-white hover:bg-amber-50 text-amber-900 font-bold rounded-2xl text-xs transition border border-amber-300 shadow-xs flex items-center justify-center gap-1.5"
             >
               <Gift size={15} className="text-purple-600" />
-              <span>Refer & Earn</span>
+              <span>Refer & Earn (+{referralSettings.referrerReward || 500})</span>
             </Link>
           </div>
         </div>

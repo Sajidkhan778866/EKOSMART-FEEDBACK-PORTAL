@@ -18,6 +18,12 @@ export default function CustomerReferrals() {
   const navigate = useNavigate();
 
   const [referralData, setReferralData] = useState<any>(null);
+  const [referralSettings, setReferralSettings] = useState<any>({
+    referrerReward: 500,
+    newCustomerReward: 500,
+    batteryCoins: 500,
+    showroomCoins: 250,
+  });
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
@@ -39,6 +45,15 @@ export default function CustomerReferrals() {
     } finally {
       setLoading(false);
     }
+
+    try {
+      const pubRes = await axios.get(`${API_BASE}/content/public`);
+      if (pubRes.data?.success && pubRes.data.data?.referralSettings) {
+        setReferralSettings(pubRes.data.data.referralSettings);
+      }
+    } catch (err) {
+      console.warn('Failed to fetch referral settings in referral page:', err);
+    }
   };
 
   useEffect(() => {
@@ -54,7 +69,7 @@ export default function CustomerReferrals() {
   };
 
   const handleShare = () => {
-    const text = `Join Ekosmart using my referral code ${code} to get 500 bonus coins on signup! ${window.location.origin}/customer/register?ref=${code}`;
+    const text = `Join Ekosmart using my referral code ${code} to earn reward coins on your showroom purchase! ${window.location.origin}/customer/register?ref=${code}`;
     if (navigator.share) {
       navigator.share({ title: 'Ekosmart Referral Program', text, url: window.location.origin }).catch(() => {});
     } else {
@@ -102,7 +117,7 @@ export default function CustomerReferrals() {
               Share Your Referral Code
             </h2>
             <p className="text-xs text-slate-300 max-w-md leading-relaxed">
-              When a friend registers with your code, they receive <strong className="text-emerald-400">500 Coins</strong> and you receive <strong className="text-amber-400">100 Coins</strong> in your wallet!
+              When a friend purchases with your code, they receive <strong className="text-emerald-400">+{referralSettings.newCustomerReward || 500} Coins</strong> and you receive <strong className="text-amber-400">+{referralSettings.referrerReward || 500} Coins</strong> in your wallet!
             </p>
           </div>
 
@@ -175,9 +190,9 @@ export default function CustomerReferrals() {
             <div className="w-7 h-7 rounded-xl bg-purple-600 text-white font-black flex items-center justify-center text-xs">
               2
             </div>
-            <h4 className="font-bold text-slate-800">Friend Registers</h4>
+            <h4 className="font-bold text-slate-800">Friend Purchases</h4>
             <p className="text-slate-500 leading-relaxed text-[11px]">
-              Your friend enters your code during account creation and verifies email OTP.
+              Your friend enters your code during account creation & makes a showroom purchase.
             </p>
           </div>
 
@@ -187,7 +202,7 @@ export default function CustomerReferrals() {
             </div>
             <h4 className="font-bold text-slate-800">Both Earn Coins</h4>
             <p className="text-slate-500 leading-relaxed text-[11px]">
-              Friend gets +500 Coins and you get +100 Coins immediately credited to your wallets!
+              Friend gets +{referralSettings.newCustomerReward || 500} Coins and you get +{referralSettings.referrerReward || 500} Coins credited upon qualifying purchase!
             </p>
           </div>
         </div>

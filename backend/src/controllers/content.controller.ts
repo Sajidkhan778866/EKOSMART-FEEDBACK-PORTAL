@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { Content, IServiceCard } from '../models/Content';
+import { ReferralSettings } from '../models/ReferralSettings';
 
 export const defaultServiceCards: IServiceCard[] = [
   {
@@ -320,6 +321,19 @@ export const getPublicContent = async (_req: Request, res: Response) => {
       .filter((nav) => nav.isVisible !== false && (!nav.roleVisibility || nav.roleVisibility.includes('public')))
       .sort((a, b) => a.order - b.order);
 
+    const referralSettings = (await ReferralSettings.findOne({ key: 'global_referral_settings' })) || {
+      enabled: true,
+      welcomeRewardCoins: 0,
+      batteryCoins: 500,
+      showroomCoins: 250,
+      purchaseReward: 500,
+      referrerReward: 500,
+      newCustomerReward: 500,
+      serviceReward: 250,
+      serviceRedemptionValue: 200,
+      coinConversionRate: 1,
+    };
+
     res.status(200).json({
       success: true,
       data: {
@@ -332,6 +346,7 @@ export const getPublicContent = async (_req: Request, res: Response) => {
         },
         portalLinks: content.portalLinks || defaultPortalLinks,
         customerLoginTimer: content.customerLoginTimer || defaultCustomerLoginTimer,
+        referralSettings,
         contactInfo: content.contactInfo || defaultContactData,
         footer: content.footer,
         privacyPolicy: content.privacyPolicy,

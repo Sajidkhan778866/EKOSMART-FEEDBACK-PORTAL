@@ -89,13 +89,15 @@ const Layout = () => {
     message: 'Login with your email to access your customer wallet, showroom bills, warranty certificates & rewards.',
   });
 
+  const [referrerCoins, setReferrerCoins] = useState<number>(500);
+
   // Close drawers & dropdowns on route transition
   useEffect(() => {
     setMobileMenuOpen(false);
     setUserDropdownOpen(false);
   }, [location.pathname]);
 
-  // Load public CMS branding & login timer configurations
+  // Load public CMS branding, referral settings & login timer configurations
   useEffect(() => {
     fetch(`${API_BASE}/content/public`)
       .then((res) => res.json())
@@ -115,6 +117,9 @@ const Layout = () => {
               ...prev,
               ...data.data.customerLoginTimer,
             }));
+          }
+          if (data.data.referralSettings?.referrerReward) {
+            setReferrerCoins(Number(data.data.referralSettings.referrerReward) || 500);
           }
         }
       })
@@ -239,7 +244,7 @@ const Layout = () => {
                 </NavLink>
               </li>
 
-              {/* Refer & Earn (+500 Coins) Option */}
+              {/* Refer & Earn Option */}
               <li>
                 <NavLink
                   to="/customer/referrals"
@@ -250,7 +255,7 @@ const Layout = () => {
                   }
                 >
                   <Gift size={15} className="text-purple-600" />
-                  <span>Refer & Earn (+500)</span>
+                  <span>Refer & Earn (+{referrerCoins})</span>
                 </NavLink>
               </li>
 
