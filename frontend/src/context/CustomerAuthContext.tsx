@@ -34,7 +34,7 @@ interface CustomerAuthContextType {
   isLoading: boolean;
   sendRegisterOtp: (data: { name: string; email: string; mobile: string; referralCode?: string }) => Promise<{ success: boolean; message: string; debugOtp?: string }>;
   verifyRegisterOtp: (data: { email: string; otp: string; name: string; mobile: string; referralCode?: string; address?: string; city?: string; state?: string }) => Promise<{ success: boolean; message: string; data?: any }>;
-  sendLoginOtp: (email: string) => Promise<{ success: boolean; message: string; debugOtp?: string }>;
+  sendLoginOtp: (email: string) => Promise<{ success: boolean; message: string; debugOtp?: string; isNew?: boolean }>;
   verifyLoginOtp: (email: string, otp: string) => Promise<{ success: boolean; message: string; data?: any }>;
   logout: () => void;
   refreshProfile: () => Promise<void>;

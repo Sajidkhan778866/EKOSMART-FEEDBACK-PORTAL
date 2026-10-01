@@ -100,6 +100,12 @@ export interface IContent extends Document {
   idCardConfig?: IIdCardConfig;
   billingConfig?: IBillingConfig;
   portalLinks?: IPortalLinks;
+  customerLoginTimer?: {
+    enabled: boolean;
+    durationSeconds: number;
+    title: string;
+    message: string;
+  };
   contactInfo: {
     heading: string;
     subheading: string;
@@ -370,6 +376,15 @@ Bulk battery orders applicable as per Minimum Order Quantity (MOQ 5 / MOQ 10) te
       adminPortalUrl: { type: String, default: '' },
       employeePortalUrl: { type: String, default: '' },
       customerFrontendUrl: { type: String, default: '' },
+    },
+    customerLoginTimer: {
+      enabled: { type: Boolean, default: true },
+      durationSeconds: { type: Number, default: 20 },
+      title: { type: String, default: 'Login to Continue' },
+      message: {
+        type: String,
+        default: 'Please login with your email to access your customer account, wallet, referrals, bills and personalized services.',
+      },
     },
   },
   { timestamps: true }

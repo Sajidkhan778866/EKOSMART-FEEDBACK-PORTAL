@@ -20,7 +20,7 @@ import {
   Send,
   Copy,
 } from 'lucide-react';
-import { billingApi, stockApi, billTemplateApi } from '../api/client';
+import { billingApi, stockApi, billTemplateApi, customerApi } from '../api/client';
 import ScannerModal from '../components/ScannerModal';
 import { DateRangeFilter, type DateRangeState } from '../components/DateRangeFilter';
 import { printElement } from '../utils/print';
@@ -107,6 +107,7 @@ const Billing = () => {
 
   // New Invoice Form
   const [customerForm, setCustomerForm] = useState({
+    customerId: '',
     customerName: '',
     customerMobile: '',
     customerEmail: '',
@@ -119,6 +120,66 @@ const Billing = () => {
     referralCode: '',
     notes: '',
   });
+
+  // Customer Auto-Search / Auto-Fill in Showroom Billing
+  const [customerSearchQuery, setCustomerSearchQuery] = useState('');
+  const [customerSearchResults, setCustomerSearchResults] = useState<any[]>([]);
+  const [isSearchingCustomer, setIsSearchingCustomer] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
+
+  // Debounced Customer Search
+  useEffect(() => {
+    if (!customerSearchQuery || customerSearchQuery.trim().length < 2) {
+      setCustomerSearchResults([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        setIsSearchingCustomer(true);
+        const res = await customerApi.getAll({ search: customerSearchQuery.trim(), limit: 6 });
+        if (res.data?.success && Array.isArray(res.data.data)) {
+          setCustomerSearchResults(res.data.data);
+        }
+      } catch {
+        setCustomerSearchResults([]);
+      } finally {
+        setIsSearchingCustomer(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [customerSearchQuery]);
+
+  const handleSelectCustomer = (cust: any) => {
+    setSelectedCustomer(cust);
+    setCustomerForm((prev) => ({
+      ...prev,
+      customerId: cust.customerId || '',
+      customerName: cust.name || prev.customerName,
+      customerMobile: cust.mobile || prev.customerMobile,
+      customerEmail: cust.email || prev.customerEmail,
+      customerAddress: cust.address || prev.customerAddress,
+      city: cust.city || prev.city || 'Kota',
+      state: cust.state || prev.state || 'Rajasthan',
+      referralCode: cust.referralCode || prev.referralCode,
+    }));
+    setCustomerSearchQuery('');
+    setCustomerSearchResults([]);
+  };
+
+  const handleClearSelectedCustomer = () => {
+    setSelectedCustomer(null);
+    setCustomerForm((prev) => ({
+      ...prev,
+      customerId: '',
+      customerName: '',
+      customerMobile: '',
+      customerEmail: '',
+      customerAddress: '',
+      city: 'Kota',
+      state: 'Rajasthan',
+      referralCode: '',
+    }));
+  };
 
   const [items, setItems] = useState<IBillLineItem[]>([
     {
@@ -703,10 +764,92 @@ const Billing = () => {
             <form onSubmit={handleCreateBill} className="flex-1 overflow-y-auto py-4 space-y-5 text-xs">
               {/* Customer Info */}
               <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
-                <h4 className="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                  <User size={14} className="text-slate-500" />
-                  <span>Customer Details</span>
-                </h4>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h4 className="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                    <User size={14} className="text-indigo-600" />
+                    <span>Customer Details & Database Link</span>
+                  </h4>
+                  {selectedCustomer && (
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-xl text-[11px] font-bold">
+                        <CheckCircle2 size={13} className="text-emerald-700" />
+                        <span>Linked: {selectedCustomer.customerId} ({selectedCustomer.walletBalance || 0} Coins)</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleClearSelectedCustomer}
+                        className="text-[11px] text-red-600 hover:underline font-bold cursor-pointer"
+                      >
+                        Unlink
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Customer Auto-Search / Auto-Fill Input */}
+                <div className="relative">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-2.5 text-slate-400" size={15} />
+                    <input
+                      type="text"
+                      value={customerSearchQuery}
+                      onChange={(e) => setCustomerSearchQuery(e.target.value)}
+                      placeholder="Search existing customer by Email, Mobile #, Name, or Customer ID..."
+                      className="w-full pl-9 pr-8 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none placeholder:text-slate-400 font-medium"
+                    />
+                    {isSearchingCustomer && (
+                      <RefreshCw className="absolute right-3 top-2.5 text-indigo-500 animate-spin" size={14} />
+                    )}
+                    {customerSearchQuery && !isSearchingCustomer && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCustomerSearchQuery('');
+                          setCustomerSearchResults([]);
+                        }}
+                        className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Customer Search Dropdown Results */}
+                  {customerSearchResults.length > 0 && (
+                    <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-xl z-20 overflow-hidden divide-y divide-slate-100 max-h-60 overflow-y-auto">
+                      <div className="p-2 bg-slate-100/80 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                        Found {customerSearchResults.length} Matching Customers (Click to auto-fill)
+                      </div>
+                      {customerSearchResults.map((cust) => (
+                        <div
+                          key={cust._id}
+                          onClick={() => handleSelectCustomer(cust)}
+                          className="p-3 hover:bg-indigo-50/70 transition cursor-pointer flex items-center justify-between gap-3 text-xs"
+                        >
+                          <div>
+                            <div className="font-bold text-slate-900 flex items-center gap-2">
+                              <span>{cust.name}</span>
+                              <span className="px-1.5 py-0.5 bg-slate-100 text-slate-700 font-mono text-[10px] rounded font-bold">
+                                {cust.customerId}
+                              </span>
+                            </div>
+                            <div className="text-[11px] text-slate-500 flex items-center gap-3 mt-0.5 font-mono">
+                              <span>📞 {cust.mobile}</span>
+                              {cust.email && <span>✉️ {cust.email}</span>}
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-lg text-[10px] font-bold">
+                              <Coins size={11} className="text-amber-600" />
+                              <span>{cust.walletBalance || 0} Coins</span>
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label className="block text-slate-600 font-bold mb-1">Customer Full Name *</label>
@@ -731,6 +874,31 @@ const Billing = () => {
                     />
                   </div>
                   <div>
+                    <label className="block text-slate-600 font-bold mb-1">
+                      Customer Email Address (For Portal & Soft Copy)
+                    </label>
+                    <input
+                      type="email"
+                      value={customerForm.customerEmail}
+                      onChange={(e) => setCustomerForm({ ...customerForm, customerEmail: e.target.value })}
+                      placeholder="e.g. customer@example.com"
+                      className="w-full p-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                  <div>
+                    <label className="block text-slate-600 font-bold mb-1">Billing / Delivery Address</label>
+                    <input
+                      type="text"
+                      value={customerForm.customerAddress}
+                      onChange={(e) => setCustomerForm({ ...customerForm, customerAddress: e.target.value })}
+                      placeholder="e.g. Plot 14, IPIA"
+                      className="w-full p-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
                     <label className="block text-slate-600 font-bold mb-1">Customer City</label>
                     <input
                       type="text"
@@ -740,9 +908,6 @@ const Billing = () => {
                       className="w-full p-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                     />
                   </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
                   <div>
                     <label className="block text-slate-600 font-bold mb-1 flex items-center gap-1">
                       <Gift size={12} className="text-indigo-600" />
@@ -756,21 +921,23 @@ const Billing = () => {
                       className="w-full p-2 bg-white border border-indigo-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono uppercase text-xs"
                     />
                   </div>
-                  <div className="sm:col-span-2 flex items-center">
-                    <div className="w-full p-2.5 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/80 rounded-xl flex items-center justify-between gap-2 text-amber-900 text-[11px]">
-                      <div className="flex items-center gap-2">
-                        <Coins size={16} className="text-amber-600 flex-shrink-0" />
-                        <div>
-                          <span className="font-bold">Customer Wallet Reward:</span>{' '}
-                          <span className="font-black text-amber-950">+500 Purchase Coins</span> will be credited automatically.
-                        </div>
+                </div>
+
+                <div className="pt-1">
+                  <div className="w-full p-2.5 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/80 rounded-xl flex items-center justify-between gap-2 text-amber-900 text-[11px]">
+                    <div className="flex items-center gap-2">
+                      <Coins size={16} className="text-amber-600 flex-shrink-0" />
+                      <div>
+                        <span className="font-bold">Customer Portal & Wallet Connection:</span>{' '}
+                        This bill will automatically appear under the customer's portal account, and{' '}
+                        <span className="font-black text-amber-950">+500 Purchase Coins</span> will be credited.
                       </div>
-                      {customerForm.referralCode && (
-                        <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-md font-mono text-[10px] font-bold">
-                          Referral Linked
-                        </span>
-                      )}
                     </div>
+                    {customerForm.referralCode && (
+                      <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-md font-mono text-[10px] font-bold">
+                        Referral Linked
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>

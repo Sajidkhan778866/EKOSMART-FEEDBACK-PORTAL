@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { API_BASE, ADMIN_PORTAL_URL, EMPLOYEE_PORTAL_URL, resolveImageUrl } from '../config/api';
 import { useCustomerAuth } from '../context/CustomerAuthContext';
+import CustomerLoginModal from './CustomerLoginModal';
 
 interface HeaderLogoContent {
   logoType?: 'preset' | 'image';
@@ -74,12 +75,27 @@ const Layout = () => {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const location = useLocation();
 
+  // 20-Second Customer Login Timer & Modal State
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [loginTimerConfig, setLoginTimerConfig] = useState<{
+    enabled: boolean;
+    durationSeconds: number;
+    title: string;
+    message: string;
+  }>({
+    enabled: true,
+    durationSeconds: 20,
+    title: 'Welcome to Ekosmart',
+    message: 'Login with your email to access your customer wallet, showroom bills, warranty certificates & rewards.',
+  });
+
   // Close drawers & dropdowns on route transition
   useEffect(() => {
     setMobileMenuOpen(false);
     setUserDropdownOpen(false);
   }, [location.pathname]);
 
+  // Load public CMS branding & login timer configurations
   useEffect(() => {
     fetch(`${API_BASE}/content/public`)
       .then((res) => res.json())
@@ -94,12 +110,45 @@ const Layout = () => {
               logoImage: data.data.hero.logoImage || '',
             });
           }
+          if (data.data.customerLoginTimer) {
+            setLoginTimerConfig((prev) => ({
+              ...prev,
+              ...data.data.customerLoginTimer,
+            }));
+          }
         }
       })
       .catch((err) => {
         console.warn('Failed to load dynamic CMS footer/header branding, using defaults:', err);
       });
   }, []);
+
+  // 20-Second Customer Login Prompt Trigger
+  useEffect(() => {
+    if (isAuthenticated || !loginTimerConfig.enabled) {
+      return;
+    }
+
+    const isDismissed = sessionStorage.getItem('ekosmart_login_prompt_dismissed') === 'true';
+    if (isDismissed) {
+      return;
+    }
+
+    const seconds = Math.max(3, Number(loginTimerConfig.durationSeconds) || 20);
+    const timer = setTimeout(() => {
+      const dismissedNow = sessionStorage.getItem('ekosmart_login_prompt_dismissed') === 'true';
+      if (!isAuthenticated && !dismissedNow) {
+        setLoginModalOpen(true);
+      }
+    }, seconds * 1000);
+
+    return () => clearTimeout(timer);
+  }, [isAuthenticated, loginTimerConfig.enabled, loginTimerConfig.durationSeconds]);
+
+  const handleCloseLoginModal = () => {
+    sessionStorage.setItem('ekosmart_login_prompt_dismissed', 'true');
+    setLoginModalOpen(false);
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -788,6 +837,14 @@ const Layout = () => {
           </div>
         </div>
       </footer>
+
+      {/* 20-Second Timed Customer Login Modal */}
+      <CustomerLoginModal
+        isOpen={loginModalOpen}
+        onClose={handleCloseLoginModal}
+        title={loginTimerConfig.title}
+        message={loginTimerConfig.message}
+      />
     </div>
   );
 };

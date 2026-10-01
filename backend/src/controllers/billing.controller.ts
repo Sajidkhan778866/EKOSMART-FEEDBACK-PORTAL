@@ -674,22 +674,36 @@ export const createBill = async (req: Request, res: Response) => {
     }
 
     // 1. Find or create Customer
-    let customer = await Customer.findOne({ mobile: customerMobile.trim() });
+    const cleanMobile = (customerMobile || '').toString().trim();
+    const cleanEmail = (customerEmail || '').toString().toLowerCase().trim();
+    const cleanCustomerId = (req.body.customerId || '').toString().trim();
+
+    let customer = null;
+    if (cleanCustomerId) {
+      customer = await Customer.findOne({ customerId: cleanCustomerId });
+    }
+    if (!customer && cleanEmail) {
+      customer = await Customer.findOne({ email: cleanEmail });
+    }
+    if (!customer && cleanMobile) {
+      customer = await Customer.findOne({ mobile: cleanMobile });
+    }
+
     if (!customer) {
       const count = await Customer.countDocuments();
-      const customerId = `CUST-${(count + 1).toString().padStart(5, '0')}`;
-      const referralCode = await generateUniqueReferralCode();
+      const customerId = cleanCustomerId || `CUST-${(count + 1).toString().padStart(5, '0')}`;
+      const newReferralCode = await generateUniqueReferralCode();
       customer = await Customer.create({
         customerId,
         name: customerName.trim(),
-        mobile: customerMobile.trim(),
-        email: customerEmail ? customerEmail.trim() : '',
+        mobile: cleanMobile,
+        email: cleanEmail,
         address: customerAddress ? customerAddress.trim() : '',
         city: city || 'Kota',
         state: state || 'Rajasthan',
         customerType: 'Showroom',
         source: 'Showroom Billing Counter',
-        referralCode,
+        referralCode: newReferralCode,
         walletBalance: 0,
         totalEarnedCoins: 0,
         isVerified: true,
@@ -697,7 +711,8 @@ export const createBill = async (req: Request, res: Response) => {
       });
     } else {
       if (customerAddress && !customer.address) customer.address = customerAddress.trim();
-      if (customerEmail && !customer.email) customer.email = customerEmail.trim();
+      if (cleanEmail && !customer.email) customer.email = cleanEmail;
+      if (cleanMobile && !customer.mobile) customer.mobile = cleanMobile;
       if (!customer.referralCode) {
         customer.referralCode = await generateUniqueReferralCode();
       }
@@ -1069,6 +1084,7 @@ export const createBill = async (req: Request, res: Response) => {
     const newBill = await Bill.create({
       invoiceNumber,
       customer: customer._id,
+      customerId: customer.customerId || '',
       customerName: customerName.trim(),
       customerMobile: customerMobile.trim(),
       customerEmail: customerEmail ? customerEmail.trim() : '',

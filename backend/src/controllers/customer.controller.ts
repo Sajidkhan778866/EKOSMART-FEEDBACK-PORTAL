@@ -350,20 +350,13 @@ export const sendLoginOtp = async (req: Request, res: Response) => {
     const { email } = req.body;
 
     if (!email) {
-      return res.status(400).json({ success: false, message: 'Please provide your registered Email Address.' });
+      return res.status(400).json({ success: false, message: 'Please provide your Email Address.' });
     }
 
     const cleanEmail = String(email).toLowerCase().trim();
     const customer = await Customer.findOne({ email: cleanEmail });
 
-    if (!customer) {
-      return res.status(404).json({
-        success: false,
-        message: 'No registered customer account found with this email. Please register to create an account.',
-      });
-    }
-
-    if (customer.status === 'Inactive') {
+    if (customer && customer.status === 'Inactive') {
       return res.status(403).json({
         success: false,
         message: 'Your customer account has been deactivated. Please contact support.',
@@ -374,12 +367,18 @@ export const sendLoginOtp = async (req: Request, res: Response) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = Date.now() + 10 * 60 * 1000;
 
-    otpCache.set(cleanEmail, { otp, expiresAt });
-    await sendOtpEmail(cleanEmail, otp, 'Login');
+    otpCache.set(cleanEmail, {
+      otp,
+      expiresAt,
+      payload: { isNew: !customer },
+    });
+
+    await sendOtpEmail(cleanEmail, otp, customer ? 'Login' : 'Registration');
 
     res.json({
       success: true,
       message: `Login OTP sent to ${cleanEmail}. Valid for 10 minutes.`,
+      isNew: !customer,
       debugOtp: process.env.NODE_ENV !== 'production' ? otp : undefined,
     });
   } catch (error: any) {
@@ -391,7 +390,7 @@ export const sendLoginOtp = async (req: Request, res: Response) => {
 // POST /api/v1/customers/auth/verify-login-otp
 export const verifyLoginOtp = async (req: Request, res: Response) => {
   try {
-    const { email, otp } = req.body;
+    const { email, otp, name, mobile } = req.body;
 
     const cleanEmail = String(email || '').toLowerCase().trim();
     const cleanOtp = String(otp || '').trim();
@@ -423,26 +422,72 @@ export const verifyLoginOtp = async (req: Request, res: Response) => {
       });
     }
 
+    const isNewCustomer = !!cached.payload?.isNew;
     otpCache.delete(cleanEmail);
 
     let customer = await Customer.findOne({ email: cleanEmail });
+
     if (!customer) {
-      return res.status(404).json({ success: false, message: 'Customer account not found.' });
-    }
+      // Auto-create customer with 500 welcome coins & unique referral code
+      const myNewReferralCode = await generateUniqueReferralCode();
+      const customerCount = await Customer.countDocuments();
+      const customerId = `CUST-${(customerCount + 1).toString().padStart(5, '0')}`;
+      const settings = await getActiveReferralSettings();
+      const welcomeReward = settings?.welcomeRewardCoins || settings?.newCustomerReward || 500;
 
-    // Ensure customer has a permanent unique referral code
-    if (!customer.referralCode) {
-      customer.referralCode = await generateUniqueReferralCode();
-    }
+      // Friendly fallback name from email
+      const emailPrefix = cleanEmail.split('@')[0] || 'Customer';
+      const autoName = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1);
 
-    customer.lastLoginAt = new Date();
-    await customer.save();
+      customer = await Customer.create({
+        customerId,
+        name: name?.trim() || autoName || 'Customer',
+        email: cleanEmail,
+        mobile: mobile?.trim() || '',
+        customerType: 'General',
+        source: 'Public Web Portal Login',
+        referralCode: myNewReferralCode,
+        walletBalance: welcomeReward,
+        totalEarnedCoins: welcomeReward,
+        totalSpentCoins: 0,
+        isVerified: true,
+        status: 'Active',
+        lastLoginAt: new Date(),
+      });
+
+      // Record welcome bonus transaction in wallet
+      await WalletTransaction.create({
+        transactionId: `WTX-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
+        customer: customer._id,
+        customerId: customer.customerId,
+        customerName: customer.name,
+        customerEmail: customer.email,
+        customerMobile: customer.mobile,
+        type: 'Credit',
+        category: 'Welcome Reward',
+        amount: welcomeReward,
+        balanceBefore: 0,
+        balanceAfter: welcomeReward,
+        description: 'Welcome reward bonus coins for joining Ekosmart Platform',
+        reference: myNewReferralCode,
+        referenceType: 'Registration',
+        status: 'Completed',
+      });
+    } else {
+      // Ensure customer has a permanent unique referral code
+      if (!customer.referralCode) {
+        customer.referralCode = await generateUniqueReferralCode();
+      }
+      customer.lastLoginAt = new Date();
+      await customer.save();
+    }
 
     const token = generateCustomerToken(customer);
 
     res.json({
       success: true,
-      message: 'Login successful. Welcome back!',
+      message: isNewCustomer ? 'Welcome to Ekosmart! Your account is active.' : 'Login successful. Welcome back!',
+      isNew: isNewCustomer,
       token,
       data: {
         _id: customer._id,
@@ -704,9 +749,22 @@ export const getMyPurchases = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'Customer not found.' });
     }
 
-    const bills = await Bill.find({
-      $or: [{ customer: customer._id }, { customerMobile: customer.mobile }, { customerEmail: customer.email }],
-    }).sort({ createdAt: -1 });
+    const cleanEmail = customer.email ? customer.email.trim().toLowerCase() : '';
+    const orConditions: any[] = [
+      { customer: customer._id },
+    ];
+
+    if (customer.customerId) {
+      orConditions.push({ customerId: customer.customerId });
+    }
+    if (customer.mobile) {
+      orConditions.push({ customerMobile: customer.mobile });
+    }
+    if (cleanEmail) {
+      orConditions.push({ customerEmail: { $regex: new RegExp(`^${cleanEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } });
+    }
+
+    const bills = await Bill.find({ $or: orConditions }).sort({ createdAt: -1 });
 
     res.json({
       success: true,

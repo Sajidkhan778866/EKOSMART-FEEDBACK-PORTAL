@@ -157,6 +157,12 @@ interface ICMSContent {
     divisionContacts?: IDivisionContact[];
     isPublished: boolean;
   };
+  customerLoginTimer?: {
+    enabled: boolean;
+    durationSeconds: number;
+    title: string;
+    message: string;
+  };
 }
 
 const AVAILABLE_ICONS = [
@@ -388,6 +394,12 @@ const defaultFallbackContent: ICMSContent = {
     ],
     isPublished: true,
   },
+  customerLoginTimer: {
+    enabled: true,
+    durationSeconds: 20,
+    title: 'Login to Continue',
+    message: 'Please login with your email to access your customer account, wallet, referrals, bills and personalized services.',
+  },
 };
 
 const renderLivePreviewIcon = (card: IServiceCard) => {
@@ -548,7 +560,7 @@ const compressImageFile = (
 };
 
 const ContentManager = () => {
-  const [activeTab, setActiveTab] = useState<'cards' | 'hero' | 'policies' | 'footer' | 'contact'>('cards');
+  const [activeTab, setActiveTab] = useState<'cards' | 'hero' | 'policies' | 'footer' | 'contact' | 'loginTimer'>('cards');
   const [content, setContent] = useState<ICMSContent>(defaultFallbackContent);
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
@@ -1035,6 +1047,18 @@ const ContentManager = () => {
         >
           <Phone size={18} />
           <span>Contact & Dropdowns</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('loginTimer')}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition cursor-pointer ${
+            activeTab === 'loginTimer'
+              ? 'border-green-600 text-green-700'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <Clock size={18} />
+          <span>Customer Login Timer ({content.customerLoginTimer?.durationSeconds || 20}s)</span>
         </button>
       </div>
 
@@ -3490,6 +3514,225 @@ const ContentManager = () => {
               >
                 <Save size={16} />
                 <span>{saving ? 'Saving Changes...' : 'Save Contact & Dropdown'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 6: CUSTOMER LOGIN TIMER & POPUP */}
+      {activeTab === 'loginTimer' && (
+        <div className="space-y-6">
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pb-4 border-b border-slate-100">
+              <div>
+                <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                  <Clock className="text-emerald-600" size={20} />
+                  <span>Public Frontend 20-Second Customer Login Timer</span>
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Controls the timed login popup that appears after a visitor browses the public frontend site.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={content.customerLoginTimer?.enabled ?? true}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        customerLoginTimer: {
+                          enabled: e.target.checked,
+                          durationSeconds: content.customerLoginTimer?.durationSeconds || 20,
+                          title: content.customerLoginTimer?.title || 'Welcome to Ekosmart',
+                          message:
+                            content.customerLoginTimer?.message ||
+                            'Login with your email to access your customer wallet, showroom bills, warranty certificates & rewards.',
+                        },
+                      })
+                    }
+                    className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <span className="text-xs font-bold text-slate-700">Enable Timed Login Popup</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Left Column: Form Settings */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Popup Delay Duration (Seconds)
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="3"
+                      max="300"
+                      value={content.customerLoginTimer?.durationSeconds ?? 20}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          customerLoginTimer: {
+                            enabled: content.customerLoginTimer?.enabled ?? true,
+                            durationSeconds: Math.max(3, Number(e.target.value) || 20),
+                            title: content.customerLoginTimer?.title || 'Welcome to Ekosmart',
+                            message: content.customerLoginTimer?.message || '',
+                          },
+                        })
+                      }
+                      className="w-32 border border-slate-300 rounded-xl p-2.5 text-sm font-bold text-center"
+                    />
+                    <div className="flex gap-1.5">
+                      {[10, 20, 30, 60].map((sec) => (
+                        <button
+                          key={sec}
+                          type="button"
+                          onClick={() =>
+                            setContent({
+                              ...content,
+                              customerLoginTimer: {
+                                enabled: content.customerLoginTimer?.enabled ?? true,
+                                durationSeconds: sec,
+                                title: content.customerLoginTimer?.title || 'Welcome to Ekosmart',
+                                message: content.customerLoginTimer?.message || '',
+                              },
+                            })
+                          }
+                          className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                            (content.customerLoginTimer?.durationSeconds ?? 20) === sec
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          }`}
+                        >
+                          {sec}s
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    When a guest opens the website, the site remains fully usable. After {content.customerLoginTimer?.durationSeconds ?? 20} seconds, the modal will smoothly prompt them to login.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Popup Heading Title
+                  </label>
+                  <input
+                    type="text"
+                    value={content.customerLoginTimer?.title || 'Welcome to Ekosmart'}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        customerLoginTimer: {
+                          enabled: content.customerLoginTimer?.enabled ?? true,
+                          durationSeconds: content.customerLoginTimer?.durationSeconds || 20,
+                          title: e.target.value,
+                          message: content.customerLoginTimer?.message || '',
+                        },
+                      })
+                    }
+                    placeholder="Welcome to Ekosmart"
+                    className="w-full border border-slate-300 rounded-xl p-2.5 text-xs font-semibold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Popup Description Message
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={
+                      content.customerLoginTimer?.message ||
+                      'Login with your email to access your customer wallet, showroom bills, warranty certificates & rewards.'
+                    }
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        customerLoginTimer: {
+                          enabled: content.customerLoginTimer?.enabled ?? true,
+                          durationSeconds: content.customerLoginTimer?.durationSeconds || 20,
+                          title: content.customerLoginTimer?.title || 'Welcome to Ekosmart',
+                          message: e.target.value,
+                        },
+                      })
+                    }
+                    className="w-full border border-slate-300 rounded-xl p-2.5 text-xs leading-relaxed"
+                  />
+                </div>
+              </div>
+
+              {/* Right Column: Live Modal Visual Preview */}
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                  Customer Live Popup Preview
+                </label>
+                <div className="bg-slate-900 rounded-3xl p-5 text-white shadow-xl border border-slate-700 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">
+                      Ekosmart Customer Portal
+                    </span>
+                    <span className="text-[11px] text-slate-400 font-mono">
+                      ⏱ Triggers in {content.customerLoginTimer?.durationSeconds ?? 20}s
+                    </span>
+                  </div>
+
+                  <div>
+                    <h4 className="text-lg font-black text-white">
+                      {content.customerLoginTimer?.title || 'Welcome to Ekosmart'}
+                    </h4>
+                    <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                      {content.customerLoginTimer?.message ||
+                        'Login with your email to access your customer wallet, showroom bills, warranty certificates & rewards.'}
+                    </p>
+                  </div>
+
+                  <div className="bg-slate-800/80 p-3 rounded-2xl border border-slate-700 space-y-2 text-xs">
+                    <div className="flex items-center gap-2 text-slate-400">
+                      <Mail size={14} className="text-emerald-400" />
+                      <span className="text-slate-300">Email Address (e.g. rahul@example.com)</span>
+                    </div>
+                    <div className="w-full py-2 bg-emerald-600 rounded-xl text-center font-bold text-white text-xs">
+                      Continue with Email OTP →
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-[10px] text-emerald-300 pt-1">
+                    <div>🪙 +500 Welcome Coins</div>
+                    <div>🧾 Showroom Bills Auto-Linked</div>
+                    <div>🛡️ 3-Year EV Warranty</div>
+                    <div>🎁 500 Coins Referral Bonus</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Save Bar */}
+          <div className="bg-slate-900 text-white rounded-2xl p-5 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-lg">
+            <div>
+              <h4 className="font-bold text-sm text-slate-100 flex items-center gap-2">
+                <CheckCircle size={16} className="text-green-400" />
+                <span>Publish Customer Login Timer Settings</span>
+              </h4>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Saving will instantly update the popup trigger delay and message across the public website.
+              </p>
+            </div>
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={saving}
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold transition shadow-md disabled:opacity-50"
+              >
+                <Save size={16} />
+                <span>{saving ? 'Saving Changes...' : 'Save Timer Configuration'}</span>
               </button>
             </div>
           </div>

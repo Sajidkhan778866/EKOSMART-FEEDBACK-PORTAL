@@ -20,6 +20,7 @@ export interface IBillItem {
 export interface IBill extends Document {
   invoiceNumber: string;
   customer: mongoose.Types.ObjectId;
+  customerId?: string;
   customerName: string;
   customerMobile: string;
   customerEmail?: string;
@@ -80,6 +81,7 @@ const billSchema = new Schema(
   {
     invoiceNumber: { type: String, required: true, unique: true, index: true },
     customer: { type: Schema.Types.ObjectId, ref: 'Customer', required: true, index: true },
+    customerId: { type: String, default: '', index: true },
     customerName: { type: String, required: true },
     customerMobile: { type: String, required: true, index: true },
     customerEmail: { type: String, default: '' },
