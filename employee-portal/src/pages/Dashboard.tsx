@@ -17,7 +17,7 @@ import { empAuthApi, resolveImageUrl } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { IdCardModal } from '../components/IdCardModal';
 import { TicketDetailModal } from '../components/TicketDetailModal';
-import { DateRangeFilter, type DateRangeState } from '../components/DateRangeFilter';
+import { DateRangeFilter, PRESET_LABELS, type DateRangeState } from '../components/DateRangeFilter';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -62,6 +62,8 @@ const Dashboard = () => {
     );
   }
 
+  const [viewTab, setViewTab] = useState<'period' | 'all'>('all');
+
   const employee = data?.employee || user;
   const stats = data?.stats || {
     assignedComplaints: 0,
@@ -70,8 +72,15 @@ const Dashboard = () => {
     resolvedComplaints: 0,
     totalAllTime: 0,
     resolvedAllTime: 0,
+    pendingAllTime: 0,
+    inProgressAllTime: 0,
   };
-  const recent = data?.recentAssignments || [];
+
+  const periodTickets = data?.periodAssignments || [];
+  const allTimeTickets = data?.allTimeAssignments || data?.recentAssignments || [];
+  const displayedTickets = viewTab === 'period' ? periodTickets : allTimeTickets;
+
+  const dateLabel = PRESET_LABELS[dateRange.filter] || 'Period';
 
   return (
     <div className="space-y-6 max-w-7xl pb-12">
@@ -81,18 +90,32 @@ const Dashboard = () => {
           <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">Metrics Scope:</span>
           <DateRangeFilter
             value={dateRange}
-            onChange={setDateRange}
+            onChange={(newRange) => {
+              setDateRange(newRange);
+              if (newRange.filter === 'all') setViewTab('all');
+            }}
           />
         </div>
 
-        <button
-          type="button"
-          onClick={fetchDashboard}
-          className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-        >
-          <RotateCcw size={13} className={loading ? 'animate-spin' : ''} />
-          <span>Refresh</span>
-        </button>
+        <div className="flex items-center gap-2">
+          {dateRange.filter !== 'all' && (
+            <button
+              type="button"
+              onClick={() => setDateRange({ filter: 'all' })}
+              className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold transition cursor-pointer"
+            >
+              View All-Time
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={fetchDashboard}
+            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+          >
+            <RotateCcw size={13} className={loading ? 'animate-spin' : ''} />
+            <span>Refresh</span>
+          </button>
+        </div>
       </div>
 
       {/* Profile Card */}
@@ -155,16 +178,21 @@ const Dashboard = () => {
 
       {/* KPI Cards (Filtered by Selected Date Preset) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex items-center gap-4 border-t-4 border-t-slate-700">
+        <div
+          onClick={() => setViewTab(dateRange.filter === 'all' ? 'all' : 'period')}
+          className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex items-center gap-4 border-t-4 border-t-slate-700 cursor-pointer hover:shadow-md transition"
+        >
           <div className="p-3.5 bg-slate-100 text-slate-700 rounded-2xl">
             <ClipboardList size={22} />
           </div>
           <div>
             <h3 className="text-slate-500 text-[11px] font-bold uppercase tracking-wider">
-              {dateRange.filter === 'today' ? "Today's Work Orders" : 'Assigned Tickets'}
+              {dateRange.filter === 'today' ? "Today's Work Orders" : 'Assigned in Period'}
             </h3>
             <p className="text-2xl font-black text-slate-800 mt-0.5">{stats.assignedComplaints}</p>
-            <span className="text-[10px] text-slate-400">Total in chosen period</span>
+            <span className="text-[10px] text-slate-400">
+              Total in queue: <strong className="text-slate-700">{stats.totalAllTime || allTimeTickets.length}</strong>
+            </span>
           </div>
         </div>
 
@@ -175,7 +203,9 @@ const Dashboard = () => {
           <div>
             <h3 className="text-slate-500 text-[11px] font-bold uppercase tracking-wider">In Progress</h3>
             <p className="text-2xl font-black text-amber-700 mt-0.5">{stats.inProgressComplaints}</p>
-            <span className="text-[10px] text-amber-600 font-semibold">Active investigations</span>
+            <span className="text-[10px] text-amber-600 font-semibold">
+              Active: {stats.inProgressAllTime ?? stats.inProgressComplaints}
+            </span>
           </div>
         </div>
 
@@ -240,18 +270,22 @@ const Dashboard = () => {
           </div>
         </Link>
 
-        <Link
-          to="/complaints"
-          className="p-4 bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl transition flex items-center gap-3 shadow-2xs"
+        <button
+          onClick={() => {
+            setViewTab('all');
+            const el = document.getElementById('assigned-table-section');
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+          }}
+          className="p-4 bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl transition flex items-center gap-3 shadow-2xs text-left cursor-pointer"
         >
           <div className="p-2.5 bg-amber-50 text-amber-600 rounded-xl">
             <ClipboardList size={20} />
           </div>
           <div>
             <h4 className="text-xs font-bold text-slate-800">Tickets Queue</h4>
-            <p className="text-[10px] text-slate-400">Service dossiers & logs</p>
+            <p className="text-[10px] text-slate-400">{allTimeTickets.length} Assigned Service Logs</p>
           </div>
-        </Link>
+        </button>
 
         <Link
           to="/salary"
@@ -268,21 +302,73 @@ const Dashboard = () => {
       </div>
 
       {/* Assigned Tickets Table */}
-      <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 space-y-4">
-        <div className="flex justify-between items-center">
+      <div id="assigned-table-section" className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-base font-bold text-slate-800">Assigned Service Work Orders</h2>
             <p className="text-xs text-slate-400">Customer tickets assigned to your engineer queue</p>
           </div>
-          <span className="text-xs font-bold bg-slate-100 text-slate-700 px-3 py-1 rounded-xl">
-            {recent.length} Assigned
-          </span>
+
+          <div className="flex items-center gap-2">
+            {/* View Mode Switcher */}
+            <div className="bg-slate-100 p-1 rounded-xl flex items-center text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => setViewTab('period')}
+                className={`px-3 py-1.5 rounded-lg transition ${
+                  viewTab === 'period'
+                    ? 'bg-white text-emerald-800 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {dateLabel} ({periodTickets.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewTab('all')}
+                className={`px-3 py-1.5 rounded-lg transition ${
+                  viewTab === 'all'
+                    ? 'bg-white text-emerald-800 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                All-Time ({allTimeTickets.length})
+              </button>
+            </div>
+
+            <span className="text-xs font-bold bg-slate-100 text-slate-700 px-3 py-1.5 rounded-xl">
+              {displayedTickets.length} Listed
+            </span>
+          </div>
         </div>
 
-        {recent.length === 0 ? (
-          <div className="py-12 text-center text-slate-400">
+        {/* Informative alert when period has 0 but all-time has items */}
+        {viewTab === 'period' && periodTickets.length === 0 && allTimeTickets.length > 0 && (
+          <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900 flex items-center justify-between gap-3">
+            <span>
+              ℹ️ No new work orders logged for <strong>{dateLabel}</strong>. You have <strong>{allTimeTickets.length} service tickets</strong> in your overall all-time queue.
+            </span>
+            <button
+              onClick={() => setViewTab('all')}
+              className="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-bold text-[11px] whitespace-nowrap cursor-pointer transition"
+            >
+              View All {allTimeTickets.length} Tickets
+            </button>
+          </div>
+        )}
+
+        {displayedTickets.length === 0 ? (
+          <div className="py-12 text-center text-slate-400 space-y-2">
             <UserCheck size={36} className="mx-auto mb-2 opacity-40" />
-            <p className="text-sm font-semibold">No service tickets currently assigned in this period.</p>
+            <p className="text-sm font-semibold">No service tickets found for {viewTab === 'period' ? dateLabel : 'All-Time'}.</p>
+            {viewTab === 'period' && allTimeTickets.length > 0 && (
+              <button
+                onClick={() => setViewTab('all')}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition cursor-pointer"
+              >
+                Show All {allTimeTickets.length} Assigned Tickets
+              </button>
+            )}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -298,7 +384,7 @@ const Dashboard = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {recent.map((c: any) => (
+                {displayedTickets.map((c: any) => (
                   <tr key={c._id} className="hover:bg-slate-50/80 transition">
                     <td className="py-3.5 px-4">
                       <button

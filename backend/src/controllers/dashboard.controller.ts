@@ -299,12 +299,37 @@ export const getEmployeeDashboardStats = async (req: Request, res: Response) => 
       endDate as string
     );
 
-    const baseQuery: any = { assignedTo: employee._id };
-    const dateQuery: any = { ...baseQuery };
+    const baseQuery: any = {
+      $or: [
+        { assignedTo: employee._id },
+        { 'formData.assignedEmployeeId': employee.employeeId },
+        { 'formData.assignedTo': employee.name },
+      ],
+    };
+
+    let dateQuery: any = baseQuery;
     if (start || end) {
-      dateQuery.updatedAt = {};
-      if (start) dateQuery.updatedAt.$gte = start;
-      if (end) dateQuery.updatedAt.$lte = end;
+      dateQuery = {
+        $and: [
+          baseQuery,
+          {
+            $or: [
+              {
+                createdAt: {
+                  ...(start ? { $gte: start } : {}),
+                  ...(end ? { $lte: end } : {}),
+                },
+              },
+              {
+                updatedAt: {
+                  ...(start ? { $gte: start } : {}),
+                  ...(end ? { $lte: end } : {}),
+                },
+              },
+            ],
+          },
+        ],
+      };
     }
 
     // Range-filtered metrics
@@ -319,12 +344,24 @@ export const getEmployeeDashboardStats = async (req: Request, res: Response) => 
     // All-time totals
     const totalAllTime = await Complaint.countDocuments(baseQuery);
     const resolvedAllTime = await Complaint.countDocuments({ ...baseQuery, status: { $in: ['Resolved', 'Closed'] } });
+    const pendingAllTime = await Complaint.countDocuments({ ...baseQuery, status: { $in: ['Assigned', 'Pending', 'New'] } });
+    const inProgressAllTime = await Complaint.countDocuments({ ...baseQuery, status: 'In Progress' });
 
-    const recentAssignments = await Complaint.find(baseQuery)
+    // Period assignments
+    const periodAssignments = await Complaint.find(dateQuery)
       .populate('customer', 'customerId name mobile email address')
       .populate('assignedTo', 'employeeId name designation division photoUrl')
       .sort({ updatedAt: -1, createdAt: -1 })
-      .limit(20);
+      .limit(50);
+
+    // All-time assignments
+    const allTimeAssignments = await Complaint.find(baseQuery)
+      .populate('customer', 'customerId name mobile email address')
+      .populate('assignedTo', 'employeeId name designation division photoUrl')
+      .sort({ updatedAt: -1, createdAt: -1 })
+      .limit(50);
+
+    const recentAssignments = periodAssignments.length > 0 ? periodAssignments : allTimeAssignments;
 
     res.json({
       success: true,
@@ -352,7 +389,11 @@ export const getEmployeeDashboardStats = async (req: Request, res: Response) => 
           resolvedComplaints,
           totalAllTime,
           resolvedAllTime,
+          pendingAllTime,
+          inProgressAllTime,
         },
+        periodAssignments,
+        allTimeAssignments,
         recentAssignments,
       },
     });
