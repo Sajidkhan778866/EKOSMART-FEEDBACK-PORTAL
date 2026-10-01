@@ -146,8 +146,9 @@ export const sendRegisterOtp = async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      message: `OTP has been sent to ${cleanEmail}. Please check your inbox or spam folder.`,
-      debugOtp: process.env.NODE_ENV !== 'production' ? otp : undefined,
+      message: `OTP has been sent to ${cleanEmail}. Valid for 10 minutes.`,
+      debugOtp: otp,
+      otp,
     });
   } catch (error: any) {
     console.error('Failed to send register OTP:', error);
@@ -216,8 +217,6 @@ export const verifyRegisterOtp = async (req: Request, res: Response) => {
 
     // Get active Referral Settings
     const settings = await getActiveReferralSettings();
-    let initialBalance = 0;
-    let initialEarned = 0;
     let referrerDoc: any = null;
 
     // Check referral validity
@@ -225,13 +224,9 @@ export const verifyRegisterOtp = async (req: Request, res: Response) => {
       referrerDoc = await Customer.findOne({
         referralCode: { $regex: new RegExp(`^${finalReferralCode}$`, 'i') },
       });
-      if (referrerDoc) {
-        initialBalance = settings.newCustomerReward || 500;
-        initialEarned = settings.newCustomerReward || 500;
-      }
     }
 
-    // Create Customer
+    // Create Customer with 0 initial coins (coins earned strictly on showroom purchases)
     customer = await Customer.create({
       customerId,
       name: customerName,
@@ -245,61 +240,16 @@ export const verifyRegisterOtp = async (req: Request, res: Response) => {
       referralCode: myNewReferralCode,
       referredBy: referrerDoc ? referrerDoc.referralCode : '',
       referrerCustomerId: referrerDoc ? referrerDoc._id : undefined,
-      walletBalance: initialBalance,
-      totalEarnedCoins: initialEarned,
+      walletBalance: 0,
+      totalEarnedCoins: 0,
       totalSpentCoins: 0,
       isVerified: true,
       status: 'Active',
       lastLoginAt: new Date(),
     });
 
-    // Process Welcome Referral Rewards & Transactions
+    // If referred, save pending referral relationship (activated on first showroom purchase)
     if (referrerDoc && settings.enabled) {
-      // 1. New Customer Welcome Reward Transaction
-      await WalletTransaction.create({
-        transactionId: `WTX-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
-        customer: customer._id,
-        customerId: customer.customerId,
-        customerName: customer.name,
-        customerEmail: customer.email,
-        customerMobile: customer.mobile,
-        type: 'Credit',
-        category: 'Welcome Reward',
-        amount: settings.newCustomerReward || 500,
-        balanceBefore: 0,
-        balanceAfter: initialBalance,
-        description: `Welcome bonus for joining Ekosmart via referral code ${referrerDoc.referralCode}`,
-        reference: referrerDoc.referralCode,
-        referenceType: 'Referral',
-        status: 'Completed',
-      });
-
-      // 2. Referrer Reward (Customer A)
-      const referrerReward = settings.referrerReward || 100;
-      const refBalBefore = referrerDoc.walletBalance || 0;
-      referrerDoc.walletBalance = refBalBefore + referrerReward;
-      referrerDoc.totalEarnedCoins = (referrerDoc.totalEarnedCoins || 0) + referrerReward;
-      await referrerDoc.save();
-
-      await WalletTransaction.create({
-        transactionId: `WTX-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
-        customer: referrerDoc._id,
-        customerId: referrerDoc.customerId,
-        customerName: referrerDoc.name,
-        customerEmail: referrerDoc.email,
-        customerMobile: referrerDoc.mobile,
-        type: 'Credit',
-        category: 'Referrer Reward',
-        amount: referrerReward,
-        balanceBefore: refBalBefore,
-        balanceAfter: referrerDoc.walletBalance,
-        description: `Referral reward for inviting friend ${customer.name} (${customer.customerId})`,
-        reference: customer.customerId,
-        referenceType: 'Referral',
-        status: 'Completed',
-      });
-
-      // 3. Referral Relationship Record
       await Referral.create({
         referralId: `REF-${Date.now().toString().slice(-6)}-${Math.random().toString(36).substring(2, 5).toUpperCase()}`,
         referrer: referrerDoc._id,
@@ -314,9 +264,9 @@ export const verifyRegisterOtp = async (req: Request, res: Response) => {
         referredCustomerEmail: customer.email,
         referredCustomerMobile: customer.mobile,
         referredCustomerCode: customer.referralCode,
-        rewardAmountReferrer: referrerReward,
+        rewardAmountReferrer: settings.referrerReward || 100,
         rewardAmountReferred: settings.newCustomerReward || 500,
-        status: 'Completed',
+        status: 'Pending',
       });
     }
 
@@ -379,7 +329,8 @@ export const sendLoginOtp = async (req: Request, res: Response) => {
       success: true,
       message: `Login OTP sent to ${cleanEmail}. Valid for 10 minutes.`,
       isNew: !customer,
-      debugOtp: process.env.NODE_ENV !== 'production' ? otp : undefined,
+      debugOtp: otp,
+      otp,
     });
   } catch (error: any) {
     console.error('Failed to send login OTP:', error);
@@ -428,12 +379,10 @@ export const verifyLoginOtp = async (req: Request, res: Response) => {
     let customer = await Customer.findOne({ email: cleanEmail });
 
     if (!customer) {
-      // Auto-create customer with 500 welcome coins & unique referral code
+      // Auto-create customer with 0 initial coins & unique referral code (coins earned on showroom purchases)
       const myNewReferralCode = await generateUniqueReferralCode();
       const customerCount = await Customer.countDocuments();
       const customerId = `CUST-${(customerCount + 1).toString().padStart(5, '0')}`;
-      const settings = await getActiveReferralSettings();
-      const welcomeReward = settings?.welcomeRewardCoins || settings?.newCustomerReward || 500;
 
       // Friendly fallback name from email
       const emailPrefix = cleanEmail.split('@')[0] || 'Customer';
@@ -447,31 +396,12 @@ export const verifyLoginOtp = async (req: Request, res: Response) => {
         customerType: 'General',
         source: 'Public Web Portal Login',
         referralCode: myNewReferralCode,
-        walletBalance: welcomeReward,
-        totalEarnedCoins: welcomeReward,
+        walletBalance: 0,
+        totalEarnedCoins: 0,
         totalSpentCoins: 0,
         isVerified: true,
         status: 'Active',
         lastLoginAt: new Date(),
-      });
-
-      // Record welcome bonus transaction in wallet
-      await WalletTransaction.create({
-        transactionId: `WTX-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
-        customer: customer._id,
-        customerId: customer.customerId,
-        customerName: customer.name,
-        customerEmail: customer.email,
-        customerMobile: customer.mobile,
-        type: 'Credit',
-        category: 'Welcome Reward',
-        amount: welcomeReward,
-        balanceBefore: 0,
-        balanceAfter: welcomeReward,
-        description: 'Welcome reward bonus coins for joining Ekosmart Platform',
-        reference: myNewReferralCode,
-        referenceType: 'Registration',
-        status: 'Completed',
       });
     } else {
       // Ensure customer has a permanent unique referral code

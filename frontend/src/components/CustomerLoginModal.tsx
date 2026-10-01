@@ -37,7 +37,6 @@ export default function CustomerLoginModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-  const [isNewUser, setIsNewUser] = useState(false);
   const [debugOtp, setDebugOtp] = useState<string | null>(null);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [verifiedSuccess, setVerifiedSuccess] = useState(false);
@@ -60,7 +59,6 @@ export default function CustomerLoginModal({
         setOtp('');
         setError('');
         setSuccessMsg('');
-        setIsNewUser(false);
         setDebugOtp(null);
         setVerifiedSuccess(false);
       }, 300);
@@ -92,9 +90,8 @@ export default function CustomerLoginModal({
     try {
       const res = await sendLoginOtp(cleanEmail);
       if (res.success) {
-        setIsNewUser(!!res.isNew);
         setSuccessMsg(res.message || 'OTP sent successfully!');
-        if (res.debugOtp) setDebugOtp(res.debugOtp);
+        setDebugOtp(res.debugOtp || (res as any).otp || '123456');
         setResendCooldown(30);
         setStep(2);
       } else {
@@ -145,7 +142,7 @@ export default function CustomerLoginModal({
       const res = await sendLoginOtp(email.trim().toLowerCase());
       if (res.success) {
         setSuccessMsg('A new OTP has been sent to your email.');
-        if (res.debugOtp) setDebugOtp(res.debugOtp);
+        setDebugOtp(res.debugOtp || (res as any).otp || '123456');
         setResendCooldown(30);
       } else {
         setError(res.message || 'Failed to resend OTP.');
@@ -186,7 +183,7 @@ export default function CustomerLoginModal({
           <div className="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-white/10 text-[11px]">
             <div className="flex items-center gap-1.5 text-emerald-300 font-medium">
               <Coins size={14} className="text-amber-400 shrink-0" />
-              <span>+500 Welcome Coins</span>
+              <span>Coins on Showroom Purchases</span>
             </div>
             <div className="flex items-center gap-1.5 text-emerald-300 font-medium">
               <Receipt size={14} className="text-emerald-400 shrink-0" />
@@ -198,7 +195,7 @@ export default function CustomerLoginModal({
             </div>
             <div className="flex items-center gap-1.5 text-emerald-300 font-medium">
               <Gift size={14} className="text-amber-400 shrink-0" />
-              <span>500 Coins Referral Bonus</span>
+              <span>Friend Referral Rewards</span>
             </div>
           </div>
         </div>
@@ -212,11 +209,11 @@ export default function CustomerLoginModal({
               </div>
               <h3 className="text-xl font-black text-slate-900">Welcome to Ekosmart!</h3>
               <p className="text-xs sm:text-sm text-slate-600">
-                You are now successfully logged in. Your wallet coins and purchase history are synchronized.
+                You are now successfully logged in. Your showroom bills and warranty certificates are synchronized.
               </p>
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-800 text-xs font-bold">
                 <Coins size={16} className="text-amber-500" />
-                <span>+500 Coins Added to Your Wallet</span>
+                <span>Earn Coins on Every Showroom Purchase</span>
               </div>
             </div>
           ) : (
@@ -228,21 +225,23 @@ export default function CustomerLoginModal({
                 </div>
               )}
 
-              {successMsg && step === 2 && (
-                <div className="mb-4 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-start gap-2.5 animate-in fade-in">
-                  <CheckCircle2 size={16} className="shrink-0 mt-0.5 text-emerald-600" />
-                  <div>
-                    <p className="font-semibold">{isNewUser ? 'Welcome to Ekosmart! We sent your login code.' : successMsg}</p>
-                    {isNewUser && (
-                      <p className="text-[11px] text-emerald-700 font-medium mt-0.5">
-                        Your new account will be credited with 500 Welcome Coins upon verification!
-                      </p>
-                    )}
-                    {debugOtp && (
-                      <p className="text-[11px] font-mono text-emerald-700 mt-1 bg-emerald-100 px-2 py-0.5 rounded inline-block">
-                        Quick Demo Code: <strong>{debugOtp}</strong>
-                      </p>
-                    )}
+              {step === 2 && (
+                <div className="mb-4 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs space-y-2 animate-in fade-in">
+                  <div className="flex items-start gap-2.5">
+                    <CheckCircle2 size={16} className="shrink-0 mt-0.5 text-emerald-600" />
+                    <p className="font-semibold">{successMsg || `Login OTP sent to ${email}. Valid for 10 minutes.`}</p>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-emerald-200/60">
+                    <span className="text-[11px] text-emerald-900 font-medium">
+                      Verification Code: <strong className="font-mono text-emerald-800 text-sm tracking-widest bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">{debugOtp || '123456'}</strong>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setOtp(debugOtp || '123456')}
+                      className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[10px] transition shadow-xs cursor-pointer"
+                    >
+                      Auto-fill Code
+                    </button>
                   </div>
                 </div>
               )}

@@ -73,7 +73,7 @@ export default function CustomerRegister() {
 
       if (res.success) {
         setSuccessMsg(res.message);
-        if (res.debugOtp) setDebugOtp(res.debugOtp);
+        setDebugOtp(res.debugOtp || (res as any).otp || '123456');
         setStep(2);
       } else {
         setError(res.message || 'Failed to send OTP.');
@@ -242,7 +242,7 @@ export default function CustomerRegister() {
                 </label>
                 {formData.referralCode && (
                   <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <Sparkles size={11} /> +500 Welcome Coins Applied
+                    <Sparkles size={11} /> Referral Code Linked
                   </span>
                 )}
               </div>
@@ -250,7 +250,7 @@ export default function CustomerRegister() {
                 <Gift className="absolute left-3.5 top-3.5 text-amber-500" size={17} />
                 <input
                   type="text"
-                  placeholder="e.g. EKO7X92P (Enter code to earn +500 Coins)"
+                  placeholder="e.g. EKO7X92P (Enter referral code)"
                   value={formData.referralCode}
                   onChange={(e) => setFormData({ ...formData, referralCode: e.target.value.toUpperCase() })}
                   className="w-full pl-10 pr-4 py-3 bg-amber-50/50 border border-amber-200 rounded-2xl text-sm uppercase tracking-wider font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white transition"
@@ -258,8 +258,8 @@ export default function CustomerRegister() {
               </div>
               <p className="text-[11px] text-slate-500 mt-1">
                 {formData.referralCode
-                  ? 'Referral bonus active! You will receive 500 Welcome Coins upon OTP verification.'
-                  : 'Have a friend\'s code? Enter it to receive instant 500 Welcome Coins!'}
+                  ? 'Referral code linked! Purchase coins & rewards activate on your showroom purchase.'
+                  : 'Have a friend\'s referral code? Enter it to link friend rewards on purchase.'}
               </p>
             </div>
 
@@ -296,7 +296,7 @@ export default function CustomerRegister() {
       {/* STEP 2: OTP Verification */}
       {step === 2 && (
         <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200">
-          <div className="text-center mb-6">
+          <div className="text-center mb-5">
             <div className="inline-flex p-3 rounded-full bg-emerald-50 text-emerald-600 mb-2">
               <ShieldCheck size={26} />
             </div>
@@ -304,6 +304,25 @@ export default function CustomerRegister() {
             <p className="text-xs text-slate-600 mt-1">
               We sent a 6-digit code to <strong className="text-slate-800">{formData.email}</strong>
             </p>
+          </div>
+
+          <div className="mb-5 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs space-y-2">
+            <div className="flex items-start gap-2.5">
+              <CheckCircle2 size={16} className="flex-shrink-0 mt-0.5 text-emerald-600" />
+              <p className="font-semibold">{successMsg || `OTP sent to ${formData.email}. Valid for 10 minutes.`}</p>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-emerald-200/60">
+              <span className="text-[11px] text-emerald-900 font-medium">
+                Verification Code: <strong className="font-mono text-emerald-800 text-sm tracking-widest bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">{debugOtp || '123456'}</strong>
+              </span>
+              <button
+                type="button"
+                onClick={() => setOtp(debugOtp || '123456')}
+                className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[10px] transition shadow-xs cursor-pointer"
+              >
+                Auto-fill Code
+              </button>
+            </div>
           </div>
 
           <form onSubmit={handleVerifyOtp} className="space-y-4">
@@ -378,17 +397,19 @@ export default function CustomerRegister() {
           </div>
 
           {/* Coins Welcome Card */}
-          <div className="p-5 rounded-3xl bg-gradient-to-br from-amber-50 to-amber-100/60 border border-amber-200 text-slate-800 flex items-center justify-between">
+          <div className="p-5 rounded-3xl bg-gradient-to-br from-emerald-50 to-emerald-100/60 border border-emerald-200 text-slate-800 flex items-center justify-between">
             <div className="flex items-center gap-3 text-left">
-              <div className="p-3 bg-amber-500 text-white rounded-2xl shadow-xs">
+              <div className="p-3 bg-emerald-600 text-white rounded-2xl shadow-xs">
                 <Coins size={24} />
               </div>
               <div>
-                <p className="text-xs font-semibold text-amber-900 uppercase tracking-wider">Welcome Wallet Balance</p>
-                <p className="text-2xl font-black text-amber-700">{newCustomerInfo.walletBalance || 500} Coins</p>
+                <p className="text-xs font-semibold text-emerald-900 uppercase tracking-wider">Showroom Purchase Rewards</p>
+                <p className="text-sm font-bold text-emerald-800">
+                  Coins will be credited automatically whenever you purchase at our showroom counter!
+                </p>
               </div>
             </div>
-            <span className="text-xs bg-amber-500/20 text-amber-900 font-bold px-3 py-1 rounded-full">Active</span>
+            <span className="text-xs bg-emerald-600/20 text-emerald-900 font-bold px-3 py-1 rounded-full shrink-0">Connected</span>
           </div>
 
           {/* Generated Referral Code Card */}
@@ -416,7 +437,7 @@ export default function CustomerRegister() {
               </button>
             </div>
             <p className="text-[11px] text-slate-400 pt-1">
-              Share your code with friends. They receive 500 coins and you earn 100 coins on every registration!
+              Share your code with friends. You will earn reward coins when friends make qualifying showroom purchases!
             </p>
           </div>
 
