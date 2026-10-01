@@ -21,6 +21,14 @@ import {
   Mail,
   Gift,
   Coins,
+  Plus,
+  Trash2,
+  RotateCcw,
+  Check,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  X,
 } from 'lucide-react';
 import { billTemplateApi } from '../api/client';
 
@@ -105,6 +113,7 @@ export interface IBillTemplate {
     label: string;
     visible: boolean;
     widthPercent?: number;
+    align?: 'left' | 'center' | 'right';
     order: number;
   }>;
   salaryConfig: {
@@ -834,7 +843,113 @@ export const BillTemplateDesigner: React.FC<BillTemplateDesignerProps> = ({
     showAlert('success', 'Cloned template as a new editable draft. Click "Save Template" when ready.');
   };
 
-  // Move Column Up/Down Helper
+  // --- DYNAMIC ADD & CUSTOM FIELD STATE ---
+  const [newColumnForm, setNewColumnForm] = useState({
+    label: '',
+    key: '',
+    widthPercent: 12,
+    align: 'left' as 'left' | 'center' | 'right',
+  });
+  const [showAddColumn, setShowAddColumn] = useState(false);
+
+  const [newCustomerFieldForm, setNewCustomerFieldForm] = useState({
+    label: '',
+    key: '',
+    required: false,
+  });
+  const [showAddCustomerField, setShowAddCustomerField] = useState(false);
+
+  const [newInvoiceFieldForm, setNewInvoiceFieldForm] = useState({
+    label: '',
+    key: '',
+  });
+  const [showAddInvoiceField, setShowAddInvoiceField] = useState(false);
+
+  const [newTermInput, setNewTermInput] = useState('');
+  const [showBulkTerms, setShowBulkTerms] = useState(false);
+  const [newEarningForm, setNewEarningForm] = useState({ label: '', defaultAmount: 5000 });
+  const [newDeductionForm, setNewDeductionForm] = useState({ label: '', defaultAmount: 500 });
+  const [newEmpFieldForm, setNewEmpFieldForm] = useState({ label: '', key: '' });
+
+  const slugify = (text: string): string => {
+    return text
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-zA-Z0-9\s]/g, '')
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((w, i) => (i === 0 ? w : w.charAt(0).toUpperCase() + w.slice(1)))
+      .join('') || `field_${Date.now()}`;
+  };
+
+  // --- COLUMN HANDLERS ---
+  const handleAddColumn = (preset?: { label: string; key?: string; widthPercent?: number; align?: 'left' | 'center' | 'right' }) => {
+    const label = (preset?.label || newColumnForm.label).trim();
+    if (!label) {
+      showAlert('error', 'Please enter a column header label name.');
+      return;
+    }
+    const key = preset?.key || (newColumnForm.key.trim() ? slugify(newColumnForm.key) : slugify(label));
+    const widthPercent = preset?.widthPercent || Number(newColumnForm.widthPercent) || 12;
+    const align = preset?.align || newColumnForm.align || 'left';
+
+    const cols = [...(currentTemplate.productColumns || [])];
+    if (cols.some((c) => c.key === key)) {
+      showAlert('error', `A table column with key "${key}" already exists.`);
+      return;
+    }
+
+    cols.push({
+      key,
+      label,
+      visible: true,
+      widthPercent,
+      align,
+      order: cols.length + 1,
+    });
+
+    setCurrentTemplate({
+      ...currentTemplate,
+      productColumns: cols,
+    });
+    setNewColumnForm({ label: '', key: '', widthPercent: 12, align: 'left' });
+    setShowAddColumn(false);
+    showAlert('success', `Added new column "${label}" to product table!`);
+  };
+
+  const handleDeleteColumn = (index: number) => {
+    const cols = [...(currentTemplate.productColumns || [])];
+    const removed = cols.splice(index, 1)[0];
+    cols.forEach((col, idx) => {
+      col.order = idx + 1;
+    });
+    setCurrentTemplate({
+      ...currentTemplate,
+      productColumns: cols,
+    });
+    showAlert('success', `Removed column "${removed?.label || 'Column'}" from table.`);
+  };
+
+  const updateColumnWidth = (index: number, widthPercent: number) => {
+    const cols = [...(currentTemplate.productColumns || [])];
+    if (!cols[index]) return;
+    cols[index].widthPercent = widthPercent;
+    setCurrentTemplate({
+      ...currentTemplate,
+      productColumns: cols,
+    });
+  };
+
+  const updateColumnAlign = (index: number, align: 'left' | 'center' | 'right') => {
+    const cols = [...(currentTemplate.productColumns || [])];
+    if (!cols[index]) return;
+    (cols[index] as any).align = align;
+    setCurrentTemplate({
+      ...currentTemplate,
+      productColumns: cols,
+    });
+  };
+
   const moveColumn = (index: number, direction: 'up' | 'down') => {
     const cols = [...(currentTemplate.productColumns || [])];
     const targetIdx = direction === 'up' ? index - 1 : index + 1;
@@ -874,7 +989,63 @@ export const BillTemplateDesigner: React.FC<BillTemplateDesignerProps> = ({
     });
   };
 
-  // Customer Field Handlers
+  const handleResetColumns = () => {
+    const defaults = isSalaryTemplate
+      ? DEFAULT_TEMPLATES[1].productColumns
+      : DEFAULT_TEMPLATES[0].productColumns;
+    setCurrentTemplate({
+      ...currentTemplate,
+      productColumns: defaults.map((c, i) => ({ ...c, order: i + 1 })),
+    });
+    showAlert('success', 'Reset product table columns to default.');
+  };
+
+  // --- CUSTOMER FIELD HANDLERS ---
+  const handleAddCustomerField = (preset?: { label: string; key?: string; required?: boolean }) => {
+    const label = (preset?.label || newCustomerFieldForm.label).trim();
+    if (!label) {
+      showAlert('error', 'Please enter a field label.');
+      return;
+    }
+    const key = preset?.key || (newCustomerFieldForm.key.trim() ? slugify(newCustomerFieldForm.key) : slugify(label));
+    const required = preset?.required !== undefined ? preset.required : Boolean(newCustomerFieldForm.required);
+
+    const fields = [...(currentTemplate.customerFields || [])];
+    if (fields.some((f) => f.key === key)) {
+      showAlert('error', `A customer field with key "${key}" already exists.`);
+      return;
+    }
+
+    fields.push({
+      key,
+      label,
+      visible: true,
+      required,
+      order: fields.length + 1,
+    });
+
+    setCurrentTemplate({
+      ...currentTemplate,
+      customerFields: fields,
+    });
+    setNewCustomerFieldForm({ label: '', key: '', required: false });
+    setShowAddCustomerField(false);
+    showAlert('success', `Added new customer field "${label}"!`);
+  };
+
+  const handleDeleteCustomerField = (index: number) => {
+    const fields = [...(currentTemplate.customerFields || [])];
+    const removed = fields.splice(index, 1)[0];
+    fields.forEach((f, idx) => {
+      f.order = idx + 1;
+    });
+    setCurrentTemplate({
+      ...currentTemplate,
+      customerFields: fields,
+    });
+    showAlert('success', `Removed field "${removed?.label || 'Field'}".`);
+  };
+
   const moveCustomerField = (index: number, direction: 'up' | 'down') => {
     const fields = [...(currentTemplate.customerFields || [])];
     const targetIdx = direction === 'up' ? index - 1 : index + 1;
@@ -911,6 +1082,251 @@ export const BillTemplateDesigner: React.FC<BillTemplateDesignerProps> = ({
     setCurrentTemplate({
       ...currentTemplate,
       customerFields: fields,
+    });
+  };
+
+  const toggleCustomerFieldRequired = (index: number) => {
+    const fields = [...(currentTemplate.customerFields || [])];
+    if (!fields[index]) return;
+    fields[index].required = !fields[index].required;
+    setCurrentTemplate({
+      ...currentTemplate,
+      customerFields: fields,
+    });
+  };
+
+  const handleResetCustomerFields = () => {
+    setCurrentTemplate({
+      ...currentTemplate,
+      customerFields: DEFAULT_TEMPLATES[0].customerFields.map((f, i) => ({ ...f, order: i + 1 })),
+    });
+    showAlert('success', 'Reset customer fields to default.');
+  };
+
+  // --- INVOICE META FIELD HANDLERS ---
+  const handleAddInvoiceField = (preset?: { label: string; key?: string }) => {
+    const label = (preset?.label || newInvoiceFieldForm.label).trim();
+    if (!label) {
+      showAlert('error', 'Please enter an invoice field label.');
+      return;
+    }
+    const key = preset?.key || (newInvoiceFieldForm.key.trim() ? slugify(newInvoiceFieldForm.key) : slugify(label));
+
+    const fields = [...(currentTemplate.invoiceFields || [])];
+    if (fields.some((f) => f.key === key)) {
+      showAlert('error', `An invoice field with key "${key}" already exists.`);
+      return;
+    }
+
+    fields.push({
+      key,
+      label,
+      visible: true,
+      order: fields.length + 1,
+    });
+
+    setCurrentTemplate({
+      ...currentTemplate,
+      invoiceFields: fields,
+    });
+    setNewInvoiceFieldForm({ label: '', key: '' });
+    setShowAddInvoiceField(false);
+    showAlert('success', `Added new invoice meta field "${label}"!`);
+  };
+
+  const handleDeleteInvoiceField = (index: number) => {
+    const fields = [...(currentTemplate.invoiceFields || [])];
+    const removed = fields.splice(index, 1)[0];
+    fields.forEach((f, idx) => {
+      f.order = idx + 1;
+    });
+    setCurrentTemplate({
+      ...currentTemplate,
+      invoiceFields: fields,
+    });
+    showAlert('success', `Removed invoice field "${removed?.label || 'Field'}".`);
+  };
+
+  const toggleInvoiceField = (index: number) => {
+    const fields = [...(currentTemplate.invoiceFields || [])];
+    if (!fields[index]) return;
+    fields[index].visible = !fields[index].visible;
+    setCurrentTemplate({
+      ...currentTemplate,
+      invoiceFields: fields,
+    });
+  };
+
+  const updateInvoiceFieldLabel = (index: number, label: string) => {
+    const fields = [...(currentTemplate.invoiceFields || [])];
+    if (!fields[index]) return;
+    fields[index].label = label;
+    setCurrentTemplate({
+      ...currentTemplate,
+      invoiceFields: fields,
+    });
+  };
+
+  const moveInvoiceField = (index: number, direction: 'up' | 'down') => {
+    const fields = [...(currentTemplate.invoiceFields || [])];
+    const targetIdx = direction === 'up' ? index - 1 : index + 1;
+    if (targetIdx < 0 || targetIdx >= fields.length) return;
+    const temp = fields[index];
+    fields[index] = fields[targetIdx];
+    fields[targetIdx] = temp;
+    fields.forEach((f, i) => {
+      f.order = i + 1;
+    });
+    setCurrentTemplate({
+      ...currentTemplate,
+      invoiceFields: fields,
+    });
+  };
+
+  // --- TERMS & CONDITIONS HANDLERS ---
+  const handleAddTerm = (text?: string) => {
+    const term = (text || newTermInput).trim();
+    if (!term) return;
+    const terms = [...(currentTemplate.footer?.termsAndConditions || [])];
+    terms.push(term);
+    setCurrentTemplate({
+      ...currentTemplate,
+      footer: {
+        ...currentTemplate.footer,
+        termsAndConditions: terms,
+      },
+    });
+    setNewTermInput('');
+    showAlert('success', 'Added new invoice term / condition!');
+  };
+
+  const handleDeleteTerm = (index: number) => {
+    const terms = [...(currentTemplate.footer?.termsAndConditions || [])];
+    terms.splice(index, 1);
+    setCurrentTemplate({
+      ...currentTemplate,
+      footer: {
+        ...currentTemplate.footer,
+        termsAndConditions: terms,
+      },
+    });
+  };
+
+  const handleMoveTerm = (index: number, direction: 'up' | 'down') => {
+    const terms = [...(currentTemplate.footer?.termsAndConditions || [])];
+    const targetIdx = direction === 'up' ? index - 1 : index + 1;
+    if (targetIdx < 0 || targetIdx >= terms.length) return;
+    const temp = terms[index];
+    terms[index] = terms[targetIdx];
+    terms[targetIdx] = temp;
+    setCurrentTemplate({
+      ...currentTemplate,
+      footer: {
+        ...currentTemplate.footer,
+        termsAndConditions: terms,
+      },
+    });
+  };
+
+  const handleUpdateTerm = (index: number, text: string) => {
+    const terms = [...(currentTemplate.footer?.termsAndConditions || [])];
+    terms[index] = text;
+    setCurrentTemplate({
+      ...currentTemplate,
+      footer: {
+        ...currentTemplate.footer,
+        termsAndConditions: terms,
+      },
+    });
+  };
+
+  // --- SALARY CONFIG HANDLERS ---
+  const handleAddEarning = (preset?: { label: string; defaultAmount: number }) => {
+    const label = (preset?.label || newEarningForm.label).trim();
+    if (!label) return;
+    const defaultAmount = preset?.defaultAmount || Number(newEarningForm.defaultAmount) || 0;
+    const earnings = [...(currentTemplate.salaryConfig?.earningsColumns || [])];
+    const key = slugify(label);
+    earnings.push({ key, label, visible: true, defaultAmount });
+    setCurrentTemplate({
+      ...currentTemplate,
+      salaryConfig: {
+        ...currentTemplate.salaryConfig,
+        earningsColumns: earnings,
+      },
+    });
+    setNewEarningForm({ label: '', defaultAmount: 5000 });
+    showAlert('success', `Added earning head "${label}"!`);
+  };
+
+  const handleDeleteEarning = (index: number) => {
+    const earnings = [...(currentTemplate.salaryConfig?.earningsColumns || [])];
+    earnings.splice(index, 1);
+    setCurrentTemplate({
+      ...currentTemplate,
+      salaryConfig: {
+        ...currentTemplate.salaryConfig,
+        earningsColumns: earnings,
+      },
+    });
+  };
+
+  const handleAddDeduction = (preset?: { label: string; defaultAmount: number }) => {
+    const label = (preset?.label || newDeductionForm.label).trim();
+    if (!label) return;
+    const defaultAmount = preset?.defaultAmount || Number(newDeductionForm.defaultAmount) || 0;
+    const deductions = [...(currentTemplate.salaryConfig?.deductionsColumns || [])];
+    const key = slugify(label);
+    deductions.push({ key, label, visible: true, defaultAmount });
+    setCurrentTemplate({
+      ...currentTemplate,
+      salaryConfig: {
+        ...currentTemplate.salaryConfig,
+        deductionsColumns: deductions,
+      },
+    });
+    setNewDeductionForm({ label: '', defaultAmount: 500 });
+    showAlert('success', `Added deduction head "${label}"!`);
+  };
+
+  const handleDeleteDeduction = (index: number) => {
+    const deductions = [...(currentTemplate.salaryConfig?.deductionsColumns || [])];
+    deductions.splice(index, 1);
+    setCurrentTemplate({
+      ...currentTemplate,
+      salaryConfig: {
+        ...currentTemplate.salaryConfig,
+        deductionsColumns: deductions,
+      },
+    });
+  };
+
+  const handleAddEmployeeField = (preset?: { label: string; key?: string }) => {
+    const label = (preset?.label || newEmpFieldForm.label).trim();
+    if (!label) return;
+    const key = preset?.key || (newEmpFieldForm.key.trim() ? slugify(newEmpFieldForm.key) : slugify(label));
+    const empFields = [...(currentTemplate.salaryConfig?.employeeFields || [])];
+    empFields.push({ key, label, visible: true });
+    setCurrentTemplate({
+      ...currentTemplate,
+      salaryConfig: {
+        ...currentTemplate.salaryConfig,
+        employeeFields: empFields,
+      },
+    });
+    setNewEmpFieldForm({ label: '', key: '' });
+    showAlert('success', `Added employee field "${label}"!`);
+  };
+
+  const handleDeleteEmployeeField = (index: number) => {
+    const empFields = [...(currentTemplate.salaryConfig?.employeeFields || [])];
+    empFields.splice(index, 1);
+    setCurrentTemplate({
+      ...currentTemplate,
+      salaryConfig: {
+        ...currentTemplate.salaryConfig,
+        employeeFields: empFields,
+      },
     });
   };
 
@@ -1002,6 +1418,56 @@ export const BillTemplateDesigner: React.FC<BillTemplateDesignerProps> = ({
     totalDeductions: 2500,
     netPayable: 40500,
     amountInWords: 'Forty Thousand Five Hundred Rupees Only',
+  };
+
+  const getSampleColumnValue = (item: any, colKey: string): string => {
+    if (item[colKey] !== undefined && item[colKey] !== null) {
+      const val = item[colKey];
+      if (typeof val === 'number') {
+        const isCur = ['price', 'unitprice', 'total', 'totalamount', 'discount', 'mrp', 'taxamount'].some((k) =>
+          colKey.toLowerCase().includes(k)
+        );
+        return isCur ? `₹${val.toLocaleString('en-IN')}` : String(val);
+      }
+      return String(val);
+    }
+    const lk = colKey.toLowerCase();
+    if (lk.includes('hsn') || lk.includes('sac')) return item.hsn || '85076000';
+    if (lk.includes('volt') || lk.includes('voltage')) return item.sno === 1 ? '60V' : '67.2V';
+    if (lk.includes('cap') || lk.includes('ah') || lk.includes('capacity')) return item.sno === 1 ? '30Ah' : '6A';
+    if (lk.includes('chem') || lk.includes('cell')) return 'LFP Grade-A';
+    if (lk.includes('warranty') || lk.includes('war')) return `${item.warrantyPeriodMonths || 36} Mo`;
+    if (lk.includes('motor')) return 'MOT-BLDC-9941';
+    if (lk.includes('charger')) return 'CHG-6720-1102';
+    if (lk.includes('mrp')) return item.sno === 1 ? '₹29,000' : '₹4,000';
+    if (lk.includes('discount')) return item.sno === 1 ? '₹1,000' : '₹200';
+    if (lk.includes('tax') || lk.includes('gst')) return '18%';
+    if (lk.includes('rate') || lk.includes('price')) return `₹${(item.unitPrice || 0).toLocaleString('en-IN')}`;
+    if (lk.includes('total') || lk.includes('amount')) return `₹${(item.totalAmount || 0).toLocaleString('en-IN')}`;
+    if (lk.includes('serial') || lk.includes('sn')) return item.batterySerial || 'BAT-9941';
+    if (lk.includes('qty') || lk.includes('quantity')) return String(item.quantity || 1);
+    if (lk.includes('name') || lk.includes('desc') || lk.includes('product')) return item.productName || 'Product';
+    return '-';
+  };
+
+  const getSampleCustomerFieldValue = (fieldKey: string): string => {
+    if ((sampleBill as any)[fieldKey] !== undefined && (sampleBill as any)[fieldKey] !== null) {
+      return String((sampleBill as any)[fieldKey]);
+    }
+    const lk = fieldKey.toLowerCase();
+    if (lk.includes('referral') || lk.includes('ref')) return sampleBill.referralCode;
+    if (lk.includes('alt') || lk.includes('phone') || lk.includes('contact') || lk.includes('mobile')) return '+91 9414012345';
+    if (lk.includes('aadhaar') || lk.includes('uid') || lk.includes('aadhar')) return '5489-1234-9942';
+    if (lk.includes('chassis') || lk.includes('frame') || lk.includes('vin')) return 'CHS-2026-EK-8842';
+    if (lk.includes('model') || lk.includes('vehicle')) return sampleBill.vehicleNumber || 'RJ-20-EV-9942';
+    if (lk.includes('depot') || lk.includes('hub') || lk.includes('location')) return 'Kota Central Distribution Hub';
+    if (lk.includes('chem') || lk.includes('battery')) return 'LFP (Lithium Iron Phosphate)';
+    if (lk.includes('gst') || lk.includes('gstin')) return sampleBill.customerGstin;
+    if (lk.includes('city') || lk.includes('state')) return sampleBill.city;
+    if (lk.includes('email')) return sampleBill.customerEmail;
+    if (lk.includes('name')) return sampleBill.customerName;
+    if (lk.includes('addr')) return sampleBill.customerAddress;
+    return `Sample ${fieldKey}`;
   };
 
   return (
@@ -1347,15 +1813,33 @@ export const BillTemplateDesigner: React.FC<BillTemplateDesignerProps> = ({
 
           {/* TAB: SALARY CONFIGURATION (Dedicated for Salary Slip) */}
           {activeTab === 'salary' && isSalaryTemplate && (
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4 text-xs">
-              <h3 className="font-black text-sm text-slate-800 flex items-center gap-2">
-                <Briefcase size={16} className="text-emerald-600" />
-                <span>Salary Allowances & Deductions Setup</span>
-              </h3>
-
-              <div className="space-y-3">
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-5 text-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
                 <div>
-                  <label className="block text-slate-700 font-bold mb-1">Earnings Section Title</label>
+                  <h3 className="font-black text-sm text-slate-800 flex items-center gap-2">
+                    <Briefcase size={16} className="text-emerald-600" />
+                    <span>Salary Allowances, Deductions & Employee Data Setup</span>
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    Add or remove earnings heads, statutory deduction heads, and employee details fields.
+                  </p>
+                </div>
+              </div>
+
+              {/* SECTION 1: Earnings / Allowances */}
+              <div className="p-4 bg-emerald-50/40 rounded-2xl border border-emerald-200 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-emerald-950 text-xs flex items-center gap-1.5">
+                    <CheckCircle2 size={14} className="text-emerald-600" />
+                    <span>Earnings & Allowances Components</span>
+                  </span>
+                  <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+                    {currentTemplate.salaryConfig?.earningsColumns?.length || 0} Heads
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Earnings Section Header Title</label>
                   <input
                     type="text"
                     value={currentTemplate.salaryConfig?.allowancesTitle || 'Earnings / Gross Pay'}
@@ -1365,12 +1849,117 @@ export const BillTemplateDesigner: React.FC<BillTemplateDesignerProps> = ({
                         salaryConfig: { ...currentTemplate.salaryConfig, allowancesTitle: e.target.value },
                       })
                     }
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
+                    className="w-full p-2 bg-white border border-slate-200 rounded-xl font-semibold"
                   />
                 </div>
 
+                {/* Preset Chips */}
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                    💡 1-Click Add Common Allowances:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { label: 'Medical Allowance', defaultAmount: 2000 },
+                      { label: 'Attendance Bonus', defaultAmount: 1500 },
+                      { label: 'Mobile & Internet Allowance', defaultAmount: 1000 },
+                      { label: 'Overtime & Incentives', defaultAmount: 0 },
+                      { label: 'Special Project Bonus', defaultAmount: 3000 },
+                    ].map((preset) => (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() => handleAddEarning(preset)}
+                        className="px-2 py-1 rounded-lg text-[10px] font-bold bg-white text-emerald-800 border border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 flex items-center gap-1 cursor-pointer transition"
+                      >
+                        <Plus size={10} className="text-emerald-600" />
+                        <span>{preset.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Quick Add Custom Earning */}
+                <div className="flex gap-2 pt-1">
+                  <input
+                    type="text"
+                    placeholder="New Earning Head Name (e.g. Travel Allowance)"
+                    value={newEarningForm.label}
+                    onChange={(e) => setNewEarningForm({ ...newEarningForm, label: e.target.value })}
+                    className="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold"
+                  />
+                  <input
+                    type="number"
+                    placeholder="Default ₹"
+                    value={newEarningForm.defaultAmount || ''}
+                    onChange={(e) => setNewEarningForm({ ...newEarningForm, defaultAmount: Number(e.target.value) || 0 })}
+                    className="w-24 p-2 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleAddEarning()}
+                    className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus size={14} />
+                    <span>Add</span>
+                  </button>
+                </div>
+
+                {/* Earning Items List */}
+                <div className="space-y-1.5 pt-1">
+                  {(Array.isArray(currentTemplate.salaryConfig?.earningsColumns)
+                    ? currentTemplate.salaryConfig.earningsColumns
+                    : []
+                  ).map((col, idx) => (
+                    <div
+                      key={col.key || idx}
+                      className="p-2.5 bg-white rounded-xl border border-emerald-200/80 flex items-center justify-between gap-2 shadow-2xs"
+                    >
+                      <div className="flex items-center gap-2 flex-1">
+                        <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
+                        <input
+                          type="text"
+                          value={col.label}
+                          onChange={(e) => {
+                            const updated = [...(currentTemplate.salaryConfig?.earningsColumns || [])];
+                            updated[idx] = { ...updated[idx], label: e.target.value };
+                            setCurrentTemplate({
+                              ...currentTemplate,
+                              salaryConfig: { ...currentTemplate.salaryConfig, earningsColumns: updated },
+                            });
+                          }}
+                          className="flex-1 p-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-slate-400 font-mono">₹{col.defaultAmount ?? 0}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteEarning(idx)}
+                          className="p-1 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg cursor-pointer transition"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* SECTION 2: Deductions & Recoveries */}
+              <div className="p-4 bg-rose-50/40 rounded-2xl border border-rose-200 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-rose-950 text-xs flex items-center gap-1.5">
+                    <AlertCircle size={14} className="text-rose-600" />
+                    <span>Statutory Deductions & Recoveries</span>
+                  </span>
+                  <span className="text-[10px] font-bold text-rose-800 bg-rose-100 px-2 py-0.5 rounded-full">
+                    {currentTemplate.salaryConfig?.deductionsColumns?.length || 0} Heads
+                  </span>
+                </div>
+
                 <div>
-                  <label className="block text-slate-700 font-bold mb-1">Deductions Section Title</label>
+                  <label className="block text-slate-700 font-bold mb-1">Deductions Section Header Title</label>
                   <input
                     type="text"
                     value={currentTemplate.salaryConfig?.deductionsTitle || 'Deductions & Recoveries'}
@@ -1380,38 +1969,189 @@ export const BillTemplateDesigner: React.FC<BillTemplateDesignerProps> = ({
                         salaryConfig: { ...currentTemplate.salaryConfig, deductionsTitle: e.target.value },
                       })
                     }
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
+                    className="w-full p-2 bg-white border border-slate-200 rounded-xl font-semibold"
                   />
                 </div>
 
-                <div className="pt-2 border-t border-slate-100">
-                  <span className="font-bold text-slate-700 block mb-2">Standard Earnings Components Included:</span>
-                  <div className="grid grid-cols-2 gap-2">
-                    {(Array.isArray(currentTemplate.salaryConfig?.earningsColumns)
-                      ? currentTemplate.salaryConfig.earningsColumns
-                      : []
-                    ).map((col, i) => (
-                      <div key={i} className="p-2 bg-emerald-50 rounded-xl border border-emerald-200 flex items-center gap-2">
-                        <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
-                        <span className="font-semibold text-emerald-950 text-[11px]">{col.label}</span>
-                      </div>
+                {/* Preset Chips */}
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                    💡 1-Click Add Common Deductions:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { label: 'Employee State Insurance (ESI)', defaultAmount: 500 },
+                      { label: 'Professional Tax (PT)', defaultAmount: 200 },
+                      { label: 'TDS / Income Tax', defaultAmount: 0 },
+                      { label: 'Staff Advance / Loan Recovery', defaultAmount: 0 },
+                      { label: 'Late Mark / Leave Deduction', defaultAmount: 0 },
+                    ].map((preset) => (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() => handleAddDeduction(preset)}
+                        className="px-2 py-1 rounded-lg text-[10px] font-bold bg-white text-rose-800 border border-rose-200 hover:bg-rose-100 hover:border-rose-300 flex items-center gap-1 cursor-pointer transition"
+                      >
+                        <Plus size={10} className="text-rose-600" />
+                        <span>{preset.label}</span>
+                      </button>
                     ))}
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-slate-100">
-                  <span className="font-bold text-slate-700 block mb-2">Standard Deductions Components Included:</span>
-                  <div className="grid grid-cols-2 gap-2">
-                    {(Array.isArray(currentTemplate.salaryConfig?.deductionsColumns)
-                      ? currentTemplate.salaryConfig.deductionsColumns
-                      : []
-                    ).map((col, i) => (
-                      <div key={i} className="p-2 bg-rose-50 rounded-xl border border-rose-200 flex items-center gap-2">
-                        <CheckCircle2 size={14} className="text-rose-600 shrink-0" />
-                        <span className="font-semibold text-rose-950 text-[11px]">{col.label}</span>
+                {/* Quick Add Custom Deduction */}
+                <div className="flex gap-2 pt-1">
+                  <input
+                    type="text"
+                    placeholder="New Deduction Head Name (e.g. Welfare Fund)"
+                    value={newDeductionForm.label}
+                    onChange={(e) => setNewDeductionForm({ ...newDeductionForm, label: e.target.value })}
+                    className="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold"
+                  />
+                  <input
+                    type="number"
+                    placeholder="Default ₹"
+                    value={newDeductionForm.defaultAmount || ''}
+                    onChange={(e) => setNewDeductionForm({ ...newDeductionForm, defaultAmount: Number(e.target.value) || 0 })}
+                    className="w-24 p-2 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleAddDeduction()}
+                    className="px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus size={14} />
+                    <span>Add</span>
+                  </button>
+                </div>
+
+                {/* Deduction Items List */}
+                <div className="space-y-1.5 pt-1">
+                  {(Array.isArray(currentTemplate.salaryConfig?.deductionsColumns)
+                    ? currentTemplate.salaryConfig.deductionsColumns
+                    : []
+                  ).map((col, idx) => (
+                    <div
+                      key={col.key || idx}
+                      className="p-2.5 bg-white rounded-xl border border-rose-200/80 flex items-center justify-between gap-2 shadow-2xs"
+                    >
+                      <div className="flex items-center gap-2 flex-1">
+                        <AlertCircle size={14} className="text-rose-600 shrink-0" />
+                        <input
+                          type="text"
+                          value={col.label}
+                          onChange={(e) => {
+                            const updated = [...(currentTemplate.salaryConfig?.deductionsColumns || [])];
+                            updated[idx] = { ...updated[idx], label: e.target.value };
+                            setCurrentTemplate({
+                              ...currentTemplate,
+                              salaryConfig: { ...currentTemplate.salaryConfig, deductionsColumns: updated },
+                            });
+                          }}
+                          className="flex-1 p-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold"
+                        />
                       </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-slate-400 font-mono">₹{col.defaultAmount ?? 0}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteDeduction(idx)}
+                          className="p-1 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg cursor-pointer transition"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* SECTION 3: Employee Details Fields */}
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                    <User size={14} className="text-slate-600" />
+                    <span>Employee Profile Metadata Fields</span>
+                  </span>
+                  <span className="text-[10px] font-bold text-slate-700 bg-slate-200 px-2 py-0.5 rounded-full">
+                    {currentTemplate.salaryConfig?.employeeFields?.length || 0} Fields
+                  </span>
+                </div>
+
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                    💡 1-Click Add Employee Fields:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { label: 'PF UAN Number', key: 'uan' },
+                      { label: 'ESI IP Number', key: 'esiNumber' },
+                      { label: 'Blood Group', key: 'bloodGroup' },
+                      { label: 'Date of Confirmation', key: 'confirmationDate' },
+                      { label: 'Emergency Contact', key: 'emergencyContact' },
+                    ].map((preset) => (
+                      <button
+                        key={preset.key}
+                        type="button"
+                        onClick={() => handleAddEmployeeField(preset)}
+                        className="px-2 py-1 rounded-lg text-[10px] font-bold bg-white text-slate-700 border border-slate-200 hover:bg-slate-100 flex items-center gap-1 cursor-pointer transition"
+                      >
+                        <Plus size={10} className="text-emerald-600" />
+                        <span>{preset.label}</span>
+                      </button>
                     ))}
                   </div>
+                </div>
+
+                <div className="flex gap-2 pt-1">
+                  <input
+                    type="text"
+                    placeholder="New Employee Field Label (e.g. Work Location)"
+                    value={newEmpFieldForm.label}
+                    onChange={(e) => setNewEmpFieldForm({ ...newEmpFieldForm, label: e.target.value })}
+                    className="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleAddEmployeeField()}
+                    className="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus size={14} />
+                    <span>Add</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                  {(Array.isArray(currentTemplate.salaryConfig?.employeeFields)
+                    ? currentTemplate.salaryConfig.employeeFields
+                    : []
+                  ).map((fld, idx) => (
+                    <div
+                      key={fld.key || idx}
+                      className="p-2 bg-white rounded-xl border border-slate-200 flex items-center justify-between gap-2 text-xs"
+                    >
+                      <input
+                        type="text"
+                        value={fld.label}
+                        onChange={(e) => {
+                          const updated = [...(currentTemplate.salaryConfig?.employeeFields || [])];
+                          updated[idx] = { ...updated[idx], label: e.target.value };
+                          setCurrentTemplate({
+                            ...currentTemplate,
+                            salaryConfig: { ...currentTemplate.salaryConfig, employeeFields: updated },
+                          });
+                        }}
+                        className="flex-1 p-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteEmployeeField(idx)}
+                        className="p-1 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg cursor-pointer transition"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -1419,59 +2159,424 @@ export const BillTemplateDesigner: React.FC<BillTemplateDesignerProps> = ({
 
           {/* TAB 2: Customer & Invoice Fields */}
           {activeTab === 'customer' && !isSalaryTemplate && (
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4 text-xs">
-              <div className="flex justify-between items-center">
-                <h3 className="font-black text-sm text-slate-800 flex items-center gap-2">
-                  <User size={16} className="text-emerald-600" />
-                  <span>Customer Fields & Reordering</span>
-                </h3>
-                <span className="text-[11px] text-slate-400">Toggle visibility and rename labels</span>
-              </div>
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-6 text-xs">
+              {/* SECTION A: Customer Fields */}
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
+                  <div>
+                    <h3 className="font-black text-sm text-slate-800 flex items-center gap-2">
+                      <User size={16} className="text-emerald-600" />
+                      <span>Customer Details & Profile Fields</span>
+                    </h3>
+                    <p className="text-[11px] text-slate-400">
+                      Customize customer profile attributes displayed on invoice bills and slips.
+                    </p>
+                  </div>
 
-              <div className="space-y-2">
-                {(Array.isArray(currentTemplate.customerFields) ? currentTemplate.customerFields : []).map((field, idx) => (
-                  <div
-                    key={field.key || idx}
-                    className={`p-3 rounded-xl border flex items-center justify-between gap-3 transition ${
-                      field.visible ? 'bg-slate-50 border-slate-200' : 'bg-slate-100/60 border-slate-200 opacity-60'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 flex-1">
-                      <input
-                        type="checkbox"
-                        checked={Boolean(field.visible)}
-                        onChange={() => toggleCustomerField(idx)}
-                        className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
-                      />
-                      <input
-                        type="text"
-                        value={field.label || ''}
-                        onChange={(e) => updateCustomerFieldLabel(idx, e.target.value)}
-                        className="flex-1 p-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold"
-                      />
-                      <span className="text-[10px] text-slate-400 font-mono">({field.key})</span>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowAddCustomerField(!showAddCustomerField)}
+                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
+                    >
+                      <Plus size={14} />
+                      <span>+ Add Customer Field</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleResetCustomerFields}
+                      title="Reset to factory standard customer fields"
+                      className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition cursor-pointer"
+                    >
+                      <RotateCcw size={14} />
+                    </button>
+                  </div>
+                </div>
 
-                    <div className="flex items-center gap-1">
+                {/* Presets */}
+                <div className="p-3 bg-slate-50/80 rounded-xl border border-slate-200 space-y-1.5">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                    💡 1-Click Quick Add Customer Fields:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { label: 'Alternate Mobile #', key: 'altMobile', required: false },
+                      { label: 'Aadhaar / National ID', key: 'aadhaarNumber', required: false },
+                      { label: 'Vehicle Frame / Chassis #', key: 'chassisNumber', required: false },
+                      { label: 'Battery Chemistry (LFP / NMC)', key: 'batteryChemistry', required: false },
+                      { label: 'Vehicle Model & Year', key: 'vehicleModel', required: false },
+                      { label: 'Delivery Depot / Hub', key: 'deliveryDepot', required: false },
+                      { label: 'Customer Referral Code', key: 'referralCode', required: false },
+                    ].map((preset) => {
+                      const exists = (currentTemplate.customerFields || []).some((f) => f.key === preset.key);
+                      return (
+                        <button
+                          key={preset.key}
+                          type="button"
+                          disabled={exists}
+                          onClick={() => handleAddCustomerField(preset)}
+                          className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition flex items-center gap-1 cursor-pointer ${
+                            exists
+                              ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed line-through opacity-60'
+                              : 'bg-white text-slate-700 border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-800'
+                          }`}
+                        >
+                          <Plus size={10} className="text-emerald-600" />
+                          <span>{preset.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Collapsible Add Custom Customer Field Form */}
+                {showAddCustomerField && (
+                  <div className="p-4 bg-emerald-50/50 rounded-2xl border-2 border-emerald-300 space-y-3 shadow-sm animate-in fade-in">
+                    <div className="flex justify-between items-center">
+                      <div className="font-bold text-xs text-emerald-950 flex items-center gap-1.5">
+                        <Plus size={14} className="text-emerald-600" />
+                        <span>Add New Customer Detail Field</span>
+                      </div>
                       <button
                         type="button"
-                        disabled={idx === 0}
-                        onClick={() => moveCustomerField(idx, 'up')}
-                        className="p-1 text-slate-500 hover:text-slate-800 disabled:opacity-30 cursor-pointer"
+                        onClick={() => setShowAddCustomerField(false)}
+                        className="text-slate-400 hover:text-slate-600 cursor-pointer"
                       >
-                        <ArrowUp size={14} />
+                        <X size={14} />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Field Label *</label>
+                        <input
+                          type="text"
+                          value={newCustomerFieldForm.label}
+                          onChange={(e) => setNewCustomerFieldForm({ ...newCustomerFieldForm, label: e.target.value })}
+                          placeholder="e.g. Alternate Mobile Number"
+                          className="w-full p-2 bg-white border border-slate-200 rounded-xl font-semibold"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">
+                          Key / Code <span className="text-slate-400 font-normal text-[10px]">(Optional)</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={newCustomerFieldForm.key}
+                          onChange={(e) => setNewCustomerFieldForm({ ...newCustomerFieldForm, key: e.target.value })}
+                          placeholder="e.g. altMobile"
+                          className="w-full p-2 bg-white border border-slate-200 rounded-xl font-mono text-xs"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-emerald-200">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={newCustomerFieldForm.required}
+                          onChange={(e) => setNewCustomerFieldForm({ ...newCustomerFieldForm, required: e.target.checked })}
+                          className="rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                        />
+                        <span className="font-bold text-slate-800 text-xs">Mandatory / Required Field</span>
+                      </label>
+
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowAddCustomerField(false)}
+                          className="px-3 py-1.5 text-slate-600 hover:text-slate-800 font-bold cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleAddCustomerField()}
+                          className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm flex items-center gap-1 cursor-pointer"
+                        >
+                          <Check size={14} />
+                          <span>Add Field</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Customer Fields List */}
+                <div className="space-y-2">
+                  {(Array.isArray(currentTemplate.customerFields) ? currentTemplate.customerFields : []).map((field, idx) => (
+                    <div
+                      key={field.key || idx}
+                      className={`p-3 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                        field.visible ? 'bg-slate-50 border-slate-200' : 'bg-slate-100/60 border-slate-200 opacity-60'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(field.visible)}
+                          onChange={() => toggleCustomerField(idx)}
+                          title={field.visible ? 'Hide field' : 'Show field'}
+                          className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer shrink-0"
+                        />
+
+                        <span className="w-5 h-5 rounded-full bg-slate-200 text-slate-700 font-bold text-[10px] flex items-center justify-center shrink-0">
+                          {idx + 1}
+                        </span>
+
+                        <input
+                          type="text"
+                          value={field.label || ''}
+                          onChange={(e) => updateCustomerFieldLabel(idx, e.target.value)}
+                          placeholder="Field Label"
+                          className="flex-1 p-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
+                        />
+
+                        <span className="px-1.5 py-0.5 bg-slate-200/80 text-slate-600 rounded font-mono text-[10px] shrink-0">
+                          {field.key}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+                        {/* Required Toggle */}
+                        <button
+                          type="button"
+                          onClick={() => toggleCustomerFieldRequired(idx)}
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold border transition cursor-pointer ${
+                            field.required
+                              ? 'bg-rose-50 text-rose-700 border-rose-300'
+                              : 'bg-slate-100 text-slate-500 border-slate-200 hover:text-slate-700'
+                          }`}
+                        >
+                          {field.required ? '★ Required' : 'Optional'}
+                        </button>
+
+                        {/* Move Up / Down */}
+                        <div className="flex items-center bg-white rounded-lg border border-slate-200 p-0.5">
+                          <button
+                            type="button"
+                            disabled={idx === 0}
+                            onClick={() => moveCustomerField(idx, 'up')}
+                            title="Move Up"
+                            className="p-1 text-slate-500 hover:text-slate-800 disabled:opacity-20 cursor-pointer"
+                          >
+                            <ArrowUp size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={idx === (currentTemplate.customerFields?.length || 0) - 1}
+                            onClick={() => moveCustomerField(idx, 'down')}
+                            title="Move Down"
+                            className="p-1 text-slate-500 hover:text-slate-800 disabled:opacity-20 cursor-pointer"
+                          >
+                            <ArrowDown size={13} />
+                          </button>
+                        </div>
+
+                        {/* Delete Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteCustomerField(idx)}
+                          title="Delete this field"
+                          className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* SECTION B: Invoice Metadata Fields */}
+              <div className="pt-4 border-t border-slate-200 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <h3 className="font-black text-sm text-slate-800 flex items-center gap-2">
+                      <FileText size={16} className="text-emerald-600" />
+                      <span>Invoice Metadata & Order Identifiers</span>
+                    </h3>
+                    <p className="text-[11px] text-slate-400">
+                      E-Way Bill, Purchase Order #, Dispatch Details, Vehicle No, Counter.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowAddInvoiceField(!showAddInvoiceField)}
+                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
+                  >
+                    <Plus size={14} />
+                    <span>+ Add Invoice Field</span>
+                  </button>
+                </div>
+
+                {/* Quick Presets */}
+                <div className="p-3 bg-slate-50/80 rounded-xl border border-slate-200 space-y-1.5">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                    💡 1-Click Add Invoice Meta Fields:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { label: 'E-Way Bill Number', key: 'ewayBillNo' },
+                      { label: 'Purchase Order (PO) #', key: 'poNumber' },
+                      { label: 'Dispatch Vehicle #', key: 'vehicleNumber' },
+                      { label: 'Payment UTR / Trans ID', key: 'paymentUtr' },
+                      { label: 'Billing Showroom Branch', key: 'showroomBranch' },
+                    ].map((preset) => {
+                      const exists = (currentTemplate.invoiceFields || []).some((f) => f.key === preset.key);
+                      return (
+                        <button
+                          key={preset.key}
+                          type="button"
+                          disabled={exists}
+                          onClick={() => handleAddInvoiceField(preset)}
+                          className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition flex items-center gap-1 cursor-pointer ${
+                            exists
+                              ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed line-through opacity-60'
+                              : 'bg-white text-slate-700 border-slate-200 hover:border-slate-400 hover:bg-slate-100'
+                          }`}
+                        >
+                          <Plus size={10} className="text-slate-600" />
+                          <span>{preset.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Collapsible Add Invoice Meta Field Form */}
+                {showAddInvoiceField && (
+                  <div className="p-4 bg-slate-100 rounded-2xl border-2 border-slate-300 space-y-3 shadow-sm animate-in fade-in">
+                    <div className="flex justify-between items-center">
+                      <div className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                        <Plus size={14} className="text-slate-700" />
+                        <span>Add New Invoice Metadata Field</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowAddInvoiceField(false)}
+                        className="text-slate-400 hover:text-slate-600 cursor-pointer"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Field Label *</label>
+                        <input
+                          type="text"
+                          value={newInvoiceFieldForm.label}
+                          onChange={(e) => setNewInvoiceFieldForm({ ...newInvoiceFieldForm, label: e.target.value })}
+                          placeholder="e.g. E-Way Bill Number"
+                          className="w-full p-2 bg-white border border-slate-200 rounded-xl font-semibold"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">
+                          Key / Code <span className="text-slate-400 font-normal text-[10px]">(Optional)</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={newInvoiceFieldForm.key}
+                          onChange={(e) => setNewInvoiceFieldForm({ ...newInvoiceFieldForm, key: e.target.value })}
+                          placeholder="e.g. ewayBill"
+                          className="w-full p-2 bg-white border border-slate-200 rounded-xl font-mono text-xs"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-2 border-t border-slate-200">
+                      <button
+                        type="button"
+                        onClick={() => setShowAddInvoiceField(false)}
+                        className="px-3 py-1.5 text-slate-600 hover:text-slate-800 font-bold cursor-pointer"
+                      >
+                        Cancel
                       </button>
                       <button
                         type="button"
-                        disabled={idx === (currentTemplate.customerFields?.length || 0) - 1}
-                        onClick={() => moveCustomerField(idx, 'down')}
-                        className="p-1 text-slate-500 hover:text-slate-800 disabled:opacity-30 cursor-pointer"
+                        onClick={() => handleAddInvoiceField()}
+                        className="px-4 py-1.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl shadow-sm flex items-center gap-1 cursor-pointer"
                       >
-                        <ArrowDown size={14} />
+                        <Check size={14} />
+                        <span>Add Field</span>
                       </button>
                     </div>
                   </div>
-                ))}
+                )}
+
+                {/* Invoice Fields List */}
+                <div className="space-y-2">
+                  {(Array.isArray(currentTemplate.invoiceFields) ? currentTemplate.invoiceFields : []).map((field, idx) => (
+                    <div
+                      key={field.key || idx}
+                      className={`p-3 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                        field.visible ? 'bg-slate-50 border-slate-200' : 'bg-slate-100/60 border-slate-200 opacity-60'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(field.visible)}
+                          onChange={() => toggleInvoiceField(idx)}
+                          title={field.visible ? 'Hide field' : 'Show field'}
+                          className="w-4 h-4 rounded text-slate-700 focus:ring-slate-500 cursor-pointer shrink-0"
+                        />
+
+                        <span className="w-5 h-5 rounded-full bg-slate-200 text-slate-700 font-bold text-[10px] flex items-center justify-center shrink-0">
+                          {idx + 1}
+                        </span>
+
+                        <input
+                          type="text"
+                          value={field.label || ''}
+                          onChange={(e) => updateInvoiceFieldLabel(idx, e.target.value)}
+                          placeholder="Field Label"
+                          className="flex-1 p-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
+                        />
+
+                        <span className="px-1.5 py-0.5 bg-slate-200/80 text-slate-600 rounded font-mono text-[10px] shrink-0">
+                          {field.key}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+                        <div className="flex items-center bg-white rounded-lg border border-slate-200 p-0.5">
+                          <button
+                            type="button"
+                            disabled={idx === 0}
+                            onClick={() => moveInvoiceField(idx, 'up')}
+                            title="Move Up"
+                            className="p-1 text-slate-500 hover:text-slate-800 disabled:opacity-20 cursor-pointer"
+                          >
+                            <ArrowUp size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={idx === (currentTemplate.invoiceFields?.length || 0) - 1}
+                            onClick={() => moveInvoiceField(idx, 'down')}
+                            title="Move Down"
+                            className="p-1 text-slate-500 hover:text-slate-800 disabled:opacity-20 cursor-pointer"
+                          >
+                            <ArrowDown size={13} />
+                          </button>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteInvoiceField(idx)}
+                          title="Delete this field"
+                          className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -1479,57 +2584,286 @@ export const BillTemplateDesigner: React.FC<BillTemplateDesignerProps> = ({
           {/* TAB 3: Line Item Columns Designer */}
           {activeTab === 'columns' && !isSalaryTemplate && (
             <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4 text-xs">
-              <div className="flex justify-between items-center">
-                <h3 className="font-black text-sm text-slate-800 flex items-center gap-2">
-                  <ListOrdered size={16} className="text-emerald-600" />
-                  <span>Invoice Line Items Table Columns</span>
-                </h3>
-                <span className="text-[11px] text-slate-400">Reorder with ↑ ↓ buttons</span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
+                <div>
+                  <h3 className="font-black text-sm text-slate-800 flex items-center gap-2">
+                    <ListOrdered size={16} className="text-emerald-600" />
+                    <span>Product Line Items Table Columns</span>
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    Add custom columns, set widths, alignment, toggle visibility, or delete unwanted columns.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddColumn(!showAddColumn)}
+                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
+                  >
+                    <Plus size={14} />
+                    <span>+ Add Custom Column</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleResetColumns}
+                    title="Reset to factory standard columns"
+                    className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition cursor-pointer"
+                  >
+                    <RotateCcw size={14} />
+                  </button>
+                </div>
               </div>
 
+              {/* QUICK PRESET ADD CHIPS */}
+              <div className="p-3 bg-slate-50/80 rounded-xl border border-slate-200 space-y-1.5">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                  💡 1-Click Quick Add Common Columns:
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { label: 'HSN / SAC Code', key: 'hsn', widthPercent: 12, align: 'left' as const },
+                    { label: 'Battery Voltage (V)', key: 'voltage', widthPercent: 10, align: 'center' as const },
+                    { label: 'Capacity (Ah)', key: 'capacity', widthPercent: 10, align: 'center' as const },
+                    { label: 'Pack Warranty (Mos)', key: 'warranty', widthPercent: 12, align: 'center' as const },
+                    { label: 'Motor Serial #', key: 'motorSerial', widthPercent: 14, align: 'left' as const },
+                    { label: 'Charger Serial #', key: 'chargerSerial', widthPercent: 14, align: 'left' as const },
+                    { label: 'MRP Rate (₹)', key: 'mrp', widthPercent: 12, align: 'right' as const },
+                    { label: 'Unit Discount (₹)', key: 'discount', widthPercent: 10, align: 'right' as const },
+                    { label: 'GST Tax %', key: 'taxRate', widthPercent: 8, align: 'center' as const },
+                    { label: 'Tax Amount (₹)', key: 'taxAmount', widthPercent: 12, align: 'right' as const },
+                  ].map((preset) => {
+                    const exists = (currentTemplate.productColumns || []).some((c) => c.key === preset.key);
+                    return (
+                      <button
+                        key={preset.key}
+                        type="button"
+                        disabled={exists}
+                        onClick={() => handleAddColumn(preset)}
+                        className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition flex items-center gap-1 cursor-pointer ${
+                          exists
+                            ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed line-through opacity-60'
+                            : 'bg-white text-slate-700 border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-800'
+                        }`}
+                      >
+                        <Plus size={10} className="text-emerald-600" />
+                        <span>{preset.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* COLLAPSIBLE ADD NEW CUSTOM COLUMN FORM */}
+              {showAddColumn && (
+                <div className="p-4 bg-emerald-50/50 rounded-2xl border-2 border-emerald-300 space-y-3 shadow-sm animate-in fade-in">
+                  <div className="flex justify-between items-center">
+                    <div className="font-bold text-xs text-emerald-950 flex items-center gap-1.5">
+                      <Plus size={14} className="text-emerald-600" />
+                      <span>Create New Custom Column</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddColumn(false)}
+                      className="text-slate-400 hover:text-slate-600 cursor-pointer"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="sm:col-span-2">
+                      <label className="block text-slate-700 font-bold mb-1">Column Header Label *</label>
+                      <input
+                        type="text"
+                        value={newColumnForm.label}
+                        onChange={(e) => setNewColumnForm({ ...newColumnForm, label: e.target.value })}
+                        placeholder="e.g. Battery Cell Brand / Chemistry"
+                        className="w-full p-2 bg-white border border-slate-200 rounded-xl font-semibold"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1">Column Width (%)</label>
+                      <select
+                        value={newColumnForm.widthPercent}
+                        onChange={(e) => setNewColumnForm({ ...newColumnForm, widthPercent: Number(e.target.value) })}
+                        className="w-full p-2 bg-white border border-slate-200 rounded-xl font-bold cursor-pointer"
+                      >
+                        <option value="8">8% (Narrow / Qty)</option>
+                        <option value="10">10% (Compact)</option>
+                        <option value="12">12% (Standard)</option>
+                        <option value="15">15% (Medium)</option>
+                        <option value="20">20% (Wide)</option>
+                        <option value="25">25% (Product Name)</option>
+                        <option value="35">35% (Description)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1">
+                        Field Key <span className="text-slate-400 font-normal text-[10px]">(Optional - Auto-generated)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={newColumnForm.key}
+                        onChange={(e) => setNewColumnForm({ ...newColumnForm, key: e.target.value })}
+                        placeholder="e.g. cellBrand"
+                        className="w-full p-2 bg-white border border-slate-200 rounded-xl font-mono text-xs"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1">Text Alignment</label>
+                      <div className="flex gap-1 bg-white p-1 rounded-xl border border-slate-200">
+                        {(['left', 'center', 'right'] as const).map((align) => (
+                          <button
+                            key={align}
+                            type="button"
+                            onClick={() => setNewColumnForm({ ...newColumnForm, align })}
+                            className={`flex-1 py-1 rounded-lg font-bold text-xs capitalize flex items-center justify-center gap-1 transition cursor-pointer ${
+                              newColumnForm.align === align
+                                ? 'bg-emerald-600 text-white shadow-2xs'
+                                : 'text-slate-600 hover:bg-slate-100'
+                            }`}
+                          >
+                            {align === 'left' && <AlignLeft size={12} />}
+                            {align === 'center' && <AlignCenter size={12} />}
+                            {align === 'right' && <AlignRight size={12} />}
+                            <span>{align}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-2 border-t border-emerald-200">
+                    <button
+                      type="button"
+                      onClick={() => setShowAddColumn(false)}
+                      className="px-3 py-1.5 text-slate-600 hover:text-slate-800 font-bold cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleAddColumn()}
+                      className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm flex items-center gap-1 cursor-pointer"
+                    >
+                      <Check size={14} />
+                      <span>Add Column to Table</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* EXISTING COLUMNS LIST WITH FULL CONTROLS */}
               <div className="space-y-2">
                 {(Array.isArray(currentTemplate.productColumns) ? currentTemplate.productColumns : []).map((col, idx) => (
                   <div
                     key={col.key || idx}
-                    className={`p-3 rounded-xl border flex items-center justify-between gap-3 transition ${
+                    className={`p-3 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
                       col.visible ? 'bg-slate-50 border-slate-200' : 'bg-slate-100/60 border-slate-200 opacity-60'
                     }`}
                   >
-                    <div className="flex items-center gap-2 flex-1">
+                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
                       <input
                         type="checkbox"
                         checked={Boolean(col.visible)}
                         onChange={() => toggleColumnVisibility(idx)}
-                        className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                        title={col.visible ? 'Hide column' : 'Show column'}
+                        className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer shrink-0"
                       />
+
+                      <span className="w-5 h-5 rounded-full bg-slate-200 text-slate-700 font-bold text-[10px] flex items-center justify-center shrink-0">
+                        {idx + 1}
+                      </span>
+
                       <input
                         type="text"
                         value={col.label || ''}
                         onChange={(e) => updateColumnLabel(idx, e.target.value)}
                         placeholder="Column Header Name"
-                        className="flex-1 p-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold"
+                        className="flex-1 p-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
                       />
-                      <span className="text-[10px] text-slate-400 font-mono">({col.key})</span>
+
+                      <span className="px-1.5 py-0.5 bg-slate-200/80 text-slate-600 rounded font-mono text-[10px] shrink-0">
+                        {col.key}
+                      </span>
                     </div>
 
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+                      {/* Width Selector */}
+                      <div className="flex items-center gap-1">
+                        <span className="text-[10px] font-bold text-slate-400">Width:</span>
+                        <select
+                          value={col.widthPercent || 12}
+                          onChange={(e) => updateColumnWidth(idx, Number(e.target.value))}
+                          className="p-1 bg-white border border-slate-200 rounded-lg text-[11px] font-bold cursor-pointer"
+                        >
+                          <option value="8">8%</option>
+                          <option value="10">10%</option>
+                          <option value="12">12%</option>
+                          <option value="15">15%</option>
+                          <option value="20">20%</option>
+                          <option value="25">25%</option>
+                          <option value="35">35%</option>
+                        </select>
+                      </div>
+
+                      {/* Alignment Selector */}
+                      <div className="flex bg-white rounded-lg border border-slate-200 p-0.5">
+                        {(['left', 'center', 'right'] as const).map((aln) => (
+                          <button
+                            key={aln}
+                            type="button"
+                            onClick={() => updateColumnAlign(idx, aln)}
+                            title={`Align ${aln}`}
+                            className={`p-1 rounded cursor-pointer ${
+                              (col.align || (['unitPrice', 'totalAmount', 'discount', 'taxAmount', 'mrp'].includes(col.key) ? 'right' : 'left')) === aln
+                                ? 'bg-slate-800 text-white'
+                                : 'text-slate-500 hover:text-slate-900'
+                            }`}
+                          >
+                            {aln === 'left' && <AlignLeft size={11} />}
+                            {aln === 'center' && <AlignCenter size={11} />}
+                            {aln === 'right' && <AlignRight size={11} />}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Move Up / Down */}
+                      <div className="flex items-center bg-white rounded-lg border border-slate-200 p-0.5">
+                        <button
+                          type="button"
+                          disabled={idx === 0}
+                          onClick={() => moveColumn(idx, 'up')}
+                          title="Move Left / Up"
+                          className="p-1 text-slate-500 hover:text-slate-800 disabled:opacity-20 cursor-pointer"
+                        >
+                          <ArrowUp size={13} />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={idx === (currentTemplate.productColumns?.length || 0) - 1}
+                          onClick={() => moveColumn(idx, 'down')}
+                          title="Move Right / Down"
+                          className="p-1 text-slate-500 hover:text-slate-800 disabled:opacity-20 cursor-pointer"
+                        >
+                          <ArrowDown size={13} />
+                        </button>
+                      </div>
+
+                      {/* Delete Button */}
                       <button
                         type="button"
-                        disabled={idx === 0}
-                        onClick={() => moveColumn(idx, 'up')}
-                        title="Move Left / Up"
-                        className="p-1 text-slate-500 hover:text-slate-800 disabled:opacity-30 cursor-pointer"
+                        onClick={() => handleDeleteColumn(idx)}
+                        title="Delete this column"
+                        className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition cursor-pointer"
                       >
-                        <ArrowUp size={14} />
-                      </button>
-                      <button
-                        type="button"
-                        disabled={idx === (currentTemplate.productColumns?.length || 0) - 1}
-                        onClick={() => moveColumn(idx, 'down')}
-                        title="Move Right / Down"
-                        className="p-1 text-slate-500 hover:text-slate-800 disabled:opacity-30 cursor-pointer"
-                      >
-                        <ArrowDown size={14} />
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   </div>
@@ -1612,107 +2946,234 @@ export const BillTemplateDesigner: React.FC<BillTemplateDesignerProps> = ({
 
           {/* TAB 5: Terms, Bank Details & Footer */}
           {activeTab === 'footer' && (
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4 text-xs">
-              <h3 className="font-black text-sm text-slate-800 flex items-center gap-2">
-                <ShieldCheck size={16} className="text-emerald-600" />
-                <span>Terms, Bank Details & Signatory</span>
-              </h3>
-
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">
-                  Terms & Conditions (One condition per line)
-                </label>
-                <textarea
-                  rows={4}
-                  value={(currentTemplate.footer?.termsAndConditions || []).join('\n')}
-                  onChange={(e) =>
-                    setCurrentTemplate({
-                      ...currentTemplate,
-                      footer: {
-                        ...currentTemplate.footer,
-                        termsAndConditions: e.target.value.split('\n').filter((t) => t.trim()),
-                      },
-                    })
-                  }
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs"
-                />
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-5 text-xs">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                <h3 className="font-black text-sm text-slate-800 flex items-center gap-2">
+                  <ShieldCheck size={16} className="text-emerald-600" />
+                  <span>Terms, Conditions & Legal Signatory</span>
+                </h3>
+                <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full">
+                  {currentTemplate.footer?.termsAndConditions?.length || 0} Clauses
+                </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-100">
-                <div>
-                  <label className="block text-slate-700 font-bold mb-1">Bank Name</label>
-                  <input
-                    type="text"
-                    value={currentTemplate.footer?.bankDetails?.bankName || ''}
-                    onChange={(e) =>
-                      setCurrentTemplate({
-                        ...currentTemplate,
-                        footer: {
-                          ...currentTemplate.footer,
-                          bankDetails: { ...currentTemplate.footer?.bankDetails, bankName: e.target.value },
-                        },
-                      })
-                    }
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
-                  />
+              {/* TERMS & CONDITIONS INTERACTIVE MANAGER */}
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-slate-800 text-xs">Invoice Terms & Warranty Policy Clauses</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowBulkTerms(!showBulkTerms)}
+                    className="text-[11px] text-emerald-700 hover:text-emerald-900 font-bold cursor-pointer"
+                  >
+                    {showBulkTerms ? 'Switch to Individual Items' : 'Bulk Edit Text Mode'}
+                  </button>
                 </div>
-                <div>
-                  <label className="block text-slate-700 font-bold mb-1">Bank A/C Number</label>
-                  <input
-                    type="text"
-                    value={currentTemplate.footer?.bankDetails?.accountNumber || ''}
-                    onChange={(e) =>
-                      setCurrentTemplate({
-                        ...currentTemplate,
-                        footer: {
-                          ...currentTemplate.footer,
-                          bankDetails: { ...currentTemplate.footer?.bankDetails, accountNumber: e.target.value },
-                        },
-                      })
-                    }
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs"
-                  />
+
+                {/* Preset Term Clauses */}
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                    💡 1-Click Add Legal & Warranty Clauses:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      'Warranty claims require this original invoice and matching battery serial number.',
+                      'Warranty is void if safety seal is broken, pack is tampered, or charged with non-certified chargers.',
+                      'Goods once sold will not be taken back without valid manufacturing defect authorization.',
+                      'Vehicle and battery health inspection is mandatory before counter delivery acceptance.',
+                      'Subject to Kota, Rajasthan jurisdiction only.',
+                    ].map((clause, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => handleAddTerm(clause)}
+                        className="px-2 py-1 rounded-lg text-[10px] font-bold bg-white text-slate-700 border border-slate-200 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-300 flex items-center gap-1 cursor-pointer transition text-left"
+                      >
+                        <Plus size={10} className="text-emerald-600 shrink-0" />
+                        <span className="truncate max-w-xs">{clause}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {showBulkTerms ? (
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">
+                      Terms & Conditions (One condition per line)
+                    </label>
+                    <textarea
+                      rows={5}
+                      value={(currentTemplate.footer?.termsAndConditions || []).join('\n')}
+                      onChange={(e) =>
+                        setCurrentTemplate({
+                          ...currentTemplate,
+                          footer: {
+                            ...currentTemplate.footer,
+                            termsAndConditions: e.target.value.split('\n').filter((t) => t.trim()),
+                          },
+                        })
+                      }
+                      className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-xs leading-relaxed"
+                    />
+                  </div>
+                ) : (
+                  <>
+                    {/* Add Term Input Bar */}
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Type a new invoice term or condition..."
+                        value={newTermInput}
+                        onChange={(e) => setNewTermInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddTerm();
+                          }
+                        }}
+                        className="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleAddTerm()}
+                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl flex items-center gap-1 cursor-pointer"
+                      >
+                        <Plus size={14} />
+                        <span>Add Term</span>
+                      </button>
+                    </div>
+
+                    {/* Term List */}
+                    <div className="space-y-1.5 pt-1">
+                      {(Array.isArray(currentTemplate.footer?.termsAndConditions)
+                        ? currentTemplate.footer.termsAndConditions
+                        : []
+                      ).map((term, idx) => (
+                        <div
+                          key={idx}
+                          className="p-2 bg-white rounded-xl border border-slate-200 flex items-center justify-between gap-2 text-xs shadow-2xs"
+                        >
+                          <span className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 font-bold text-[10px] flex items-center justify-center shrink-0">
+                            {idx + 1}
+                          </span>
+                          <input
+                            type="text"
+                            value={term}
+                            onChange={(e) => handleUpdateTerm(idx, e.target.value)}
+                            className="flex-1 p-1 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                          />
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              type="button"
+                              disabled={idx === 0}
+                              onClick={() => handleMoveTerm(idx, 'up')}
+                              className="p-1 text-slate-400 hover:text-slate-700 disabled:opacity-20 cursor-pointer"
+                            >
+                              <ArrowUp size={12} />
+                            </button>
+                            <button
+                              type="button"
+                              disabled={idx === (currentTemplate.footer?.termsAndConditions?.length || 0) - 1}
+                              onClick={() => handleMoveTerm(idx, 'down')}
+                              className="p-1 text-slate-400 hover:text-slate-700 disabled:opacity-20 cursor-pointer"
+                            >
+                              <ArrowDown size={12} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteTerm(idx)}
+                              className="p-1 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg cursor-pointer"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* BANK DETAILS SECTION */}
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                <span className="font-bold text-slate-800 text-xs block">Bank & Digital Disbursal Details</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">Bank Name</label>
+                    <input
+                      type="text"
+                      value={currentTemplate.footer?.bankDetails?.bankName || ''}
+                      onChange={(e) =>
+                        setCurrentTemplate({
+                          ...currentTemplate,
+                          footer: {
+                            ...currentTemplate.footer,
+                            bankDetails: { ...currentTemplate.footer?.bankDetails, bankName: e.target.value },
+                          },
+                        })
+                      }
+                      className="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">Bank A/C Number</label>
+                    <input
+                      type="text"
+                      value={currentTemplate.footer?.bankDetails?.accountNumber || ''}
+                      onChange={(e) =>
+                        setCurrentTemplate({
+                          ...currentTemplate,
+                          footer: {
+                            ...currentTemplate.footer,
+                            bankDetails: { ...currentTemplate.footer?.bankDetails, accountNumber: e.target.value },
+                          },
+                        })
+                      }
+                      className="w-full p-2 bg-white border border-slate-200 rounded-xl font-mono text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">IFSC Code</label>
+                    <input
+                      type="text"
+                      value={currentTemplate.footer?.bankDetails?.ifscCode || ''}
+                      onChange={(e) =>
+                        setCurrentTemplate({
+                          ...currentTemplate,
+                          footer: {
+                            ...currentTemplate.footer,
+                            bankDetails: { ...currentTemplate.footer?.bankDetails, ifscCode: e.target.value },
+                          },
+                        })
+                      }
+                      className="w-full p-2 bg-white border border-slate-200 rounded-xl font-mono text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">UPI ID for Disbursal / Payment</label>
+                    <input
+                      type="text"
+                      value={currentTemplate.footer?.bankDetails?.upiId || ''}
+                      onChange={(e) =>
+                        setCurrentTemplate({
+                          ...currentTemplate,
+                          footer: {
+                            ...currentTemplate.footer,
+                            bankDetails: { ...currentTemplate.footer?.bankDetails, upiId: e.target.value },
+                          },
+                        })
+                      }
+                      className="w-full p-2 bg-white border border-slate-200 rounded-xl font-mono text-xs"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-700 font-bold mb-1">IFSC Code</label>
-                  <input
-                    type="text"
-                    value={currentTemplate.footer?.bankDetails?.ifscCode || ''}
-                    onChange={(e) =>
-                      setCurrentTemplate({
-                        ...currentTemplate,
-                        footer: {
-                          ...currentTemplate.footer,
-                          bankDetails: { ...currentTemplate.footer?.bankDetails, ifscCode: e.target.value },
-                        },
-                      })
-                    }
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-700 font-bold mb-1">UPI ID for Disbursal / Payment</label>
-                  <input
-                    type="text"
-                    value={currentTemplate.footer?.bankDetails?.upiId || ''}
-                    onChange={(e) =>
-                      setCurrentTemplate({
-                        ...currentTemplate,
-                        footer: {
-                          ...currentTemplate.footer,
-                          bankDetails: { ...currentTemplate.footer?.bankDetails, upiId: e.target.value },
-                        },
-                      })
-                    }
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-100">
+              {/* SIGNATORY DETAILS */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                 <div>
                   <label className="block text-slate-700 font-bold mb-1">Authorized Signatory Label</label>
                   <input
@@ -2930,9 +4391,9 @@ export const BillTemplateDesigner: React.FC<BillTemplateDesignerProps> = ({
                 <div className="space-y-1">
                   <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Billed To (Customer):</div>
                   {currentTemplate.customerFields
-                    ?.filter((f) => f.visible)
+                    ?.filter((f) => f && f.visible)
                     .map((f) => {
-                      let val = (sampleBill as any)[f.key] || '-';
+                      const val = getSampleCustomerFieldValue(f.key);
                       if (f.key === 'referralCode') {
                         return (
                           <div key={f.key} className="text-[11px] leading-tight flex items-center gap-1.5 pt-0.5">
@@ -2956,20 +4417,25 @@ export const BillTemplateDesigner: React.FC<BillTemplateDesignerProps> = ({
 
                 <div className="space-y-1 text-right">
                   <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Invoice Details:</div>
-                  <div className="text-[11px]">
-                    <span className="text-slate-500">Showroom:</span>{' '}
-                    <span className="font-bold text-slate-800">{sampleBill.showroom}</span>
-                  </div>
-                  <div className="text-[11px]">
-                    <span className="text-slate-500">Executive:</span>{' '}
-                    <span className="font-bold text-slate-800">{sampleBill.employeeName}</span>
-                  </div>
-                  <div className="text-[11px]">
-                    <span className="text-slate-500">Payment:</span>{' '}
-                    <span className="font-bold text-emerald-700">
-                      {sampleBill.paymentMode} ({sampleBill.paymentStatus})
-                    </span>
-                  </div>
+                  {(currentTemplate.invoiceFields && currentTemplate.invoiceFields.length > 0
+                    ? currentTemplate.invoiceFields.filter((f) => f.visible)
+                    : [
+                        { label: 'Showroom', key: 'showroom' },
+                        { label: 'Executive', key: 'employeeName' },
+                        { label: 'Payment', key: 'paymentMode' },
+                      ]
+                  ).map((invF, i) => {
+                    let val = (sampleBill as any)[invF.key] || `Ref-${invF.key.toUpperCase()}-99`;
+                    if (invF.key === 'paymentMode') {
+                      val = `${sampleBill.paymentMode} (${sampleBill.paymentStatus})`;
+                    }
+                    return (
+                      <div key={i} className="text-[11px]">
+                        <span className="text-slate-500">{invF.label}:</span>{' '}
+                        <span className="font-bold text-slate-800">{val}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -2982,11 +4448,12 @@ export const BillTemplateDesigner: React.FC<BillTemplateDesignerProps> = ({
                         .filter((c) => c && c.visible)
                         .map((col, idx) => {
                           const colKey = String(col.key || `col_${idx}`);
-                          const isNumeric = colKey.toLowerCase().includes('amount') || colKey.toLowerCase().includes('price') || colKey.toLowerCase().includes('rate');
+                          const align = col.align || (['unitPrice', 'totalAmount', 'discount', 'taxAmount', 'mrp'].includes(colKey) ? 'right' : 'left');
                           return (
                             <th
                               key={colKey}
-                              className={`p-2 ${isNumeric ? 'text-right' : ''}`}
+                              style={{ width: col.widthPercent ? `${col.widthPercent}%` : undefined }}
+                              className={`p-2 text-[11px] font-bold ${align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : 'text-left'}`}
                             >
                               {col.label || colKey}
                             </th>
@@ -3001,28 +4468,22 @@ export const BillTemplateDesigner: React.FC<BillTemplateDesignerProps> = ({
                           .filter((c) => c && c.visible)
                           .map((col, cIdx) => {
                             const colKey = String(col.key || `col_${cIdx}`);
-                            let val = (item as any)[colKey];
-                            if (
-                              colKey === 'unitPrice' ||
-                              colKey === 'totalAmount' ||
-                              colKey === 'taxAmount' ||
-                              colKey === 'discount'
-                            ) {
-                              val = `₹${(Number(val) || 0).toLocaleString('en-IN')}`;
-                            }
-                            const isNumeric = colKey.toLowerCase().includes('amount') || colKey.toLowerCase().includes('price') || colKey.toLowerCase().includes('rate');
+                            const val = getSampleColumnValue(item, colKey);
+                            const align = col.align || (['unitPrice', 'totalAmount', 'discount', 'taxAmount', 'mrp'].includes(colKey) ? 'right' : 'left');
                             return (
                               <td
                                 key={colKey}
                                 className={`p-2 ${
-                                  isNumeric
-                                    ? 'text-right font-bold'
+                                  align === 'right'
+                                    ? 'text-right font-bold font-mono'
+                                    : align === 'center'
+                                    ? 'text-center'
                                     : colKey === 'batterySerial'
-                                    ? 'font-mono text-emerald-700 font-semibold'
-                                    : 'text-slate-800'
+                                    ? 'font-mono text-emerald-700 font-semibold text-left'
+                                    : 'text-slate-800 text-left'
                                 }`}
                               >
-                                {val !== undefined && val !== null ? String(val) : '-'}
+                                {val}
                               </td>
                             );
                           })}
