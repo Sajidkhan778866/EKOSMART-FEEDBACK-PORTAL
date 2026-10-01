@@ -29,8 +29,8 @@ const customerSchema = new Schema(
   {
     customerId: { type: String, required: true, unique: true, index: true },
     name: { type: String, required: true, index: true },
-    mobile: { type: String, required: true, unique: true, index: true },
-    email: { type: String, index: true },
+    mobile: { type: String, default: '', index: true },
+    email: { type: String, index: true, lowercase: true, trim: true },
     address: { type: String, default: '' },
     city: { type: String, default: '' },
     state: { type: String, default: '' },
