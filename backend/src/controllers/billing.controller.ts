@@ -545,11 +545,16 @@ export const deleteBillTemplate = async (req: Request, res: Response) => {
 // GET /api/v1/billing - List bills
 export const getAllBills = async (req: Request, res: Response) => {
   try {
-    const { search, paymentStatus, showroom, dateFilter, startDate, endDate, page, limit } = req.query;
+    const { search, paymentStatus, showroom, category, division, dateFilter, startDate, endDate, limit } = req.query;
     const query: any = {};
 
     if (paymentStatus && paymentStatus !== 'All') query.paymentStatus = paymentStatus;
     if (showroom && showroom !== 'All') query.showroom = showroom;
+
+    const cat = category || division;
+    if (cat && cat !== 'All') {
+      query['items.category'] = { $regex: new RegExp(`^${cat}$`, 'i') };
+    }
 
     applyDateFilterToQuery(query, 'createdAt', dateFilter as string, startDate as string, endDate as string);
 
@@ -559,11 +564,25 @@ export const getAllBills = async (req: Request, res: Response) => {
         { invoiceNumber: { $regex: s, $options: 'i' } },
         { customerName: { $regex: s, $options: 'i' } },
         { customerMobile: { $regex: s, $options: 'i' } },
+        { customerReferralCode: { $regex: s, $options: 'i' } },
+        { referralCodeUsed: { $regex: s, $options: 'i' } },
       ];
     }
 
     const max = Math.min(200, Number(limit) || 100);
-    const bills = await Bill.find(query).sort({ createdAt: -1 }).limit(max);
+    const rawBills = await Bill.find(query)
+      .populate('customer', 'referralCode walletBalance totalEarnedCoins customerId mobile')
+      .sort({ createdAt: -1 })
+      .limit(max);
+
+    // Ensure customerReferralCode is populated for every bill
+    const bills = rawBills.map((b: any) => {
+      const doc = b.toObject ? b.toObject() : { ...b };
+      if (!doc.customerReferralCode && doc.customer?.referralCode) {
+        doc.customerReferralCode = doc.customer.referralCode;
+      }
+      return doc;
+    });
 
     const totalRevenue = bills.reduce((acc, b) => acc + (b.grandTotal || 0), 0);
 
@@ -597,7 +616,12 @@ export const getBillById = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'Invoice not found' });
     }
 
-    res.json({ success: true, data: bill });
+    const billObj = bill.toObject ? bill.toObject() : { ...bill };
+    if (!billObj.customerReferralCode && billObj.customer?.referralCode) {
+      billObj.customerReferralCode = billObj.customer.referralCode;
+    }
+
+    res.json({ success: true, data: billObj });
   } catch (error: any) {
     res.status(500).json({ success: false, message: 'Failed to retrieve invoice', error: error.message });
   }

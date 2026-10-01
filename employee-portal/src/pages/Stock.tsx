@@ -679,6 +679,41 @@ const Stock = () => {
         </div>
       </div>
 
+      {/* Category Pill Tabs (Showroom, Battery, Spare Parts) */}
+      <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">Division:</span>
+          {['All', 'Battery', 'EV Scooter', 'Spare Parts', 'Charger'].map((cat) => {
+            const isSelected = categoryFilter === cat;
+            const count = cat === 'All'
+              ? stockList.length
+              : stockList.filter((s) => (s.category || '').toLowerCase() === cat.toLowerCase()).length;
+            return (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setCategoryFilter(cat)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                  isSelected
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                <span>{cat === 'Battery' ? '🔋' : cat === 'EV Scooter' ? '🛵' : cat === 'Spare Parts' ? '⚙️' : cat === 'Charger' ? '⚡' : '📦'}</span>
+                <span>{cat}</span>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${isSelected ? 'bg-white/20 text-white' : 'bg-white text-slate-700 font-bold'}`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <span className="text-xs font-bold text-slate-500">
+          {stockList.filter((s) => categoryFilter === 'All' || (s.category || '').toLowerCase() === categoryFilter.toLowerCase()).length} of {stockList.length} Units
+        </span>
+      </div>
+
       {/* Stock Cards / Grid */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         {loading ? (

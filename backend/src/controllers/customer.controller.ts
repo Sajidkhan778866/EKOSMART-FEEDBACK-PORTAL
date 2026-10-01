@@ -55,9 +55,14 @@ export const getActiveReferralSettings = async () => {
     settings = await ReferralSettings.create({
       key: 'global_referral_settings',
       enabled: true,
+      welcomeRewardCoins: 250,
       newCustomerReward: 500,
-      referrerReward: 100,
+      referrerReward: 500,
       purchaseReward: 500,
+      showroomCoins: 250,
+      batteryCoins: 500,
+      serviceReward: 250,
+      serviceRedemptionValue: 200,
       qualifyingMinPurchase: 0,
       coinConversionRate: 1,
     });

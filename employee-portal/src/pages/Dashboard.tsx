@@ -29,6 +29,7 @@ const Dashboard = () => {
   // Date Filter (Default: TODAY as requested)
   const [dateRange, setDateRange] = useState<DateRangeState>({ filter: 'today' });
   const [filterTab, setFilterTab] = useState<'active' | 'inProgress' | 'closed' | 'all'>('active');
+  const [selectedDivision, setSelectedDivision] = useState<string>('All');
 
   const fetchDashboard = async () => {
     try {
@@ -101,7 +102,7 @@ const Dashboard = () => {
   // 3. In Progress complaints
   const inProgressTickets: any[] = allTickets.filter((c: any) => c.status === 'In Progress');
 
-  const displayedTickets =
+  const baseFilteredTickets =
     filterTab === 'active'
       ? activeTickets
       : filterTab === 'inProgress'
@@ -109,6 +110,19 @@ const Dashboard = () => {
       : filterTab === 'closed'
       ? closedTickets
       : allTickets;
+
+  const displayedTickets = baseFilteredTickets.filter((c: any) => {
+    if (selectedDivision === 'All') return true;
+    return (c.division || '').toLowerCase() === selectedDivision.toLowerCase();
+  });
+
+  const divisionsList = [
+    { id: 'All', label: 'All Divisions', icon: '🏢' },
+    { id: 'Battery', label: 'Battery', icon: '🔋' },
+    { id: 'Showroom', label: 'Showroom', icon: '🛵' },
+    { id: 'Rental', label: 'Rental', icon: '🔄' },
+    { id: 'Spare Parts', label: 'Spare Parts', icon: '⚙️' },
+  ];
 
   return (
     <div className="space-y-6 max-w-7xl pb-12">
@@ -439,6 +453,35 @@ const Dashboard = () => {
               <span>📋 All ({allTickets.length})</span>
             </button>
           </div>
+        </div>
+
+        {/* Division Filter Pills (Showroom, Battery, Rental, Spare Parts) */}
+        <div className="flex flex-wrap items-center gap-1.5 pt-1 pb-1 border-t border-slate-100">
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">Division:</span>
+          {divisionsList.map((div) => {
+            const isSelected = selectedDivision === div.id;
+            const count = div.id === 'All'
+              ? baseFilteredTickets.length
+              : baseFilteredTickets.filter((t: any) => (t.division || '').toLowerCase() === div.id.toLowerCase()).length;
+            return (
+              <button
+                key={div.id}
+                type="button"
+                onClick={() => setSelectedDivision(div.id)}
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                  isSelected
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                <span>{div.icon}</span>
+                <span>{div.label}</span>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${isSelected ? 'bg-white/20 text-white' : 'bg-white text-slate-700'}`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Empty state when active is 0 */}

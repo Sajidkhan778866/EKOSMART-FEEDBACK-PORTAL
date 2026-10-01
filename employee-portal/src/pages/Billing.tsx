@@ -18,6 +18,7 @@ import {
   Gift,
   Mail,
   Send,
+  Copy,
 } from 'lucide-react';
 import { billingApi, stockApi, billTemplateApi } from '../api/client';
 import ScannerModal from '../components/ScannerModal';
@@ -78,6 +79,8 @@ const Billing = () => {
   const [search, setSearch] = useState('');
   const [activeTemplate, setActiveTemplate] = useState<any>(null);
   const [exporting, setExporting] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [copiedRef, setCopiedRef] = useState(false);
 
   // Date Filter
   const [dateRange, setDateRange] = useState<DateRangeState>({ filter: 'all' });
@@ -420,6 +423,18 @@ const Billing = () => {
     }
   };
 
+  const categoriesList = [
+    { id: 'All', label: 'All Invoices', icon: '📋' },
+    { id: 'Battery', label: 'Battery Sales', icon: '🔋' },
+    { id: 'Showroom', label: 'Showroom Sales', icon: '🛵' },
+    { id: 'Spare Parts', label: 'Spare Parts', icon: '⚙️' },
+  ];
+
+  const displayedBills = bills.filter((b) => {
+    if (selectedCategory === 'All') return true;
+    return b.items.some((it) => (it.category || '').toLowerCase() === selectedCategory.toLowerCase());
+  });
+
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
@@ -476,18 +491,53 @@ const Billing = () => {
         </div>
       )}
 
-      {/* Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex gap-3">
-        <div className="flex-1 relative">
+      {/* Search Bar & Category Filter Pills */}
+      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+        <div className="relative">
           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && fetchBills()}
-            placeholder="Search recent bills by invoice #, customer name, or phone..."
+            placeholder="Search recent bills by invoice #, customer name, phone, or referral code..."
             className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
           />
+        </div>
+
+        {/* Category Pill Tabs (Showroom, Battery, Spare Parts) */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">Division:</span>
+            {categoriesList.map((cat) => {
+              const isSelected = selectedCategory === cat.id;
+              const count = cat.id === 'All'
+                ? bills.length
+                : bills.filter((b) => b.items.some((it) => (it.category || '').toLowerCase() === cat.id.toLowerCase())).length;
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                    isSelected
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  <span>{cat.icon}</span>
+                  <span>{cat.label}</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${isSelected ? 'bg-white/20 text-white' : 'bg-white text-slate-700 font-bold'}`}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <span className="text-xs font-bold text-slate-500">
+            {displayedBills.length} of {bills.length} Invoices
+          </span>
         </div>
       </div>
 
@@ -498,12 +548,12 @@ const Billing = () => {
             <RefreshCw size={24} className="animate-spin text-indigo-500" />
             <span className="text-xs font-medium">Loading recent invoices...</span>
           </div>
-        ) : bills.length === 0 ? (
+        ) : displayedBills.length === 0 ? (
           <div className="p-12 text-center text-slate-500 flex flex-col items-center gap-3">
             <Receipt size={36} className="text-slate-300" />
-            <p className="text-sm font-bold text-slate-700">No Billing Invoices Found</p>
+            <p className="text-sm font-bold text-slate-700">No Invoices Found for Selected Filter</p>
             <p className="text-xs text-slate-400 max-w-sm">
-              Click "New Customer Bill" above to generate your first showroom invoice.
+              Try switching division filter or click "New Customer Bill" above.
             </p>
           </div>
         ) : (
@@ -513,7 +563,7 @@ const Billing = () => {
                 <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
                   <th className="p-4">Invoice #</th>
                   <th className="p-4">Date</th>
-                  <th className="p-4">Customer</th>
+                  <th className="p-4">Customer & Referral Code</th>
                   <th className="p-4">Items / Pack #</th>
                   <th className="p-4">Grand Total</th>
                   <th className="p-4">Payment</th>
@@ -523,7 +573,7 @@ const Billing = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {bills.map((bill) => (
+                {displayedBills.map((bill) => (
                   <tr key={bill._id} className="hover:bg-slate-50/80 transition">
                     <td className="p-4">
                       <div className="font-bold text-indigo-600 font-mono text-xs">{bill.invoiceNumber}</div>
@@ -535,6 +585,12 @@ const Billing = () => {
                     <td className="p-4">
                       <div className="font-bold text-slate-800">{bill.customerName}</div>
                       <div className="text-slate-500 font-mono text-[11px]">{bill.customerMobile}</div>
+                      {(bill.customerReferralCode || (bill as any).customer?.referralCode) && (
+                        <div className="flex items-center gap-1 mt-1 font-mono text-[10px] font-bold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 w-fit">
+                          <Gift size={10} className="text-emerald-600" />
+                          <span>Ref: {bill.customerReferralCode || (bill as any).customer?.referralCode}</span>
+                        </div>
+                      )}
                     </td>
                     <td className="p-4">
                       <div className="font-medium text-slate-700">
@@ -1043,20 +1099,53 @@ const Billing = () => {
                 </div>
               </div>
 
-              {/* Customer Wallet Reward Stamp */}
-              <div className="p-2.5 bg-amber-50 rounded-xl border border-amber-200 flex items-center justify-between text-amber-900 text-[11px]">
-                <div className="flex items-center gap-2">
-                  <Coins size={16} className="text-amber-600 flex-shrink-0" />
-                  <div>
-                    <span className="font-bold">Customer Reward Coins Credited:</span>{' '}
-                    <span className="font-black text-amber-950">+{selectedBill.rewardCoinsAwarded || (selectedBill.purchaseRewardAwarded ? 500 : 500)} Coins</span> into customer digital wallet.
+              {/* Customer Referral Code & Wallet Reward Stamp */}
+              <div className="p-3 bg-gradient-to-r from-emerald-50 via-amber-50 to-emerald-50 rounded-2xl border border-emerald-200/80 space-y-2 text-[11px]">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 bg-emerald-600 text-white rounded-lg">
+                      <Gift size={15} />
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase font-bold text-slate-500">Customer Referral Code</div>
+                      <div className="font-mono font-black text-emerald-800 text-xs flex items-center gap-1.5">
+                        <span>{selectedBill.customerReferralCode || (selectedBill as any).customer?.referralCode || 'EBS-REF-MEMBER'}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const code = selectedBill.customerReferralCode || (selectedBill as any).customer?.referralCode || '';
+                            if (code) {
+                              navigator.clipboard.writeText(code);
+                              setCopiedRef(true);
+                              setTimeout(() => setCopiedRef(false), 2000);
+                            }
+                          }}
+                          className="px-2 py-0.5 bg-white border border-emerald-300 rounded text-[10px] text-emerald-700 hover:bg-emerald-100 font-sans font-bold cursor-pointer inline-flex items-center gap-1"
+                        >
+                          <Copy size={10} />
+                          <span>{copiedRef ? 'Copied!' : 'Copy Code'}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <div className="text-[10px] uppercase font-bold text-amber-700">Customer Reward Coins</div>
+                    <div className="font-mono font-black text-amber-900 text-xs flex items-center justify-end gap-1">
+                      <Coins size={14} className="text-amber-600 fill-amber-600" />
+                      <span>+{selectedBill.rewardCoinsAwarded || (selectedBill.purchaseRewardAwarded ? 500 : 500)} Coins Credited</span>
+                    </div>
                   </div>
                 </div>
-                {selectedBill.referralCodeUsed && (
-                  <div className="flex items-center gap-1 text-[10px] font-mono font-bold bg-amber-100 text-amber-900 px-2 py-0.5 rounded-md border border-amber-300">
-                    <Gift size={11} /> Ref: {selectedBill.referralCodeUsed}
-                  </div>
-                )}
+
+                <div className="text-[10px] text-slate-600 bg-white/80 p-2 rounded-xl border border-emerald-100/80 flex flex-wrap items-center justify-between gap-1">
+                  <span>💡 <strong>Coin Benefit:</strong> Redeem coins for EV battery servicing, maintenance & showroom accessories.</span>
+                  {selectedBill.referralCodeUsed && (
+                    <span className="font-mono font-bold bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-[10px] border border-amber-200">
+                      Applied Ref: {selectedBill.referralCodeUsed}
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Footer Note */}
