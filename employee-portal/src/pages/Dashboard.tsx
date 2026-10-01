@@ -28,6 +28,7 @@ const Dashboard = () => {
 
   // Date Filter (Default: TODAY as requested)
   const [dateRange, setDateRange] = useState<DateRangeState>({ filter: 'today' });
+  const [filterTab, setFilterTab] = useState<'active' | 'inProgress' | 'closed' | 'all'>('active');
 
   const fetchDashboard = async () => {
     try {
@@ -61,8 +62,6 @@ const Dashboard = () => {
       </div>
     );
   }
-
-  const [filterTab, setFilterTab] = useState<'active' | 'inProgress' | 'closed' | 'all'>('active');
 
   const employee = data?.employee || user;
   const stats = data?.stats || {
