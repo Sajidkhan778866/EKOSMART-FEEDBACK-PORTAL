@@ -356,7 +356,7 @@ export default function CustomerWallet() {
             </div>
             <p className="font-semibold text-slate-700">No transaction records found.</p>
             <p className="text-[11px] text-slate-400">
-              Your welcome coins, referral earnings, and purchase rewards will be listed here.
+              Your showroom purchase rewards and referral earnings will be listed here.
             </p>
           </div>
         ) : (

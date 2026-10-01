@@ -235,6 +235,13 @@ Bulk battery orders applicable as per Minimum Order Quantity (MOQ 5 / MOQ 10) te
   isPublished: true,
 };
 
+export const defaultCustomerLoginTimer = {
+  enabled: true,
+  durationSeconds: 20,
+  title: 'Welcome to Ekosmart',
+  message: 'Login with your email to access your customer wallet, showroom bills, warranty certificates & rewards.',
+};
+
 export const getOrCreateDefaultContent = async () => {
   let content = await Content.findOne({ key: 'global_cms' });
   if (!content) {
@@ -246,6 +253,7 @@ export const getOrCreateDefaultContent = async () => {
       idCardConfig: defaultIdCardConfig,
       billingConfig: defaultBillingConfig,
       portalLinks: defaultPortalLinks,
+      customerLoginTimer: defaultCustomerLoginTimer,
       contactInfo: defaultContactData,
       footer: defaultFooterData,
       privacyPolicy: defaultPrivacyPolicyData,
@@ -272,6 +280,10 @@ export const getOrCreateDefaultContent = async () => {
     }
     if (!content.portalLinks || !content.portalLinks.adminPortalUrl) {
       content.portalLinks = defaultPortalLinks;
+      modified = true;
+    }
+    if (!content.customerLoginTimer || typeof content.customerLoginTimer.enabled === 'undefined') {
+      content.customerLoginTimer = defaultCustomerLoginTimer;
       modified = true;
     }
     if (!content.contactInfo || !content.contactInfo.dropdownOptions || content.contactInfo.dropdownOptions.length === 0) {
@@ -319,6 +331,7 @@ export const getPublicContent = async (_req: Request, res: Response) => {
           showroomLocations: content.billingConfig?.showroomLocations || defaultBillingConfig.showroomLocations,
         },
         portalLinks: content.portalLinks || defaultPortalLinks,
+        customerLoginTimer: content.customerLoginTimer || defaultCustomerLoginTimer,
         contactInfo: content.contactInfo || defaultContactData,
         footer: content.footer,
         privacyPolicy: content.privacyPolicy,
@@ -337,6 +350,7 @@ export const getPublicContent = async (_req: Request, res: Response) => {
         navigation: defaultNavigation,
         billingConfig: defaultBillingConfig,
         portalLinks: defaultPortalLinks,
+        customerLoginTimer: defaultCustomerLoginTimer,
         contactInfo: defaultContactData,
         footer: defaultFooterData,
         privacyPolicy: defaultPrivacyPolicyData,
@@ -374,6 +388,7 @@ export const updateAdminContent = async (req: Request, res: Response) => {
       idCardConfig,
       billingConfig,
       portalLinks,
+      customerLoginTimer,
       footer,
       privacyPolicy,
       termsConditions,
@@ -402,6 +417,10 @@ export const updateAdminContent = async (req: Request, res: Response) => {
     if (portalLinks) {
       content.portalLinks = { ...(content.portalLinks || {}), ...portalLinks };
       content.markModified('portalLinks');
+    }
+    if (customerLoginTimer) {
+      content.customerLoginTimer = { ...(content.customerLoginTimer || {}), ...customerLoginTimer };
+      content.markModified('customerLoginTimer');
     }
     if (contactInfo) {
       content.contactInfo = {

@@ -589,7 +589,7 @@ const Home = () => {
                 Ekosmart Digital Wallet & Referral Coins
               </h3>
               <p className="text-xs text-amber-900/80 max-w-xl">
-                Earn <strong>+500 Welcome Coins</strong> on registration, <strong>+500 Purchase Coins</strong> on showroom billing, and <strong>+100 Coins</strong> per verified friend referral!
+                Earn <strong>Reward Coins</strong> on every showroom purchase & battery billing, and <strong>Referral Bonus Coins</strong> on friend purchases!
               </p>
             </div>
           </div>

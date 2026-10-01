@@ -169,14 +169,7 @@ export default function CustomerRegister() {
       {successMsg && step === 2 && (
         <div className="mb-5 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-start gap-2.5">
           <CheckCircle2 size={16} className="flex-shrink-0 mt-0.5 text-emerald-600" />
-          <div>
-            <p className="font-semibold">{successMsg}</p>
-            {debugOtp && (
-              <p className="text-[11px] font-mono text-emerald-700 mt-1 bg-emerald-100/80 px-2 py-1 rounded inline-block">
-                Demo Quick Code: {debugOtp}
-              </p>
-            )}
-          </div>
+          <p className="font-semibold">{successMsg}</p>
         </div>
       )}
 
@@ -306,21 +299,27 @@ export default function CustomerRegister() {
             </p>
           </div>
 
-          <div className="mb-5 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs space-y-2">
+          <div className="mb-5 p-4 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs space-y-2 shadow-xs">
             <div className="flex items-start gap-2.5">
-              <CheckCircle2 size={16} className="flex-shrink-0 mt-0.5 text-emerald-600" />
-              <p className="font-semibold">{successMsg || `OTP sent to ${formData.email}. Valid for 10 minutes.`}</p>
+              <CheckCircle2 size={18} className="flex-shrink-0 mt-0.5 text-emerald-600" />
+              <div>
+                <p className="font-bold text-emerald-950">Instant Verification Code (On-Screen OTP)</p>
+                <p className="text-[11px] text-emerald-800">
+                  {successMsg || `Instant code generated for ${formData.email}:`}
+                </p>
+              </div>
             </div>
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-emerald-200/60">
-              <span className="text-[11px] text-emerald-900 font-medium">
-                Verification Code: <strong className="font-mono text-emerald-800 text-sm tracking-widest bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">{debugOtp || '123456'}</strong>
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-emerald-200">
+              <span className="text-xs text-emerald-950 font-bold">
+                Your Code: <strong className="font-mono text-emerald-900 text-base tracking-widest bg-emerald-100 px-3 py-1 rounded-xl border border-emerald-300 shadow-inner">{debugOtp || '123456'}</strong>
               </span>
               <button
                 type="button"
                 onClick={() => setOtp(debugOtp || '123456')}
-                className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[10px] transition shadow-xs cursor-pointer"
+                className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl font-bold text-xs transition shadow-xs cursor-pointer flex items-center gap-1"
               >
-                Auto-fill Code
+                <span>Auto-fill Code</span>
+                <span>⚡</span>
               </button>
             </div>
           </div>

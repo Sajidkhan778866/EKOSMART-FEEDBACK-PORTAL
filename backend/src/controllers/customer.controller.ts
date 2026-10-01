@@ -55,7 +55,7 @@ export const getActiveReferralSettings = async () => {
     settings = await ReferralSettings.create({
       key: 'global_referral_settings',
       enabled: true,
-      welcomeRewardCoins: 250,
+      welcomeRewardCoins: 0,
       newCustomerReward: 500,
       referrerReward: 500,
       purchaseReward: 500,
@@ -146,7 +146,7 @@ export const sendRegisterOtp = async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      message: `OTP has been sent to ${cleanEmail}. Valid for 10 minutes.`,
+      message: `Verification code generated for ${cleanEmail}. Use the on-screen code below to verify.`,
       debugOtp: otp,
       otp,
     });
@@ -327,7 +327,7 @@ export const sendLoginOtp = async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      message: `Login OTP sent to ${cleanEmail}. Valid for 10 minutes.`,
+      message: `Login verification code generated for ${cleanEmail}. Use the on-screen code below to verify.`,
       isNew: !customer,
       debugOtp: otp,
       otp,

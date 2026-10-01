@@ -429,7 +429,7 @@ const Layout = () => {
                 <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-900/60 to-emerald-800/40 border border-emerald-700/50 flex items-center justify-between">
                   <div>
                     <p className="text-xs font-bold text-white">Join Ekosmart Rewards</p>
-                    <p className="text-[10px] text-emerald-300">+500 Welcome Coins on Signup</p>
+                    <p className="text-[10px] text-emerald-300">Earn Coins on Showroom Purchases</p>
                   </div>
                   <Link
                     to="/customer/register"

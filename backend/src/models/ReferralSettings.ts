@@ -22,7 +22,7 @@ const referralSettingsSchema = new Schema(
   {
     key: { type: String, default: 'global_referral_settings', unique: true },
     enabled: { type: Boolean, default: true },
-    welcomeRewardCoins: { type: Number, default: 250 },
+    welcomeRewardCoins: { type: Number, default: 0 },
     newCustomerReward: { type: Number, default: 500 },
     referrerReward: { type: Number, default: 500 },
     purchaseReward: { type: Number, default: 500 },
@@ -35,9 +35,9 @@ const referralSettingsSchema = new Schema(
     termsAndConditions: {
       type: [String],
       default: [
-        '1. New registered customers receive welcome coins upon entering a valid referral code or opening an account.',
-        '2. The referring customer receives referral coins once their referred friend completes verification or first purchase.',
-        '3. Every qualifying showroom & EV battery product purchase awards reward coins directly to the customer digital wallet.',
+        '1. Customer registration starts with 0 coins. Reward coins are awarded strictly on showroom purchases.',
+        '2. Every qualifying showroom & EV battery product purchase awards reward coins directly to the customer digital wallet.',
+        '3. The referring friend receives referral bonus coins once their referred customer completes their first qualifying purchase.',
         '4. Accumulated coins can be redeemed for EV battery servicing, maintenance charges, and accessories.',
         '5. Referral codes are permanent, unique, non-guessable, and linked to the customer account.',
       ],
