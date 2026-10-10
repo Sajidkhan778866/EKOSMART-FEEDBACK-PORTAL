@@ -106,6 +106,27 @@ export interface IContent extends Document {
     title: string;
     message: string;
   };
+  batteryBanner?: {
+    badgeText: string;
+    heading: string;
+    subheading: string;
+    highlight1: string;
+    highlight2: string;
+    helplinePhone: string;
+    helplineBtnText: string;
+    plantBtnText: string;
+    plantBtnLink: string;
+  };
+  quickActions?: Array<{
+    id: string;
+    title: string;
+    subtitle: string;
+    url: string;
+    icon: string;
+    color: string;
+    isVisible: boolean;
+    order: number;
+  }>;
   contactInfo: {
     heading: string;
     subheading: string;
@@ -386,6 +407,63 @@ Bulk battery orders applicable as per Minimum Order Quantity (MOQ 5 / MOQ 10) te
         default: 'Please login with your email to access your customer account, wallet, referrals, bills and personalized services.',
       },
     },
+    batteryBanner: {
+      badgeText: { type: String, default: 'GET HIGH POWER OF LITHIUM' },
+      heading: { type: String, default: 'Genuine Li-ion & LFP Batteries For E-Scooter & E-Rickshaw' },
+      subheading: {
+        type: String,
+        default:
+          'Engineered with advanced Smart BMS, thermal protection, and high energy density cells. Tested at our Kota plant with Pan-India dispatch & replacement support.',
+      },
+      highlight1: { type: String, default: '48V Series (3 Year Warranty)' },
+      highlight2: { type: String, default: '60V / 72V Series (1.5 Year Warranty)' },
+      helplinePhone: { type: String, default: '8949049003' },
+      helplineBtnText: { type: String, default: 'Call +91 8949049003' },
+      plantBtnText: { type: String, default: 'View Plant Contact Details' },
+      plantBtnLink: { type: String, default: '/contact' },
+    },
+    quickActions: [
+      {
+        id: { type: String, default: 'act-track' },
+        title: { type: String, default: 'Track Ticket' },
+        subtitle: { type: String, default: 'Live complaint inspection status' },
+        url: { type: String, default: '/complaint/track' },
+        icon: { type: String, default: 'Search' },
+        color: { type: String, default: 'blue' },
+        isVisible: { type: Boolean, default: true },
+        order: { type: Number, default: 1 },
+      },
+      {
+        id: { type: String, default: 'act-warranty-reg' },
+        title: { type: String, default: 'Warranty Registration' },
+        subtitle: { type: String, default: 'Register new sales & serial number' },
+        url: { type: String, default: '/warranty/register' },
+        icon: { type: String, default: 'ShieldCheck' },
+        color: { type: String, default: 'amber' },
+        isVisible: { type: Boolean, default: true },
+        order: { type: Number, default: 2 },
+      },
+      {
+        id: { type: String, default: 'act-warranty-check' },
+        title: { type: String, default: 'Check Warranty' },
+        subtitle: { type: String, default: '3-Yr (48V) & 1.5-Yr (60V/72V) status' },
+        url: { type: String, default: '/warranty/check' },
+        icon: { type: String, default: 'ShieldAlert' },
+        color: { type: String, default: 'emerald' },
+        isVisible: { type: Boolean, default: true },
+        order: { type: Number, default: 3 },
+      },
+      {
+        id: { type: String, default: 'act-contact' },
+        title: { type: String, default: 'Contact Directory' },
+        subtitle: { type: String, default: 'Kota Plant +91 8949049003' },
+        url: { type: String, default: '/contact' },
+        icon: { type: String, default: 'Phone' },
+        color: { type: String, default: 'purple' },
+        isVisible: { type: Boolean, default: true },
+        order: { type: Number, default: 4 },
+      },
+    ],
   },
   { timestamps: true }
 );

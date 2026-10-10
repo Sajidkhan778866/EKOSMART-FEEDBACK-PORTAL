@@ -346,6 +346,19 @@ export const getPublicContent = async (_req: Request, res: Response) => {
         },
         portalLinks: content.portalLinks || defaultPortalLinks,
         customerLoginTimer: content.customerLoginTimer || defaultCustomerLoginTimer,
+        batteryBanner: content.batteryBanner || {
+          badgeText: 'GET HIGH POWER OF LITHIUM',
+          heading: 'Genuine Li-ion & LFP Batteries For E-Scooter & E-Rickshaw',
+          subheading:
+            'Engineered with advanced Smart BMS, thermal protection, and high energy density cells. Tested at our Kota plant with Pan-India dispatch & replacement support.',
+          highlight1: '48V Series (3 Year Warranty)',
+          highlight2: '60V / 72V Series (1.5 Year Warranty)',
+          helplinePhone: '8949049003',
+          helplineBtnText: 'Call +91 8949049003',
+          plantBtnText: 'View Plant Contact Details',
+          plantBtnLink: '/contact',
+        },
+        quickActions: (content.quickActions || []).filter((q) => q.isVisible !== false),
         referralSettings,
         contactInfo: content.contactInfo || defaultContactData,
         footer: content.footer,
@@ -404,6 +417,8 @@ export const updateAdminContent = async (req: Request, res: Response) => {
       billingConfig,
       portalLinks,
       customerLoginTimer,
+      batteryBanner,
+      quickActions,
       footer,
       privacyPolicy,
       termsConditions,
@@ -436,6 +451,14 @@ export const updateAdminContent = async (req: Request, res: Response) => {
     if (customerLoginTimer) {
       content.customerLoginTimer = { ...(content.customerLoginTimer || {}), ...customerLoginTimer };
       content.markModified('customerLoginTimer');
+    }
+    if (batteryBanner) {
+      content.batteryBanner = { ...(content.batteryBanner || {}), ...batteryBanner };
+      content.markModified('batteryBanner');
+    }
+    if (quickActions) {
+      content.quickActions = quickActions;
+      content.markModified('quickActions');
     }
     if (contactInfo) {
       content.contactInfo = {

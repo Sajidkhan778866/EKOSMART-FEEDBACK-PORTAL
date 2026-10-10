@@ -48,10 +48,11 @@ import {
   MapPin,
   Clock,
   Edit3,
+  Coins,
+  Gift,
+  Award,
 } from 'lucide-react';
-import { contentApi, API_BASE_URL, resolveImageUrl } from '../api/client';
-
-
+import { contentApi, customerApi, API_BASE_URL, resolveImageUrl } from '../api/client';
 
 const FRONTEND_URL =
   import.meta.env.VITE_FRONTEND_URL ||
@@ -94,6 +95,29 @@ export interface IDivisionContact {
   address?: string;
 }
 
+export interface IQuickActionItem {
+  id: string;
+  title: string;
+  subtitle: string;
+  url: string;
+  icon: string;
+  color: string;
+  isVisible: boolean;
+  order: number;
+}
+
+export interface IBatteryBanner {
+  badgeText: string;
+  heading: string;
+  subheading: string;
+  highlight1: string;
+  highlight2: string;
+  helplinePhone: string;
+  helplineBtnText: string;
+  plantBtnText: string;
+  plantBtnLink: string;
+}
+
 interface ICMSContent {
   hero: {
     heading: string;
@@ -108,6 +132,8 @@ interface ICMSContent {
     complaintLogoImage?: string;
   };
   serviceCards: IServiceCard[];
+  batteryBanner?: IBatteryBanner;
+  quickActions?: IQuickActionItem[];
   footer: {
     companyName: string;
     copyrightText: string;
@@ -400,6 +426,60 @@ const defaultFallbackContent: ICMSContent = {
     title: 'Login to Continue',
     message: 'Please login with your email to access your customer account, wallet, referrals, bills and personalized services.',
   },
+  batteryBanner: {
+    badgeText: 'GET HIGH POWER OF LITHIUM',
+    heading: 'Genuine Li-ion & LFP Batteries For E-Scooter & E-Rickshaw',
+    subheading:
+      'Engineered with advanced Smart BMS, thermal protection, and high energy density cells. Tested at our Kota plant with Pan-India dispatch & replacement support.',
+    highlight1: '48V Series (3 Year Warranty)',
+    highlight2: '60V / 72V Series (1.5 Year Warranty)',
+    helplinePhone: '8949049003',
+    helplineBtnText: 'Call +91 8949049003',
+    plantBtnText: 'View Plant Contact Details',
+    plantBtnLink: '/contact',
+  },
+  quickActions: [
+    {
+      id: 'act-track',
+      title: 'Track Ticket',
+      subtitle: 'Live complaint inspection status',
+      url: '/complaint/track',
+      icon: 'Search',
+      color: 'blue',
+      isVisible: true,
+      order: 1,
+    },
+    {
+      id: 'act-warranty-reg',
+      title: 'Warranty Registration',
+      subtitle: 'Register new sales & serial number',
+      url: '/warranty/register',
+      icon: 'ShieldCheck',
+      color: 'amber',
+      isVisible: true,
+      order: 2,
+    },
+    {
+      id: 'act-warranty-check',
+      title: 'Check Warranty',
+      subtitle: '3-Yr (48V) & 1.5-Yr (60V/72V) status',
+      url: '/warranty/check',
+      icon: 'ShieldAlert',
+      color: 'emerald',
+      isVisible: true,
+      order: 3,
+    },
+    {
+      id: 'act-contact',
+      title: 'Contact Directory',
+      subtitle: 'Kota Plant +91 8949049003',
+      url: '/contact',
+      icon: 'Phone',
+      color: 'purple',
+      isVisible: true,
+      order: 4,
+    },
+  ],
 };
 
 const renderLivePreviewIcon = (card: IServiceCard) => {
@@ -560,8 +640,31 @@ const compressImageFile = (
 };
 
 const ContentManager = () => {
-  const [activeTab, setActiveTab] = useState<'cards' | 'hero' | 'policies' | 'footer' | 'contact' | 'loginTimer'>('cards');
+  const [activeTab, setActiveTab] = useState<
+    'cards' | 'hero' | 'rewards' | 'banner' | 'policies' | 'footer' | 'contact' | 'loginTimer'
+  >('cards');
   const [content, setContent] = useState<ICMSContent>(defaultFallbackContent);
+  const [referralSettings, setReferralSettings] = useState<{
+    enabled: boolean;
+    welcomeRewardCoins: number;
+    batteryCoins: number;
+    showroomCoins: number;
+    referrerReward: number;
+    newCustomerReward: number;
+    serviceReward: number;
+    serviceRedemptionValue: number;
+    coinConversionRate: number;
+  }>({
+    enabled: true,
+    welcomeRewardCoins: 0,
+    batteryCoins: 500,
+    showroomCoins: 250,
+    referrerReward: 500,
+    newCustomerReward: 500,
+    serviceReward: 250,
+    serviceRedemptionValue: 200,
+    coinConversionRate: 1,
+  });
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -645,15 +748,25 @@ const ContentManager = () => {
   const fetchContent = async () => {
     try {
       setLoading(true);
-      const res = await contentApi.getAdmin();
-      if (res.data.success && res.data.data) {
-        const d = res.data.data;
+      const [res, refRes] = await Promise.allSettled([
+        contentApi.getAdmin(),
+        customerApi.getReferralSettings(),
+      ]);
+
+      if (res.status === 'fulfilled' && res.value.data.success && res.value.data.data) {
+        const d = res.value.data.data;
         setContent({
           ...defaultFallbackContent,
           ...d,
           serviceCards: normalizeServiceCards(d.serviceCards || defaultFallbackContent.serviceCards),
           contactInfo: d.contactInfo ? { ...defaultFallbackContent.contactInfo, ...d.contactInfo } : defaultFallbackContent.contactInfo,
+          batteryBanner: d.batteryBanner ? { ...defaultFallbackContent.batteryBanner, ...d.batteryBanner } : defaultFallbackContent.batteryBanner,
+          quickActions: d.quickActions && d.quickActions.length > 0 ? d.quickActions : defaultFallbackContent.quickActions,
         });
+      }
+
+      if (refRes.status === 'fulfilled' && refRes.value.data.success && refRes.value.data.data) {
+        setReferralSettings(refRes.value.data.data);
       }
     } catch (err: any) {
       console.warn('Admin content fetch failed, trying public fallback:', err);
@@ -663,6 +776,8 @@ const ContentManager = () => {
         if (pubData.success && pubData.data) {
           const pd = pubData.data;
           setContent({
+            ...defaultFallbackContent,
+            ...pd,
             hero: pd.hero || defaultFallbackContent.hero,
             serviceCards: normalizeServiceCards(pd.serviceCards || defaultFallbackContent.serviceCards),
             footer: pd.footer || defaultFallbackContent.footer,
@@ -670,7 +785,12 @@ const ContentManager = () => {
             termsConditions: pd.termsConditions || defaultFallbackContent.termsConditions,
             refundPolicy: pd.refundPolicy || defaultFallbackContent.refundPolicy,
             contactInfo: pd.contactInfo ? { ...defaultFallbackContent.contactInfo, ...pd.contactInfo } : defaultFallbackContent.contactInfo,
+            batteryBanner: pd.batteryBanner || defaultFallbackContent.batteryBanner,
+            quickActions: pd.quickActions || defaultFallbackContent.quickActions,
           });
+          if (pd.referralSettings) {
+            setReferralSettings((prev) => ({ ...prev, ...pd.referralSettings }));
+          }
         }
       } catch (fallbackErr) {
         console.error('Failed to load fallback CMS content:', fallbackErr);
@@ -685,12 +805,23 @@ const ContentManager = () => {
     try {
       setSaving(true);
       setNotification(null);
-      const res = await contentApi.updateAdmin(content);
+      const [res] = await Promise.all([
+        contentApi.updateAdmin(content),
+        customerApi.updateReferralSettings(referralSettings).catch((err) => {
+          console.warn('Referral settings update warning:', err);
+        }),
+      ]);
       if (res.data.success) {
-        setContent(res.data.data);
+        setContent({
+          ...defaultFallbackContent,
+          ...res.data.data,
+          serviceCards: normalizeServiceCards(res.data.data.serviceCards || defaultFallbackContent.serviceCards),
+          batteryBanner: res.data.data.batteryBanner || defaultFallbackContent.batteryBanner,
+          quickActions: res.data.data.quickActions || defaultFallbackContent.quickActions,
+        });
         setNotification({
           type: 'success',
-          message: 'Soft-coded CMS content successfully saved & updated across portal!',
+          message: 'Soft-coded CMS content & wallet rewards saved successfully!',
         });
         setTimeout(() => setNotification(null), 4000);
       } else {
@@ -988,10 +1119,10 @@ const ContentManager = () => {
       )}
 
       {/* Navigation Tabs */}
-      <div className="flex border-b border-slate-200 space-x-2">
+      <div className="flex border-b border-slate-200 space-x-2 overflow-x-auto">
         <button
           onClick={() => setActiveTab('cards')}
-          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition cursor-pointer shrink-0 ${
             activeTab === 'cards'
               ? 'border-green-600 text-green-700'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -1003,7 +1134,7 @@ const ContentManager = () => {
 
         <button
           onClick={() => setActiveTab('hero')}
-          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition cursor-pointer shrink-0 ${
             activeTab === 'hero'
               ? 'border-green-600 text-green-700'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -1014,8 +1145,32 @@ const ContentManager = () => {
         </button>
 
         <button
+          onClick={() => setActiveTab('rewards')}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition cursor-pointer shrink-0 ${
+            activeTab === 'rewards'
+              ? 'border-green-600 text-green-700'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <Coins size={18} className="text-amber-500" />
+          <span>Customer Rewards & Wallet</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('banner')}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition cursor-pointer shrink-0 ${
+            activeTab === 'banner'
+              ? 'border-green-600 text-green-700'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <Battery size={18} className="text-teal-600" />
+          <span>Battery Assistance & Quick Actions</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('policies')}
-          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition cursor-pointer shrink-0 ${
             activeTab === 'policies'
               ? 'border-green-600 text-green-700'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -1027,7 +1182,7 @@ const ContentManager = () => {
 
         <button
           onClick={() => setActiveTab('footer')}
-          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition cursor-pointer shrink-0 ${
             activeTab === 'footer'
               ? 'border-green-600 text-green-700'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -1039,7 +1194,7 @@ const ContentManager = () => {
 
         <button
           onClick={() => setActiveTab('contact')}
-          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition cursor-pointer shrink-0 ${
             activeTab === 'contact'
               ? 'border-green-600 text-green-700'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -1051,7 +1206,7 @@ const ContentManager = () => {
 
         <button
           onClick={() => setActiveTab('loginTimer')}
-          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition cursor-pointer shrink-0 ${
             activeTab === 'loginTimer'
               ? 'border-green-600 text-green-700'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -2351,6 +2506,630 @@ const ContentManager = () => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: CUSTOMER REWARDS & WALLET / REFERRALS */}
+      {activeTab === 'rewards' && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-6 shadow-sm">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-slate-100 pb-4">
+              <div>
+                <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                  <Coins className="text-amber-500" size={20} />
+                  <span>Customer Wallet & Referral Coins Management</span>
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Configure coin reward rules for battery purchases, showroom billings, friend referrals, and digital wallet store credit conversion.
+                </p>
+              </div>
+              <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer self-start sm:self-auto bg-amber-50 px-3.5 py-1.5 rounded-xl border border-amber-200">
+                <input
+                  type="checkbox"
+                  checked={referralSettings.enabled ?? true}
+                  onChange={(e) => setReferralSettings({ ...referralSettings, enabled: e.target.checked })}
+                  className="rounded text-amber-600 focus:ring-amber-500 h-4 w-4"
+                />
+                <span className="font-bold text-amber-900">Enable Rewards & Referral System</span>
+              </label>
+            </div>
+
+            {/* Coin Configuration Settings Cards Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* 1. Battery Purchase Coins */}
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <Battery size={15} className="text-teal-600" />
+                    <span>Battery Purchase Reward</span>
+                  </label>
+                  <span className="text-[10px] font-extrabold bg-teal-100 text-teal-800 px-2 py-0.5 rounded-full">
+                    +{referralSettings.batteryCoins || 500} Coins
+                  </span>
+                </div>
+                <input
+                  type="number"
+                  min="0"
+                  step="50"
+                  value={referralSettings.batteryCoins || 0}
+                  onChange={(e) =>
+                    setReferralSettings({ ...referralSettings, batteryCoins: Number(e.target.value) || 0 })
+                  }
+                  className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-bold text-slate-800"
+                />
+                <p className="text-[11px] text-slate-500 leading-tight">
+                  Coins credited to customer wallet when purchasing an EV Lithium Battery pack.
+                </p>
+              </div>
+
+              {/* 2. Showroom Billing Coins */}
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <Store size={15} className="text-emerald-600" />
+                    <span>Showroom Billing Reward</span>
+                  </label>
+                  <span className="text-[10px] font-extrabold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
+                    +{referralSettings.showroomCoins || 250} Coins
+                  </span>
+                </div>
+                <input
+                  type="number"
+                  min="0"
+                  step="50"
+                  value={referralSettings.showroomCoins || 0}
+                  onChange={(e) =>
+                    setReferralSettings({ ...referralSettings, showroomCoins: Number(e.target.value) || 0 })
+                  }
+                  className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-bold text-slate-800"
+                />
+                <p className="text-[11px] text-slate-500 leading-tight">
+                  Coins credited per verified showroom invoice / store billing transaction.
+                </p>
+              </div>
+
+              {/* 3. Referrer Reward (Friend Referral) */}
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <Gift size={15} className="text-purple-600" />
+                    <span>Referrer Bonus (Friend Invite)</span>
+                  </label>
+                  <span className="text-[10px] font-extrabold bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full">
+                    +{referralSettings.referrerReward || 500} Coins
+                  </span>
+                </div>
+                <input
+                  type="number"
+                  min="0"
+                  step="50"
+                  value={referralSettings.referrerReward || 0}
+                  onChange={(e) =>
+                    setReferralSettings({ ...referralSettings, referrerReward: Number(e.target.value) || 0 })
+                  }
+                  className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-bold text-slate-800"
+                />
+                <p className="text-[11px] text-slate-500 leading-tight">
+                  Coins credited to existing customer when their invited friend joins using their link.
+                </p>
+              </div>
+
+              {/* 4. New Customer Welcome Bonus */}
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <Sparkles size={15} className="text-amber-500" />
+                    <span>New Customer Welcome Bonus</span>
+                  </label>
+                  <span className="text-[10px] font-extrabold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
+                    +{referralSettings.newCustomerReward || referralSettings.welcomeRewardCoins || 500} Coins
+                  </span>
+                </div>
+                <input
+                  type="number"
+                  min="0"
+                  step="50"
+                  value={referralSettings.newCustomerReward || referralSettings.welcomeRewardCoins || 0}
+                  onChange={(e) =>
+                    setReferralSettings({
+                      ...referralSettings,
+                      newCustomerReward: Number(e.target.value) || 0,
+                      welcomeRewardCoins: Number(e.target.value) || 0,
+                    })
+                  }
+                  className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-bold text-slate-800"
+                />
+                <p className="text-[11px] text-slate-500 leading-tight">
+                  Coins instantly awarded upon first customer account login / registration.
+                </p>
+              </div>
+
+              {/* 5. Service / Complaint Resolution Reward */}
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <Wrench size={15} className="text-blue-600" />
+                    <span>Service Resolution Bonus</span>
+                  </label>
+                  <span className="text-[10px] font-extrabold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                    +{referralSettings.serviceReward || 250} Coins
+                  </span>
+                </div>
+                <input
+                  type="number"
+                  min="0"
+                  step="50"
+                  value={referralSettings.serviceReward || 0}
+                  onChange={(e) =>
+                    setReferralSettings({ ...referralSettings, serviceReward: Number(e.target.value) || 0 })
+                  }
+                  className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-bold text-slate-800"
+                />
+                <p className="text-[11px] text-slate-500 leading-tight">
+                  Appreciation coins awarded when customer completes feedback after ticket resolution.
+                </p>
+              </div>
+
+              {/* 6. Coin Conversion Rate */}
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <Award size={15} className="text-indigo-600" />
+                    <span>Store Credit Conversion (₹ / Coin)</span>
+                  </label>
+                  <span className="text-[10px] font-extrabold bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full">
+                    1 Coin = ₹{referralSettings.coinConversionRate || 1}
+                  </span>
+                </div>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.1"
+                  value={referralSettings.coinConversionRate || 1}
+                  onChange={(e) =>
+                    setReferralSettings({ ...referralSettings, coinConversionRate: Number(e.target.value) || 1 })
+                  }
+                  className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-bold text-slate-800"
+                />
+                <p className="text-[11px] text-slate-500 leading-tight">
+                  Rupee value per coin when customer redeems coins on rental or service bookings.
+                </p>
+              </div>
+            </div>
+
+            {/* Live Customer Portal Rewards Banner Preview */}
+            <div className="pt-2">
+              <span className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <Eye size={14} className="text-amber-500" />
+                <span>Live Homepage Customer Rewards Banner Preview</span>
+              </span>
+              <div className="bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/5 rounded-3xl p-6 border-2 border-amber-300 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-600 to-amber-400 text-white flex items-center justify-center shadow-lg flex-shrink-0">
+                    <Coins size={28} />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="bg-amber-200 text-amber-950 font-black text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider">
+                        Customer Rewards
+                      </span>
+                      <span className="text-xs font-bold text-amber-800">
+                        1 Coin = ₹{referralSettings.coinConversionRate || 1} Store Credit
+                      </span>
+                    </div>
+                    <h3 className="text-lg md:text-xl font-black text-amber-950">
+                      Ekosmart Digital Wallet & Referral Coins
+                    </h3>
+                    <p className="text-xs text-amber-900/80 max-w-xl">
+                      Earn <strong className="font-bold text-amber-950">+{referralSettings.batteryCoins || 500} Coins</strong> on EV Battery purchases, <strong className="font-bold text-amber-950">+{referralSettings.showroomCoins || 250} Coins</strong> on Showroom billing, and <strong className="font-bold text-amber-950">+{referralSettings.referrerReward || 500} Coins</strong> on friend referrals!
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                  <div className="px-5 py-2.5 bg-amber-600 text-white font-black rounded-2xl text-xs shadow-md flex items-center justify-center gap-2">
+                    <Coins size={15} />
+                    <span>Open My Wallet</span>
+                  </div>
+                  <div className="px-4 py-2.5 bg-white text-amber-900 font-bold rounded-2xl text-xs border border-amber-300 shadow-xs flex items-center justify-center gap-1.5">
+                    <Gift size={15} className="text-purple-600" />
+                    <span>Refer & Earn (+{referralSettings.referrerReward || 500})</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Save Bar */}
+          <div className="bg-slate-900 text-white rounded-2xl p-5 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-lg">
+            <div>
+              <h4 className="font-bold text-sm text-slate-100 flex items-center gap-2">
+                <CheckCircle size={16} className="text-green-400" />
+                <span>Publish Wallet & Referral Rewards</span>
+              </h4>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Saving will immediately apply coin rewards rules to customer accounts, referrals, and public banner.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="flex items-center gap-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold transition shadow-md disabled:opacity-50 cursor-pointer"
+            >
+              <Save size={16} />
+              <span>{saving ? 'Saving...' : 'Save Rewards & Referral Settings'}</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: BATTERY ASSISTANCE & QUICK ACTIONS */}
+      {activeTab === 'banner' && (
+        <div className="space-y-6">
+          {/* Section 1: Dark Plant Battery Assistance Banner */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-5 shadow-sm">
+            <div className="border-b border-slate-100 pb-3">
+              <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                <Battery className="text-teal-600" size={20} />
+                <span>EBS Factory Battery Assistance Banner</span>
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Soft-code the dark Kota plant engineering support banner located at the bottom of the public homepage.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Badge Tagline</label>
+                <input
+                  type="text"
+                  value={content.batteryBanner?.badgeText || ''}
+                  onChange={(e) =>
+                    setContent({
+                      ...content,
+                      batteryBanner: {
+                        ...(content.batteryBanner || defaultFallbackContent.batteryBanner!),
+                        badgeText: e.target.value,
+                      },
+                    })
+                  }
+                  placeholder="GET HIGH POWER OF LITHIUM"
+                  className="w-full border border-slate-300 rounded-lg p-2 text-xs font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Helpline Phone Number</label>
+                <input
+                  type="text"
+                  value={content.batteryBanner?.helplinePhone || ''}
+                  onChange={(e) =>
+                    setContent({
+                      ...content,
+                      batteryBanner: {
+                        ...(content.batteryBanner || defaultFallbackContent.batteryBanner!),
+                        helplinePhone: e.target.value,
+                      },
+                    })
+                  }
+                  placeholder="8949049003"
+                  className="w-full border border-slate-300 rounded-lg p-2 text-xs font-mono"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block font-semibold text-slate-700 mb-1">Banner Main Heading</label>
+                <input
+                  type="text"
+                  value={content.batteryBanner?.heading || ''}
+                  onChange={(e) =>
+                    setContent({
+                      ...content,
+                      batteryBanner: {
+                        ...(content.batteryBanner || defaultFallbackContent.batteryBanner!),
+                        heading: e.target.value,
+                      },
+                    })
+                  }
+                  placeholder="Genuine Li-ion & LFP Batteries For E-Scooter & E-Rickshaw"
+                  className="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block font-semibold text-slate-700 mb-1">Subheading Description</label>
+                <textarea
+                  rows={2}
+                  value={content.batteryBanner?.subheading || ''}
+                  onChange={(e) =>
+                    setContent({
+                      ...content,
+                      batteryBanner: {
+                        ...(content.batteryBanner || defaultFallbackContent.batteryBanner!),
+                        subheading: e.target.value,
+                      },
+                    })
+                  }
+                  className="w-full border border-slate-300 rounded-lg p-2 text-xs leading-relaxed"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Technical Highlight 1</label>
+                <input
+                  type="text"
+                  value={content.batteryBanner?.highlight1 || ''}
+                  onChange={(e) =>
+                    setContent({
+                      ...content,
+                      batteryBanner: {
+                        ...(content.batteryBanner || defaultFallbackContent.batteryBanner!),
+                        highlight1: e.target.value,
+                      },
+                    })
+                  }
+                  placeholder="48V Series (3 Year Warranty)"
+                  className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Technical Highlight 2</label>
+                <input
+                  type="text"
+                  value={content.batteryBanner?.highlight2 || ''}
+                  onChange={(e) =>
+                    setContent({
+                      ...content,
+                      batteryBanner: {
+                        ...(content.batteryBanner || defaultFallbackContent.batteryBanner!),
+                        highlight2: e.target.value,
+                      },
+                    })
+                  }
+                  placeholder="60V / 72V Series (1.5 Year Warranty)"
+                  className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Helpline Button Label</label>
+                <input
+                  type="text"
+                  value={content.batteryBanner?.helplineBtnText || ''}
+                  onChange={(e) =>
+                    setContent({
+                      ...content,
+                      batteryBanner: {
+                        ...(content.batteryBanner || defaultFallbackContent.batteryBanner!),
+                        helplineBtnText: e.target.value,
+                      },
+                    })
+                  }
+                  placeholder="Call +91 8949049003"
+                  className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Plant Details Button Label & Link</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    value={content.batteryBanner?.plantBtnText || ''}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        batteryBanner: {
+                          ...(content.batteryBanner || defaultFallbackContent.batteryBanner!),
+                          plantBtnText: e.target.value,
+                        },
+                      })
+                    }
+                    placeholder="View Plant Contact Details"
+                    className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+                  />
+                  <input
+                    type="text"
+                    value={content.batteryBanner?.plantBtnLink || ''}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        batteryBanner: {
+                          ...(content.batteryBanner || defaultFallbackContent.batteryBanner!),
+                          plantBtnLink: e.target.value,
+                        },
+                      })
+                    }
+                    placeholder="/contact"
+                    className="w-full border border-slate-300 rounded-lg p-2 text-xs font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Live Visual Preview */}
+            <div className="pt-2">
+              <span className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <Eye size={14} className="text-teal-600" />
+                <span>Live Battery Assistance Banner Preview</span>
+              </span>
+              <div className="bg-gradient-to-br from-slate-900 to-slate-950 text-white rounded-3xl p-6 md:p-8 border border-slate-800 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="space-y-3 max-w-lg">
+                  {content.batteryBanner?.badgeText && (
+                    <div className="inline-block bg-emerald-500/20 text-emerald-400 font-mono text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-500/30">
+                      {content.batteryBanner.badgeText}
+                    </div>
+                  )}
+                  <h3 className="text-xl md:text-2xl font-extrabold leading-tight">
+                    {content.batteryBanner?.heading || 'Genuine Li-ion & LFP Batteries For E-Scooter & E-Rickshaw'}
+                  </h3>
+                  <p className="text-slate-400 text-xs leading-relaxed">
+                    {content.batteryBanner?.subheading ||
+                      'Engineered with advanced Smart BMS, thermal protection, and high energy density cells. Tested at our Kota plant.'}
+                  </p>
+                  <div className="flex flex-wrap gap-3 text-xs font-semibold text-slate-300 pt-1">
+                    {content.batteryBanner?.highlight1 && (
+                      <span className="flex items-center gap-1.5 text-emerald-400">
+                        <CheckCircle2 size={14} />
+                        <span>{content.batteryBanner.highlight1}</span>
+                      </span>
+                    )}
+                    {content.batteryBanner?.highlight2 && (
+                      <span className="flex items-center gap-1.5 text-emerald-400">
+                        <CheckCircle2 size={14} />
+                        <span>{content.batteryBanner.highlight2}</span>
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="bg-slate-800/80 p-5 rounded-2xl border border-slate-700 text-center space-y-2.5 flex-shrink-0 w-full md:w-64">
+                  <div className="w-10 h-10 bg-emerald-900 rounded-xl flex items-center justify-center text-white font-bold text-xs mx-auto">
+                    EBS
+                  </div>
+                  <h4 className="font-bold text-xs text-white">Need Battery Assistance?</h4>
+                  <p className="text-[10px] text-slate-400">Contact our factory technical engineers in Kota, Rajasthan</p>
+                  <div className="space-y-1.5 pt-1">
+                    <div className="w-full py-2 bg-emerald-600 text-white font-bold rounded-xl text-xs text-center shadow">
+                      {content.batteryBanner?.helplineBtnText || 'Call +91 8949049003'}
+                    </div>
+                    <div className="w-full py-1.5 bg-white/10 text-slate-200 font-semibold rounded-xl text-xs text-center border border-white/20">
+                      {content.batteryBanner?.plantBtnText || 'View Plant Contact Details'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2: Quick Access Utility Actions Cards */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-5 shadow-sm">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-slate-100 pb-3">
+              <div>
+                <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                  <Search className="text-blue-600" size={20} />
+                  <span>Homepage Quick Actions Utility Bar (4 Cards)</span>
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Customize the 4 horizontal utility action cards (Track Ticket, Warranty Registration, Check Warranty, Contact Directory).
+                </p>
+              </div>
+            </div>
+
+            {/* Quick Actions List Editor */}
+            <div className="space-y-3">
+              {(content.quickActions || defaultFallbackContent.quickActions || []).map((act, actIdx) => (
+                <div
+                  key={act.id || actIdx}
+                  className="bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 sm:grid-cols-12 gap-3 items-center"
+                >
+                  <div className="sm:col-span-1 text-center font-bold text-slate-400 text-xs">
+                    #{act.order || actIdx + 1}
+                  </div>
+
+                  <div className="sm:col-span-3">
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">Title</label>
+                    <input
+                      type="text"
+                      value={act.title}
+                      onChange={(e) => {
+                        const updated = [...(content.quickActions || defaultFallbackContent.quickActions!)];
+                        updated[actIdx] = { ...updated[actIdx], title: e.target.value };
+                        setContent({ ...content, quickActions: updated });
+                      }}
+                      className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-bold"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-3">
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">Subtitle</label>
+                    <input
+                      type="text"
+                      value={act.subtitle}
+                      onChange={(e) => {
+                        const updated = [...(content.quickActions || defaultFallbackContent.quickActions!)];
+                        updated[actIdx] = { ...updated[actIdx], subtitle: e.target.value };
+                        setContent({ ...content, quickActions: updated });
+                      }}
+                      className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-3">
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">Target URL</label>
+                    <input
+                      type="text"
+                      value={act.url}
+                      onChange={(e) => {
+                        const updated = [...(content.quickActions || defaultFallbackContent.quickActions!)];
+                        updated[actIdx] = { ...updated[actIdx], url: e.target.value };
+                        setContent({ ...content, quickActions: updated });
+                      }}
+                      className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-mono"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2 flex items-center justify-end gap-2">
+                    <select
+                      value={act.color}
+                      onChange={(e) => {
+                        const updated = [...(content.quickActions || defaultFallbackContent.quickActions!)];
+                        updated[actIdx] = { ...updated[actIdx], color: e.target.value };
+                        setContent({ ...content, quickActions: updated });
+                      }}
+                      className="bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium"
+                    >
+                      <option value="blue">Blue</option>
+                      <option value="amber">Amber</option>
+                      <option value="emerald">Green</option>
+                      <option value="purple">Purple</option>
+                    </select>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const updated = [...(content.quickActions || defaultFallbackContent.quickActions!)];
+                        updated[actIdx] = { ...updated[actIdx], isVisible: !updated[actIdx].isVisible };
+                        setContent({ ...content, quickActions: updated });
+                      }}
+                      className={`p-2 rounded-lg border transition cursor-pointer ${
+                        act.isVisible !== false
+                          ? 'bg-green-50 text-green-700 border-green-200'
+                          : 'bg-slate-100 text-slate-400 border-slate-200'
+                      }`}
+                      title={act.isVisible !== false ? 'Visible on Homepage' : 'Hidden'}
+                    >
+                      {act.isVisible !== false ? <Eye size={14} /> : <EyeOff size={14} />}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Bottom Save Bar */}
+          <div className="bg-slate-900 text-white rounded-2xl p-5 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-lg">
+            <div>
+              <h4 className="font-bold text-sm text-slate-100 flex items-center gap-2">
+                <CheckCircle size={16} className="text-green-400" />
+                <span>Save Battery Assistance & Quick Actions</span>
+              </h4>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Saving will update the plant assistance banner and quick action utility links on {FRONTEND_URL}.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="flex items-center gap-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold transition shadow-md disabled:opacity-50 cursor-pointer"
+            >
+              <Save size={16} />
+              <span>{saving ? 'Saving...' : 'Save Banner & Quick Actions'}</span>
+            </button>
           </div>
         </div>
       )}

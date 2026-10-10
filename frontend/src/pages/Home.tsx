@@ -47,6 +47,29 @@ interface ServiceCard {
   order: number;
 }
 
+interface QuickActionItem {
+  id: string;
+  title: string;
+  subtitle: string;
+  url: string;
+  icon: string;
+  color: string;
+  isVisible?: boolean;
+  order?: number;
+}
+
+interface BatteryBannerContent {
+  badgeText: string;
+  heading: string;
+  subheading: string;
+  highlight1: string;
+  highlight2: string;
+  helplinePhone: string;
+  helplineBtnText: string;
+  plantBtnText: string;
+  plantBtnLink: string;
+}
+
 interface HeroContent {
   heading: string;
   subheading: string;
@@ -68,6 +91,62 @@ const defaultHero: HeroContent = {
   logoType: 'preset',
   logoImage: '',
 };
+
+const defaultBatteryBanner: BatteryBannerContent = {
+  badgeText: 'GET HIGH POWER OF LITHIUM',
+  heading: 'Genuine Li-ion & LFP Batteries For E-Scooter & E-Rickshaw',
+  subheading:
+    'Engineered with advanced Smart BMS, thermal protection, and high energy density cells. Tested at our Kota plant with Pan-India dispatch & replacement support.',
+  highlight1: '48V Series (3 Year Warranty)',
+  highlight2: '60V / 72V Series (1.5 Year Warranty)',
+  helplinePhone: '8949049003',
+  helplineBtnText: 'Call +91 8949049003',
+  plantBtnText: 'View Plant Contact Details',
+  plantBtnLink: '/contact',
+};
+
+const defaultQuickActions: QuickActionItem[] = [
+  {
+    id: 'act-track',
+    title: 'Track Ticket',
+    subtitle: 'Live complaint inspection status',
+    url: '/complaint/track',
+    icon: 'Search',
+    color: 'blue',
+    isVisible: true,
+    order: 1,
+  },
+  {
+    id: 'act-warranty-reg',
+    title: 'Warranty Registration',
+    subtitle: 'Register new sales & serial number',
+    url: '/warranty/register',
+    icon: 'ShieldCheck',
+    color: 'amber',
+    isVisible: true,
+    order: 2,
+  },
+  {
+    id: 'act-warranty-check',
+    title: 'Check Warranty',
+    subtitle: '3-Yr (48V) & 1.5-Yr (60V/72V) status',
+    url: '/warranty/check',
+    icon: 'ShieldAlert',
+    color: 'emerald',
+    isVisible: true,
+    order: 3,
+  },
+  {
+    id: 'act-contact',
+    title: 'Contact Directory',
+    subtitle: 'Kota Plant +91 8949049003',
+    url: '/contact',
+    icon: 'Phone',
+    color: 'purple',
+    isVisible: true,
+    order: 4,
+  },
+];
 
 const defaultCards: ServiceCard[] = [
   {
@@ -293,9 +372,74 @@ const getDivisionCardStyles = (color: string) => {
   }
 };
 
+const renderQuickActionIcon = (iconName: string) => {
+  const iconProps = { size: 22 };
+  switch (iconName?.toLowerCase()) {
+    case 'search':
+    case 'track':
+      return <Search {...iconProps} />;
+    case 'shieldcheck':
+    case 'shield-check':
+    case 'shield':
+    case 'warranty':
+      return <ShieldCheck {...iconProps} />;
+    case 'shieldalert':
+    case 'shield-alert':
+      return <ShieldAlert {...iconProps} />;
+    case 'phone':
+    case 'contact':
+      return <Phone {...iconProps} />;
+    case 'coins':
+      return <Coins {...iconProps} />;
+    case 'gift':
+      return <Gift {...iconProps} />;
+    case 'zap':
+      return <Zap {...iconProps} />;
+    case 'battery':
+      return <Battery {...iconProps} />;
+    case 'package':
+      return <Package {...iconProps} />;
+    case 'settings':
+      return <Settings {...iconProps} />;
+    default:
+      return <FileText {...iconProps} />;
+  }
+};
+
+const getQuickActionColorStyles = (color: string) => {
+  switch (color?.toLowerCase()) {
+    case 'amber':
+    case 'orange':
+      return {
+        bg: 'bg-amber-50 text-amber-600 group-hover:bg-amber-500 group-hover:text-white',
+        text: 'group-hover:text-amber-600',
+      };
+    case 'emerald':
+    case 'green':
+      return {
+        bg: 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white',
+        text: 'group-hover:text-emerald-600',
+      };
+    case 'purple':
+    case 'violet':
+      return {
+        bg: 'bg-purple-50 text-purple-600 group-hover:bg-purple-600 group-hover:text-white',
+        text: 'group-hover:text-purple-600',
+      };
+    case 'blue':
+    default:
+      return {
+        bg: 'bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white',
+        text: 'group-hover:text-blue-600',
+      };
+  }
+};
+
 const Home = () => {
   const [hero, setHero] = useState<HeroContent>(defaultHero);
   const [cards, setCards] = useState<ServiceCard[]>(defaultCards);
+  const [batteryBanner, setBatteryBanner] = useState<BatteryBannerContent>(defaultBatteryBanner);
+  const [quickActions, setQuickActions] = useState<QuickActionItem[]>(defaultQuickActions);
   const [selectedSection, setSelectedSection] = useState<string>('all');
   const [referralSettings, setReferralSettings] = useState<{
     enabled: boolean;
@@ -329,6 +473,15 @@ const Home = () => {
           }
           if (data.data.serviceCards && Array.isArray(data.data.serviceCards)) {
             setCards(data.data.serviceCards);
+          }
+          if (data.data.batteryBanner) {
+            setBatteryBanner((prev) => ({
+              ...prev,
+              ...data.data.batteryBanner,
+            }));
+          }
+          if (data.data.quickActions && Array.isArray(data.data.quickActions) && data.data.quickActions.length > 0) {
+            setQuickActions(data.data.quickActions);
           }
           if (data.data.referralSettings) {
             setReferralSettings((prev) => ({
@@ -645,73 +798,58 @@ const Home = () => {
       {/* Quick Access Utility Actions Bar */}
       <section className="max-w-6xl mx-auto px-4">
         <div className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200 shadow-sm flex flex-wrap items-center justify-around gap-6 text-center">
-          <Link
-            to="/complaint/track"
-            className="flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-50 transition group"
-          >
-            <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition">
-              <Search size={22} />
-            </div>
-            <div className="text-left">
-              <h4 className="font-bold text-sm text-slate-800 group-hover:text-blue-600 transition">Track Ticket</h4>
-              <p className="text-[11px] text-slate-400">Live complaint inspection status</p>
-            </div>
-          </Link>
-
-          <div className="hidden md:block w-px h-10 bg-slate-200"></div>
-
-          <a
-            href="/warranty/register"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-50 transition group cursor-pointer"
-          >
-            <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:bg-amber-500 group-hover:text-white transition">
-              <ShieldCheck size={22} />
-            </div>
-            <div className="text-left">
-              <div className="flex items-center gap-1.5">
-                <h4 className="font-bold text-sm text-slate-800 group-hover:text-amber-600 transition">Warranty Registration</h4>
-                <ExternalLink size={12} className="text-slate-400 group-hover:text-amber-600" />
-              </div>
-              <p className="text-[11px] text-slate-400">Register new sales & serial number</p>
-            </div>
-          </a>
-
-          <div className="hidden md:block w-px h-10 bg-slate-200"></div>
-
-          <a
-            href="/warranty/check"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-50 transition group cursor-pointer"
-          >
-            <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition">
-              <ShieldAlert size={22} />
-            </div>
-            <div className="text-left">
-              <div className="flex items-center gap-1.5">
-                <h4 className="font-bold text-sm text-slate-800 group-hover:text-emerald-600 transition">Check Warranty</h4>
-                <ExternalLink size={12} className="text-slate-400 group-hover:text-emerald-600" />
-              </div>
-              <p className="text-[11px] text-slate-400">3-Yr (48V) & 1.5-Yr (60V/72V) status</p>
-            </div>
-          </a>
-
-          <div className="hidden md:block w-px h-10 bg-slate-200"></div>
-
-          <Link
-            to="/contact"
-            className="flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-50 transition group"
-          >
-            <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition">
-              <Phone size={22} />
-            </div>
-            <div className="text-left">
-              <h4 className="font-bold text-sm text-slate-800 group-hover:text-purple-600 transition">Contact Directory</h4>
-              <p className="text-[11px] text-slate-400">Kota Plant +91 8949049003</p>
-            </div>
-          </Link>
+          {quickActions
+            .filter((act) => act.isVisible !== false)
+            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+            .map((act, idx, arr) => {
+              const styles = getQuickActionColorStyles(act.color);
+              const isExternal = act.url.startsWith('http') || act.url.includes('warranty');
+              return (
+                <div key={act.id || idx} className="flex items-center gap-6">
+                  {isExternal ? (
+                    <a
+                      href={act.url}
+                      target={act.url.startsWith('http') || act.url.startsWith('/warranty') ? '_blank' : undefined}
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-50 transition group cursor-pointer"
+                    >
+                      <div
+                        className={`w-12 h-12 rounded-xl flex items-center justify-center transition shadow-xs ${styles.bg}`}
+                      >
+                        {renderQuickActionIcon(act.icon)}
+                      </div>
+                      <div className="text-left">
+                        <div className="flex items-center gap-1.5">
+                          <h4 className={`font-bold text-sm text-slate-800 transition ${styles.text}`}>
+                            {act.title}
+                          </h4>
+                          <ExternalLink size={12} className={`text-slate-400 ${styles.text}`} />
+                        </div>
+                        <p className="text-[11px] text-slate-400">{act.subtitle}</p>
+                      </div>
+                    </a>
+                  ) : (
+                    <Link
+                      to={act.url}
+                      className="flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-50 transition group cursor-pointer"
+                    >
+                      <div
+                        className={`w-12 h-12 rounded-xl flex items-center justify-center transition shadow-xs ${styles.bg}`}
+                      >
+                        {renderQuickActionIcon(act.icon)}
+                      </div>
+                      <div className="text-left">
+                        <h4 className={`font-bold text-sm text-slate-800 transition ${styles.text}`}>
+                          {act.title}
+                        </h4>
+                        <p className="text-[11px] text-slate-400">{act.subtitle}</p>
+                      </div>
+                    </Link>
+                  )}
+                  {idx < arr.length - 1 && <div className="hidden md:block w-px h-10 bg-slate-200" />}
+                </div>
+              );
+            })}
         </div>
       </section>
 
@@ -719,25 +857,34 @@ const Home = () => {
       <section className="max-w-6xl mx-auto px-4 pb-12">
         <div className="bg-gradient-to-br from-slate-900 to-slate-950 text-white rounded-3xl p-8 md:p-12 border border-slate-800 shadow-xl flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="space-y-4 max-w-xl">
-            <div className="inline-block bg-emerald-500/20 text-emerald-400 font-mono text-xs font-bold px-3 py-1 rounded-full border border-emerald-500/30">
-              GET HIGH POWER OF LITHIUM
-            </div>
+            {batteryBanner.badgeText && (
+              <div className="inline-block bg-emerald-500/20 text-emerald-400 font-mono text-xs font-bold px-3 py-1 rounded-full border border-emerald-500/30">
+                {batteryBanner.badgeText}
+              </div>
+            )}
             <h3 className="text-2xl md:text-3xl font-extrabold leading-tight">
-              Genuine Li-ion & LFP Batteries For E-Scooter & E-Rickshaw
+              {batteryBanner.heading || 'Genuine Li-ion & LFP Batteries For E-Scooter & E-Rickshaw'}
             </h3>
             <p className="text-slate-400 text-xs md:text-sm leading-relaxed">
-              Engineered with advanced Smart BMS, thermal protection, and high energy density cells. Tested at our Kota plant with Pan-India dispatch & replacement support.
+              {batteryBanner.subheading ||
+                'Engineered with advanced Smart BMS, thermal protection, and high energy density cells. Tested at our Kota plant with Pan-India dispatch & replacement support.'}
             </p>
-            <div className="flex flex-wrap gap-4 text-xs font-semibold text-slate-300 pt-2">
-              <span className="flex items-center gap-1.5 text-emerald-400">
-                <CheckCircle2 size={16} />
-                <span>48V Series (3 Year Warranty)</span>
-              </span>
-              <span className="flex items-center gap-1.5 text-emerald-400">
-                <CheckCircle2 size={16} />
-                <span>60V / 72V Series (1.5 Year Warranty)</span>
-              </span>
-            </div>
+            {(batteryBanner.highlight1 || batteryBanner.highlight2) && (
+              <div className="flex flex-wrap gap-4 text-xs font-semibold text-slate-300 pt-2">
+                {batteryBanner.highlight1 && (
+                  <span className="flex items-center gap-1.5 text-emerald-400">
+                    <CheckCircle2 size={16} />
+                    <span>{batteryBanner.highlight1}</span>
+                  </span>
+                )}
+                {batteryBanner.highlight2 && (
+                  <span className="flex items-center gap-1.5 text-emerald-400">
+                    <CheckCircle2 size={16} />
+                    <span>{batteryBanner.highlight2}</span>
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="bg-slate-800/80 p-6 rounded-2xl border border-slate-700 text-center space-y-3 flex-shrink-0 w-full md:w-72">
@@ -746,17 +893,28 @@ const Home = () => {
             <p className="text-[11px] text-slate-400">Contact our factory technical engineers in Kota, Rajasthan</p>
             <div className="space-y-2 pt-1">
               <a
-                href="tel:8949049003"
-                className="inline-block w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition shadow"
+                href={`tel:${(batteryBanner.helplinePhone || '8949049003').replace(/[^0-9]/g, '')}`}
+                className="inline-block w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition shadow cursor-pointer"
               >
-                Call +91 8949049003
+                {batteryBanner.helplineBtnText || 'Call +91 8949049003'}
               </a>
-              <Link
-                to="/contact"
-                className="inline-block w-full py-2 bg-white/10 hover:bg-white/20 text-slate-200 font-semibold rounded-xl text-xs transition border border-white/20"
-              >
-                View Plant Contact Details
-              </Link>
+              {batteryBanner.plantBtnLink?.startsWith('http') ? (
+                <a
+                  href={batteryBanner.plantBtnLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block w-full py-2 bg-white/10 hover:bg-white/20 text-slate-200 font-semibold rounded-xl text-xs transition border border-white/20 cursor-pointer"
+                >
+                  {batteryBanner.plantBtnText || 'View Plant Contact Details'}
+                </a>
+              ) : (
+                <Link
+                  to={batteryBanner.plantBtnLink || '/contact'}
+                  className="inline-block w-full py-2 bg-white/10 hover:bg-white/20 text-slate-200 font-semibold rounded-xl text-xs transition border border-white/20 cursor-pointer"
+                >
+                  {batteryBanner.plantBtnText || 'View Plant Contact Details'}
+                </Link>
+              )}
             </div>
           </div>
         </div>
