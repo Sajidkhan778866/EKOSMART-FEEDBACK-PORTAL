@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import {
-  FileText,
   Plus,
   Trash2,
   Save,
@@ -29,6 +28,164 @@ const FIELD_TYPES = [
 
 const STANDARD_SECTIONS = ['Showroom', 'Battery', 'Rental', 'Spare Parts'];
 const STANDARD_WARRANTY = ['Showroom', 'Plant'];
+
+const DEFAULT_COMPLAINT_FIELDS: Record<string, any[]> = {
+  showroom: [
+    { name: 'customerName', label: 'Customer / Entity Name', type: 'Text', required: true, order: 1, isActive: true },
+    { name: 'contactNumber', label: 'Contact Mobile Number', type: 'Mobile', required: true, order: 2, isActive: true },
+    { name: 'email', label: 'Email Address', type: 'Email', required: false, order: 3, isActive: true },
+    { name: 'dealershipName', label: 'Showroom / Dealership Location', type: 'Text', required: true, order: 4, isActive: true },
+    { name: 'modelNumber', label: 'Vehicle Model / Chassis No', type: 'Text', required: true, order: 5, isActive: true },
+    { name: 'invoiceNumber', label: 'Invoice / Booking Ref', type: 'Text', required: false, order: 6, isActive: true },
+    {
+      name: 'issueCategory',
+      label: 'Inquiry / Issue Category',
+      type: 'Dropdown',
+      required: true,
+      options: ['New Vehicle Booking', 'Delivery Delay', 'Documentation / RC', 'Sales Service Assistance', 'Other Showroom Query'],
+      order: 7,
+      isActive: true,
+    },
+    { name: 'description', label: 'Detailed Problem Description', type: 'Textarea', required: true, order: 8, isActive: true },
+  ],
+  battery: [
+    { name: 'customerName', label: 'Customer Full Name', type: 'Text', required: true, order: 1, isActive: true },
+    { name: 'contactNumber', label: 'Contact Mobile Number', type: 'Mobile', required: true, order: 2, isActive: true },
+    { name: 'email', label: 'Email Address', type: 'Email', required: false, order: 3, isActive: true },
+    { name: 'serialNumber', label: 'Battery Serial Number', type: 'Serial Number', required: true, order: 4, isActive: true },
+    {
+      name: 'batteryModel',
+      label: 'Battery Pack Voltage / Spec',
+      type: 'Dropdown',
+      required: true,
+      options: ['48V 28Ah / 32Ah LFP (3-Yr)', '48V 40Ah Lithium-Ion (3-Yr)', '60V 30Ah / 32Ah LFP (1.5-Yr)', '60V 40Ah Lithium-Ion (1.5-Yr)', '72V 32Ah / 40Ah Pack (1.5-Yr)', 'Custom Pack'],
+      order: 5,
+      isActive: true,
+    },
+    { name: 'purchaseDate', label: 'Purchase Date / Bill Date', type: 'Date', required: false, order: 6, isActive: true },
+    {
+      name: 'issueType',
+      label: 'Battery Issue Category',
+      type: 'Dropdown',
+      required: true,
+      options: ['Low Mileage / Quick Drain', 'Charging Failure / Charger Tripping', 'BMS Cutoff / No Voltage Output', 'Physical Casing / Terminal Damage', 'Warranty Inspection Request', 'AMC Health Checkup'],
+      order: 7,
+      isActive: true,
+    },
+    { name: 'description', label: 'Issue / Fault Details', type: 'Textarea', required: true, order: 8, isActive: true },
+  ],
+  rental: [
+    { name: 'customerName', label: 'Rider / Customer Name', type: 'Text', required: true, order: 1, isActive: true },
+    { name: 'contactNumber', label: 'Contact Mobile Number', type: 'Mobile', required: true, order: 2, isActive: true },
+    { name: 'email', label: 'Email Address', type: 'Email', required: false, order: 3, isActive: true },
+    { name: 'scooterId', label: 'Rental Vehicle / Scooter ID', type: 'Text', required: true, order: 4, isActive: true },
+    {
+      name: 'hubLocation',
+      label: 'Rental Hub Location',
+      type: 'Dropdown',
+      required: true,
+      options: ['Kota Central Hub', 'Showroom Hub 1', 'Main Bus Stand Station', 'Railway Station Kiosk'],
+      order: 5,
+      isActive: true,
+    },
+    {
+      name: 'rentalIssue',
+      label: 'Rental Issue Category',
+      type: 'Dropdown',
+      required: true,
+      options: ['Battery Swap Station Issue', 'Vehicle Breakdown / Roadside Help', 'Rental Plan Renewal / Extension', 'Security Deposit Refund Query', 'App / Account Issue'],
+      order: 6,
+      isActive: true,
+    },
+    { name: 'description', label: 'Problem Description', type: 'Textarea', required: true, order: 7, isActive: true },
+  ],
+  'spare parts': [
+    { name: 'customerName', label: 'Customer / Mechanic Name', type: 'Text', required: true, order: 1, isActive: true },
+    { name: 'contactNumber', label: 'Contact Mobile Number', type: 'Mobile', required: true, order: 2, isActive: true },
+    { name: 'email', label: 'Email Address', type: 'Email', required: false, order: 3, isActive: true },
+    { name: 'partName', label: 'Part Name / Item Code', type: 'Text', required: true, order: 4, isActive: true },
+    {
+      name: 'partCategory',
+      label: 'Spare Parts Category',
+      type: 'Dropdown',
+      required: true,
+      options: ['Aluminium Fast Charger (67.2V / 72V)', 'Smart BMS & Wiring Harness', 'BLDC Motor & Controller', 'Throttle / Display Unit', 'Brake Assembly & Cables', 'OEM Connectors & Fuses'],
+      order: 5,
+      isActive: true,
+    },
+    { name: 'orderRef', label: 'Order / Invoice Ref Number', type: 'Text', required: false, order: 6, isActive: true },
+    { name: 'description', label: 'Problem / Replacement Requirement', type: 'Textarea', required: true, order: 7, isActive: true },
+  ],
+};
+
+const DEFAULT_WARRANTY_FIELDS: Record<string, any[]> = {
+  showroom: [
+    { name: 'customerName', label: 'Customer Full Name', type: 'Text', required: true, order: 1, isActive: true },
+    { name: 'mobile', label: 'Contact Mobile Number', type: 'Mobile', required: true, order: 2, isActive: true },
+    { name: 'email', label: 'Email Address', type: 'Email', required: true, order: 3, isActive: true },
+    { name: 'serialNumber', label: 'Product Serial Number', type: 'Serial Number', required: true, order: 4, isActive: true },
+    { name: 'model', label: 'Battery / Vehicle Model', type: 'Text', required: true, order: 5, isActive: true },
+    { name: 'dealerLocation', label: 'Showroom / Dealership Store', type: 'Text', required: true, order: 6, isActive: true },
+    { name: 'purchaseDate', label: 'Date of Purchase', type: 'Date', required: true, order: 7, isActive: true },
+    { name: 'billNumber', label: 'Invoice / Bill Number', type: 'Text', required: true, order: 8, isActive: true },
+  ],
+  plant: [
+    { name: 'companyName', label: 'Organization / Company Name', type: 'Text', required: true, order: 1, isActive: true },
+    { name: 'contactPerson', label: 'Authorized Person Name', type: 'Text', required: true, order: 2, isActive: true },
+    { name: 'mobile', label: 'Contact Mobile Number', type: 'Mobile', required: true, order: 3, isActive: true },
+    { name: 'email', label: 'Official Business Email', type: 'Email', required: true, order: 4, isActive: true },
+    { name: 'serialNumber', label: 'Batch / Master Serial Number', type: 'Serial Number', required: true, order: 5, isActive: true },
+    {
+      name: 'packSpec',
+      label: 'Commercial Battery Specification',
+      type: 'Dropdown',
+      required: true,
+      options: ['48V 100Ah Industrial LFP', '60V 80Ah Commercial Fleet', '72V 100Ah E-Rickshaw Heavy Pack', 'Custom Solar Energy Storage ESS'],
+      order: 6,
+      isActive: true,
+    },
+    { name: 'challanNumber', label: 'Plant Delivery Challan / Invoice No', type: 'Text', required: true, order: 7, isActive: true },
+    { name: 'dispatchDate', label: 'Commissioning / Dispatch Date', type: 'Date', required: true, order: 8, isActive: true },
+  ],
+};
+
+const getDefaultFieldsForDivision = (divisionName: string) => {
+  const key = divisionName.trim().toLowerCase();
+  if (DEFAULT_COMPLAINT_FIELDS[key]) {
+    return JSON.parse(JSON.stringify(DEFAULT_COMPLAINT_FIELDS[key]));
+  }
+  return [
+    { name: 'customerName', label: 'Customer / Entity Name', type: 'Text', required: true, order: 1, isActive: true },
+    { name: 'contactNumber', label: 'Contact Mobile Number', type: 'Mobile', required: true, order: 2, isActive: true },
+    { name: 'email', label: 'Email Address', type: 'Email', required: false, order: 3, isActive: true },
+    { name: 'serviceIdentifier', label: `${divisionName} Reference / Serial No.`, type: 'Text', required: true, order: 4, isActive: true },
+    {
+      name: 'issueType',
+      label: 'Issue / Inquiry Category',
+      type: 'Dropdown',
+      required: true,
+      options: ['General Inquiry', 'Breakdown / Malfunction', 'Maintenance Request', 'Billing / Account Issue', 'Other'],
+      order: 5,
+      isActive: true,
+    },
+    { name: 'description', label: 'Detailed Description of Request', type: 'Textarea', required: true, order: 6, isActive: true },
+  ];
+};
+
+const getDefaultFieldsForWarranty = (categoryName: string) => {
+  const key = categoryName.trim().toLowerCase();
+  if (DEFAULT_WARRANTY_FIELDS[key]) {
+    return JSON.parse(JSON.stringify(DEFAULT_WARRANTY_FIELDS[key]));
+  }
+  return [
+    { name: 'customerName', label: 'Customer Name / Entity', type: 'Text', required: true, order: 1, isActive: true },
+    { name: 'mobile', label: 'Mobile Number', type: 'Mobile', required: true, order: 2, isActive: true },
+    { name: 'email', label: 'Email Address', type: 'Email', required: true, order: 3, isActive: true },
+    { name: 'serialNumber', label: 'Product Serial Number', type: 'Serial Number', required: true, order: 4, isActive: true },
+    { name: 'purchaseDate', label: 'Date of Purchase / Commissioning', type: 'Date', required: true, order: 5, isActive: true },
+    { name: 'invoiceNumber', label: 'Invoice / Challan Number', type: 'Text', required: true, order: 6, isActive: true },
+  ];
+};
 
 const Forms = () => {
   const [activeTab, setActiveTab] = useState<'Complaint' | 'Warranty' | 'ComplaintTypes'>('Complaint');
@@ -61,7 +218,6 @@ const Forms = () => {
   // Fetch all dynamic sections from database and content CMS
   const fetchAllSections = async () => {
     try {
-      // 1. Fetch from dynamic backend sections endpoint
       let dynamicList: string[] = [];
       try {
         const secRes = await formApi.getSections();
@@ -72,7 +228,6 @@ const Forms = () => {
         console.warn('Failed to load dynamic sections endpoint:', e);
       }
 
-      // 2. Fetch from Content CMS service cards
       let cmsList: string[] = [];
       try {
         const cmsRes = await contentApi.getAdmin();
@@ -85,7 +240,6 @@ const Forms = () => {
         console.warn('Failed to load CMS service cards for sections:', e);
       }
 
-      // 3. Fetch from existing complaint forms
       let formsList: string[] = [];
       try {
         const formsRes = await formApi.getComplaintForms();
@@ -96,7 +250,6 @@ const Forms = () => {
         console.warn('Failed to load existing forms list:', e);
       }
 
-      // Merge dynamic sections from CMS and forms
       const dynamicMerged = Array.from(
         new Set([...dynamicList, ...cmsList, ...formsList])
       );
@@ -106,7 +259,6 @@ const Forms = () => {
         setSelectedDivision(finalSections[0]);
       }
 
-      // Also merge warranty categories
       try {
         const warRes = await formApi.getWarrantyForms();
         if (warRes.data.success && Array.isArray(warRes.data.data)) {
@@ -134,88 +286,52 @@ const Forms = () => {
       if (activeTab === 'Complaint') {
         const res = await formApi.getComplaintForms();
         if (res.data.success) {
-          const form = res.data.data.find((f: any) => f.division.toLowerCase() === selectedDivision.toLowerCase());
-          if (form && form.fields && form.fields.length > 0) {
+          const form = res.data.data.find((f: any) => f.division?.toLowerCase() === selectedDivision?.toLowerCase());
+          if (form && Array.isArray(form.fields) && form.fields.length > 0) {
             setFields(form.fields);
           } else {
-            // Provide clean starter fields for empty/new sections
-            setFields([
-              {
-                name: 'customerName',
-                label: 'Customer / Entity Name',
-                type: 'Text',
-                required: true,
-                order: 1,
-                isActive: true,
-              },
-              {
-                name: 'contactNumber',
-                label: 'Contact Number',
-                type: 'Mobile',
-                required: true,
-                order: 2,
-                isActive: true,
-              },
-              {
-                name: 'serviceDetails',
-                label: 'Service / Product Specification',
-                type: 'Text',
-                required: true,
-                order: 3,
-                isActive: true,
-              },
-              {
-                name: 'problemDescription',
-                label: 'Problem Description',
-                type: 'Textarea',
-                required: true,
-                order: 4,
-                isActive: true,
-              },
-            ]);
+            // Auto-fill section-specific standard basic fields
+            const defaultFields = getDefaultFieldsForDivision(selectedDivision);
+            setFields(defaultFields);
           }
         }
       } else if (activeTab === 'Warranty') {
         const res = await formApi.getWarrantyForms();
         if (res.data.success) {
-          const form = res.data.data.find((f: any) => f.category.toLowerCase() === selectedCategory.toLowerCase());
-          if (form && form.fields && form.fields.length > 0) {
+          const form = res.data.data.find((f: any) => f.category?.toLowerCase() === selectedCategory?.toLowerCase());
+          if (form && Array.isArray(form.fields) && form.fields.length > 0) {
             setFields(form.fields);
           } else {
-            setFields([
-              {
-                name: 'customerName',
-                label: 'Customer Name',
-                type: 'Text',
-                required: true,
-                order: 1,
-                isActive: true,
-              },
-              {
-                name: 'mobile',
-                label: 'Mobile Number',
-                type: 'Mobile',
-                required: true,
-                order: 2,
-                isActive: true,
-              },
-              {
-                name: 'serialNumber',
-                label: 'Serial Number / Unit ID',
-                type: 'Serial Number',
-                required: true,
-                order: 3,
-                isActive: true,
-              },
-            ]);
+            const defaultFields = getDefaultFieldsForWarranty(selectedCategory);
+            setFields(defaultFields);
           }
         }
       }
     } catch (err) {
       console.error(err);
+      // Fallback on error to default fields
+      if (activeTab === 'Complaint') {
+        setFields(getDefaultFieldsForDivision(selectedDivision));
+      } else if (activeTab === 'Warranty') {
+        setFields(getDefaultFieldsForWarranty(selectedCategory));
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSeedBasicFields = () => {
+    let seeded: any[] = [];
+    if (activeTab === 'Complaint') {
+      seeded = getDefaultFieldsForDivision(selectedDivision);
+      setFields(seeded);
+      setMessage(`Standard basic fields populated for "${selectedDivision}"! Click "Save Changes" to apply.`);
+    } else if (activeTab === 'Warranty') {
+      seeded = getDefaultFieldsForWarranty(selectedCategory);
+      setFields(seeded);
+      setMessage(`Standard basic fields populated for "${selectedCategory}"! Click "Save Changes" to apply.`);
+    }
+    setTimeout(() => setMessage(''), 5000);
   };
 
   const fetchComplaintTypes = async () => {
@@ -655,23 +771,38 @@ const Forms = () => {
       {/* Field List Builder (When tab is Complaint or Warranty) */}
       {activeTab !== 'ComplaintTypes' ? (
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-2">
+          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-2">
             <div>
               <h3 className="font-bold text-slate-800 text-base flex items-center gap-2">
                 <Sparkles size={16} className="text-emerald-600" />
                 <span>Configured Fields for {activeTab === 'Complaint' ? selectedDivision : selectedCategory}</span>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                  {fields.length} {fields.length === 1 ? 'field' : 'fields'}
+                </span>
               </h3>
               <p className="text-xs text-slate-400">
                 These dynamic inputs are presented to customers when registering tickets under {activeTab === 'Complaint' ? selectedDivision : selectedCategory}.
               </p>
             </div>
-            <button
-              onClick={addField}
-              className="px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition shadow-xs self-start sm:self-auto"
-            >
-              <Plus size={16} />
-              <span>Add New Field</span>
-            </button>
+            <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+              <button
+                type="button"
+                onClick={handleSeedBasicFields}
+                className="px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition shadow-xs"
+                title="Populate complete standard basic fields for this category"
+              >
+                <Sparkles size={14} />
+                <span>Auto-Fill Basic Fields</span>
+              </button>
+              <button
+                type="button"
+                onClick={addField}
+                className="px-3.5 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition shadow-xs"
+              >
+                <Plus size={15} />
+                <span>Add New Field</span>
+              </button>
+            </div>
           </div>
 
           {loading ? (
@@ -679,9 +810,36 @@ const Forms = () => {
               <Loader2 className="animate-spin text-green-600" size={32} />
             </div>
           ) : fields.length === 0 ? (
-            <div className="py-10 text-center text-slate-400">
-              <FileText size={40} className="mx-auto mb-2 opacity-40" />
-              <p className="text-sm">No fields configured yet. Click "+ Add New Field" to start building.</p>
+            <div className="py-12 px-4 text-center bg-slate-50/80 border-2 border-dashed border-slate-200 rounded-2xl space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 mx-auto flex items-center justify-center shadow-xs">
+                <Sparkles size={24} />
+              </div>
+              <div>
+                <h4 className="font-bold text-slate-800 text-sm">
+                  No Fields Configured for {activeTab === 'Complaint' ? selectedDivision : selectedCategory}
+                </h4>
+                <p className="text-xs text-slate-500 max-w-md mx-auto mt-1">
+                  Click below to instantly auto-populate standard basic fields (Customer Name, Mobile, Email, Identification, Category, Details) or add custom fields manually.
+                </p>
+              </div>
+              <div className="flex flex-wrap justify-center items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={handleSeedBasicFields}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-md shadow-green-600/20 cursor-pointer"
+                >
+                  <Sparkles size={15} />
+                  <span>Auto-Fill Standard Basic Fields</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={addField}
+                  className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-xs"
+                >
+                  <Plus size={15} />
+                  <span>Add Custom Field</span>
+                </button>
+              </div>
             </div>
           ) : (
             <div className="space-y-4">
