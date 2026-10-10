@@ -285,26 +285,26 @@ const Forms = () => {
     try {
       if (activeTab === 'Complaint') {
         const res = await formApi.getComplaintForms();
-        if (res.data.success) {
-          const form = res.data.data.find((f: any) => f.division?.toLowerCase() === selectedDivision?.toLowerCase());
-          if (form && Array.isArray(form.fields) && form.fields.length > 0) {
-            setFields(form.fields);
-          } else {
-            // Auto-fill section-specific standard basic fields
-            const defaultFields = getDefaultFieldsForDivision(selectedDivision);
-            setFields(defaultFields);
-          }
+        const rawData = res.data?.data ?? res.data ?? [];
+        const formsList = Array.isArray(rawData) ? rawData : [];
+        const form = formsList.find((f: any) => f?.division?.toLowerCase() === selectedDivision?.toLowerCase());
+        if (form && Array.isArray(form.fields) && form.fields.length > 0) {
+          setFields(form.fields);
+        } else {
+          // Auto-fill section-specific standard basic fields
+          const defaultFields = getDefaultFieldsForDivision(selectedDivision);
+          setFields(defaultFields);
         }
       } else if (activeTab === 'Warranty') {
         const res = await formApi.getWarrantyForms();
-        if (res.data.success) {
-          const form = res.data.data.find((f: any) => f.category?.toLowerCase() === selectedCategory?.toLowerCase());
-          if (form && Array.isArray(form.fields) && form.fields.length > 0) {
-            setFields(form.fields);
-          } else {
-            const defaultFields = getDefaultFieldsForWarranty(selectedCategory);
-            setFields(defaultFields);
-          }
+        const rawData = res.data?.data ?? res.data ?? [];
+        const formsList = Array.isArray(rawData) ? rawData : [];
+        const form = formsList.find((f: any) => f?.category?.toLowerCase() === selectedCategory?.toLowerCase());
+        if (form && Array.isArray(form.fields) && form.fields.length > 0) {
+          setFields(form.fields);
+        } else {
+          const defaultFields = getDefaultFieldsForWarranty(selectedCategory);
+          setFields(defaultFields);
         }
       }
     } catch (err) {
@@ -566,7 +566,10 @@ const Forms = () => {
       {/* Tabs */}
       <div className="flex gap-4 border-b border-slate-200 pb-2">
         <button
-          onClick={() => setActiveTab('Complaint')}
+          onClick={() => {
+            setActiveTab('Complaint');
+            setFields(getDefaultFieldsForDivision(selectedDivision));
+          }}
           className={`pb-2 px-4 text-sm font-bold border-b-2 transition cursor-pointer ${
             activeTab === 'Complaint' ? 'border-green-600 text-green-600' : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
@@ -574,7 +577,10 @@ const Forms = () => {
           Complaint Forms
         </button>
         <button
-          onClick={() => setActiveTab('Warranty')}
+          onClick={() => {
+            setActiveTab('Warranty');
+            setFields(getDefaultFieldsForWarranty(selectedCategory));
+          }}
           className={`pb-2 px-4 text-sm font-bold border-b-2 transition cursor-pointer ${
             activeTab === 'Warranty' ? 'border-green-600 text-green-600' : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
@@ -701,7 +707,10 @@ const Forms = () => {
                 <div key={div} className="inline-flex items-center">
                   <button
                     type="button"
-                    onClick={() => setSelectedDivision(div)}
+                    onClick={() => {
+                      setSelectedDivision(div);
+                      setFields(getDefaultFieldsForDivision(div));
+                    }}
                     className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
                       isSelected
                         ? 'bg-green-600 text-white shadow-md shadow-green-600/20'
@@ -735,7 +744,10 @@ const Forms = () => {
                 <button
                   key={cat}
                   type="button"
-                  onClick={() => setSelectedCategory(cat)}
+                  onClick={() => {
+                    setSelectedCategory(cat);
+                    setFields(getDefaultFieldsForWarranty(cat));
+                  }}
                   className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                     isSelected
                       ? 'bg-green-600 text-white shadow-md shadow-green-600/20'
