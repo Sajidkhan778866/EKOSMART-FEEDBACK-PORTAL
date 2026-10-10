@@ -1,272 +1,311 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
+export interface INavDropdownItem {
+  label: string;
+  url: string;
+  icon?: string;
+  isExternal?: boolean;
+}
+
 export interface INavItemConfig {
   id: string;
   label: string;
   url: string;
   icon?: string;
-  order: number;
   isVisible: boolean;
+  order: number;
   isExternal?: boolean;
-  highlightBadge?: string;
-  dropdownItems?: Array<{
-    id: string;
-    label: string;
-    url: string;
-    icon?: string;
-    description?: string;
-  }>;
+  isButton?: boolean;
+  buttonVariant?: 'primary' | 'secondary' | 'outline' | 'ghost';
+  children?: INavDropdownItem[];
 }
 
 export interface IFooterColumn {
   title: string;
-  links: Array<{
-    label: string;
-    url: string;
-    isExternal?: boolean;
-  }>;
+  links: { label: string; url: string; isExternal?: boolean }[];
+}
+
+export interface IGlobalColors {
+  primary: string;
+  primaryHover: string;
+  primaryLight: string;
+  primaryDark: string;
+  secondary: string;
+  secondaryHover: string;
+  secondaryLight: string;
+  accent: string;
+  accentHover: string;
+  accentLight: string;
+  neutral: string;
+  surface: string;
+  background: string;
+  surfaceDark: string;
+  textPrimary: string;
+  textSecondary: string;
+  textMuted: string;
+  border: string;
+  success: string;
+  warning: string;
+  error: string;
+  info: string;
+}
+
+export interface IGlobalTypography {
+  fontFamilySans: string;
+  fontFamilyHeading: string;
+  fontFamilyMono: string;
+  h1Size: string;
+  h2Size: string;
+  h3Size: string;
+  h4Size: string;
+  bodySize: string;
+  captionSize: string;
+  baseLineHeight: string;
+  headingLineHeight: string;
+}
+
+export interface IGlobalDimensions {
+  containerMaxWidth: string;
+  spacingScale: string;
+  borderRadius: string;
+  buttonRadius: string;
+  buttonPadding: string;
+  inputRadius: string;
+  inputHeight: string;
+  shadowSm: string;
+  shadowMd: string;
+  shadowLg: string;
+}
+
+export interface IGlobalEffects {
+  enableTransitions: boolean;
+  enableHoverAnimations: boolean;
+  enableEntranceAnimations: boolean;
+  transitionSpeed: string;
+}
+
+export interface IHeaderConfig {
+  logoUrl?: string;
+  logoText: string;
+  logoSubtitle?: string;
+  logoType: 'preset' | 'image';
+  height: string;
+  backgroundColor: string;
+  textColor: string;
+  isSticky: boolean;
+  isTransparent: boolean;
+  navItems: INavItemConfig[];
+  ctaButton: {
+    text: string;
+    link: string;
+    isVisible: boolean;
+    variant: 'primary' | 'secondary' | 'accent' | 'outline';
+  };
+  showEmergencyCall: boolean;
+  emergencyPhone: string;
+}
+
+export interface IFooterConfig {
+  showFooter: boolean;
+  backgroundColor: string;
+  textColor: string;
+  copyrightText: string;
+  columns: IFooterColumn[];
+  socialLinks: { platform: string; url: string; isVisible: boolean }[];
+  badges: { title: string; subtitle: string; icon: string }[];
+}
+
+export interface IThemeRevision {
+  revisionId: string;
+  publishedAt: Date;
+  publishedBy: string;
+  colors: IGlobalColors;
+  typography: IGlobalTypography;
+  dimensions: IGlobalDimensions;
+  effects: IGlobalEffects;
+  header: IHeaderConfig;
+  footer: IFooterConfig;
+  note?: string;
 }
 
 export interface IThemeConfig extends Document {
   key: string;
-  name: string;
-  tokens: {
-    colors: {
-      primary: string;
-      primaryHover: string;
-      primaryGradient: string;
-      secondary: string;
-      secondaryHover: string;
-      accent: string;
-      background: string;
-      surface: string;
-      surfaceBorder: string;
-      text: string;
-      textMuted: string;
-      textInverted: string;
-      success: string;
-      warning: string;
-      danger: string;
-      info: string;
-      headerBg: string;
-      footerBg: string;
-    };
-    typography: {
-      fontFamily: string;
-      headingFont: string;
-      baseFontSize: string;
-      headingScaleRatio: number;
-      fontWeights: {
-        normal: number;
-        medium: number;
-        bold: number;
-        black: number;
-      };
-      lineHeight: string;
-    };
-    spacing: {
-      containerMaxWidth: string;
-      radiusDefault: string;
-      radiusCard: string;
-      radiusButton: string;
-      spacingScale: number;
-      shadowLevel: string;
-    };
-    effects: {
-      enableAnimations: boolean;
-      transitionDuration: string;
-      hoverScale: string;
-      entranceAnimation: string;
-    };
+  colors: IGlobalColors;
+  typography: IGlobalTypography;
+  dimensions: IGlobalDimensions;
+  effects: IGlobalEffects;
+  header: IHeaderConfig;
+  footer: IFooterConfig;
+  draftConfig?: {
+    colors: IGlobalColors;
+    typography: IGlobalTypography;
+    dimensions: IGlobalDimensions;
+    effects: IGlobalEffects;
+    header: IHeaderConfig;
+    footer: IFooterConfig;
   };
-  header: {
-    logoType: 'preset' | 'image';
-    logoUrl?: string;
-    siteTitle: string;
-    tagline: string;
-    height: string;
-    isSticky: boolean;
-    isTransparent: boolean;
-    showCustomerLoginButton: boolean;
-    ctaButton?: {
-      label: string;
-      url: string;
-      isVisible: boolean;
-      color: string;
-    };
-    navItems: INavItemConfig[];
-  };
-  footer: {
-    companyName: string;
-    tagline: string;
-    copyrightText: string;
-    disclaimer: string;
-    address: string;
-    phone: string;
-    email: string;
-    officeHours: string;
-    gstin: string;
-    website: string;
-    showPrivacyPolicy: boolean;
-    showTermsConditions: boolean;
-    showRefundPolicy: boolean;
-    columns: IFooterColumn[];
-    socialLinks: Array<{
-      platform: string;
-      url: string;
-      icon: string;
-    }>;
-  };
-  loginPromptTimer: {
-    enabled: boolean;
-    durationSeconds: number;
-    title: string;
-    message: string;
-  };
+  revisions: IThemeRevision[];
+  customGlobalCss?: string;
+  lastPublishedAt?: Date;
+  lastEditedBy?: string;
+  createdAt: Date;
   updatedAt: Date;
 }
 
-const navItemSchema = new Schema<INavItemConfig>(
-  {
-    id: { type: String, required: true },
-    label: { type: String, required: true },
-    url: { type: String, required: true },
-    icon: { type: String, default: '' },
-    order: { type: Number, default: 1 },
-    isVisible: { type: Boolean, default: true },
-    isExternal: { type: Boolean, default: false },
-    highlightBadge: { type: String, default: '' },
-    dropdownItems: [
-      {
-        id: { type: String, required: true },
-        label: { type: String, required: true },
-        url: { type: String, required: true },
-        icon: { type: String, default: '' },
-        description: { type: String, default: '' },
-      },
-    ],
-  },
-  { _id: false }
-);
+const defaultColors: IGlobalColors = {
+  primary: '#059669',
+  primaryHover: '#047857',
+  primaryLight: '#d1fae5',
+  primaryDark: '#064e3b',
+  secondary: '#0284c7',
+  secondaryHover: '#0369a1',
+  secondaryLight: '#e0f2fe',
+  accent: '#f59e0b',
+  accentHover: '#d97706',
+  accentLight: '#fef3c7',
+  neutral: '#64748b',
+  surface: '#ffffff',
+  background: '#f8fafc',
+  surfaceDark: '#0f172a',
+  textPrimary: '#0f172a',
+  textSecondary: '#475569',
+  textMuted: '#94a3b8',
+  border: '#e2e8f0',
+  success: '#10b981',
+  warning: '#f59e0b',
+  error: '#ef4444',
+  info: '#3b82f6',
+};
 
-const footerColumnSchema = new Schema<IFooterColumn>(
-  {
-    title: { type: String, required: true },
-    links: [
-      {
-        label: { type: String, required: true },
-        url: { type: String, required: true },
-        isExternal: { type: Boolean, default: false },
-      },
-    ],
-  },
-  { _id: false }
-);
+const defaultTypography: IGlobalTypography = {
+  fontFamilySans: 'Inter, system-ui, -apple-system, sans-serif',
+  fontFamilyHeading: 'Inter, system-ui, -apple-system, sans-serif',
+  fontFamilyMono: 'Consolas, Menlo, monospace',
+  h1Size: '2.25rem',
+  h2Size: '1.75rem',
+  h3Size: '1.375rem',
+  h4Size: '1.125rem',
+  bodySize: '0.9375rem',
+  captionSize: '0.8125rem',
+  baseLineHeight: '1.5',
+  headingLineHeight: '1.2',
+};
 
-const themeConfigSchema = new Schema<IThemeConfig>(
-  {
-    key: { type: String, default: 'global_theme', unique: true },
-    name: { type: String, default: 'Ekosmart Official Clean Theme' },
-    tokens: {
-      colors: {
-        primary: { type: String, default: '#059669' }, // Emerald-600
-        primaryHover: { type: String, default: '#047857' }, // Emerald-700
-        primaryGradient: { type: String, default: 'linear-gradient(135deg, #059669 0%, #047857 100%)' },
-        secondary: { type: String, default: '#0284c7' }, // Sky-600
-        secondaryHover: { type: String, default: '#0369a1' },
-        accent: { type: String, default: '#d97706' }, // Amber-600
-        background: { type: String, default: '#f8fafc' }, // Slate-50
-        surface: { type: String, default: '#ffffff' },
-        surfaceBorder: { type: String, default: '#e2e8f0' },
-        text: { type: String, default: '#0f172a' }, // Slate-900
-        textMuted: { type: String, default: '#64748b' }, // Slate-500
-        textInverted: { type: String, default: '#ffffff' },
-        success: { type: String, default: '#10b981' },
-        warning: { type: String, default: '#f59e0b' },
-        danger: { type: String, default: '#ef4444' },
-        info: { type: String, default: '#3b82f6' },
-        headerBg: { type: String, default: '#ffffff' },
-        footerBg: { type: String, default: '#0f172a' },
-      },
-      typography: {
-        fontFamily: { type: String, default: 'Inter, system-ui, sans-serif' },
-        headingFont: { type: String, default: 'Inter, system-ui, sans-serif' },
-        baseFontSize: { type: String, default: '16px' },
-        headingScaleRatio: { type: Number, default: 1.25 },
-        fontWeights: {
-          normal: { type: Number, default: 400 },
-          medium: { type: Number, default: 500 },
-          bold: { type: Number, default: 700 },
-          black: { type: Number, default: 900 },
-        },
-        lineHeight: { type: String, default: '1.6' },
-      },
-      spacing: {
-        containerMaxWidth: { type: String, default: '1280px' },
-        radiusDefault: { type: String, default: '12px' },
-        radiusCard: { type: String, default: '16px' },
-        radiusButton: { type: String, default: '12px' },
-        spacingScale: { type: Number, default: 1 },
-        shadowLevel: { type: String, default: '0 4px 6px -1px rgb(0 0 0 / 0.1)' },
-      },
-      effects: {
-        enableAnimations: { type: Boolean, default: true },
-        transitionDuration: { type: String, default: '200ms' },
-        hoverScale: { type: String, default: '1.02' },
-        entranceAnimation: { type: String, default: 'fade-up' },
-      },
-    },
-    header: {
-      logoType: { type: String, enum: ['preset', 'image'], default: 'preset' },
-      logoUrl: { type: String, default: '' },
-      siteTitle: { type: String, default: 'EKOSMART EV BATTERY SOLUTION' },
-      tagline: { type: String, default: 'Clean Energy & Smart Electric Mobility' },
-      height: { type: String, default: '72px' },
-      isSticky: { type: Boolean, default: true },
-      isTransparent: { type: Boolean, default: false },
-      showCustomerLoginButton: { type: Boolean, default: true },
-      ctaButton: {
-        label: { type: String, default: 'Register Complaint' },
-        url: { type: String, default: '/complaint/register' },
-        isVisible: { type: Boolean, default: true },
-        color: { type: String, default: 'emerald' },
-      },
-      navItems: [navItemSchema],
-    },
-    footer: {
-      companyName: { type: String, default: 'Ekosmart Battery Solution (EBS) & EV Mobility' },
-      tagline: { type: String, default: 'High Power Lithium-Ion & LFP Battery Technologies' },
-      copyrightText: { type: String, default: '© 2026 Ekosmart Battery Solution. All rights reserved. GSTIN: 08DTUPM4205B1Z0' },
-      disclaimer: { type: String, default: 'Official customer support, service ticket resolution & warranty check portal.' },
-      address: { type: String, default: 'Plot No. 14, Electronic Complex, Road No. 1, IPIA, Kota, Rajasthan - 324005' },
-      phone: { type: String, default: '+91 8949049003 / +91 9549730483' },
-      email: { type: String, default: 'support@ekosmartdrive.in' },
-      officeHours: { type: String, default: '10:00 AM to 6:30 PM (Mon - Sat)' },
-      gstin: { type: String, default: '08DTUPM4205B1Z0' },
-      website: { type: String, default: 'www.ekosmartdrive.in' },
-      showPrivacyPolicy: { type: Boolean, default: true },
-      showTermsConditions: { type: Boolean, default: true },
-      showRefundPolicy: { type: Boolean, default: true },
-      columns: [footerColumnSchema],
-      socialLinks: [
-        {
-          platform: { type: String, default: 'WhatsApp' },
-          url: { type: String, default: 'https://wa.me/918949049003' },
-          icon: { type: String, default: 'MessageSquare' },
-        },
+const defaultDimensions: IGlobalDimensions = {
+  containerMaxWidth: '1280px',
+  spacingScale: '1rem',
+  borderRadius: '0.75rem',
+  buttonRadius: '0.75rem',
+  buttonPadding: '0.625rem 1.25rem',
+  inputRadius: '0.625rem',
+  inputHeight: '2.625rem',
+  shadowSm: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+  shadowMd: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+  shadowLg: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+};
+
+const defaultEffects: IGlobalEffects = {
+  enableTransitions: true,
+  enableHoverAnimations: true,
+  enableEntranceAnimations: true,
+  transitionSpeed: '200ms',
+};
+
+const defaultHeader: IHeaderConfig = {
+  logoText: 'EKOSMART',
+  logoSubtitle: 'EV Battery Solution & Spare Parts',
+  logoType: 'preset',
+  height: '72px',
+  backgroundColor: '#ffffff',
+  textColor: '#0f172a',
+  isSticky: true,
+  isTransparent: false,
+  navItems: [
+    { id: 'nav-1', label: 'Home', url: '/', icon: 'Home', isVisible: true, order: 1 },
+    { id: 'nav-2', label: 'Services', url: '/services', icon: 'BatteryCharging', isVisible: true, order: 2 },
+    { id: 'nav-3', label: 'Book Complaint', url: '/complaint/register', icon: 'Wrench', isVisible: true, order: 3 },
+    { id: 'nav-4', label: 'Track Ticket', url: '/complaint/track', icon: 'Search', isVisible: true, order: 4 },
+    { id: 'nav-5', label: 'Warranty Check', url: '/warranty/check', icon: 'ShieldCheck', isVisible: true, order: 5 },
+    { id: 'nav-6', label: 'Contact', url: '/contact', icon: 'Phone', isVisible: true, order: 6 },
+  ],
+  ctaButton: {
+    text: 'Register Complaint',
+    link: '/complaint/register',
+    isVisible: true,
+    variant: 'primary',
+  },
+  showEmergencyCall: true,
+  emergencyPhone: '+91 8949049003',
+};
+
+const defaultFooter: IFooterConfig = {
+  showFooter: true,
+  backgroundColor: '#0f172a',
+  textColor: '#f8fafc',
+  copyrightText: '© 2026 Ekosmart EV Battery Solution & Spare Parts. All Rights Reserved.',
+  columns: [
+    {
+      title: 'EV Battery Services',
+      links: [
+        { label: 'Lithium Battery Diagnostics', url: '/services' },
+        { label: 'BMS Testing & Balancing', url: '/services' },
+        { label: 'Drive Rental Fleet Support', url: '/services' },
+        { label: 'OEM Spare Parts Catalog', url: '/services' },
       ],
     },
-    loginPromptTimer: {
-      enabled: { type: Boolean, default: true },
-      durationSeconds: { type: Number, default: 20 },
-      title: { type: String, default: 'Login to Continue' },
-      message: {
-        type: String,
-        default: 'Please login with your email to access your customer account, wallet, referrals, bills and personalized services.',
-      },
+    {
+      title: 'Customer Support',
+      links: [
+        { label: 'Register Grievance', url: '/complaint/register' },
+        { label: 'Track Service Ticket', url: '/complaint/track' },
+        { label: 'Warranty Coverage Check', url: '/warranty/check' },
+        { label: 'Self Warranty Registration', url: '/warranty/register' },
+      ],
     },
+    {
+      title: 'Company & Compliance',
+      links: [
+        { label: 'About Ekosmart', url: '/about' },
+        { label: 'Privacy Policy', url: '/privacy-policy' },
+        { label: 'Terms & Conditions', url: '/terms-conditions' },
+        { label: 'Refund & Warranty SLA', url: '/refund-policy' },
+      ],
+    },
+  ],
+  socialLinks: [
+    { platform: 'whatsapp', url: 'https://wa.me/918949049003', isVisible: true },
+    { platform: 'phone', url: 'tel:+918949049003', isVisible: true },
+    { platform: 'mail', url: 'mailto:support@ekosmartdrive.in', isVisible: true },
+  ],
+  badges: [
+    { title: 'ISO 9001:2015', subtitle: 'Certified Manufacturing & Servicing', icon: 'Award' },
+    { title: 'AIS-156 & AIS-038', subtitle: 'EV Battery Safety Compliant', icon: 'ShieldCheck' },
+    { title: '100% Genuine Cells', subtitle: 'Grade-A Tested Lithium Packs', icon: 'CheckCircle' },
+  ],
+};
+
+const ThemeConfigSchema = new Schema<IThemeConfig>(
+  {
+    key: { type: String, required: true, unique: true, default: 'global_theme' },
+    colors: { type: Schema.Types.Mixed, default: defaultColors },
+    typography: { type: Schema.Types.Mixed, default: defaultTypography },
+    dimensions: { type: Schema.Types.Mixed, default: defaultDimensions },
+    effects: { type: Schema.Types.Mixed, default: defaultEffects },
+    header: { type: Schema.Types.Mixed, default: defaultHeader },
+    footer: { type: Schema.Types.Mixed, default: defaultFooter },
+    draftConfig: { type: Schema.Types.Mixed, default: null },
+    revisions: [Schema.Types.Mixed],
+    customGlobalCss: { type: String, default: '' },
+    lastPublishedAt: { type: Date },
+    lastEditedBy: { type: String, default: 'Admin' },
   },
   { timestamps: true }
 );
 
-export const ThemeConfig = mongoose.model<IThemeConfig>('ThemeConfig', themeConfigSchema);
+export { defaultColors, defaultTypography, defaultDimensions, defaultEffects, defaultHeader, defaultFooter };
+
+const ThemeConfig: mongoose.Model<IThemeConfig> =
+  (mongoose.models.ThemeConfig as mongoose.Model<IThemeConfig>) ||
+  mongoose.model<IThemeConfig>('ThemeConfig', ThemeConfigSchema);
+export { ThemeConfig };
+export default ThemeConfig;

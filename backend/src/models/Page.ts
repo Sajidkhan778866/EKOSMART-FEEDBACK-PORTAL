@@ -1,230 +1,213 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
+export type ComponentType =
+  | 'hero_banner'
+  | 'service_cards_grid'
+  | 'feature_grid'
+  | 'dynamic_form'
+  | 'ticket_tracker'
+  | 'warranty_checker'
+  | 'text_heading'
+  | 'rich_text'
+  | 'button'
+  | 'button_group'
+  | 'card'
+  | 'card_grid'
+  | 'accordion_faq'
+  | 'tabs_container'
+  | 'stats_counter'
+  | 'image_gallery'
+  | 'video_player'
+  | 'alert_banner'
+  | 'divider_spacer'
+  | 'data_table'
+  | 'customer_wallet_card'
+  | 'customer_profile_card'
+  | 'contact_info_box';
+
 export interface IComponentConfig {
   id: string;
-  type: string; // 'HeroBanner' | 'HeadingText' | 'RichTextBlock' | 'ServiceCardGrid' | 'FeatureList' | 'ImageBlock' | 'VideoBlock' | 'Button' | 'ButtonGroup' | 'AccordionFaq' | 'TabsBlock' | 'StatsCounter' | 'DynamicFormBlock' | 'ComplaintTrackerBlock' | 'WarrantyCheckBlock' | 'CustomerReferralWidget' | 'ContactDirectoryBlock' | 'AlertBanner' | 'Divider' | 'PricingCardGrid' | 'TestimonialsCarousel'
-  name?: string;
-  isVisible: boolean;
-  order: number;
+  type: ComponentType;
+  name: string;
   props: Record<string, any>;
-  style?: {
-    textAlign?: 'left' | 'center' | 'right' | 'justify';
-    textColor?: string;
+  styling?: {
+    color?: string;
     bgColor?: string;
+    bgGradient?: string;
+    fontSize?: string;
+    fontWeight?: string;
+    textAlign?: 'left' | 'center' | 'right' | 'justify';
     padding?: string;
     margin?: string;
+    border?: string;
     borderRadius?: string;
     shadow?: string;
-    border?: string;
+    width?: string;
+    maxWidth?: string;
+    height?: string;
     customCss?: string;
   };
   responsive?: {
-    hideDesktop?: boolean;
-    hideTablet?: boolean;
-    hideMobile?: boolean;
+    hideOnDesktop?: boolean;
+    hideOnTablet?: boolean;
+    hideOnMobile?: boolean;
+    mobileFontSize?: string;
+    tabletFontSize?: string;
+    mobilePadding?: string;
+  };
+  animation?: {
+    type?: 'none' | 'fade-in' | 'slide-up' | 'slide-down' | 'zoom-in' | 'bounce';
+    duration?: string;
+    delay?: string;
+    hoverEffect?: 'none' | 'scale' | 'glow' | 'lift';
   };
   action?: {
-    type: 'none' | 'navigate' | 'modal' | 'scroll' | 'external_link' | 'trigger_form';
-    target?: string;
+    type?: 'none' | 'navigate' | 'external_link' | 'open_modal' | 'scroll_to' | 'submit_form';
+    payload?: string;
+    target?: '_self' | '_blank';
   };
+  children?: IComponentConfig[];
 }
 
 export interface ISectionConfig {
   id: string;
   name: string;
-  isVisible: boolean;
-  order: number;
-  container: {
-    maxWidth?: 'full' | '7xl' | '6xl' | '5xl' | '4xl' | '3xl' | 'prose';
-    width?: string;
-    minHeight?: string;
-    paddingY?: 'none' | 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
-    paddingX?: 'none' | 'xs' | 'sm' | 'md' | 'lg' | 'xl';
-    marginY?: 'none' | 'xs' | 'sm' | 'md' | 'lg';
-    bgType?: 'transparent' | 'solid' | 'gradient' | 'image';
+  type: 'standard' | 'hero' | 'grid' | 'fullwidth' | 'split' | 'card_container';
+  layout: {
+    width?: 'boxed' | 'full' | 'narrow';
+    maxWidth?: string;
+    columns?: number;
+    gap?: string;
+    alignItems?: 'start' | 'center' | 'end' | 'stretch';
+    justifyContent?: 'start' | 'center' | 'end' | 'between' | 'around';
+    direction?: 'row' | 'column';
+  };
+  styling: {
     bgColor?: string;
     bgGradient?: string;
     bgImage?: string;
     bgOverlayOpacity?: number;
-    borderRadius?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | 'full';
-    shadow?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
-    borderStyle?: 'none' | 'solid' | 'dashed' | 'dotted';
-    borderColor?: string;
-    borderWidth?: string;
+    paddingY?: string;
+    paddingX?: string;
+    marginY?: string;
+    borderRadius?: string;
+    border?: string;
+    shadow?: string;
+    minHeight?: string;
   };
-  layout: {
-    display?: 'block' | 'grid' | 'flex';
-    gridCols?: 1 | 2 | 3 | 4 | 5 | 6;
-    gridGap?: 'none' | 'xs' | 'sm' | 'md' | 'lg' | 'xl';
-    flexDir?: 'row' | 'column' | 'row-reverse' | 'column-reverse';
-    flexAlign?: 'start' | 'center' | 'end' | 'stretch';
-    flexJustify?: 'start' | 'center' | 'end' | 'between' | 'around';
-    flexWrap?: 'nowrap' | 'wrap' | 'wrap-reverse';
-  };
-  responsive?: {
-    hideDesktop?: boolean;
-    hideTablet?: boolean;
-    hideMobile?: boolean;
-    mobileCols?: 1 | 2;
-    tabletCols?: 1 | 2 | 3;
-    mobilePaddingY?: 'none' | 'xs' | 'sm' | 'md' | 'lg';
+  responsive: {
+    hideOnDesktop?: boolean;
+    hideOnTablet?: boolean;
+    hideOnMobile?: boolean;
+    columnsTablet?: number;
+    columnsMobile?: number;
+    paddingYMobile?: string;
   };
   components: IComponentConfig[];
+  isVisible: boolean;
+  order: number;
 }
 
 export interface IPageRevision {
-  version: number;
+  revisionId: string;
+  title: string;
+  sections: ISectionConfig[];
+  designTokensOverride?: Record<string, any>;
   publishedAt: Date;
   publishedBy: string;
-  changeNote?: string;
-  snapshot: {
-    title: string;
-    slug: string;
-    meta?: any;
-    sections: ISectionConfig[];
-  };
+  note?: string;
 }
 
 export interface IPage extends Document {
-  pageId: string;
-  title: string;
   slug: string;
-  description?: string;
+  title: string;
+  metaDescription?: string;
+  keywords?: string;
+  ogImage?: string;
+  isHomepage: boolean;
+  isPublished: boolean;
   status: 'draft' | 'published' | 'archived';
-  isHome: boolean;
-  access: 'public' | 'customer' | 'employee' | 'admin';
-  meta: {
-    title?: string;
-    description?: string;
-    keywords?: string;
-    ogImage?: string;
-  };
+  accessLevel: 'public' | 'customer' | 'employee' | 'admin';
   sections: ISectionConfig[];
   draftSections: ISectionConfig[];
-  currentVersion: number;
   revisions: IPageRevision[];
-  headerConfigOverride?: any;
-  footerConfigOverride?: any;
+  designTokensOverride?: Record<string, any>;
+  customCss?: string;
+  order: number;
+  lastPublishedAt?: Date;
+  lastEditedBy?: string;
   createdAt: Date;
   updatedAt: Date;
 }
 
-const componentSchema = new Schema<IComponentConfig>(
+const ComponentSchema = new Schema(
   {
     id: { type: String, required: true },
     type: { type: String, required: true },
-    name: { type: String, default: '' },
-    isVisible: { type: Boolean, default: true },
-    order: { type: Number, default: 1 },
+    name: { type: String, default: 'Component' },
     props: { type: Schema.Types.Mixed, default: {} },
-    style: {
-      textAlign: { type: String, default: 'left' },
-      textColor: { type: String, default: '' },
-      bgColor: { type: String, default: '' },
-      padding: { type: String, default: '' },
-      margin: { type: String, default: '' },
-      borderRadius: { type: String, default: '' },
-      shadow: { type: String, default: '' },
-      border: { type: String, default: '' },
-      customCss: { type: String, default: '' },
-    },
-    responsive: {
-      hideDesktop: { type: Boolean, default: false },
-      hideTablet: { type: Boolean, default: false },
-      hideMobile: { type: Boolean, default: false },
-    },
-    action: {
-      type: { type: String, default: 'none' },
-      target: { type: String, default: '' },
-    },
+    styling: { type: Schema.Types.Mixed, default: {} },
+    responsive: { type: Schema.Types.Mixed, default: {} },
+    animation: { type: Schema.Types.Mixed, default: {} },
+    action: { type: Schema.Types.Mixed, default: {} },
+    children: { type: [Schema.Types.Mixed], default: [] },
   },
   { _id: false }
 );
 
-const sectionSchema = new Schema<ISectionConfig>(
+const SectionSchema = new Schema(
   {
     id: { type: String, required: true },
-    name: { type: String, required: true },
+    name: { type: String, default: 'Section' },
+    type: { type: String, default: 'standard' },
+    layout: { type: Schema.Types.Mixed, default: { width: 'boxed', columns: 1, gap: '1.5rem' } },
+    styling: { type: Schema.Types.Mixed, default: { paddingY: '3rem', paddingX: '1.5rem' } },
+    responsive: { type: Schema.Types.Mixed, default: {} },
+    components: { type: [ComponentSchema], default: [] },
     isVisible: { type: Boolean, default: true },
-    order: { type: Number, default: 1 },
-    container: {
-      maxWidth: { type: String, default: '7xl' },
-      width: { type: String, default: '100%' },
-      minHeight: { type: String, default: '' },
-      paddingY: { type: String, default: 'md' },
-      paddingX: { type: String, default: 'md' },
-      marginY: { type: String, default: 'none' },
-      bgType: { type: String, default: 'transparent' },
-      bgColor: { type: String, default: '' },
-      bgGradient: { type: String, default: '' },
-      bgImage: { type: String, default: '' },
-      bgOverlayOpacity: { type: Number, default: 0 },
-      borderRadius: { type: String, default: 'none' },
-      shadow: { type: String, default: 'none' },
-      borderStyle: { type: String, default: 'none' },
-      borderColor: { type: String, default: '' },
-      borderWidth: { type: String, default: '' },
-    },
-    layout: {
-      display: { type: String, default: 'block' },
-      gridCols: { type: Number, default: 1 },
-      gridGap: { type: String, default: 'md' },
-      flexDir: { type: String, default: 'column' },
-      flexAlign: { type: String, default: 'start' },
-      flexJustify: { type: String, default: 'start' },
-      flexWrap: { type: String, default: 'wrap' },
-    },
-    responsive: {
-      hideDesktop: { type: Boolean, default: false },
-      hideTablet: { type: Boolean, default: false },
-      hideMobile: { type: Boolean, default: false },
-      mobileCols: { type: Number, default: 1 },
-      tabletCols: { type: Number, default: 1 },
-      mobilePaddingY: { type: String, default: 'sm' },
-    },
-    components: [componentSchema],
+    order: { type: Number, default: 0 },
   },
   { _id: false }
 );
 
-const pageRevisionSchema = new Schema<IPageRevision>(
+const PageRevisionSchema = new Schema(
   {
-    version: { type: Number, required: true },
+    revisionId: { type: String, required: true },
+    title: { type: String, required: true },
+    sections: { type: [SectionSchema], default: [] },
+    designTokensOverride: { type: Schema.Types.Mixed, default: {} },
     publishedAt: { type: Date, default: Date.now },
     publishedBy: { type: String, default: 'Admin' },
-    changeNote: { type: String, default: '' },
-    snapshot: { type: Schema.Types.Mixed, required: true },
+    note: { type: String, default: 'Published revision' },
   },
   { _id: false }
 );
 
-const pageSchema = new Schema<IPage>(
+const PageSchema = new Schema<IPage>(
   {
-    pageId: { type: String, required: true, unique: true },
-    title: { type: String, required: true },
-    slug: { type: String, required: true, unique: true },
-    description: { type: String, default: '' },
+    slug: { type: String, required: true, unique: true, trim: true, lowercase: true, index: true },
+    title: { type: String, required: true, trim: true },
+    metaDescription: { type: String, default: '' },
+    keywords: { type: String, default: '' },
+    ogImage: { type: String, default: '' },
+    isHomepage: { type: Boolean, default: false },
+    isPublished: { type: Boolean, default: true },
     status: { type: String, enum: ['draft', 'published', 'archived'], default: 'published' },
-    isHome: { type: Boolean, default: false },
-    access: { type: String, enum: ['public', 'customer', 'employee', 'admin'], default: 'public' },
-    meta: {
-      title: { type: String, default: '' },
-      description: { type: String, default: '' },
-      keywords: { type: String, default: '' },
-      ogImage: { type: String, default: '' },
-    },
-    sections: [sectionSchema],
-    draftSections: [sectionSchema],
-    currentVersion: { type: Number, default: 1 },
-    revisions: [pageRevisionSchema],
-    headerConfigOverride: { type: Schema.Types.Mixed },
-    footerConfigOverride: { type: Schema.Types.Mixed },
+    accessLevel: { type: String, enum: ['public', 'customer', 'employee', 'admin'], default: 'public' },
+    sections: { type: [SectionSchema], default: [] },
+    draftSections: { type: [SectionSchema], default: [] },
+    revisions: { type: [PageRevisionSchema], default: [] },
+    designTokensOverride: { type: Schema.Types.Mixed, default: {} },
+    customCss: { type: String, default: '' },
+    order: { type: Number, default: 0 },
+    lastPublishedAt: { type: Date },
+    lastEditedBy: { type: String, default: 'Admin' },
   },
   { timestamps: true }
 );
 
-// Indexes for fast lookup
-pageSchema.index({ slug: 1, status: 1 });
-pageSchema.index({ isHome: 1 });
+PageSchema.index({ slug: 1, isPublished: 1 });
 
-export const Page = mongoose.model<IPage>('Page', pageSchema);
+const Page: mongoose.Model<IPage> = (mongoose.models.Page as mongoose.Model<IPage>) || mongoose.model<IPage>('Page', PageSchema);
+export { Page };
+export default Page;

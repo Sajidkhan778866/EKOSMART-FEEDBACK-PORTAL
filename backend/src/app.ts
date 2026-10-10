@@ -15,6 +15,9 @@ import contentRoutes from './routes/content.routes';
 import stockRoutes from './routes/stock.routes';
 import billingRoutes from './routes/billing.routes';
 import frontendBuilderRoutes from './routes/frontendBuilder.routes';
+import pageRoutes from './routes/page.routes';
+import themeRoutes from './routes/theme.routes';
+import mediaRoutes from './routes/media.routes';
 
 const app: Express = express();
 
@@ -163,6 +166,9 @@ const mountRoutes = (prefix: string) => {
   app.use(`${prefix}/billing`, billingRoutes);
   app.use(`${prefix}/frontend-builder`, frontendBuilderRoutes);
   app.use(`${prefix}/builder`, frontendBuilderRoutes);
+  app.use(`${prefix}/pages`, pageRoutes);
+  app.use(`${prefix}/theme`, themeRoutes);
+  app.use(`${prefix}/media`, mediaRoutes);
 };
 
 mountRoutes('/api/v1');

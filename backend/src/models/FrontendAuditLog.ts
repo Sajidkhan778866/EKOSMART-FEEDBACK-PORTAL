@@ -1,37 +1,43 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IFrontendAuditLog extends Document {
-  adminId?: string;
-  adminName: string;
-  action: string;
-  targetType: 'Page' | 'Theme' | 'Form' | 'Media' | 'System';
+  action:
+    | 'create_page'
+    | 'update_draft'
+    | 'publish_page'
+    | 'revert_page'
+    | 'delete_page'
+    | 'duplicate_page'
+    | 'update_theme_draft'
+    | 'publish_theme'
+    | 'reset_theme'
+    | 'upload_media'
+    | 'delete_media';
+  targetType: 'page' | 'theme' | 'media';
   targetId?: string;
-  targetTitle?: string;
-  details?: any;
-  ipAddress?: string;
+  targetName: string;
+  adminEmail: string;
+  details?: Record<string, any>;
   timestamp: Date;
 }
 
-const frontendAuditLogSchema = new Schema<IFrontendAuditLog>(
+const FrontendAuditLogSchema = new Schema<IFrontendAuditLog>(
   {
-    adminId: { type: String, default: '' },
-    adminName: { type: String, default: 'Administrator' },
     action: { type: String, required: true },
-    targetType: {
-      type: String,
-      enum: ['Page', 'Theme', 'Form', 'Media', 'System'],
-      default: 'Page',
-    },
-    targetId: { type: String, default: '' },
-    targetTitle: { type: String, default: '' },
+    targetType: { type: String, required: true },
+    targetId: { type: String },
+    targetName: { type: String, required: true },
+    adminEmail: { type: String, required: true, default: 'admin@ekosmart.com' },
     details: { type: Schema.Types.Mixed, default: {} },
-    ipAddress: { type: String, default: '' },
     timestamp: { type: Date, default: Date.now },
   },
   { timestamps: true }
 );
 
-frontendAuditLogSchema.index({ timestamp: -1 });
-frontendAuditLogSchema.index({ targetType: 1, targetId: 1 });
+FrontendAuditLogSchema.index({ timestamp: -1 });
 
-export const FrontendAuditLog = mongoose.model<IFrontendAuditLog>('FrontendAuditLog', frontendAuditLogSchema);
+const FrontendAuditLog: mongoose.Model<IFrontendAuditLog> =
+  (mongoose.models.FrontendAuditLog as mongoose.Model<IFrontendAuditLog>) ||
+  mongoose.model<IFrontendAuditLog>('FrontendAuditLog', FrontendAuditLogSchema);
+export { FrontendAuditLog };
+export default FrontendAuditLog;

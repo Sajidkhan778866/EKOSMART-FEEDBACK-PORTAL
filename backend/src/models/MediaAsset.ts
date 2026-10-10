@@ -1,41 +1,48 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IMediaAsset extends Document {
-  assetId: string;
   name: string;
+  category: 'logo' | 'banner' | 'card' | 'icon' | 'product' | 'general';
   url: string;
-  category: 'general' | 'banners' | 'products' | 'icons' | 'logos' | 'documents';
   altText: string;
-  size: number;
+  fileSize: number;
   mimeType: string;
   dimensions?: {
     width: number;
     height: number;
   };
-  uploadedBy?: string;
+  tags: string[];
+  uploadedBy: string;
   createdAt: Date;
+  updatedAt: Date;
 }
 
-const mediaAssetSchema = new Schema<IMediaAsset>(
+const MediaAssetSchema = new Schema<IMediaAsset>(
   {
-    assetId: { type: String, required: true, unique: true },
-    name: { type: String, required: true },
-    url: { type: String, required: true },
+    name: { type: String, required: true, trim: true },
     category: {
       type: String,
-      enum: ['general', 'banners', 'products', 'icons', 'logos', 'documents'],
+      enum: ['logo', 'banner', 'card', 'icon', 'product', 'general'],
       default: 'general',
     },
+    url: { type: String, required: true, trim: true },
     altText: { type: String, default: '' },
-    size: { type: Number, default: 0 },
-    mimeType: { type: String, default: 'image/jpeg' },
+    fileSize: { type: Number, default: 0 },
+    mimeType: { type: String, default: 'image/png' },
     dimensions: {
       width: { type: Number },
       height: { type: Number },
     },
+    tags: { type: [String], default: [] },
     uploadedBy: { type: String, default: 'Admin' },
   },
   { timestamps: true }
 );
 
-export const MediaAsset = mongoose.model<IMediaAsset>('MediaAsset', mediaAssetSchema);
+MediaAssetSchema.index({ category: 1, name: 1 });
+
+const MediaAsset: mongoose.Model<IMediaAsset> =
+  (mongoose.models.MediaAsset as mongoose.Model<IMediaAsset>) ||
+  mongoose.model<IMediaAsset>('MediaAsset', MediaAssetSchema);
+export { MediaAsset };
+export default MediaAsset;
