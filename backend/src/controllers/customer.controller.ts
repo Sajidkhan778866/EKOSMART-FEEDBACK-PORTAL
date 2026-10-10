@@ -862,43 +862,115 @@ export const redeemServiceCoins = async (req: Request, res: Response) => {
 // 3. ADMIN CUSTOMER, REFERRAL & WALLET MANAGEMENT
 // ==============================================================================
 
+export const defaultStarterCustomers = [
+  {
+    customerId: 'CUST-EBS-1001',
+    name: 'Rajesh Kumar Sharma',
+    mobile: '9829012345',
+    email: 'rajesh.sharma@example.com',
+    customerType: 'General',
+    city: 'Kota',
+    state: 'Rajasthan',
+    address: 'Vigyan Nagar, Kota',
+    walletBalance: 750,
+    totalEarnedCoins: 750,
+    totalSpentCoins: 0,
+    referralCode: 'EKORAJESH',
+    isVerified: true,
+    status: 'Active',
+  },
+  {
+    customerId: 'CUST-EBS-1002',
+    name: 'Amit Verma (Showroom Partner)',
+    mobile: '9414056789',
+    email: 'amit.verma@example.com',
+    customerType: 'Showroom',
+    city: 'Jaipur',
+    state: 'Rajasthan',
+    address: 'E-Mobility Hub, MI Road, Jaipur',
+    walletBalance: 1200,
+    totalEarnedCoins: 1200,
+    totalSpentCoins: 0,
+    referralCode: 'EKOAMITV',
+    isVerified: true,
+    status: 'Active',
+  },
+  {
+    customerId: 'CUST-EBS-1003',
+    name: 'Sunil Gurjar (Drive Rental Fleet)',
+    mobile: '8890123456',
+    email: 'sunil.gurjar@example.com',
+    customerType: 'General',
+    city: 'Kota',
+    state: 'Rajasthan',
+    address: 'Rangbari Road, Kota',
+    walletBalance: 500,
+    totalEarnedCoins: 500,
+    totalSpentCoins: 0,
+    referralCode: 'EKOSUNIL',
+    isVerified: true,
+    status: 'Active',
+  },
+];
+
 // GET /api/v1/customers - Admin: Get all customers with filters
 export const getCustomers = async (req: Request, res: Response) => {
   try {
+    const countTotal = await Customer.countDocuments();
+    if (countTotal === 0) {
+      try {
+        await Customer.insertMany(defaultStarterCustomers);
+      } catch (seedErr) {
+        console.warn('Auto-seed customers error:', seedErr);
+      }
+    }
+
     const { customerType, search, dateFilter, startDate, endDate, limit } = req.query;
     const query: any = {};
 
     if (customerType && customerType !== 'All') query.customerType = customerType;
-    applyDateFilterToQuery(query, 'createdAt', dateFilter as string, startDate as string, endDate as string);
-
-    if (search) {
-      const s = (search as string).trim();
-      query.$or = [
-        { name: { $regex: s, $options: 'i' } },
-        { mobile: { $regex: s, $options: 'i' } },
-        { email: { $regex: s, $options: 'i' } },
-        { customerId: { $regex: s, $options: 'i' } },
-        { referralCode: { $regex: s, $options: 'i' } },
-      ];
+    if (dateFilter && dateFilter !== 'all' && dateFilter !== 'All') {
+      applyDateFilterToQuery(query, 'createdAt', dateFilter as string, startDate as string, endDate as string);
     }
 
-    const max = Math.min(200, Number(limit) || 100);
-    const customers = await Customer.find(query).sort({ createdAt: -1 }).limit(max);
+    if (search) {
+      const s = String(search).trim();
+      if (s) {
+        query.$or = [
+          { name: { $regex: s, $options: 'i' } },
+          { mobile: { $regex: s, $options: 'i' } },
+          { email: { $regex: s, $options: 'i' } },
+          { customerId: { $regex: s, $options: 'i' } },
+          { referralCode: { $regex: s, $options: 'i' } },
+        ];
+      }
+    }
 
-    // Count statistics
-    const totalCustomers = customers.length;
-    const totalCoinsInCirculation = customers.reduce((acc, c) => acc + (c.walletBalance || 0), 0);
+    const max = Math.min(500, Number(limit) || 100);
+    const customers = await Customer.find(query).sort({ createdAt: -1 }).limit(max).lean();
+
+    const formatted = (customers || []).map((c: any) => ({
+      ...c,
+      referralCode: c.referralCode || `EKO${c.customerId || c._id.toString().slice(-5).toUpperCase()}`,
+      walletBalance: Number(c.walletBalance) || 0,
+      totalEarnedCoins: Number(c.totalEarnedCoins) || 0,
+      totalSpentCoins: Number(c.totalSpentCoins) || 0,
+    }));
+
+    const totalCustomers = formatted.length;
+    const totalCoinsInCirculation = formatted.reduce((acc, c) => acc + (c.walletBalance || 0), 0);
 
     res.json({
       success: true,
-      data: customers,
+      data: formatted,
       meta: {
         count: totalCustomers,
         totalCoinsInCirculation,
       },
     });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: 'Failed to fetch customers' });
+    console.error('getCustomers error:', error);
+    res.status(500).json({ success: false, message: error.message || 'Failed to fetch customers' });
   }
 };
 

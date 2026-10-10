@@ -143,12 +143,18 @@ export default function Customers({ defaultTab }: CustomersProps) {
         startDate: dateRange.startDate,
         endDate: dateRange.endDate,
       });
-      if (res.data.success) {
-        setCustomers(res.data.data);
+      if (res.data?.success) {
+        setCustomers(Array.isArray(res.data.data) ? res.data.data : []);
+      } else if (Array.isArray(res.data)) {
+        setCustomers(res.data);
+      } else {
+        setCustomers([]);
       }
     } catch (err: any) {
-      console.error(err);
-      showAlert('error', err.response?.data?.message || 'Failed to load customers');
+      console.error('Customer fetch error:', err);
+      if (err.response?.status !== 401) {
+        showAlert('error', err.response?.data?.message || 'Failed to load customers');
+      }
     } finally {
       setLoading(false);
     }
