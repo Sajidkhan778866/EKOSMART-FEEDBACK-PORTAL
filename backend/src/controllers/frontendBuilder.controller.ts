@@ -319,23 +319,40 @@ export const submitPublicForm = async (req: Request, res: Response) => {
 export const getAdminPages = async (_req: Request, res: Response) => {
   try {
     await seedDefaultContent();
-    const pages = await Page.find()
-      .select('slug title isHomepage isPublished status accessLevel order updatedAt lastPublishedAt revisions')
-      .sort({ order: 1, updatedAt: -1 });
+    const pages = await Page.find().sort({ order: 1, updatedAt: -1 });
 
-    const formatted = pages.map((p) => ({
-      id: p._id,
-      slug: p.slug,
-      title: p.title,
-      isHomepage: p.isHomepage,
-      isPublished: p.isPublished,
-      status: p.status,
-      accessLevel: p.accessLevel,
-      order: p.order,
-      revisionCount: p.revisions ? p.revisions.length : 0,
-      updatedAt: p.updatedAt,
-      lastPublishedAt: p.lastPublishedAt,
-    }));
+    const formatted = pages.map((p) => {
+      const activeSections = p.sections || [];
+      const activeDraftSections = p.draftSections && p.draftSections.length > 0 ? p.draftSections : activeSections;
+
+      return {
+        _id: String(p._id),
+        id: String(p._id),
+        pageId: String(p._id),
+        slug: p.slug,
+        title: p.title,
+        description: p.metaDescription || '',
+        metaDescription: p.metaDescription || '',
+        keywords: p.keywords || '',
+        ogImage: p.ogImage || '',
+        isHomepage: p.isHomepage,
+        isHome: p.isHomepage,
+        isPublished: p.isPublished,
+        status: p.status || (p.isPublished ? 'published' : 'draft'),
+        accessLevel: p.accessLevel || 'public',
+        access: p.accessLevel || 'public',
+        order: p.order || 0,
+        sections: activeSections,
+        draftSections: activeDraftSections,
+        currentVersion: p.revisions ? p.revisions.length : 1,
+        revisionCount: p.revisions ? p.revisions.length : 0,
+        revisions: p.revisions || [],
+        customCss: p.customCss || '',
+        designTokensOverride: p.designTokensOverride || {},
+        updatedAt: p.updatedAt,
+        lastPublishedAt: p.lastPublishedAt,
+      };
+    });
 
     res.json({ success: true, data: formatted });
   } catch (err: any) {
@@ -350,9 +367,38 @@ export const getAdminPageById = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'Page not found' });
     }
     if (!page.draftSections || page.draftSections.length === 0) {
-      page.draftSections = page.sections;
+      page.draftSections = page.sections || [];
     }
-    res.json({ success: true, data: page });
+
+    const formatted = {
+      _id: String(page._id),
+      id: String(page._id),
+      pageId: String(page._id),
+      slug: page.slug,
+      title: page.title,
+      description: page.metaDescription || '',
+      metaDescription: page.metaDescription || '',
+      keywords: page.keywords || '',
+      ogImage: page.ogImage || '',
+      isHomepage: page.isHomepage,
+      isHome: page.isHomepage,
+      isPublished: page.isPublished,
+      status: page.status || 'published',
+      accessLevel: page.accessLevel || 'public',
+      access: page.accessLevel || 'public',
+      order: page.order || 0,
+      sections: page.sections || [],
+      draftSections: page.draftSections || page.sections || [],
+      currentVersion: page.revisions ? page.revisions.length : 1,
+      revisionCount: page.revisions ? page.revisions.length : 0,
+      revisions: page.revisions || [],
+      customCss: page.customCss || '',
+      designTokensOverride: page.designTokensOverride || {},
+      updatedAt: page.updatedAt,
+      lastPublishedAt: page.lastPublishedAt,
+    };
+
+    res.json({ success: true, data: formatted });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message });
   }

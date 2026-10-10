@@ -111,10 +111,23 @@ export const FrontendBuilder: React.FC = () => {
   }, [initData]);
 
   // Load active page sections (prefer draftSections if present, fallback to sections)
-  const loadPageData = (page: IPage) => {
+  const loadPageData = async (page: IPage) => {
     setActivePage(page);
-    const secs = page.draftSections && page.draftSections.length > 0 ? page.draftSections : page.sections || [];
-    const cloned = JSON.parse(JSON.stringify(secs));
+    let secs = page.draftSections && page.draftSections.length > 0 ? page.draftSections : page.sections || [];
+    const targetId = page.pageId || page._id || (page as any).id;
+    if ((!secs || secs.length === 0) && targetId) {
+      try {
+        const fullRes = await frontendBuilderApi.getPageById(targetId);
+        if (fullRes.data?.success && fullRes.data.data) {
+          const fullPage = fullRes.data.data;
+          secs = fullPage.draftSections && fullPage.draftSections.length > 0 ? fullPage.draftSections : fullPage.sections || [];
+          setActivePage(fullPage);
+        }
+      } catch (err) {
+        console.warn('Failed to fetch full page details:', err);
+      }
+    }
+    const cloned = JSON.parse(JSON.stringify(secs || []));
     setSections(cloned);
     setHistory([cloned]);
     setHistoryIndex(0);
@@ -335,9 +348,11 @@ export const FrontendBuilder: React.FC = () => {
   // Draft Save & Publish
   const handleSaveDraft = async () => {
     if (!activePage) return;
+    const targetId = activePage.pageId || activePage._id || (activePage as any).id;
+    if (!targetId) return;
     try {
       setIsSaving(true);
-      const res = await frontendBuilderApi.updatePageDraft(activePage.pageId, {
+      const res = await frontendBuilderApi.updatePageDraft(targetId, {
         draftSections: sections,
       });
       if (res.data?.success) {
@@ -353,20 +368,23 @@ export const FrontendBuilder: React.FC = () => {
 
   const handlePublish = async () => {
     if (!activePage) return;
+    const targetId = activePage.pageId || activePage._id || (activePage as any).id;
+    if (!targetId) return;
     try {
       setIsPublishing(true);
       // First save draft
-      await frontendBuilderApi.updatePageDraft(activePage.pageId, { draftSections: sections });
+      await frontendBuilderApi.updatePageDraft(targetId, { draftSections: sections });
       // Publish atomically
-      const res = await frontendBuilderApi.publishPage(activePage.pageId, {
+      const res = await frontendBuilderApi.publishPage(targetId, {
         changeNote: `Published Version ${((activePage.currentVersion || 1) + 1)}`,
       });
       if (res.data?.success) {
         const updatedPage: IPage = res.data.data;
         setActivePage(updatedPage);
-        setPages((prev) => prev.map((p) => (p.pageId === updatedPage.pageId ? updatedPage : p)));
+        const resolvedId = updatedPage.pageId || updatedPage._id || (updatedPage as any).id;
+        setPages((prev) => prev.map((p) => ((p.pageId || p._id || (p as any).id) === resolvedId ? updatedPage : p)));
         setHasUnsavedChanges(false);
-        showNotification('success', `🚀 Page published live as Version ${updatedPage.currentVersion}!`);
+        showNotification('success', `🚀 Page published live as Version ${updatedPage.currentVersion || 1}!`);
       }
     } catch (err: any) {
       showNotification('error', err.response?.data?.message || 'Failed to publish page');
@@ -377,12 +395,14 @@ export const FrontendBuilder: React.FC = () => {
 
   const handleRollback = async (version: number) => {
     if (!activePage) return;
+    const targetId = activePage.pageId || activePage._id || (activePage as any).id;
+    if (!targetId) return;
     try {
-      const res = await frontendBuilderApi.rollbackPage(activePage.pageId, version);
+      const res = await frontendBuilderApi.rollbackPage(targetId, version);
       if (res.data?.success) {
         const rolledPage: IPage = res.data.data;
         setActivePage(rolledPage);
-        loadPageData(rolledPage);
+        await loadPageData(rolledPage);
         showNotification('success', `Page rolled back successfully to Version ${version}!`);
       }
     } catch (err: any) {

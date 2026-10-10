@@ -178,14 +178,17 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
             </div>
 
             {/* Dynamic props based on component type */}
-            {selectedComponent.type === 'HeroBanner' && (
+            {(selectedComponent.type === 'HeroBanner' || selectedComponent.type === 'hero_banner') && (
               <>
                 <div>
                   <label className="block text-slate-700 font-bold mb-1">Badge Ribbon Text</label>
                   <input
                     type="text"
-                    value={selectedComponent.props?.badgeText || ''}
-                    onChange={(e) => updateComponentProp('badgeText', e.target.value)}
+                    value={selectedComponent.props?.badgeText || selectedComponent.props?.badge || ''}
+                    onChange={(e) => {
+                      updateComponentProp('badgeText', e.target.value);
+                      updateComponentProp('badge', e.target.value);
+                    }}
                     placeholder="⚡ OFFICIAL EKOSMART PORTAL"
                     className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl"
                   />
@@ -194,8 +197,11 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
                   <label className="block text-slate-700 font-bold mb-1">Main Heading</label>
                   <textarea
                     rows={2}
-                    value={selectedComponent.props?.heading || ''}
-                    onChange={(e) => updateComponentProp('heading', e.target.value)}
+                    value={selectedComponent.props?.heading || selectedComponent.props?.title || ''}
+                    onChange={(e) => {
+                      updateComponentProp('heading', e.target.value);
+                      updateComponentProp('title', e.target.value);
+                    }}
                     className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl"
                   />
                 </div>
@@ -203,8 +209,11 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
                   <label className="block text-slate-700 font-bold mb-1">Subheading Description</label>
                   <textarea
                     rows={3}
-                    value={selectedComponent.props?.subheading || ''}
-                    onChange={(e) => updateComponentProp('subheading', e.target.value)}
+                    value={selectedComponent.props?.subheading || selectedComponent.props?.subtitle || ''}
+                    onChange={(e) => {
+                      updateComponentProp('subheading', e.target.value);
+                      updateComponentProp('subtitle', e.target.value);
+                    }}
                     className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl"
                   />
                 </div>
@@ -248,30 +257,40 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
                     />
                   </div>
                 </div>
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Warranty Check Button Text</label>
+                  <input
+                    type="text"
+                    value={selectedComponent.props?.warrantyButtonText || ''}
+                    onChange={(e) => updateComponentProp('warrantyButtonText', e.target.value)}
+                    placeholder="Check Battery Warranty"
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl"
+                  />
+                </div>
               </>
             )}
 
-            {selectedComponent.type === 'HeadingText' && (
+            {(selectedComponent.type === 'HeadingText' || selectedComponent.type === 'text_heading') && (
               <>
                 <div>
-                  <label className="block text-slate-700 font-bold mb-1">Heading Level</label>
-                  <select
-                    value={selectedComponent.props?.level || 'h2'}
-                    onChange={(e) => updateComponentProp('level', e.target.value)}
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl font-bold"
-                  >
-                    <option value="h1">H1 — Main Title</option>
-                    <option value="h2">H2 — Section Title</option>
-                    <option value="h3">H3 — Subtitle</option>
-                    <option value="h4">H4 — Small Header</option>
-                  </select>
+                  <label className="block text-slate-700 font-bold mb-1">Badge Ribbon</label>
+                  <input
+                    type="text"
+                    value={selectedComponent.props?.badge || ''}
+                    onChange={(e) => updateComponentProp('badge', e.target.value)}
+                    placeholder="Our Specialized Divisions"
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl"
+                  />
                 </div>
                 <div>
                   <label className="block text-slate-700 font-bold mb-1">Title Text</label>
                   <input
                     type="text"
-                    value={selectedComponent.props?.title || ''}
-                    onChange={(e) => updateComponentProp('title', e.target.value)}
+                    value={selectedComponent.props?.title || selectedComponent.props?.heading || ''}
+                    onChange={(e) => {
+                      updateComponentProp('title', e.target.value);
+                      updateComponentProp('heading', e.target.value);
+                    }}
                     className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl"
                   />
                 </div>
@@ -299,19 +318,116 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
               </>
             )}
 
-            {selectedComponent.type === 'RichTextBlock' && (
+            {(selectedComponent.type === 'StatsCounter' || selectedComponent.type === 'stats_counter') && (
+              <>
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Metric Number / Value</label>
+                  <input
+                    type="text"
+                    value={selectedComponent.props?.value || selectedComponent.props?.number || ''}
+                    onChange={(e) => {
+                      updateComponentProp('value', e.target.value);
+                      updateComponentProp('number', e.target.value);
+                    }}
+                    placeholder="12,500+"
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Label</label>
+                  <input
+                    type="text"
+                    value={selectedComponent.props?.label || ''}
+                    onChange={(e) => updateComponentProp('label', e.target.value)}
+                    placeholder="Battery Packs Tested"
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Trend Badge</label>
+                  <input
+                    type="text"
+                    value={selectedComponent.props?.trend || ''}
+                    onChange={(e) => updateComponentProp('trend', e.target.value)}
+                    placeholder="Fast-Track SLA"
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl"
+                  />
+                </div>
+              </>
+            )}
+
+            {(selectedComponent.type === 'ServiceCardGrid' || selectedComponent.type === 'service_cards_grid') && (
+              <div className="space-y-3">
+                <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-900 text-xs">
+                  <strong>⚡ Dynamic Division Cards Active:</strong> Renders all active service divisions (Showroom, Rental, Spare Parts, Lithium Battery, etc.) directly from MongoDB.
+                </div>
+              </div>
+            )}
+
+            {(selectedComponent.type === 'ComplaintTrackerBlock' || selectedComponent.type === 'ticket_tracker') && (
+              <div className="space-y-2">
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Widget Title</label>
+                  <input
+                    type="text"
+                    value={selectedComponent.props?.title || ''}
+                    onChange={(e) => updateComponentProp('title', e.target.value)}
+                    placeholder="Track Service Ticket"
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Subtitle</label>
+                  <textarea
+                    rows={2}
+                    value={selectedComponent.props?.subtitle || ''}
+                    onChange={(e) => updateComponentProp('subtitle', e.target.value)}
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl"
+                  />
+                </div>
+              </div>
+            )}
+
+            {(selectedComponent.type === 'WarrantyCheckBlock' || selectedComponent.type === 'warranty_checker') && (
+              <div className="space-y-2">
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Widget Title</label>
+                  <input
+                    type="text"
+                    value={selectedComponent.props?.title || ''}
+                    onChange={(e) => updateComponentProp('title', e.target.value)}
+                    placeholder="Verify Warranty Coverage"
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Subtitle</label>
+                  <textarea
+                    rows={2}
+                    value={selectedComponent.props?.subtitle || ''}
+                    onChange={(e) => updateComponentProp('subtitle', e.target.value)}
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl"
+                  />
+                </div>
+              </div>
+            )}
+
+            {(selectedComponent.type === 'RichTextBlock' || selectedComponent.type === 'rich_text') && (
               <div>
                 <label className="block text-slate-700 font-bold mb-1">Content Body</label>
                 <textarea
                   rows={8}
-                  value={selectedComponent.props?.content || ''}
-                  onChange={(e) => updateComponentProp('content', e.target.value)}
+                  value={selectedComponent.props?.content || selectedComponent.props?.text || ''}
+                  onChange={(e) => {
+                    updateComponentProp('content', e.target.value);
+                    updateComponentProp('text', e.target.value);
+                  }}
                   className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl font-sans"
                 />
               </div>
             )}
 
-            {selectedComponent.type === 'DynamicFormBlock' && (
+            {(selectedComponent.type === 'DynamicFormBlock' || selectedComponent.type === 'dynamic_form') && (
               <div className="space-y-3">
                 <div>
                   <label className="block text-slate-700 font-bold mb-1">Select Form Schema</label>
@@ -337,7 +453,7 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
               </div>
             )}
 
-            {selectedComponent.type === 'CustomerReferralWidget' && (
+            {(selectedComponent.type === 'CustomerReferralWidget' || selectedComponent.type === 'customer_wallet_card' || selectedComponent.type === 'customer_referral_widget') && (
               <>
                 <div>
                   <label className="block text-slate-700 font-bold mb-1">Banner Title</label>

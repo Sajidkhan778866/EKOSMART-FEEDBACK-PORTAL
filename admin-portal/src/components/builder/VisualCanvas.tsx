@@ -95,10 +95,11 @@ export const VisualCanvas: React.FC<VisualCanvasProps> = ({
               if (!section.isVisible && previewMode) return null;
 
               const isSectionSelected = activeSectionId === section.id && !activeComponentId;
-              const container = section.container || {};
+              const container = section.container || (section as any).styling || {};
+              const styling = (section as any).styling || {};
               const layout = section.layout || {};
 
-              // Padding classes
+              // Padding classes / styles
               const pyClass =
                 container.paddingY === 'none'
                   ? 'py-0'
@@ -112,7 +113,9 @@ export const VisualCanvas: React.FC<VisualCanvasProps> = ({
                   ? 'py-16'
                   : container.paddingY === '2xl'
                   ? 'py-24'
-                  : 'py-8';
+                  : container.paddingY === 'md'
+                  ? 'py-8'
+                  : '';
 
               const pxClass =
                 container.paddingX === 'none'
@@ -125,19 +128,32 @@ export const VisualCanvas: React.FC<VisualCanvasProps> = ({
                   ? 'px-8'
                   : container.paddingX === 'xl'
                   ? 'px-12'
-                  : 'px-6';
+                  : container.paddingX === 'md'
+                  ? 'px-6'
+                  : '';
 
               // Background styling
               const bgStyle: React.CSSProperties = {};
-              if (container.bgType === 'solid' && container.bgColor) {
-                bgStyle.backgroundColor = container.bgColor;
-              } else if (container.bgType === 'gradient' && container.bgGradient) {
-                bgStyle.background = container.bgGradient;
-              } else if (container.bgType === 'image' && container.bgImage) {
-                bgStyle.backgroundImage = `url(${container.bgImage})`;
+              const bgColor = container.bgColor || styling.bgColor;
+              const bgGradient = container.bgGradient || styling.bgGradient;
+              const bgImage = container.bgImage || styling.bgImage;
+
+              if (bgGradient) {
+                bgStyle.background = bgGradient;
+              } else if (bgColor) {
+                bgStyle.backgroundColor = bgColor;
+              } else if (bgImage) {
+                bgStyle.backgroundImage = `url(${bgImage})`;
                 bgStyle.backgroundSize = 'cover';
                 bgStyle.backgroundPosition = 'center';
               }
+
+              if (styling.paddingY && !pyClass) bgStyle.paddingTop = styling.paddingY;
+              if (styling.paddingY && !pyClass) bgStyle.paddingBottom = styling.paddingY;
+              if (styling.paddingX && !pxClass) bgStyle.paddingLeft = styling.paddingX;
+              if (styling.paddingX && !pxClass) bgStyle.paddingRight = styling.paddingX;
+              if (styling.borderRadius) bgStyle.borderRadius = styling.borderRadius;
+              if (styling.shadow) bgStyle.boxShadow = styling.shadow;
 
               return (
                 <div
@@ -147,7 +163,7 @@ export const VisualCanvas: React.FC<VisualCanvasProps> = ({
                     if (!previewMode) onSelectSection(section.id);
                   }}
                   style={bgStyle}
-                  className={`relative transition-all ${pyClass} ${pxClass} ${
+                  className={`relative transition-all ${pyClass || 'py-8'} ${pxClass || 'px-6'} ${
                     !previewMode && isSectionSelected
                       ? 'ring-2 ring-emerald-500 ring-offset-2 z-10'
                       : !previewMode
@@ -334,47 +350,66 @@ const RenderComponentPreview: React.FC<{ cmp: IComponentConfig; theme: IThemeCon
 
   switch (cmp.type) {
     case 'HeroBanner':
+    case 'hero_banner':
       return (
         <div className="p-8 sm:p-12 text-center text-white space-y-4">
-          {props.badgeText && (
+          {(props.badgeText || props.badge) && (
             <span className="inline-block px-3 py-1 bg-emerald-500/20 border border-emerald-400/30 rounded-full text-emerald-300 text-xs font-bold tracking-wider uppercase">
-              {props.badgeText}
+              {props.badgeText || props.badge}
             </span>
           )}
           <h1 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight whitespace-pre-line text-white">
-            {props.heading || 'Ekosmart High Power Lithium Technologies'}
+            {props.heading || props.title || 'Ekosmart High Power Lithium Technologies'}
           </h1>
           <p className="text-xs sm:text-sm text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            {props.subheading || 'High Charging Power • Long Life • Low Maintenance. Official support & warranty verification portal.'}
+            {props.subheading || props.subtitle || 'High Charging Power • Long Life • Low Maintenance. Official support & warranty verification portal.'}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-            <button
-              type="button"
-              className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-md transition cursor-pointer"
-            >
-              {props.primaryButtonText || 'Register Complaint'}
-            </button>
-            <button
-              type="button"
-              className="px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-xs border border-white/20 backdrop-blur-xs transition cursor-pointer"
-            >
-              {props.secondaryButtonText || 'Check Battery Warranty'}
-            </button>
+            {(props.primaryButtonText || props.primaryText) && (
+              <button
+                type="button"
+                className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-md transition cursor-pointer"
+              >
+                {props.primaryButtonText || props.primaryText || 'Register Complaint'}
+              </button>
+            )}
+            {(props.secondaryButtonText || props.secondaryText) && (
+              <button
+                type="button"
+                className="px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-xs border border-white/20 backdrop-blur-xs transition cursor-pointer"
+              >
+                {props.secondaryButtonText || props.secondaryText || 'Check Battery Warranty'}
+              </button>
+            )}
+            {props.warrantyButtonText && (
+              <button
+                type="button"
+                className="px-5 py-2.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold rounded-xl text-xs border border-amber-400/30 backdrop-blur-xs transition cursor-pointer"
+              >
+                {props.warrantyButtonText}
+              </button>
+            )}
           </div>
-          {props.showCoinsBadge && (
+          {(props.showCoinsBadge || props.showMetricsPill) && (
             <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-400/30 rounded-full text-[11px] font-bold mt-2">
               <Coins size={12} className="text-amber-400" />
-              <span>{props.coinsBadgeText || '🪙 Earn 500 Coins on Battery Bills & Friend Referrals'}</span>
+              <span>{props.coinsBadgeText || props.metricsText || '🪙 Earn 500 Coins on Battery Bills & Friend Referrals'}</span>
             </div>
           )}
         </div>
       );
 
     case 'HeadingText':
+    case 'text_heading':
       return (
         <div className={`space-y-1 ${props.align === 'center' ? 'text-center' : props.align === 'right' ? 'text-right' : 'text-left'}`}>
+          {props.badge && (
+            <span className="inline-block px-2.5 py-0.5 bg-emerald-100 text-emerald-800 rounded-full text-[10px] font-black uppercase tracking-wider mb-1">
+              {props.badge}
+            </span>
+          )}
           <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight" style={{ color: props.textColor || undefined }}>
-            {props.title || 'Section Heading'}
+            {props.title || props.heading || 'Section Heading'}
           </h2>
           {props.subtitle && (
             <p className="text-xs text-slate-500 max-w-2xl mx-auto leading-relaxed">{props.subtitle}</p>
@@ -383,31 +418,36 @@ const RenderComponentPreview: React.FC<{ cmp: IComponentConfig; theme: IThemeCon
       );
 
     case 'RichTextBlock':
+    case 'rich_text':
       return (
         <div className="text-xs text-slate-700 leading-relaxed whitespace-pre-line bg-slate-50/70 p-4 rounded-xl border border-slate-200">
-          {props.content || 'Add rich informative content or policy descriptions here...'}
+          {props.content || props.text || 'Add rich informative content or policy descriptions here...'}
         </div>
       );
 
     case 'StatsCounter':
+    case 'stats_counter':
       return (
         <div className="p-4 bg-white rounded-2xl border border-slate-200 text-center shadow-xs space-y-1">
           <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-2">
             <BarChart3 size={20} />
           </div>
-          <div className="text-xl font-black text-slate-900 tracking-tight">{props.number || '50,000+'}</div>
+          <div className="text-xl font-black text-slate-900 tracking-tight">{props.number || props.value || '50,000+'}</div>
           <div className="text-[11px] font-semibold text-slate-500">{props.label || 'Metric Label'}</div>
+          {props.trend && <div className="text-[10px] font-bold text-emerald-700">{props.trend}</div>}
         </div>
       );
 
     case 'ServiceCardGrid':
+    case 'service_cards_grid':
       const cards = props.cards || [
-        { title: 'EV Battery Solution', desc: '48V, 60V, 72V Lithium Packs', badge: '3-Yr Warranty', color: 'emerald' },
-        { title: 'Spare Parts & Chargers', desc: 'OEM Fast Chargers & Parts', badge: 'Genuine', color: 'blue' },
-        { title: 'Drive & Battery Rental', desc: 'Flexible Fleet Subscriptions', badge: 'Daily/Monthly', color: 'amber' },
+        { title: 'EV Showroom Support', desc: 'New vehicle bookings, delivery & sales', badge: 'NEW BOOKINGS', color: 'emerald' },
+        { title: 'Drive Rental Support', desc: 'EV scooter booking & quick battery swap', badge: 'FLEXIBLE PLANS', color: 'blue' },
+        { title: 'Spare Parts & Chargers', desc: 'OEM Fast Chargers, Smart BMS & kits', badge: 'GENUINE OEM', color: 'purple' },
+        { title: 'Lithium Battery Pack', desc: 'Cell balancing, diagnostic & warranty', badge: '3-YR WARRANTY', color: 'teal' },
       ];
       return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {cards.map((card: any, idx: number) => (
             <div
               key={idx}
@@ -431,7 +471,7 @@ const RenderComponentPreview: React.FC<{ cmp: IComponentConfig; theme: IThemeCon
                 type="button"
                 className="w-full py-1.5 bg-slate-50 hover:bg-emerald-600 hover:text-white text-slate-700 font-bold rounded-xl text-xs border border-slate-200 transition"
               >
-                {card.buttonText || 'Learn More'}
+                {card.buttonText || 'Select Division'}
               </button>
             </div>
           ))}
@@ -439,6 +479,8 @@ const RenderComponentPreview: React.FC<{ cmp: IComponentConfig; theme: IThemeCon
       );
 
     case 'CustomerReferralWidget':
+    case 'customer_wallet_card':
+    case 'customer_referral_widget':
       return (
         <div className="p-6 bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 rounded-2xl space-y-3 text-center">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-900 rounded-full font-bold text-xs">
@@ -463,6 +505,7 @@ const RenderComponentPreview: React.FC<{ cmp: IComponentConfig; theme: IThemeCon
       );
 
     case 'AccordionFaq':
+    case 'accordion_faq':
       const items = props.items || [
         { question: 'How do I register a service complaint?', answer: 'Click on Register Complaint and submit your ticket details.' },
         { question: 'What is the standard warranty period?', answer: '48V LFP packs carry 3-Year replacement warranty.' },
@@ -482,6 +525,7 @@ const RenderComponentPreview: React.FC<{ cmp: IComponentConfig; theme: IThemeCon
       );
 
     case 'DynamicFormBlock':
+    case 'dynamic_form':
       return (
         <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200 max-w-2xl mx-auto space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
@@ -513,6 +557,7 @@ const RenderComponentPreview: React.FC<{ cmp: IComponentConfig; theme: IThemeCon
       );
 
     case 'ComplaintTrackerBlock':
+    case 'ticket_tracker':
       return (
         <div className="p-6 bg-white rounded-2xl border border-slate-200 max-w-2xl mx-auto space-y-4 shadow-xs">
           <div className="flex gap-2">
@@ -527,6 +572,7 @@ const RenderComponentPreview: React.FC<{ cmp: IComponentConfig; theme: IThemeCon
       );
 
     case 'WarrantyCheckBlock':
+    case 'warranty_checker':
       return (
         <div className="p-6 bg-white rounded-2xl border border-slate-200 max-w-2xl mx-auto space-y-4 shadow-xs">
           <div className="flex gap-2">
@@ -541,6 +587,7 @@ const RenderComponentPreview: React.FC<{ cmp: IComponentConfig; theme: IThemeCon
       );
 
     case 'ContactDirectoryBlock':
+    case 'contact_info_box':
       return (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="p-5 bg-slate-900 text-white rounded-2xl space-y-2">
@@ -563,6 +610,7 @@ const RenderComponentPreview: React.FC<{ cmp: IComponentConfig; theme: IThemeCon
       );
 
     case 'FeatureList':
+    case 'feature_grid':
       const features = props.features || ['Smart Cell Diagnostics', 'BMS Balance Testing', 'Fast Replacement Dispatch'];
       return (
         <div className="space-y-2">

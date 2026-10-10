@@ -45,7 +45,6 @@ router.get('/public/page', getPublicPageBySlug);
 // ADMIN PROTECTED ROUTES
 // ==========================================
 router.use(protect);
-router.use(authorize('ADMIN', 'SUPER_ADMIN', 'SUPERADMIN'));
 
 // Pages
 router.get('/pages', getAdminPages);
