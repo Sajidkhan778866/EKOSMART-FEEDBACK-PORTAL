@@ -26,11 +26,13 @@ import {
 } from 'lucide-react';
 import { API_BASE, ADMIN_PORTAL_URL, EMPLOYEE_PORTAL_URL, resolveImageUrl } from '../config/api';
 import { useCustomerAuth } from '../context/CustomerAuthContext';
+import { useTheme } from '../context/ThemeContext';
 import CustomerLoginModal from './CustomerLoginModal';
 
 interface HeaderLogoContent {
   logoType?: 'preset' | 'image';
   logoImage?: string;
+  logoText?: string;
 }
 
 interface FooterContent {
@@ -48,6 +50,8 @@ interface FooterContent {
   showRefundPolicy: boolean;
   logoType?: 'preset' | 'image';
   logoImage?: string;
+  socialLinks?: Array<{ platform: string; url: string }>;
+  columns?: Array<{ title: string; links: Array<{ label: string; href: string }> }>;
 }
 
 const defaultFooter: FooterContent = {
@@ -69,6 +73,7 @@ const defaultFooter: FooterContent = {
 
 const Layout = () => {
   const { customer, isAuthenticated, logout } = useCustomerAuth();
+  const { theme } = useTheme();
   const [footer, setFooter] = useState<FooterContent>(defaultFooter);
   const [headerLogo, setHeaderLogo] = useState<HeaderLogoContent>({ logoType: 'preset', logoImage: '' });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -97,26 +102,42 @@ const Layout = () => {
     setUserDropdownOpen(false);
   }, [location.pathname]);
 
-  // Load public CMS branding, referral settings & login timer configurations
+  // Sync theme changes into local state
+  useEffect(() => {
+    if (theme) {
+      if (theme.footer) {
+        setFooter((prev) => ({ ...prev, ...theme.footer }));
+      }
+      if (theme.header) {
+        setHeaderLogo({
+          logoType: theme.header.logoType || 'preset',
+          logoImage: theme.header.logoImage || '',
+          logoText: theme.header.logoText || 'Ekosmart',
+        });
+      }
+      if (theme.customerLoginTimer) {
+        setLoginTimerConfig((prev) => ({
+          ...prev,
+          ...theme.customerLoginTimer,
+        }));
+      }
+    }
+  }, [theme]);
+
+  // Load public CMS branding & referral fallback settings
   useEffect(() => {
     fetch(`${API_BASE}/content/public`)
       .then((res) => res.json())
       .then((data) => {
         if (data.success && data.data) {
-          if (data.data.footer) {
+          if (data.data.footer && !theme.footer) {
             setFooter({ ...defaultFooter, ...data.data.footer });
           }
-          if (data.data.hero) {
+          if (data.data.hero && !theme.header) {
             setHeaderLogo({
               logoType: data.data.hero.logoType || 'preset',
               logoImage: data.data.hero.logoImage || '',
             });
-          }
-          if (data.data.customerLoginTimer) {
-            setLoginTimerConfig((prev) => ({
-              ...prev,
-              ...data.data.customerLoginTimer,
-            }));
           }
           if (data.data.referralSettings?.referrerReward) {
             setReferrerCoins(Number(data.data.referralSettings.referrerReward) || 500);
@@ -124,9 +145,9 @@ const Layout = () => {
         }
       })
       .catch((err) => {
-        console.warn('Failed to load dynamic CMS footer/header branding, using defaults:', err);
+        console.warn('CMS content fallback load error:', err);
       });
-  }, []);
+  }, [theme]);
 
   // 20-Second Customer Login Prompt Trigger
   useEffect(() => {

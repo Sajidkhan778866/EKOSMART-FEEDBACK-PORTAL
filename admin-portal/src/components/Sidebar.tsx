@@ -35,6 +35,7 @@ const Sidebar = ({ onClose }: SidebarProps) => {
     { name: 'Complaints', path: '/complaints', icon: <ClipboardList size={18} /> },
     { name: 'Warranty', path: '/warranty', icon: <ShieldCheck size={18} /> },
     { name: 'Customers', path: '/customers', icon: <UserCheck size={18} /> },
+    { name: 'Frontend Studio', path: '/builder', icon: <LayoutTemplate size={18} className="text-emerald-400" /> },
     { name: 'Form Builder', path: '/forms', icon: <FileText size={18} /> },
     { name: 'Content CMS', path: '/cms', icon: <LayoutTemplate size={18} /> },
     { name: 'Reports', path: '/reports', icon: <BarChart2 size={18} /> },

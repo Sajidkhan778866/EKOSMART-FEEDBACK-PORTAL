@@ -10,6 +10,10 @@ import TermsConditions from './pages/TermsConditions';
 import RefundPolicy from './pages/RefundPolicy';
 import Contact from './pages/Contact';
 
+// Dynamic CMS Engine
+import { ThemeProvider } from './context/ThemeContext';
+import { DynamicPageRenderer } from './components/dynamic/DynamicPageRenderer';
+
 // Customer Portal Pages
 import { CustomerAuthProvider, useCustomerAuth } from './context/CustomerAuthContext';
 import CustomerRegister from './pages/CustomerRegister';
@@ -40,79 +44,85 @@ const ProtectedCustomerRoute = ({ children }: { children: React.ReactNode }) => 
 function App() {
   return (
     <CustomerAuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Home />} />
-            
-            {/* Support & Warranty */}
-            <Route path="complaint/register" element={<RegisterComplaint />} />
-            <Route path="complaint/track" element={<TrackComplaint />} />
-            <Route path="warranty/check" element={<WarrantyCheck />} />
-            <Route path="warranty/register" element={<WarrantyRegister />} />
-            
-            {/* Showroom Public Info */}
-            <Route path="showroom-billing" element={<ShowroomBillingPublic />} />
-            
-            {/* Customer Authentication */}
-            <Route path="customer/register" element={<CustomerRegister />} />
-            <Route path="register" element={<CustomerRegister />} />
-            <Route path="customer/login" element={<CustomerLogin />} />
-            <Route path="login" element={<CustomerLogin />} />
+      <ThemeProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Layout />}>
+              {/* Dynamic Homepage (with static fallback) */}
+              <Route index element={<DynamicPageRenderer slug="home" fallback={<Home />} />} />
+              
+              {/* Support & Warranty */}
+              <Route path="complaint/register" element={<DynamicPageRenderer slug="complaints" fallback={<RegisterComplaint />} />} />
+              <Route path="complaint/track" element={<DynamicPageRenderer slug="track-complaint" fallback={<TrackComplaint />} />} />
+              <Route path="warranty/check" element={<DynamicPageRenderer slug="warranty" fallback={<WarrantyCheck />} />} />
+              <Route path="warranty/register" element={<WarrantyRegister />} />
+              
+              {/* Showroom Public Info */}
+              <Route path="showroom-billing" element={<ShowroomBillingPublic />} />
+              
+              {/* Customer Authentication */}
+              <Route path="customer/register" element={<CustomerRegister />} />
+              <Route path="register" element={<CustomerRegister />} />
+              <Route path="customer/login" element={<CustomerLogin />} />
+              <Route path="login" element={<CustomerLogin />} />
 
-            {/* Protected Customer Dashboard & Services */}
-            <Route
-              path="customer/dashboard"
-              element={
-                <ProtectedCustomerRoute>
-                  <CustomerDashboard />
-                </ProtectedCustomerRoute>
-              }
-            />
-            <Route
-              path="customer/wallet"
-              element={
-                <ProtectedCustomerRoute>
-                  <CustomerWallet />
-                </ProtectedCustomerRoute>
-              }
-            />
-            <Route
-              path="customer/referrals"
-              element={
-                <ProtectedCustomerRoute>
-                  <CustomerReferrals />
-                </ProtectedCustomerRoute>
-              }
-            />
-            <Route
-              path="customer/purchases"
-              element={
-                <ProtectedCustomerRoute>
-                  <CustomerPurchases />
-                </ProtectedCustomerRoute>
-              }
-            />
-            <Route
-              path="customer/profile"
-              element={
-                <ProtectedCustomerRoute>
-                  <CustomerProfile />
-                </ProtectedCustomerRoute>
-              }
-            />
+              {/* Protected Customer Dashboard & Services */}
+              <Route
+                path="customer/dashboard"
+                element={
+                  <ProtectedCustomerRoute>
+                    <CustomerDashboard />
+                  </ProtectedCustomerRoute>
+                }
+              />
+              <Route
+                path="customer/wallet"
+                element={
+                  <ProtectedCustomerRoute>
+                    <CustomerWallet />
+                  </ProtectedCustomerRoute>
+                }
+              />
+              <Route
+                path="customer/referrals"
+                element={
+                  <ProtectedCustomerRoute>
+                    <CustomerReferrals />
+                  </ProtectedCustomerRoute>
+                }
+              />
+              <Route
+                path="customer/purchases"
+                element={
+                  <ProtectedCustomerRoute>
+                    <CustomerPurchases />
+                  </ProtectedCustomerRoute>
+                }
+              />
+              <Route
+                path="customer/profile"
+                element={
+                  <ProtectedCustomerRoute>
+                    <CustomerProfile />
+                  </ProtectedCustomerRoute>
+                }
+              />
 
-            {/* General Info & Policies */}
-            <Route path="contact" element={<Contact />} />
-            <Route path="privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="terms-conditions" element={<TermsConditions />} />
-            <Route path="refund-policy" element={<RefundPolicy />} />
-            
-            {/* Fallback */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+              {/* General Info & Policies */}
+              <Route path="contact" element={<DynamicPageRenderer slug="contact" fallback={<Contact />} />} />
+              <Route path="privacy-policy" element={<DynamicPageRenderer slug="privacy-policy" fallback={<PrivacyPolicy />} />} />
+              <Route path="terms-conditions" element={<DynamicPageRenderer slug="terms-conditions" fallback={<TermsConditions />} />} />
+              <Route path="refund-policy" element={<DynamicPageRenderer slug="refund-policy" fallback={<RefundPolicy />} />} />
+              
+              {/* Arbitrary CMS Pages created by Admin (e.g. /p/dealership, /p/diwali-deal) */}
+              <Route path="p/:slug" element={<DynamicPageRenderer />} />
+
+              {/* Fallback */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </ThemeProvider>
     </CustomerAuthProvider>
   );
 }

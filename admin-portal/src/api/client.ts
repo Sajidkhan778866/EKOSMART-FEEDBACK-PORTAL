@@ -294,3 +294,36 @@ export const billTemplateApi = {
   delete: (id: string) => apiClient.delete(`/billing/templates/${id}`),
 };
 
+export const frontendBuilderApi = {
+  // Pages
+  getPages: () => apiClient.get('/frontend-builder/pages'),
+  getPageById: (id: string) => apiClient.get(`/frontend-builder/pages/${id}`),
+  createPage: (data: any) => apiClient.post('/frontend-builder/pages', data),
+  updatePageDraft: (id: string, data: any) => apiClient.put(`/frontend-builder/pages/${id}/draft`, data),
+  publishPage: (id: string, data?: any) => apiClient.post(`/frontend-builder/pages/${id}/publish`, data),
+  rollbackPage: (id: string, version: number) => apiClient.post(`/frontend-builder/pages/${id}/rollback/${version}`),
+  duplicatePage: (id: string) => apiClient.post(`/frontend-builder/pages/${id}/duplicate`),
+  deletePage: (id: string) => apiClient.delete(`/frontend-builder/pages/${id}`),
+
+  // Theme & Tokens
+  getTheme: () => apiClient.get('/frontend-builder/theme'),
+  updateTheme: (data: any) => apiClient.put('/frontend-builder/theme', data),
+
+  // Forms
+  getForms: () => apiClient.get('/frontend-builder/forms'),
+  saveForm: (data: any) => apiClient.post('/frontend-builder/forms', data),
+  deleteForm: (formKey: string) => apiClient.delete(`/frontend-builder/forms/${formKey}`),
+
+  // Media
+  getMedia: () => apiClient.get('/frontend-builder/media'),
+  uploadMedia: (data: any) => apiClient.post('/frontend-builder/media', data),
+  deleteMedia: (assetId: string) => apiClient.delete(`/frontend-builder/media/${assetId}`),
+
+  // Audit Logs
+  getAuditLogs: () => apiClient.get('/frontend-builder/audit-logs'),
+
+  // Seed Defaults
+  seedDefaults: () => apiClient.post('/frontend-builder/seed-defaults'),
+};
+
+

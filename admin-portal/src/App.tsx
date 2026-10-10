@@ -13,6 +13,7 @@ import Settings from './pages/Settings';
 import ContentManager from './pages/ContentManager';
 import StockManager from './pages/StockManager';
 import BillingManager from './pages/BillingManager';
+import FrontendBuilder from './pages/FrontendBuilder';
 import ErrorBoundary from './components/ErrorBoundary';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -42,6 +43,37 @@ function App() {
               <PublicRoute>
                 <Login />
               </PublicRoute>
+            }
+          />
+          {/* Full Screen Visual Studio Frontend Builder */}
+          <Route
+            path="/builder"
+            element={
+              <ProtectedRoute>
+                <ErrorBoundary fallbackTitle="Frontend Builder Error">
+                  <FrontendBuilder />
+                </ErrorBoundary>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/frontend-builder"
+            element={
+              <ProtectedRoute>
+                <ErrorBoundary fallbackTitle="Frontend Builder Error">
+                  <FrontendBuilder />
+                </ErrorBoundary>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/frontend-builder"
+            element={
+              <ProtectedRoute>
+                <ErrorBoundary fallbackTitle="Frontend Builder Error">
+                  <FrontendBuilder />
+                </ErrorBoundary>
+              </ProtectedRoute>
             }
           />
           <Route

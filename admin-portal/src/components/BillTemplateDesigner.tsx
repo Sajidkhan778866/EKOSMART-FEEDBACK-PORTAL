@@ -3692,10 +3692,10 @@ export const BillTemplateDesigner: React.FC<BillTemplateDesignerProps> = ({
                   Only digital wallet coins are shown to customers in soft bills and referral banners. You can edit default coin reward amounts below:
                 </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-                  <div className="bg-white p-3 rounded-xl border border-amber-200 shadow-2xs space-y-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                  <div className="bg-white p-3.5 rounded-xl border border-amber-200 shadow-2xs space-y-1">
                     <label className="block text-[11px] font-bold text-amber-950">
-                      Purchase Coins (🪙)
+                      Showroom Purchase Coins (🪙)
                     </label>
                     <input
                       type="number"
@@ -3710,41 +3710,21 @@ export const BillTemplateDesigner: React.FC<BillTemplateDesignerProps> = ({
                           },
                         })
                       }
-                      className="w-full p-2 border border-amber-300 rounded-lg text-xs font-black text-amber-900 bg-amber-50/40"
+                      className="w-full p-2.5 border border-amber-300 rounded-lg text-xs font-black text-amber-900 bg-amber-50/40"
                     />
-                    <span className="text-[9px] font-mono text-slate-500 block">Token: {"{{coins}}"} / {"{{rewardCoins}}"}</span>
+                    <span className="text-[9px] font-mono text-slate-500 block">
+                      Token: {"{{coins}}"} / {"{{rewardCoins}}"} (Credited on bill generation)
+                    </span>
                   </div>
 
-                  <div className="bg-white p-3 rounded-xl border border-amber-200 shadow-2xs space-y-1">
-                    <label className="block text-[11px] font-bold text-amber-950">
-                      Welcome Bonus Coins (🪙)
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={currentTemplate.softBillEmailConfig?.welcomeCoins ?? 500}
-                      onChange={(e) =>
-                        setCurrentTemplate({
-                          ...currentTemplate,
-                          softBillEmailConfig: {
-                            ...currentTemplate.softBillEmailConfig,
-                            welcomeCoins: Number(e.target.value) || 0,
-                          },
-                        })
-                      }
-                      className="w-full p-2 border border-amber-300 rounded-lg text-xs font-black text-amber-900 bg-amber-50/40"
-                    />
-                    <span className="text-[9px] font-mono text-slate-500 block">Token: {"{{welcomeCoins}}"}</span>
-                  </div>
-
-                  <div className="bg-white p-3 rounded-xl border border-amber-200 shadow-2xs space-y-1">
+                  <div className="bg-white p-3.5 rounded-xl border border-amber-200 shadow-2xs space-y-1">
                     <label className="block text-[11px] font-bold text-amber-950">
                       Referrer Bonus Coins (🪙)
                     </label>
                     <input
                       type="number"
                       min="0"
-                      value={currentTemplate.softBillEmailConfig?.referrerCoins ?? 100}
+                      value={currentTemplate.softBillEmailConfig?.referrerCoins ?? 500}
                       onChange={(e) =>
                         setCurrentTemplate({
                           ...currentTemplate,
@@ -3754,9 +3734,11 @@ export const BillTemplateDesigner: React.FC<BillTemplateDesignerProps> = ({
                           },
                         })
                       }
-                      className="w-full p-2 border border-amber-300 rounded-lg text-xs font-black text-amber-900 bg-amber-50/40"
+                      className="w-full p-2.5 border border-amber-300 rounded-lg text-xs font-black text-amber-900 bg-amber-50/40"
                     />
-                    <span className="text-[9px] font-mono text-slate-500 block">Token: {"{{referrerCoins}}"}</span>
+                    <span className="text-[9px] font-mono text-slate-500 block">
+                      Token: {"{{referrerCoins}}"} (Credited to referrer on purchase)
+                    </span>
                   </div>
                 </div>
               </div>
