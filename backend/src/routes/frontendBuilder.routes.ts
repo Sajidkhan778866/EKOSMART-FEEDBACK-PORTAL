@@ -35,6 +35,9 @@ router.get('/public/theme', getPublicTheme);
 router.get('/public/pages', getPublicPages);
 router.get('/public/forms/:formKey', getPublicFormSchema);
 router.post('/public/forms/:formKey/submit', submitPublicForm);
+router.get('/public/form/:formKey', getPublicFormSchema);
+router.post('/public/form/:formKey/submit', submitPublicForm);
+router.get('/public/page/:slug', getPublicPageBySlug);
 router.get('/public/page/*', getPublicPageBySlug);
 router.get('/public/page', getPublicPageBySlug);
 

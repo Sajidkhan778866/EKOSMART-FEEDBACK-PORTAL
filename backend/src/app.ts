@@ -167,6 +167,8 @@ const mountRoutes = (prefix: string) => {
 
 mountRoutes('/api/v1');
 mountRoutes('/api');
+mountRoutes('/v1');
+mountRoutes('');
 
 // Catch-all 404 JSON response for unmatched API routes (prevents returning HTML)
 app.use((req: Request, res: Response, next: NextFunction) => {
