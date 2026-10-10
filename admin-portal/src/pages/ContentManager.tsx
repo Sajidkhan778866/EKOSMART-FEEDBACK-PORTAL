@@ -51,6 +51,7 @@ import {
   Coins,
   Gift,
   Award,
+  Palette,
 } from 'lucide-react';
 import { contentApi, customerApi, API_BASE_URL, resolveImageUrl } from '../api/client';
 
@@ -130,6 +131,25 @@ interface ICMSContent {
     logoImage?: string;
     complaintLogoType?: 'preset' | 'image';
     complaintLogoImage?: string;
+    bgType?: 'gradient' | 'solid' | 'image';
+    bgGradientPreset?: string;
+    bgGradientStart?: string;
+    bgGradientMiddle?: string;
+    bgGradientEnd?: string;
+    bgGradientDirection?: string;
+    bgSolidColor?: string;
+    bgImage?: string;
+    bgOverlayOpacity?: number;
+    bgPattern?: string;
+    badgeText?: string;
+    badgeIcon?: string;
+    highlight1Text?: string;
+    highlight1Icon?: string;
+    highlight2Text?: string;
+    highlight2Icon?: string;
+    highlight3Text?: string;
+    highlight3Icon?: string;
+    textColor?: string;
   };
   serviceCards: IServiceCard[];
   batteryBanner?: IBatteryBanner;
@@ -246,6 +266,25 @@ const defaultFallbackContent: ICMSContent = {
     logoImage: '',
     complaintLogoType: 'preset',
     complaintLogoImage: '',
+    bgType: 'gradient',
+    bgGradientPreset: 'ebs-emerald',
+    bgGradientStart: '#022c22',
+    bgGradientMiddle: '#064e3b',
+    bgGradientEnd: '#115e59',
+    bgGradientDirection: 'to-r',
+    bgSolidColor: '#064e3b',
+    bgImage: '',
+    bgOverlayOpacity: 0.8,
+    bgPattern: 'mesh',
+    badgeText: 'Official EBS Battery Solution Portal • Kota, Rajasthan',
+    badgeIcon: 'Sparkles',
+    highlight1Text: 'High Charging Power',
+    highlight1Icon: 'Zap',
+    highlight2Text: 'Long Life (3 & 1.5 Year Warranty)',
+    highlight2Icon: 'Battery',
+    highlight3Text: 'Low Maintenance',
+    highlight3Icon: 'Wrench',
+    textColor: '#ffffff',
   },
   serviceCards: [
     {
@@ -2408,6 +2447,572 @@ const ContentManager = () => {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* HERO BACKGROUND & VISUAL STYLING SOFT-CODING MANAGER */}
+          <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-5">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+              <div>
+                <label className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                  <Palette size={18} className="text-emerald-600" />
+                  <span>Hero Background & Visual Styling (100% Soft-Coded)</span>
+                </label>
+                <p className="text-[11px] text-slate-500">
+                  Configure the hero background gradient, solid color, background image, overlay opacity, and ambient pattern.
+                </p>
+              </div>
+
+              {/* Background Mode Selector */}
+              <div className="flex bg-slate-200 p-0.5 rounded-lg text-xs self-start sm:self-auto">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setContent({
+                      ...content,
+                      hero: { ...content.hero, bgType: 'gradient' },
+                    })
+                  }
+                  className={`px-3 py-1 rounded-md font-bold text-[11px] transition cursor-pointer ${
+                    (content.hero.bgType || 'gradient') === 'gradient'
+                      ? 'bg-white text-emerald-700 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Gradient
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setContent({
+                      ...content,
+                      hero: { ...content.hero, bgType: 'solid' },
+                    })
+                  }
+                  className={`px-3 py-1 rounded-md font-bold text-[11px] transition cursor-pointer ${
+                    content.hero.bgType === 'solid'
+                      ? 'bg-white text-emerald-700 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Solid Color
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setContent({
+                      ...content,
+                      hero: { ...content.hero, bgType: 'image' },
+                    })
+                  }
+                  className={`px-3 py-1 rounded-md font-bold text-[11px] transition cursor-pointer ${
+                    content.hero.bgType === 'image'
+                      ? 'bg-white text-emerald-700 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Image Background
+                </button>
+              </div>
+            </div>
+
+            {/* GRADIENT MODE CONTROLS */}
+            {(content.hero.bgType || 'gradient') === 'gradient' && (
+              <div className="space-y-4 bg-white p-4 rounded-xl border border-slate-200">
+                {/* Gradient Quick Presets */}
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-2">
+                    Quick Preset Color Palettes:
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[
+                      {
+                        name: 'EBS Deep Emerald',
+                        start: '#022c22',
+                        mid: '#064e3b',
+                        end: '#115e59',
+                        dir: 'to-r',
+                      },
+                      {
+                        name: 'Midnight Slate',
+                        start: '#0f172a',
+                        mid: '#1e293b',
+                        end: '#0d9488',
+                        dir: 'to-r',
+                      },
+                      {
+                        name: 'Electric Blue Tech',
+                        start: '#0c1e40',
+                        mid: '#1e3a8a',
+                        end: '#2563eb',
+                        dir: 'to-r',
+                      },
+                      {
+                        name: 'Royal Purple & Indigo',
+                        start: '#1e1b4b',
+                        mid: '#312e81',
+                        end: '#6366f1',
+                        dir: 'to-r',
+                      },
+                      {
+                        name: 'Dark Carbon Minimal',
+                        start: '#0a0a0a',
+                        mid: '#171717',
+                        end: '#262626',
+                        dir: 'to-r',
+                      },
+                      {
+                        name: 'Forest Green Glow',
+                        start: '#052e16',
+                        mid: '#14532d',
+                        end: '#15803d',
+                        dir: 'to-r',
+                      },
+                      {
+                        name: 'Sunset Gold & Amber',
+                        start: '#451a03',
+                        mid: '#78350f',
+                        end: '#b45309',
+                        dir: 'to-r',
+                      },
+                      {
+                        name: 'Cyber Teal Radial',
+                        start: '#022c22',
+                        mid: '#064e3b',
+                        end: '#042f2e',
+                        dir: 'radial',
+                      },
+                    ].map((preset) => (
+                      <button
+                        key={preset.name}
+                        type="button"
+                        onClick={() =>
+                          setContent({
+                            ...content,
+                            hero: {
+                              ...content.hero,
+                              bgGradientStart: preset.start,
+                              bgGradientMiddle: preset.mid,
+                              bgGradientEnd: preset.end,
+                              bgGradientDirection: preset.dir,
+                            },
+                          })
+                        }
+                        className="p-2 rounded-xl border border-slate-200 text-left transition hover:scale-[1.02] flex items-center gap-2 cursor-pointer shadow-2xs group"
+                      >
+                        <div
+                          className="w-6 h-6 rounded-lg shrink-0 border border-white/20 shadow-xs"
+                          style={{
+                            background: `linear-gradient(135deg, ${preset.start}, ${preset.mid}, ${preset.end})`,
+                          }}
+                        />
+                        <span className="text-[10px] font-bold text-slate-700 truncate group-hover:text-emerald-700">
+                          {preset.name}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Granular Gradient Colors & Direction */}
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs pt-2">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Gradient Start Color
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={content.hero.bgGradientStart || '#022c22'}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            hero: { ...content.hero, bgGradientStart: e.target.value },
+                          })
+                        }
+                        className="w-8 h-8 rounded-lg cursor-pointer border border-slate-300 p-0.5 bg-white"
+                      />
+                      <input
+                        type="text"
+                        value={content.hero.bgGradientStart || '#022c22'}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            hero: { ...content.hero, bgGradientStart: e.target.value },
+                          })
+                        }
+                        className="w-full border border-slate-300 rounded-lg p-1.5 text-xs font-mono uppercase bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Gradient Middle Color
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={content.hero.bgGradientMiddle || '#064e3b'}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            hero: { ...content.hero, bgGradientMiddle: e.target.value },
+                          })
+                        }
+                        className="w-8 h-8 rounded-lg cursor-pointer border border-slate-300 p-0.5 bg-white"
+                      />
+                      <input
+                        type="text"
+                        value={content.hero.bgGradientMiddle || '#064e3b'}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            hero: { ...content.hero, bgGradientMiddle: e.target.value },
+                          })
+                        }
+                        className="w-full border border-slate-300 rounded-lg p-1.5 text-xs font-mono uppercase bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Gradient End Color
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={content.hero.bgGradientEnd || '#115e59'}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            hero: { ...content.hero, bgGradientEnd: e.target.value },
+                          })
+                        }
+                        className="w-8 h-8 rounded-lg cursor-pointer border border-slate-300 p-0.5 bg-white"
+                      />
+                      <input
+                        type="text"
+                        value={content.hero.bgGradientEnd || '#115e59'}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            hero: { ...content.hero, bgGradientEnd: e.target.value },
+                          })
+                        }
+                        className="w-full border border-slate-300 rounded-lg p-1.5 text-xs font-mono uppercase bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Gradient Angle / Flow
+                    </label>
+                    <select
+                      value={content.hero.bgGradientDirection || 'to-r'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          hero: { ...content.hero, bgGradientDirection: e.target.value },
+                        })
+                      }
+                      className="w-full border border-slate-300 rounded-lg p-2 text-xs font-semibold bg-white"
+                    >
+                      <option value="to-r">Horizontal (Left to Right)</option>
+                      <option value="to-b">Vertical (Top to Bottom)</option>
+                      <option value="to-br">Diagonal (Top-Left to Bottom-Right)</option>
+                      <option value="to-tr">Diagonal (Bottom-Left to Top-Right)</option>
+                      <option value="radial">Radial Center Glow</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* SOLID COLOR CONTROLS */}
+            {content.hero.bgType === 'solid' && (
+              <div className="space-y-3 bg-white p-4 rounded-xl border border-slate-200">
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  Choose Solid Background Color
+                </label>
+                <div className="flex items-center gap-3 max-w-sm">
+                  <input
+                    type="color"
+                    value={content.hero.bgSolidColor || '#064e3b'}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        hero: { ...content.hero, bgSolidColor: e.target.value },
+                      })
+                    }
+                    className="w-10 h-10 rounded-xl cursor-pointer border border-slate-300 p-0.5 bg-white"
+                  />
+                  <input
+                    type="text"
+                    value={content.hero.bgSolidColor || '#064e3b'}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        hero: { ...content.hero, bgSolidColor: e.target.value },
+                      })
+                    }
+                    className="flex-1 border border-slate-300 rounded-lg p-2 text-xs font-mono uppercase bg-white font-semibold"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* IMAGE BACKGROUND CONTROLS */}
+            {content.hero.bgType === 'image' && (
+              <div className="space-y-4 bg-white p-4 rounded-xl border border-slate-200">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Upload Background Image File
+                    </label>
+                    <label className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-xs w-fit">
+                      <Upload size={14} />
+                      <span>Choose Banner Image</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            try {
+                              const res = await compressImageFile(file, 1920, 1080, 0.85);
+                              if (res) {
+                                setContent({
+                                  ...content,
+                                  hero: { ...content.hero, bgImage: res },
+                                });
+                              }
+                            } catch (err) {
+                              console.error('Failed to compress banner image:', err);
+                            }
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Or Background Image URL
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="https://images.unsplash.com/photo-... or /assets/hero.jpg"
+                      value={content.hero.bgImage || ''}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          hero: { ...content.hero, bgImage: e.target.value },
+                        })
+                      }
+                      className="w-full border border-slate-300 rounded-lg p-2 text-xs font-mono bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-between items-center text-[11px] font-bold text-slate-700 mb-1">
+                    <span>Dark Overlay Darkness</span>
+                    <span>{Math.round((content.hero.bgOverlayOpacity ?? 0.8) * 100)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={content.hero.bgOverlayOpacity ?? 0.8}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        hero: { ...content.hero, bgOverlayOpacity: parseFloat(e.target.value) },
+                      })
+                    }
+                    className="w-full accent-emerald-600"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Pattern Overlay & Text Color */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs pt-1">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  Ambient Tech Pattern
+                </label>
+                <select
+                  value={content.hero.bgPattern || 'mesh'}
+                  onChange={(e) =>
+                    setContent({
+                      ...content,
+                      hero: { ...content.hero, bgPattern: e.target.value },
+                    })
+                  }
+                  className="w-full border border-slate-300 rounded-lg p-2 text-xs bg-white font-medium"
+                >
+                  <option value="mesh">Subtle Tech Dot Matrix Mesh</option>
+                  <option value="none">None (Clean Background)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  Text & Headings Color
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={content.hero.textColor || '#ffffff'}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        hero: { ...content.hero, textColor: e.target.value },
+                      })
+                    }
+                    className="w-8 h-8 rounded-lg cursor-pointer border border-slate-300 p-0.5 bg-white"
+                  />
+                  <input
+                    type="text"
+                    value={content.hero.textColor || '#ffffff'}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        hero: { ...content.hero, textColor: e.target.value },
+                      })
+                    }
+                    className="flex-1 border border-slate-300 rounded-lg p-1.5 text-xs font-mono uppercase bg-white font-semibold"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* BADGE PILL & 3 CORE HIGHLIGHTS SOFT-CODING */}
+          <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4 text-xs">
+            <label className="font-bold text-slate-800 text-sm flex items-center gap-2">
+              <Sparkles size={16} className="text-amber-500" />
+              <span>Top Badge & Core Highlight Badges</span>
+            </label>
+
+            <div>
+              <label className="block text-slate-700 font-bold mb-1">Top Pill Badge Text</label>
+              <input
+                type="text"
+                value={content.hero.badgeText || ''}
+                onChange={(e) =>
+                  setContent({
+                    ...content,
+                    hero: { ...content.hero, badgeText: e.target.value },
+                  })
+                }
+                placeholder="Official EBS Battery Solution Portal • Kota, Rajasthan"
+                className="w-full border border-slate-300 rounded-lg p-2.5 text-xs bg-white font-semibold"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Highlight 1 (e.g. Power)</label>
+                <input
+                  type="text"
+                  value={content.hero.highlight1Text || ''}
+                  onChange={(e) =>
+                    setContent({
+                      ...content,
+                      hero: { ...content.hero, highlight1Text: e.target.value },
+                    })
+                  }
+                  placeholder="High Charging Power"
+                  className="w-full border border-slate-300 rounded-lg p-2 text-xs bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Highlight 2 (e.g. Warranty)</label>
+                <input
+                  type="text"
+                  value={content.hero.highlight2Text || ''}
+                  onChange={(e) =>
+                    setContent({
+                      ...content,
+                      hero: { ...content.hero, highlight2Text: e.target.value },
+                    })
+                  }
+                  placeholder="Long Life (3 & 1.5 Year Warranty)"
+                  className="w-full border border-slate-300 rounded-lg p-2 text-xs bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Highlight 3 (e.g. Service)</label>
+                <input
+                  type="text"
+                  value={content.hero.highlight3Text || ''}
+                  onChange={(e) =>
+                    setContent({
+                      ...content,
+                      hero: { ...content.hero, highlight3Text: e.target.value },
+                    })
+                  }
+                  placeholder="Low Maintenance"
+                  className="w-full border border-slate-300 rounded-lg p-2 text-xs bg-white"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* REAL-TIME LIVE HERO PREVIEW */}
+          <div className="space-y-2">
+            <label className="block font-bold text-slate-800 text-xs flex items-center gap-1.5">
+              <Sparkles size={14} className="text-emerald-600" />
+              <span>Real-Time Live Hero Banner Preview</span>
+            </label>
+            <div
+              style={{
+                background:
+                  content.hero.bgType === 'solid'
+                    ? content.hero.bgSolidColor || '#064e3b'
+                    : content.hero.bgType === 'image' && content.hero.bgImage
+                    ? `url(${resolveImageUrl(content.hero.bgImage)})`
+                    : content.hero.bgGradientDirection === 'radial'
+                    ? `radial-gradient(circle at center, ${content.hero.bgGradientMiddle || '#064e3b'} 0%, ${content.hero.bgGradientStart || '#022c22'} 70%, ${content.hero.bgGradientEnd || '#115e59'} 100%)`
+                    : `linear-gradient(to right, ${content.hero.bgGradientStart || '#022c22'}, ${content.hero.bgGradientMiddle || '#064e3b'}, ${content.hero.bgGradientEnd || '#115e59'})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                color: content.hero.textColor || '#ffffff',
+              }}
+              className="p-8 rounded-2xl text-center space-y-4 relative overflow-hidden shadow-md border border-slate-200/40"
+            >
+              {content.hero.bgPattern !== 'none' && (
+                <div className="absolute inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:20px_20px] opacity-10 pointer-events-none" />
+              )}
+              <div className="relative z-10 space-y-3 max-w-2xl mx-auto">
+                <div className="inline-flex items-center gap-1.5 bg-white/10 backdrop-blur-md px-3.5 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase border border-white/20">
+                  <Sparkles size={12} className="text-amber-300" />
+                  <span>{content.hero.badgeText || 'Official EBS Battery Solution Portal'}</span>
+                </div>
+                <h3 className="text-2xl sm:text-3xl font-black whitespace-pre-line leading-tight">
+                  {content.hero.heading}
+                </h3>
+                <p className="text-xs opacity-85 leading-relaxed">
+                  {content.hero.subheading}
+                </p>
+                <div className="flex flex-wrap justify-center gap-2 pt-2">
+                  <span className="px-5 py-2 bg-emerald-500 text-slate-950 font-black rounded-full text-xs shadow">
+                    {content.hero.primaryButtonText}
+                  </span>
+                  <span className="px-5 py-2 bg-white/10 text-white font-bold rounded-full text-xs border border-white/20">
+                    {content.hero.secondaryButtonText}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="space-y-4 text-xs">

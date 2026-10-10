@@ -81,20 +81,41 @@ export interface IPortalLinks {
   customerFrontendUrl: string;
 }
 
+export interface IHeroContent {
+  heading: string;
+  subheading: string;
+  primaryButtonText: string;
+  primaryButtonLink: string;
+  secondaryButtonText: string;
+  secondaryButtonLink: string;
+  logoType?: 'preset' | 'image';
+  logoImage?: string;
+  complaintLogoType?: 'preset' | 'image';
+  complaintLogoImage?: string;
+  bgType?: 'gradient' | 'solid' | 'image';
+  bgGradientPreset?: string;
+  bgGradientStart?: string;
+  bgGradientMiddle?: string;
+  bgGradientEnd?: string;
+  bgGradientDirection?: string;
+  bgSolidColor?: string;
+  bgImage?: string;
+  bgOverlayOpacity?: number;
+  bgPattern?: string;
+  badgeText?: string;
+  badgeIcon?: string;
+  highlight1Text?: string;
+  highlight1Icon?: string;
+  highlight2Text?: string;
+  highlight2Icon?: string;
+  highlight3Text?: string;
+  highlight3Icon?: string;
+  textColor?: string;
+}
+
 export interface IContent extends Document {
   key: string;
-  hero: {
-    heading: string;
-    subheading: string;
-    primaryButtonText: string;
-    primaryButtonLink: string;
-    secondaryButtonText: string;
-    secondaryButtonLink: string;
-    logoType?: 'preset' | 'image';
-    logoImage?: string;
-    complaintLogoType?: 'preset' | 'image';
-    complaintLogoImage?: string;
-  };
+  hero: IHeroContent;
   serviceCards: IServiceCard[];
   navigation?: INavItem[];
   idCardConfig?: IIdCardConfig;
@@ -231,6 +252,25 @@ const contentSchema = new Schema<IContent>(
       logoImage: { type: String, default: '' },
       complaintLogoType: { type: String, enum: ['preset', 'image'], default: 'preset' },
       complaintLogoImage: { type: String, default: '' },
+      bgType: { type: String, enum: ['gradient', 'solid', 'image'], default: 'gradient' },
+      bgGradientPreset: { type: String, default: 'ebs-emerald' },
+      bgGradientStart: { type: String, default: '#022c22' },
+      bgGradientMiddle: { type: String, default: '#064e3b' },
+      bgGradientEnd: { type: String, default: '#115e59' },
+      bgGradientDirection: { type: String, default: 'to-r' },
+      bgSolidColor: { type: String, default: '#064e3b' },
+      bgImage: { type: String, default: '' },
+      bgOverlayOpacity: { type: Number, default: 0.8 },
+      bgPattern: { type: String, default: 'mesh' },
+      badgeText: { type: String, default: 'Official EBS Battery Solution Portal • Kota, Rajasthan' },
+      badgeIcon: { type: String, default: 'Sparkles' },
+      highlight1Text: { type: String, default: 'High Charging Power' },
+      highlight1Icon: { type: String, default: 'Zap' },
+      highlight2Text: { type: String, default: 'Long Life (3 & 1.5 Year Warranty)' },
+      highlight2Icon: { type: String, default: 'Battery' },
+      highlight3Text: { type: String, default: 'Low Maintenance' },
+      highlight3Icon: { type: String, default: 'Wrench' },
+      textColor: { type: String, default: '#ffffff' },
     },
     serviceCards: [serviceCardSchema],
     contactInfo: {

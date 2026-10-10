@@ -75,7 +75,7 @@ export const defaultServiceCards: IServiceCard[] = [
 
 export const defaultHeroData = {
   heading: 'Ekosmart Battery Solution (EBS)\nHigh Power Lithium-Ion & LFP Battery Packs',
-  subheading: 'High Charging Power • Long Life • Low Maintenance. Official support portal for EV scooter & E-rickshaw batteries, genuine spare parts, and warranty verification.',
+  subheading: 'High Charging Power • Long Life • Low Maintenance. Official customer support portal for EV scooter & E-rickshaw batteries, genuine spare parts, and warranty verification.',
   primaryButtonText: 'Register Complaint',
   primaryButtonLink: '/complaint/register',
   secondaryButtonText: 'Check Battery Warranty',
@@ -84,6 +84,25 @@ export const defaultHeroData = {
   logoImage: '',
   complaintLogoType: 'preset' as const,
   complaintLogoImage: '',
+  bgType: 'gradient' as const,
+  bgGradientPreset: 'ebs-emerald',
+  bgGradientStart: '#022c22',
+  bgGradientMiddle: '#064e3b',
+  bgGradientEnd: '#115e59',
+  bgGradientDirection: 'to-r',
+  bgSolidColor: '#064e3b',
+  bgImage: '',
+  bgOverlayOpacity: 0.8,
+  bgPattern: 'mesh',
+  badgeText: 'Official EBS Battery Solution Portal • Kota, Rajasthan',
+  badgeIcon: 'Sparkles',
+  highlight1Text: 'High Charging Power',
+  highlight1Icon: 'Zap',
+  highlight2Text: 'Long Life (3 & 1.5 Year Warranty)',
+  highlight2Icon: 'Battery',
+  highlight3Text: 'Low Maintenance',
+  highlight3Icon: 'Wrench',
+  textColor: '#ffffff',
 };
 
 export const defaultNavigation: any[] = [

@@ -79,6 +79,27 @@ interface HeroContent {
   secondaryButtonLink: string;
   logoType?: 'preset' | 'image';
   logoImage?: string;
+  complaintLogoType?: 'preset' | 'image';
+  complaintLogoImage?: string;
+  bgType?: 'gradient' | 'solid' | 'image';
+  bgGradientPreset?: string;
+  bgGradientStart?: string;
+  bgGradientMiddle?: string;
+  bgGradientEnd?: string;
+  bgGradientDirection?: string;
+  bgSolidColor?: string;
+  bgImage?: string;
+  bgOverlayOpacity?: number;
+  bgPattern?: string;
+  badgeText?: string;
+  badgeIcon?: string;
+  highlight1Text?: string;
+  highlight1Icon?: string;
+  highlight2Text?: string;
+  highlight2Icon?: string;
+  highlight3Text?: string;
+  highlight3Icon?: string;
+  textColor?: string;
 }
 
 const defaultHero: HeroContent = {
@@ -90,6 +111,27 @@ const defaultHero: HeroContent = {
   secondaryButtonLink: '/warranty/check',
   logoType: 'preset',
   logoImage: '',
+  complaintLogoType: 'preset',
+  complaintLogoImage: '',
+  bgType: 'gradient',
+  bgGradientPreset: 'ebs-emerald',
+  bgGradientStart: '#022c22',
+  bgGradientMiddle: '#064e3b',
+  bgGradientEnd: '#115e59',
+  bgGradientDirection: 'to-r',
+  bgSolidColor: '#064e3b',
+  bgImage: '',
+  bgOverlayOpacity: 0.8,
+  bgPattern: 'mesh',
+  badgeText: 'Official EBS Battery Solution Portal • Kota, Rajasthan',
+  badgeIcon: 'Sparkles',
+  highlight1Text: 'High Charging Power',
+  highlight1Icon: 'Zap',
+  highlight2Text: 'Long Life (3 & 1.5 Year Warranty)',
+  highlight2Icon: 'Battery',
+  highlight3Text: 'Low Maintenance',
+  highlight3Icon: 'Wrench',
+  textColor: '#ffffff',
 };
 
 const defaultBatteryBanner: BatteryBannerContent = {
@@ -508,10 +550,85 @@ const Home = () => {
       ? visibleCards
       : visibleCards.filter((c) => (c.section || 'General').toLowerCase() === selectedSection.toLowerCase());
 
+  const getHeroBackgroundStyle = (): React.CSSProperties => {
+    if (hero.bgType === 'solid') {
+      return { backgroundColor: hero.bgSolidColor || '#064e3b' };
+    }
+    if (hero.bgType === 'image' && hero.bgImage) {
+      return {
+        backgroundImage: `url(${resolveImageUrl(hero.bgImage)})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      };
+    }
+    const dirMap: Record<string, string> = {
+      'to-r': 'to right',
+      'to-b': 'to bottom',
+      'to-br': 'to bottom right',
+      'to-tr': 'to top right',
+      'to-l': 'to left',
+    };
+    const direction = dirMap[hero.bgGradientDirection || 'to-r'] || 'to right';
+    const start = hero.bgGradientStart || '#022c22';
+    const mid = hero.bgGradientMiddle || '#064e3b';
+    const end = hero.bgGradientEnd || '#115e59';
+
+    if (hero.bgGradientDirection === 'radial') {
+      return { background: `radial-gradient(circle at center, ${mid} 0%, ${start} 70%, ${end} 100%)` };
+    }
+    return { background: `linear-gradient(${direction}, ${start}, ${mid}, ${end})` };
+  };
+
+  const renderHighlightIcon = (iconName?: string) => {
+    switch ((iconName || '').toLowerCase()) {
+      case 'zap':
+      case 'lightning':
+      case 'power':
+        return <Zap className="text-yellow-400" size={16} />;
+      case 'battery':
+      case 'battery-charging':
+        return <Battery className="text-green-400" size={16} />;
+      case 'wrench':
+      case 'tools':
+      case 'maintenance':
+        return <Wrench className="text-teal-300" size={16} />;
+      case 'shield':
+      case 'shieldcheck':
+        return <ShieldCheck className="text-emerald-400" size={16} />;
+      case 'sparkles':
+      case 'sparkle':
+        return <Sparkles className="text-amber-300" size={16} />;
+      case 'check':
+      case 'checkcircle':
+        return <CheckCircle2 className="text-green-400" size={16} />;
+      default:
+        return <Zap className="text-yellow-400" size={16} />;
+    }
+  };
+
   return (
     <div className="space-y-12 -mt-8">
-      {/* Dynamic Hero Section with EBS Lithium-Ion Theme */}
-      <section className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-teal-800 text-white py-16 md:py-20 px-4 relative overflow-hidden">
+      {/* 100% Soft-Coded Hero Section */}
+      <section
+        style={{
+          ...getHeroBackgroundStyle(),
+          color: hero.textColor || '#ffffff',
+        }}
+        className="text-white py-16 md:py-20 px-4 relative overflow-hidden transition-all duration-300 shadow-inner"
+      >
+        {/* Background Image Overlay */}
+        {hero.bgType === 'image' && hero.bgImage && (
+          <div
+            className="absolute inset-0 bg-slate-950 pointer-events-none transition-opacity"
+            style={{ opacity: hero.bgOverlayOpacity ?? 0.75 }}
+          />
+        )}
+
+        {/* Ambient Grid / Mesh Pattern */}
+        {hero.bgPattern !== 'none' && (
+          <div className="absolute inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:24px_24px] opacity-10 pointer-events-none" />
+        )}
+
         <div className="max-w-6xl mx-auto text-center space-y-8 relative z-10">
           {hero.logoType === 'image' && hero.logoImage ? (
             <div className="flex flex-col items-center gap-3">
@@ -525,13 +642,13 @@ const Home = () => {
 
               <div className="inline-flex items-center gap-2 bg-emerald-800/60 border border-emerald-500/40 px-4 py-1.5 rounded-full text-emerald-300 text-xs font-bold tracking-widest uppercase">
                 <Sparkles size={14} />
-                <span>Official EBS Battery Solution Portal • Kota, Rajasthan</span>
+                <span>{hero.badgeText || 'Official EBS Battery Solution Portal • Kota, Rajasthan'}</span>
               </div>
             </div>
           ) : (
             <div className="inline-flex items-center gap-2 bg-emerald-800/60 border border-emerald-500/40 px-4 py-1.5 rounded-full text-emerald-300 text-xs font-bold tracking-widest uppercase">
               <Sparkles size={14} />
-              <span>Official EBS Battery Solution Portal • Kota, Rajasthan</span>
+              <span>{hero.badgeText || 'Official EBS Battery Solution Portal • Kota, Rajasthan'}</span>
             </div>
           )}
 
@@ -539,23 +656,23 @@ const Home = () => {
             {hero.heading}
           </h1>
 
-          <p className="text-lg md:text-xl text-emerald-100 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-lg md:text-xl text-emerald-100 max-w-3xl mx-auto leading-relaxed opacity-90">
             {hero.subheading}
           </p>
 
-          {/* 3 Core Highlights from Official Brochure */}
+          {/* 3 Core Highlights (Fully Soft-Coded) */}
           <div className="flex flex-wrap justify-center gap-6 pt-2 pb-2">
             <div className="flex items-center gap-2 bg-white/10 backdrop-blur-xs px-4 py-2 rounded-xl border border-white/10 text-xs font-bold">
-              <Zap className="text-yellow-400" size={16} />
-              <span>High Charging Power</span>
+              {renderHighlightIcon(hero.highlight1Icon || 'Zap')}
+              <span>{hero.highlight1Text || 'High Charging Power'}</span>
             </div>
             <div className="flex items-center gap-2 bg-white/10 backdrop-blur-xs px-4 py-2 rounded-xl border border-white/10 text-xs font-bold">
-              <Battery className="text-green-400" size={16} />
-              <span>Long Life (3 & 1.5 Year Warranty)</span>
+              {renderHighlightIcon(hero.highlight2Icon || 'Battery')}
+              <span>{hero.highlight2Text || 'Long Life (3 & 1.5 Year Warranty)'}</span>
             </div>
             <div className="flex items-center gap-2 bg-white/10 backdrop-blur-xs px-4 py-2 rounded-xl border border-white/10 text-xs font-bold">
-              <Wrench className="text-teal-300" size={16} />
-              <span>Low Maintenance</span>
+              {renderHighlightIcon(hero.highlight3Icon || 'Wrench')}
+              <span>{hero.highlight3Text || 'Low Maintenance'}</span>
             </div>
           </div>
 
