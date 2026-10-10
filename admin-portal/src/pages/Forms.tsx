@@ -200,7 +200,7 @@ const Forms = () => {
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newCategoryInput, setNewCategoryInput] = useState('');
   
-  const [fields, setFields] = useState<any[]>([]);
+  const [fields, setFields] = useState<any[]>(() => getDefaultFieldsForDivision('Showroom'));
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');

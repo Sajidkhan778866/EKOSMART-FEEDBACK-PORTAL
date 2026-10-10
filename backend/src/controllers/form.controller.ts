@@ -313,14 +313,18 @@ export const getAllWarrantyForms = async (_req: Request, res: Response) => {
 export const saveComplaintForm = async (req: Request, res: Response) => {
   try {
     const { division, fields } = req.body;
-    let form = await ComplaintForm.findOne({ division });
+    let form = await ComplaintForm.findOne({
+      division: { $regex: new RegExp(`^${division.trim()}$`, 'i') },
+    });
     
     if (form) {
+      form.division = division;
       form.fields = fields;
-      form.version += 1;
+      form.isActive = true;
+      form.version = (form.version || 0) + 1;
       await form.save();
     } else {
-      form = await ComplaintForm.create({ division, fields });
+      form = await ComplaintForm.create({ division, fields, isActive: true, version: 1 });
     }
     
     res.json({ success: true, data: form });
@@ -366,14 +370,18 @@ export const deleteComplaintForm = async (req: Request, res: Response) => {
 export const saveWarrantyForm = async (req: Request, res: Response) => {
   try {
     const { category, fields } = req.body;
-    let form = await WarrantyForm.findOne({ category });
+    let form = await WarrantyForm.findOne({
+      category: { $regex: new RegExp(`^${category.trim()}$`, 'i') },
+    });
     
     if (form) {
+      form.category = category;
       form.fields = fields;
-      form.version += 1;
+      form.isActive = true;
+      form.version = (form.version || 0) + 1;
       await form.save();
     } else {
-      form = await WarrantyForm.create({ category, fields });
+      form = await WarrantyForm.create({ category, fields, isActive: true, version: 1 });
     }
     
     res.json({ success: true, data: form });
