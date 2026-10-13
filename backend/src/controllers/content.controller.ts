@@ -519,3 +519,106 @@ export const updateAdminContent = async (req: Request, res: Response) => {
     });
   }
 };
+
+// POST /api/v1/content/reset-defaults - Reset to original default data (pre-update clean factory state)
+export const resetContentToDefaults = async (_req: Request, res: Response) => {
+  try {
+    let content = await Content.findOne({ key: 'global_cms' });
+    if (!content) {
+      content = new Content({ key: 'global_cms' });
+    }
+
+    content.hero = defaultHeroData;
+    content.serviceCards = defaultServiceCards;
+    content.navigation = defaultNavigation;
+    content.idCardConfig = defaultIdCardConfig;
+    content.billingConfig = defaultBillingConfig;
+    content.portalLinks = defaultPortalLinks;
+    content.customerLoginTimer = defaultCustomerLoginTimer;
+    content.contactInfo = defaultContactData;
+    content.footer = defaultFooterData;
+    content.privacyPolicy = defaultPrivacyPolicyData;
+    content.termsConditions = defaultTermsConditionsData;
+    content.refundPolicy = defaultRefundPolicyData;
+    content.batteryBanner = {
+      badgeText: 'GET HIGH POWER OF LITHIUM',
+      heading: 'Genuine Li-ion & LFP Batteries For E-Scooter & E-Rickshaw',
+      subheading:
+        'Engineered with advanced Smart BMS, thermal protection, and high energy density cells. Tested at our Kota plant with Pan-India dispatch & replacement support.',
+      highlight1: '48V Series (3 Year Warranty)',
+      highlight2: '60V / 72V Series (1.5 Year Warranty)',
+      helplinePhone: '8949049003',
+      helplineBtnText: 'Call +91 8949049003',
+      plantBtnText: 'View Plant Contact Details',
+      plantBtnLink: '/contact',
+    };
+    content.quickActions = [
+      {
+        id: 'act-track',
+        title: 'Track Ticket',
+        subtitle: 'Live complaint inspection status',
+        url: '/complaint/track',
+        icon: 'Search',
+        color: 'blue',
+        isVisible: true,
+        order: 1,
+      },
+      {
+        id: 'act-warranty-reg',
+        title: 'Warranty Registration',
+        subtitle: 'Register new sales & serial number',
+        url: '/warranty/register',
+        icon: 'ShieldCheck',
+        color: 'amber',
+        isVisible: true,
+        order: 2,
+      },
+      {
+        id: 'act-warranty-check',
+        title: 'Check Warranty',
+        subtitle: '3-Yr (48V) & 1.5-Yr (60V/72V) status',
+        url: '/warranty/check',
+        icon: 'ShieldAlert',
+        color: 'emerald',
+        isVisible: true,
+        order: 3,
+      },
+      {
+        id: 'act-contact',
+        title: 'Contact Directory',
+        subtitle: 'Kota Plant +91 8949049003',
+        url: '/contact',
+        icon: 'Phone',
+        color: 'purple',
+        isVisible: true,
+        order: 4,
+      },
+    ];
+
+    content.markModified('serviceCards');
+    content.markModified('hero');
+    content.markModified('batteryBanner');
+    content.markModified('quickActions');
+    content.markModified('footer');
+    content.markModified('contactInfo');
+    content.markModified('privacyPolicy');
+    content.markModified('termsConditions');
+    content.markModified('refundPolicy');
+    content.updatedAt = new Date();
+
+    await content.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Content successfully reset to previous default data',
+      data: content,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to reset content',
+      error: error.message,
+    });
+  }
+};
+

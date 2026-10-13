@@ -3,6 +3,7 @@ import {
   getPublicContent,
   getAdminContent,
   updateAdminContent,
+  resetContentToDefaults,
 } from '../controllers/content.controller';
 import { protect, authorize } from '../middleware/auth';
 
@@ -16,5 +17,7 @@ router.put('/admin', protect, authorize('Admin', 'SuperAdmin', 'ADMIN', 'SUPER_A
 router.post('/admin', protect, authorize('Admin', 'SuperAdmin', 'ADMIN', 'SUPER_ADMIN', 'Staff', 'Technician'), updateAdminContent);
 router.put('/', protect, authorize('Admin', 'SuperAdmin', 'ADMIN', 'SUPER_ADMIN', 'Staff', 'Technician'), updateAdminContent);
 router.post('/', protect, authorize('Admin', 'SuperAdmin', 'ADMIN', 'SUPER_ADMIN', 'Staff', 'Technician'), updateAdminContent);
+router.post('/reset-defaults', protect, authorize('Admin', 'SuperAdmin', 'ADMIN', 'SUPER_ADMIN', 'Staff', 'Technician'), resetContentToDefaults);
+router.post('/admin/reset-defaults', protect, authorize('Admin', 'SuperAdmin', 'ADMIN', 'SUPER_ADMIN', 'Staff', 'Technician'), resetContentToDefaults);
 
 export default router;

@@ -48,13 +48,13 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Layout />}>
-              {/* Dynamic Homepage (with static fallback) */}
-              <Route index element={<DynamicPageRenderer slug="home" fallback={<Home />} />} />
+              {/* Core Dynamic Pages */}
+              <Route index element={<Home />} />
               
               {/* Support & Warranty */}
-              <Route path="complaint/register" element={<DynamicPageRenderer slug="complaints" fallback={<RegisterComplaint />} />} />
-              <Route path="complaint/track" element={<DynamicPageRenderer slug="track-complaint" fallback={<TrackComplaint />} />} />
-              <Route path="warranty/check" element={<DynamicPageRenderer slug="warranty" fallback={<WarrantyCheck />} />} />
+              <Route path="complaint/register" element={<RegisterComplaint />} />
+              <Route path="complaint/track" element={<TrackComplaint />} />
+              <Route path="warranty/check" element={<WarrantyCheck />} />
               <Route path="warranty/register" element={<WarrantyRegister />} />
               
               {/* Showroom Public Info */}
@@ -109,10 +109,10 @@ function App() {
               />
 
               {/* General Info & Policies */}
-              <Route path="contact" element={<DynamicPageRenderer slug="contact" fallback={<Contact />} />} />
-              <Route path="privacy-policy" element={<DynamicPageRenderer slug="privacy-policy" fallback={<PrivacyPolicy />} />} />
-              <Route path="terms-conditions" element={<DynamicPageRenderer slug="terms-conditions" fallback={<TermsConditions />} />} />
-              <Route path="refund-policy" element={<DynamicPageRenderer slug="refund-policy" fallback={<RefundPolicy />} />} />
+              <Route path="contact" element={<Contact />} />
+              <Route path="privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="terms-conditions" element={<TermsConditions />} />
+              <Route path="refund-policy" element={<RefundPolicy />} />
               
               {/* Arbitrary CMS Pages created by Admin (e.g. /p/dealership, /p/diwali-deal) */}
               <Route path="p/:slug" element={<DynamicPageRenderer />} />

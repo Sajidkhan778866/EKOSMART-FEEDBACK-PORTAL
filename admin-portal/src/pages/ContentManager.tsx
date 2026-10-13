@@ -887,6 +887,50 @@ const ContentManager = () => {
     }
   };
 
+  const handleResetDefaults = async () => {
+    if (
+      !window.confirm(
+        'Are you sure you want to reset all CMS content to previous default data? This will restore the 4 default service cards (Showroom, Rental, Spare Parts, Lithium Battery), previous clean hero text, battery banner, and legal policies.'
+      )
+    ) {
+      return;
+    }
+    try {
+      setSaving(true);
+      const res = await contentApi.resetDefaults();
+      if (res.data.success) {
+        setContent(res.data.data);
+        setSelectedSectionFilter('all');
+        setNotification({
+          type: 'success',
+          message: 'CMS content successfully reset to previous default data!',
+        });
+        setTimeout(() => setNotification(null), 4000);
+      }
+    } catch (err: any) {
+      console.error('Reset defaults failed:', err);
+      try {
+        const updateRes = await contentApi.updateAdmin(defaultFallbackContent);
+        if (updateRes.data.success) {
+          setContent(updateRes.data.data);
+          setSelectedSectionFilter('all');
+          setNotification({
+            type: 'success',
+            message: 'CMS content successfully reset to previous default data!',
+          });
+          setTimeout(() => setNotification(null), 4000);
+        }
+      } catch (e: any) {
+        setNotification({
+          type: 'error',
+          message: e.response?.data?.message || 'Failed to reset defaults.',
+        });
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
   // Card Handlers with Single-Instance Modal
   const handleOpenAddCard = (sectionPreset?: string) => {
     if (!content) return;
@@ -936,7 +980,7 @@ const ContentManager = () => {
     setDraftFeatureText('');
   };
 
-  const handleSaveCardDraft = () => {
+  const handleSaveCardDraft = async () => {
     if (!cardDraft || !content) return;
     const updatedCards = [...content.serviceCards];
     if (editingCardIndex !== null && editingCardIndex >= 0 && editingCardIndex < updatedCards.length) {
@@ -947,19 +991,36 @@ const ContentManager = () => {
         order: updatedCards.length + 1,
       });
     }
-    setContent({
+    const updatedContent = {
       ...content,
       serviceCards: updatedCards,
-    });
+    };
+    setContent(updatedContent);
     handleCloseCardModal();
-    setNotification({
-      type: 'success',
-      message: `Card "${cardDraft.title}" updated in draft! Click "Save All Changes" at the top to publish.`,
-    });
-    setTimeout(() => setNotification(null), 4000);
+
+    try {
+      setSaving(true);
+      const res = await contentApi.updateAdmin(updatedContent);
+      if (res.data.success) {
+        setContent(res.data.data);
+        setNotification({
+          type: 'success',
+          message: `Card "${cardDraft.title}" saved and published live across homepage and divisions!`,
+        });
+        setTimeout(() => setNotification(null), 4000);
+      }
+    } catch (err: any) {
+      console.error('Failed to auto-save card:', err);
+      setNotification({
+        type: 'error',
+        message: 'Draft saved in browser. Please click "Save All Changes" at top to sync with server.',
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleDuplicateCard = (index: number) => {
+  const handleDuplicateCard = async (index: number) => {
     if (!content) return;
     const original = content.serviceCards[index];
     const copyCard: IServiceCard = {
@@ -969,25 +1030,53 @@ const ContentManager = () => {
       order: content.serviceCards.length + 1,
       features: original.features ? [...original.features] : [],
     };
-    setContent({
-      ...content,
-      serviceCards: [...content.serviceCards, copyCard],
-    });
-    setNotification({
-      type: 'success',
-      message: `Duplicated "${original.title}". Click "Save All Changes" to publish.`,
-    });
-    setTimeout(() => setNotification(null), 3000);
+    const updatedCards = [...content.serviceCards, copyCard];
+    const updatedContent = { ...content, serviceCards: updatedCards };
+    setContent(updatedContent);
+
+    try {
+      setSaving(true);
+      const res = await contentApi.updateAdmin(updatedContent);
+      if (res.data.success) {
+        setContent(res.data.data);
+        setNotification({
+          type: 'success',
+          message: `Duplicated "${original.title}" and published live!`,
+        });
+        setTimeout(() => setNotification(null), 3000);
+      }
+    } catch {
+      setNotification({
+        type: 'success',
+        message: `Duplicated "${original.title}". Click "Save All Changes" to publish.`,
+      });
+      setTimeout(() => setNotification(null), 3000);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleToggleCardVisibility = (index: number) => {
+  const handleToggleCardVisibility = async (index: number) => {
     if (!content) return;
     const updatedCards = [...content.serviceCards];
     updatedCards[index] = {
       ...updatedCards[index],
       isVisible: !updatedCards[index].isVisible,
     };
-    setContent({ ...content, serviceCards: updatedCards });
+    const updatedContent = { ...content, serviceCards: updatedCards };
+    setContent(updatedContent);
+
+    try {
+      setSaving(true);
+      const res = await contentApi.updateAdmin(updatedContent);
+      if (res.data.success) {
+        setContent(res.data.data);
+      }
+    } catch (err) {
+      console.error('Failed to auto-save visibility:', err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDeleteCard = async (index: number) => {
@@ -1034,7 +1123,7 @@ const ContentManager = () => {
     }
   };
 
-  const handleMoveCard = (index: number, direction: 'up' | 'down') => {
+  const handleMoveCard = async (index: number, direction: 'up' | 'down') => {
     if (!content) return;
     const cards = [...content.serviceCards];
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
@@ -1045,7 +1134,20 @@ const ContentManager = () => {
     cards[targetIndex] = temp;
 
     const reordered = cards.map((c, idx) => ({ ...c, order: idx + 1 }));
-    setContent({ ...content, serviceCards: reordered });
+    const updatedContent = { ...content, serviceCards: reordered };
+    setContent(updatedContent);
+
+    try {
+      setSaving(true);
+      const res = await contentApi.updateAdmin(updatedContent);
+      if (res.data.success) {
+        setContent(res.data.data);
+      }
+    } catch (err) {
+      console.error('Failed to auto-save reorder:', err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleAddDraftFeature = () => {
@@ -1122,7 +1224,17 @@ const ContentManager = () => {
             Edit live homepage flash cards, section divisions, hero slogans, legal policies, and footer links without modifying code.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            type="button"
+            onClick={handleResetDefaults}
+            disabled={saving}
+            className="flex items-center gap-1.5 px-3.5 py-2 border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+            title="Restore original 4 service cards and previous clean default data"
+          >
+            <RotateCcw size={14} className={saving ? 'animate-spin' : ''} />
+            <span>Reset to Previous Default Data</span>
+          </button>
           <a
             href={FRONTEND_URL}
             target="_blank"

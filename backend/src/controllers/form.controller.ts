@@ -43,9 +43,12 @@ export const getDynamicSections = async (_req: Request, res: Response) => {
     });
 
     let sections = Array.from(sectionsSet);
-    if (sections.length === 0) {
-      sections = ['Showroom', 'Rental', 'Spare Parts', 'Battery'];
-    }
+    // Always guarantee the core 4 sections exist
+    ['Showroom', 'Rental', 'Spare Parts', 'Battery'].forEach((s) => {
+      if (!sections.some((x) => x.toLowerCase() === s.toLowerCase())) {
+        sections.push(s);
+      }
+    });
 
     // Case-insensitive deduplication while preserving original casing
     const uniqueSections: string[] = [];
@@ -204,12 +207,15 @@ export const defaultWarrantyForms = [
 
 export const getComplaintForm = async (req: Request, res: Response) => {
   try {
-    const division = req.params.division as any;
-    let form = await ComplaintForm.findOne({ division, isActive: true });
+    const rawDivision = String(req.params.division || '').trim();
+    let form = await ComplaintForm.findOne({
+      division: { $regex: new RegExp(`^${rawDivision}$`, 'i') },
+      isActive: true,
+    });
     
     if (!form || !form.fields || form.fields.length === 0) {
       const matchedDefault = defaultComplaintForms.find(
-        (d) => d.division.toLowerCase() === String(division).toLowerCase()
+        (d) => d.division.toLowerCase() === rawDivision.toLowerCase()
       );
       if (matchedDefault) {
         form = await ComplaintForm.findOneAndUpdate(
@@ -217,8 +223,29 @@ export const getComplaintForm = async (req: Request, res: Response) => {
           { $set: { fields: matchedDefault.fields, isActive: true } },
           { upsert: true, new: true }
         );
-      } else if (!form) {
-        return res.status(404).json({ success: false, message: 'Form not found for this division' });
+      } else {
+        // Automatically provide and persist standard fields for any new/custom division!
+        const defaultFields = [
+          { name: 'customerName', label: 'Customer / Entity Name', type: 'Text', required: true, order: 1, isActive: true },
+          { name: 'contactNumber', label: 'Contact Mobile Number', type: 'Mobile', required: true, order: 2, isActive: true },
+          { name: 'email', label: 'Email Address', type: 'Email', required: false, order: 3, isActive: true },
+          { name: 'serviceIdentifier', label: `${rawDivision} Reference / Serial No.`, type: 'Text', required: true, order: 4, isActive: true },
+          {
+            name: 'issueType',
+            label: 'Issue / Inquiry Category',
+            type: 'Dropdown',
+            required: true,
+            options: ['General Inquiry', 'Breakdown / Malfunction', 'Maintenance Request', 'Billing / Account Issue', 'Other'],
+            order: 5,
+            isActive: true,
+          },
+          { name: 'description', label: 'Detailed Description of Request', type: 'Textarea', required: true, order: 6, isActive: true },
+        ];
+        form = await ComplaintForm.findOneAndUpdate(
+          { division: rawDivision },
+          { $set: { fields: defaultFields, isActive: true } },
+          { upsert: true, new: true }
+        );
       }
     }
     

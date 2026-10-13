@@ -759,7 +759,7 @@ const Home = () => {
               ? 'grid-cols-1 sm:grid-cols-2 max-w-3xl mx-auto'
               : filteredCards.length === 3
               ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
-              : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
+              : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
           }`}
         >
           {filteredCards.map((card) => {
@@ -843,24 +843,28 @@ const Home = () => {
 
                 {/* Bottom Action Button */}
                 <div className="pt-5 relative z-10">
-                  {card.linkUrl.includes('warranty') || card.linkUrl.startsWith('http') ? (
-                    <a
-                      href={card.linkUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`w-full bg-white ${styles.btnText} font-bold py-3 px-5 rounded-full text-xs transition shadow-md flex items-center justify-center gap-1.5`}
-                    >
-                      <span>{card.buttonText || 'Select Division'}</span>
-                      <ExternalLink size={12} />
-                    </a>
-                  ) : (
-                    <Link
-                      to={card.linkUrl}
-                      className={`block w-full bg-white ${styles.btnText} font-bold py-3 px-5 rounded-full text-xs transition shadow-md text-center`}
-                    >
-                      {card.buttonText || 'Select Division'}
-                    </Link>
-                  )}
+                  {(() => {
+                    const finalUrl = card.linkUrl?.trim() || `/complaint/register?division=${encodeURIComponent(card.section || card.title)}`;
+                    const isExternal = finalUrl.startsWith('http') || (finalUrl.includes('warranty') && !finalUrl.startsWith('/'));
+                    return isExternal ? (
+                      <a
+                        href={finalUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`w-full bg-white ${styles.btnText} font-bold py-3 px-5 rounded-full text-xs transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer`}
+                      >
+                        <span>{card.buttonText || 'Select Division'}</span>
+                        <ExternalLink size={12} />
+                      </a>
+                    ) : (
+                      <Link
+                        to={finalUrl}
+                        className={`block w-full bg-white ${styles.btnText} font-bold py-3 px-5 rounded-full text-xs transition shadow-md text-center cursor-pointer`}
+                      >
+                        {card.buttonText || 'Select Division'}
+                      </Link>
+                    );
+                  })()}
                 </div>
               </div>
             );

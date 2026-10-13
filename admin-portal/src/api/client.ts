@@ -259,6 +259,7 @@ export const customerApi = {
 export const contentApi = {
   getAdmin: () => apiClient.get('/content/admin'),
   updateAdmin: (data: any) => apiClient.put('/content/admin', data),
+  resetDefaults: () => apiClient.post('/content/reset-defaults'),
 };
 
 export const stockApi = {
