@@ -73,13 +73,59 @@ export const defaultServiceCards: IServiceCard[] = [
   },
 ];
 
+export const defaultTopBarData = {
+  isVisible: true,
+  phone: '+91 8949049003',
+  phoneLabel: 'Helpline:',
+  showPhone: true,
+  officeHours: '10:00 AM to 6:30 PM (Mon - Sat)',
+  showOfficeHours: true,
+  gstin: '08DTUPM4205B1Z0',
+  showGstin: true,
+  location: 'Kota, Rajasthan',
+  showLocation: true,
+  bgColor: '#0f172a',
+  textColor: '#cbd5e1',
+  accentColor: '#34d399',
+};
+
+export const defaultHeaderNavData = {
+  brandTitle: 'EBS EKOSMART',
+  brandSubtitle: 'Battery Solution • Li-ion & LFP',
+  logoType: 'preset' as const,
+  logoImage: '',
+  homeLabel: 'Home',
+  showHome: true,
+  walletLabel: 'Wallet & Coins',
+  showWallet: true,
+  showWalletBadge: true,
+  referLabel: 'Refer & Earn',
+  showRefer: true,
+  accountLabel: 'Account / Login',
+  showAccount: true,
+  accountBtnBg: '#059669',
+  accountBtnText: '#ffffff',
+  navBgColor: '#ffffff',
+  navBorderColor: '#e2e8f0',
+};
+
 export const defaultHeroData = {
   heading: 'Ekosmart Battery Solution (EBS)\nHigh Power Lithium-Ion & LFP Battery Packs',
   subheading: 'High Charging Power • Long Life • Low Maintenance. Official customer support portal for EV scooter & E-rickshaw batteries, genuine spare parts, and warranty verification.',
   primaryButtonText: 'Register Complaint',
   primaryButtonLink: '/complaint/register',
+  primaryButtonTarget: '_self' as const,
+  primaryButtonVisible: true,
+  primaryButtonBgColor: '#10b981',
+  primaryButtonTextColor: '#020617',
   secondaryButtonText: 'Check Battery Warranty',
   secondaryButtonLink: '/warranty/check',
+  secondaryButtonTarget: '_blank' as const,
+  secondaryButtonVisible: true,
+  secondaryButtonBgColor: 'rgba(255, 255, 255, 0.1)',
+  secondaryButtonTextColor: '#ffffff',
+  secondaryButtonBorderColor: 'rgba(255, 255, 255, 0.2)',
+  secondaryButtonShowIcon: true,
   logoType: 'preset' as const,
   logoImage: '',
   complaintLogoType: 'preset' as const,
@@ -96,12 +142,22 @@ export const defaultHeroData = {
   bgPattern: 'mesh',
   badgeText: 'Official EBS Battery Solution Portal • Kota, Rajasthan',
   badgeIcon: 'Sparkles',
+  badgeVisible: true,
+  badgeBgColor: 'rgba(6, 78, 59, 0.6)',
+  badgeTextColor: '#6ee7b7',
+  badgeBorderColor: 'rgba(16, 185, 129, 0.4)',
   highlight1Text: 'High Charging Power',
   highlight1Icon: 'Zap',
+  highlight1Color: '#facc15',
+  highlight1Visible: true,
   highlight2Text: 'Long Life (3 & 1.5 Year Warranty)',
   highlight2Icon: 'Battery',
+  highlight2Color: '#4ade80',
+  highlight2Visible: true,
   highlight3Text: 'Low Maintenance',
   highlight3Icon: 'Wrench',
+  highlight3Color: '#5eead4',
+  highlight3Visible: true,
   textColor: '#ffffff',
 };
 
@@ -267,6 +323,8 @@ export const getOrCreateDefaultContent = async () => {
   if (!content) {
     content = await Content.create({
       key: 'global_cms',
+      topBar: defaultTopBarData,
+      headerNav: defaultHeaderNavData,
       hero: defaultHeroData,
       serviceCards: defaultServiceCards,
       navigation: defaultNavigation,
@@ -282,6 +340,14 @@ export const getOrCreateDefaultContent = async () => {
     });
   } else {
     let modified = false;
+    if (!content.topBar || !content.topBar.phone) {
+      content.topBar = defaultTopBarData;
+      modified = true;
+    }
+    if (!content.headerNav || !content.headerNav.brandTitle) {
+      content.headerNav = defaultHeaderNavData;
+      modified = true;
+    }
     if (!content.serviceCards || content.serviceCards.length === 0) {
       content.serviceCards = defaultServiceCards;
       modified = true;
@@ -356,6 +422,8 @@ export const getPublicContent = async (_req: Request, res: Response) => {
     res.status(200).json({
       success: true,
       data: {
+        topBar: content.topBar || defaultTopBarData,
+        headerNav: content.headerNav || defaultHeaderNavData,
         hero: content.hero,
         serviceCards: visibleCards,
         navigation: visibleNav,
@@ -443,9 +511,19 @@ export const updateAdminContent = async (req: Request, res: Response) => {
       termsConditions,
       refundPolicy,
       contactInfo,
+      topBar,
+      headerNav,
     } = req.body;
     let content = await getOrCreateDefaultContent();
 
+    if (topBar) {
+      content.topBar = { ...(content.topBar || {}), ...topBar };
+      content.markModified('topBar');
+    }
+    if (headerNav) {
+      content.headerNav = { ...(content.headerNav || {}), ...headerNav };
+      content.markModified('headerNav');
+    }
     if (hero) content.hero = { ...content.hero, ...hero };
     if (serviceCards) {
       content.serviceCards = serviceCards;
@@ -528,6 +606,8 @@ export const resetContentToDefaults = async (_req: Request, res: Response) => {
       content = new Content({ key: 'global_cms' });
     }
 
+    content.topBar = defaultTopBarData;
+    content.headerNav = defaultHeaderNavData;
     content.hero = defaultHeroData;
     content.serviceCards = defaultServiceCards;
     content.navigation = defaultNavigation;
@@ -595,6 +675,8 @@ export const resetContentToDefaults = async (_req: Request, res: Response) => {
       },
     ];
 
+    content.markModified('topBar');
+    content.markModified('headerNav');
     content.markModified('serviceCards');
     content.markModified('hero');
     content.markModified('batteryBanner');

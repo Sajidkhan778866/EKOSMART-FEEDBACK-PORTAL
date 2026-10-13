@@ -5,6 +5,8 @@ interface EbsLogoProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   showText?: boolean;
   className?: string;
+  customTitle?: string;
+  customSubtitle?: string;
 }
 
 export const EbsLogo: React.FC<EbsLogoProps> = ({
@@ -12,6 +14,8 @@ export const EbsLogo: React.FC<EbsLogoProps> = ({
   size = 'md',
   showText = true,
   className = '',
+  customTitle,
+  customSubtitle,
 }) => {
   const sizeMap = {
     sm: { icon: 'w-7 h-7', text: 'text-xs', sub: 'text-[9px]' },
@@ -124,11 +128,28 @@ export const EbsLogo: React.FC<EbsLogoProps> = ({
       {showText && (
         <div>
           <div className={`font-black tracking-wider text-slate-900 leading-tight ${text} flex items-center gap-1.5`}>
-            <span className="text-emerald-700 font-black">EBS</span>
-            <span className="text-slate-800">EKOSMART</span>
+            {customTitle ? (
+              (() => {
+                const parts = customTitle.trim().split(' ');
+                if (parts.length > 1) {
+                  return (
+                    <>
+                      <span className="text-emerald-700 font-black">{parts[0]}</span>
+                      <span className="text-slate-800">{parts.slice(1).join(' ')}</span>
+                    </>
+                  );
+                }
+                return <span className="text-slate-800">{customTitle}</span>;
+              })()
+            ) : (
+              <>
+                <span className="text-emerald-700 font-black">EBS</span>
+                <span className="text-slate-800">EKOSMART</span>
+              </>
+            )}
           </div>
           <span className={`text-emerald-700 font-bold uppercase tracking-wider block ${sub}`}>
-            Battery Solution • Li-ion & LFP
+            {customSubtitle || 'Battery Solution • Li-ion & LFP'}
           </span>
         </div>
       )}

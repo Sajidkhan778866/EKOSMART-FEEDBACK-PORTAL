@@ -81,13 +81,59 @@ export interface IPortalLinks {
   customerFrontendUrl: string;
 }
 
+export interface ITopBarContent {
+  isVisible: boolean;
+  phone: string;
+  phoneLabel: string;
+  showPhone: boolean;
+  officeHours: string;
+  showOfficeHours: boolean;
+  gstin: string;
+  showGstin: boolean;
+  location: string;
+  showLocation: boolean;
+  bgColor: string;
+  textColor: string;
+  accentColor: string;
+}
+
+export interface IHeaderNavContent {
+  brandTitle: string;
+  brandSubtitle: string;
+  logoType: 'preset' | 'image';
+  logoImage?: string;
+  homeLabel: string;
+  showHome: boolean;
+  walletLabel: string;
+  showWallet: boolean;
+  showWalletBadge: boolean;
+  referLabel: string;
+  showRefer: boolean;
+  accountLabel: string;
+  showAccount: boolean;
+  accountBtnBg: string;
+  accountBtnText: string;
+  navBgColor?: string;
+  navBorderColor?: string;
+}
+
 export interface IHeroContent {
   heading: string;
   subheading: string;
   primaryButtonText: string;
   primaryButtonLink: string;
+  primaryButtonTarget?: '_self' | '_blank';
+  primaryButtonVisible?: boolean;
+  primaryButtonBgColor?: string;
+  primaryButtonTextColor?: string;
   secondaryButtonText: string;
   secondaryButtonLink: string;
+  secondaryButtonTarget?: '_self' | '_blank';
+  secondaryButtonVisible?: boolean;
+  secondaryButtonBgColor?: string;
+  secondaryButtonTextColor?: string;
+  secondaryButtonBorderColor?: string;
+  secondaryButtonShowIcon?: boolean;
   logoType?: 'preset' | 'image';
   logoImage?: string;
   complaintLogoType?: 'preset' | 'image';
@@ -104,17 +150,29 @@ export interface IHeroContent {
   bgPattern?: string;
   badgeText?: string;
   badgeIcon?: string;
+  badgeVisible?: boolean;
+  badgeBgColor?: string;
+  badgeTextColor?: string;
+  badgeBorderColor?: string;
   highlight1Text?: string;
   highlight1Icon?: string;
+  highlight1Color?: string;
+  highlight1Visible?: boolean;
   highlight2Text?: string;
   highlight2Icon?: string;
+  highlight2Color?: string;
+  highlight2Visible?: boolean;
   highlight3Text?: string;
   highlight3Icon?: string;
+  highlight3Color?: string;
+  highlight3Visible?: boolean;
   textColor?: string;
 }
 
 export interface IContent extends Document {
   key: string;
+  topBar?: ITopBarContent;
+  headerNav?: IHeaderNavContent;
   hero: IHeroContent;
   serviceCards: IServiceCard[];
   navigation?: INavItem[];
@@ -238,6 +296,40 @@ const divisionContactSchema = new Schema(
 const contentSchema = new Schema<IContent>(
   {
     key: { type: String, default: 'global_cms', unique: true },
+    topBar: {
+      isVisible: { type: Boolean, default: true },
+      phone: { type: String, default: '+91 8949049003' },
+      phoneLabel: { type: String, default: 'Helpline:' },
+      showPhone: { type: Boolean, default: true },
+      officeHours: { type: String, default: '10:00 AM to 6:30 PM (Mon - Sat)' },
+      showOfficeHours: { type: Boolean, default: true },
+      gstin: { type: String, default: '08DTUPM4205B1Z0' },
+      showGstin: { type: Boolean, default: true },
+      location: { type: String, default: 'Kota, Rajasthan' },
+      showLocation: { type: Boolean, default: true },
+      bgColor: { type: String, default: '#0f172a' },
+      textColor: { type: String, default: '#cbd5e1' },
+      accentColor: { type: String, default: '#34d399' },
+    },
+    headerNav: {
+      brandTitle: { type: String, default: 'EBS EKOSMART' },
+      brandSubtitle: { type: String, default: 'Battery Solution • Li-ion & LFP' },
+      logoType: { type: String, enum: ['preset', 'image'], default: 'preset' },
+      logoImage: { type: String, default: '' },
+      homeLabel: { type: String, default: 'Home' },
+      showHome: { type: Boolean, default: true },
+      walletLabel: { type: String, default: 'Wallet & Coins' },
+      showWallet: { type: Boolean, default: true },
+      showWalletBadge: { type: Boolean, default: true },
+      referLabel: { type: String, default: 'Refer & Earn' },
+      showRefer: { type: Boolean, default: true },
+      accountLabel: { type: String, default: 'Account / Login' },
+      showAccount: { type: Boolean, default: true },
+      accountBtnBg: { type: String, default: '#059669' },
+      accountBtnText: { type: String, default: '#ffffff' },
+      navBgColor: { type: String, default: '#ffffff' },
+      navBorderColor: { type: String, default: '#e2e8f0' },
+    },
     hero: {
       heading: { type: String, default: 'Ekosmart Battery Solution (EBS)\nHigh Power Lithium-Ion & LFP Battery Packs' },
       subheading: {
@@ -246,8 +338,18 @@ const contentSchema = new Schema<IContent>(
       },
       primaryButtonText: { type: String, default: 'Register Complaint' },
       primaryButtonLink: { type: String, default: '/complaint/register' },
+      primaryButtonTarget: { type: String, enum: ['_self', '_blank'], default: '_self' },
+      primaryButtonVisible: { type: Boolean, default: true },
+      primaryButtonBgColor: { type: String, default: '#10b981' },
+      primaryButtonTextColor: { type: String, default: '#020617' },
       secondaryButtonText: { type: String, default: 'Check Battery Warranty' },
       secondaryButtonLink: { type: String, default: '/warranty/check' },
+      secondaryButtonTarget: { type: String, enum: ['_self', '_blank'], default: '_blank' },
+      secondaryButtonVisible: { type: Boolean, default: true },
+      secondaryButtonBgColor: { type: String, default: 'rgba(255, 255, 255, 0.1)' },
+      secondaryButtonTextColor: { type: String, default: '#ffffff' },
+      secondaryButtonBorderColor: { type: String, default: 'rgba(255, 255, 255, 0.2)' },
+      secondaryButtonShowIcon: { type: Boolean, default: true },
       logoType: { type: String, enum: ['preset', 'image'], default: 'preset' },
       logoImage: { type: String, default: '' },
       complaintLogoType: { type: String, enum: ['preset', 'image'], default: 'preset' },
@@ -264,12 +366,22 @@ const contentSchema = new Schema<IContent>(
       bgPattern: { type: String, default: 'mesh' },
       badgeText: { type: String, default: 'Official EBS Battery Solution Portal • Kota, Rajasthan' },
       badgeIcon: { type: String, default: 'Sparkles' },
+      badgeVisible: { type: Boolean, default: true },
+      badgeBgColor: { type: String, default: 'rgba(6, 78, 59, 0.6)' },
+      badgeTextColor: { type: String, default: '#6ee7b7' },
+      badgeBorderColor: { type: String, default: 'rgba(16, 185, 129, 0.4)' },
       highlight1Text: { type: String, default: 'High Charging Power' },
       highlight1Icon: { type: String, default: 'Zap' },
+      highlight1Color: { type: String, default: '#facc15' },
+      highlight1Visible: { type: Boolean, default: true },
       highlight2Text: { type: String, default: 'Long Life (3 & 1.5 Year Warranty)' },
       highlight2Icon: { type: String, default: 'Battery' },
+      highlight2Color: { type: String, default: '#4ade80' },
+      highlight2Visible: { type: Boolean, default: true },
       highlight3Text: { type: String, default: 'Low Maintenance' },
       highlight3Icon: { type: String, default: 'Wrench' },
+      highlight3Color: { type: String, default: '#5eead4' },
+      highlight3Visible: { type: Boolean, default: true },
       textColor: { type: String, default: '#ffffff' },
     },
     serviceCards: [serviceCardSchema],

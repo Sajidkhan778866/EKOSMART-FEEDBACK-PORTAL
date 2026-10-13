@@ -52,6 +52,8 @@ import {
   Gift,
   Award,
   Palette,
+  Home,
+  User,
 } from 'lucide-react';
 import { contentApi, customerApi, API_BASE_URL, resolveImageUrl } from '../api/client';
 
@@ -119,14 +121,62 @@ export interface IBatteryBanner {
   plantBtnLink: string;
 }
 
+export interface ITopBarConfig {
+  isVisible?: boolean;
+  phone?: string;
+  phoneLabel?: string;
+  showPhone?: boolean;
+  officeHours?: string;
+  showOfficeHours?: boolean;
+  gstin?: string;
+  showGstin?: boolean;
+  location?: string;
+  showLocation?: boolean;
+  bgColor?: string;
+  textColor?: string;
+  accentColor?: string;
+}
+
+export interface IHeaderNavConfig {
+  brandTitle?: string;
+  brandSubtitle?: string;
+  logoType?: 'preset' | 'image';
+  logoImage?: string;
+  homeLabel?: string;
+  showHome?: boolean;
+  walletLabel?: string;
+  showWallet?: boolean;
+  showWalletBadge?: boolean;
+  referLabel?: string;
+  showRefer?: boolean;
+  accountLabel?: string;
+  showAccount?: boolean;
+  accountBtnBg?: string;
+  accountBtnText?: string;
+  navBgColor?: string;
+  navBorderColor?: string;
+}
+
 interface ICMSContent {
+  topBar?: ITopBarConfig;
+  headerNav?: IHeaderNavConfig;
   hero: {
     heading: string;
     subheading: string;
     primaryButtonText: string;
     primaryButtonLink: string;
+    primaryButtonTarget?: '_self' | '_blank';
+    primaryButtonVisible?: boolean;
+    primaryButtonBgColor?: string;
+    primaryButtonTextColor?: string;
     secondaryButtonText: string;
     secondaryButtonLink: string;
+    secondaryButtonTarget?: '_self' | '_blank';
+    secondaryButtonVisible?: boolean;
+    secondaryButtonBgColor?: string;
+    secondaryButtonTextColor?: string;
+    secondaryButtonBorderColor?: string;
+    secondaryButtonShowIcon?: boolean;
     logoType?: 'preset' | 'image';
     logoImage?: string;
     complaintLogoType?: 'preset' | 'image';
@@ -143,12 +193,22 @@ interface ICMSContent {
     bgPattern?: string;
     badgeText?: string;
     badgeIcon?: string;
+    badgeVisible?: boolean;
+    badgeBgColor?: string;
+    badgeTextColor?: string;
+    badgeBorderColor?: string;
     highlight1Text?: string;
     highlight1Icon?: string;
+    highlight1Color?: string;
+    highlight1Visible?: boolean;
     highlight2Text?: string;
     highlight2Icon?: string;
+    highlight2Color?: string;
+    highlight2Visible?: boolean;
     highlight3Text?: string;
     highlight3Icon?: string;
+    highlight3Color?: string;
+    highlight3Visible?: boolean;
     textColor?: string;
   };
   serviceCards: IServiceCard[];
@@ -255,13 +315,57 @@ const QUICK_LINK_PRESETS = [
 ];
 
 const defaultFallbackContent: ICMSContent = {
+  topBar: {
+    isVisible: true,
+    phone: '+91 8949049003',
+    phoneLabel: 'Helpline:',
+    showPhone: true,
+    officeHours: '10:00 AM to 6:30 PM (Mon - Sat)',
+    showOfficeHours: true,
+    gstin: '08DTUPM4205B1Z0',
+    showGstin: true,
+    location: 'Kota, Rajasthan',
+    showLocation: true,
+    bgColor: '#0f172a',
+    textColor: '#cbd5e1',
+    accentColor: '#34d399',
+  },
+  headerNav: {
+    brandTitle: 'EBS EKOSMART',
+    brandSubtitle: 'Battery Solution • Li-ion & LFP',
+    logoType: 'preset',
+    logoImage: '',
+    homeLabel: 'Home',
+    showHome: true,
+    walletLabel: 'Wallet & Coins',
+    showWallet: true,
+    showWalletBadge: true,
+    referLabel: 'Refer & Earn',
+    showRefer: true,
+    accountLabel: 'Account / Login',
+    showAccount: true,
+    accountBtnBg: '#059669',
+    accountBtnText: '#ffffff',
+    navBgColor: '#ffffff',
+    navBorderColor: '#e2e8f0',
+  },
   hero: {
     heading: 'Ekosmart Battery Solution (EBS)\nHigh Power Lithium-Ion & LFP Battery Packs',
     subheading: 'High Charging Power • Long Life • Low Maintenance. Official customer support portal for EV scooter & E-rickshaw batteries, genuine spare parts, and warranty verification.',
     primaryButtonText: 'Register Complaint',
     primaryButtonLink: '/complaint/register',
+    primaryButtonTarget: '_self',
+    primaryButtonVisible: true,
+    primaryButtonBgColor: '#10b981',
+    primaryButtonTextColor: '#020617',
     secondaryButtonText: 'Check Battery Warranty',
     secondaryButtonLink: '/warranty/check',
+    secondaryButtonTarget: '_blank',
+    secondaryButtonVisible: true,
+    secondaryButtonBgColor: 'rgba(255, 255, 255, 0.1)',
+    secondaryButtonTextColor: '#ffffff',
+    secondaryButtonBorderColor: 'rgba(255, 255, 255, 0.2)',
+    secondaryButtonShowIcon: true,
     logoType: 'preset',
     logoImage: '',
     complaintLogoType: 'preset',
@@ -278,12 +382,22 @@ const defaultFallbackContent: ICMSContent = {
     bgPattern: 'mesh',
     badgeText: 'Official EBS Battery Solution Portal • Kota, Rajasthan',
     badgeIcon: 'Sparkles',
+    badgeVisible: true,
+    badgeBgColor: 'rgba(6, 78, 59, 0.6)',
+    badgeTextColor: '#6ee7b7',
+    badgeBorderColor: 'rgba(16, 185, 129, 0.4)',
     highlight1Text: 'High Charging Power',
     highlight1Icon: 'Zap',
+    highlight1Color: '#facc15',
+    highlight1Visible: true,
     highlight2Text: 'Long Life (3 & 1.5 Year Warranty)',
     highlight2Icon: 'Battery',
+    highlight2Color: '#4ade80',
+    highlight2Visible: true,
     highlight3Text: 'Low Maintenance',
     highlight3Icon: 'Wrench',
+    highlight3Color: '#5eead4',
+    highlight3Visible: true,
     textColor: '#ffffff',
   },
   serviceCards: [
@@ -2243,162 +2357,290 @@ const ContentManager = () => {
         </div>
       )}
 
-      {/* TAB 2: HERO & HEADER */}
+      {/* TAB 2: HERO & HEADER (100% SOFT-CODED) */}
       {activeTab === 'hero' && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-6 shadow-sm">
-          <div>
-            <h2 className="text-base font-bold text-slate-800">Homepage Hero & Header Branding</h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Customize the logo branding, banner titles, welcome message, and main call-to-action buttons.
-            </p>
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-8 shadow-sm">
+          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-b border-slate-100 pb-4">
+            <div>
+              <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                <LayoutTemplate size={18} className="text-green-600" />
+                <span>Homepage Hero & Header Soft-Coding Suite</span>
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                100% database-driven control for the top helpline bar, brand navbar, titles, hero background, feature badges, and action buttons.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              disabled={saving}
+              onClick={handleSave}
+              className="px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-sm disabled:opacity-50 self-start sm:self-auto"
+            >
+              <Save size={15} />
+              <span>{saving ? 'Saving Changes...' : 'Save Header & Hero'}</span>
+            </button>
           </div>
 
-          {/* Header & Hero Brand Logo Configuration */}
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
-            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+          {/* 1. TOP HELPLINE & BUSINESS INFO BAR (100% SOFT-CODED) */}
+          <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
               <div>
-                <label className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
-                  <ImageIcon size={16} className="text-green-600" />
-                  <span>Header / Navbar Brand Logo</span>
+                <label className="font-bold text-slate-800 text-xs flex items-center gap-2">
+                  <Phone size={16} className="text-emerald-600" />
+                  <span>Top Notification & Business Info Bar</span>
                 </label>
                 <p className="text-[11px] text-slate-500">
-                  Select whether to display the official preset SVG emblem or upload a custom company logo image.
+                  Controls the top dark strip above the navbar showing phone helpline, office timings, GSTIN number, and plant city location.
                 </p>
               </div>
 
-              {/* Mode Toggle Button Group */}
-              <div className="flex bg-slate-200 p-0.5 rounded-lg text-xs self-start sm:self-auto">
-                <button
-                  type="button"
-                  onClick={() =>
+              <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
+                <input
+                  type="checkbox"
+                  checked={content.topBar?.isVisible ?? true}
+                  onChange={(e) =>
                     setContent({
                       ...content,
-                      hero: { ...content.hero, logoType: 'preset' },
+                      topBar: { ...(content.topBar || {}), isVisible: e.target.checked },
                     })
                   }
-                  className={`px-3 py-1 rounded-md font-bold text-[11px] transition cursor-pointer ${
-                    (content.hero.logoType || 'preset') === 'preset'
-                      ? 'bg-white text-green-700 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Preset SVG Emblem
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setContent({
-                      ...content,
-                      hero: { ...content.hero, logoType: 'image' },
-                    })
-                  }
-                  className={`px-3 py-1 rounded-md font-bold text-[11px] transition cursor-pointer ${
-                    content.hero.logoType === 'image'
-                      ? 'bg-white text-green-700 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Custom Image Logo
-                </button>
-              </div>
+                  className="rounded text-green-600 focus:ring-green-500 h-4 w-4"
+                />
+                <span>Enable Top Bar</span>
+              </label>
             </div>
 
-            {(content.hero.logoType || 'preset') === 'preset' ? (
-              <div className="flex items-center gap-3 bg-white p-3 rounded-lg border border-slate-200 text-xs">
-                <div className="w-10 h-10 bg-emerald-900 rounded-xl flex items-center justify-center text-white font-bold text-xs shadow-xs">
-                  EBS
-                </div>
-                <div>
-                  <span className="font-bold text-slate-800">Using Official Ekosmart Battery Solution (EBS) Emblem</span>
-                  <p className="text-[11px] text-slate-500">
-                    Default SVG branding with Battery & Lightning symbol is active in top navigation header.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
-                  {/* Image Preview Thumbnail */}
-                  <div className="sm:col-span-3 flex flex-col items-center justify-center p-3 bg-white rounded-xl border border-slate-200 text-center">
-                    <div className="w-24 h-16 bg-slate-100 rounded-xl flex items-center justify-center border border-slate-300 overflow-hidden shadow-xs">
-                      {content.hero.logoImage ? (
-                        <img
-                          src={resolveImageUrl(content.hero.logoImage)}
-                          alt="Header Logo Preview"
-                          className="w-full h-full object-contain p-1"
+            {(content.topBar?.isVisible ?? true) && (
+              <div className="space-y-4 pt-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                  {/* Phone Helpline */}
+                  <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="font-bold text-slate-700 text-[11px]">Helpline Phone</label>
+                      <label className="flex items-center gap-1 text-[10px] text-slate-500 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={content.topBar?.showPhone ?? true}
+                          onChange={(e) =>
+                            setContent({
+                              ...content,
+                              topBar: { ...(content.topBar || {}), showPhone: e.target.checked },
+                            })
+                          }
+                          className="rounded text-green-600 h-3 w-3"
                         />
-                      ) : (
-
-                        <ImageIcon size={28} className="text-slate-400" />
-                      )}
+                        <span>Show</span>
+                      </label>
                     </div>
-                    <span className="text-[10px] font-bold text-slate-500 mt-1">Logo Preview</span>
+                    <input
+                      type="text"
+                      placeholder="Helpline:"
+                      value={content.topBar?.phoneLabel ?? 'Helpline:'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          topBar: { ...(content.topBar || {}), phoneLabel: e.target.value },
+                        })
+                      }
+                      className="w-full border border-slate-200 rounded-lg p-1.5 text-xs bg-slate-50 mb-1"
+                    />
+                    <input
+                      type="text"
+                      placeholder="+91 8949049003"
+                      value={content.topBar?.phone ?? '+91 8949049003'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          topBar: { ...(content.topBar || {}), phone: e.target.value },
+                        })
+                      }
+                      className="w-full border border-slate-300 rounded-lg p-1.5 text-xs font-semibold"
+                    />
                   </div>
 
-                  {/* Upload from Computer & URL Input */}
-                  <div className="sm:col-span-9 space-y-2.5">
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                        Upload Logo Image from Computer
+                  {/* Office Hours */}
+                  <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="font-bold text-slate-700 text-[11px]">Office Hours</label>
+                      <label className="flex items-center gap-1 text-[10px] text-slate-500 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={content.topBar?.showOfficeHours ?? true}
+                          onChange={(e) =>
+                            setContent({
+                              ...content,
+                              topBar: { ...(content.topBar || {}), showOfficeHours: e.target.checked },
+                            })
+                          }
+                          className="rounded text-green-600 h-3 w-3"
+                        />
+                        <span>Show</span>
                       </label>
-                      <div className="flex items-center gap-2">
-                        <label className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs">
-                          <Upload size={14} />
-                          <span>Choose Image File</span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={async (e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                try {
-                                  const res = await compressImageFile(file, 800, 400, 0.9);
-                                  if (res) {
-                                    setContent({
-                                      ...content,
-                                      hero: { ...content.hero, logoImage: res },
-                                    });
-                                  }
-                                } catch (err) {
-                                  console.error('Failed to compress hero logo:', err);
-                                }
-                              }
-                            }}
-                          />
-                        </label>
-                        {content.hero.logoImage && (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setContent({
-                                ...content,
-                                hero: { ...content.hero, logoImage: '' },
-                              })
-                            }
-                            className="px-2.5 py-1.5 text-red-600 hover:bg-red-50 rounded-lg text-xs font-semibold border border-red-200 transition cursor-pointer"
-                          >
-                            Clear
-                          </button>
-                        )}
-                      </div>
                     </div>
+                    <input
+                      type="text"
+                      placeholder="10:00 AM to 6:30 PM (Mon - Sat)"
+                      value={content.topBar?.officeHours ?? '10:00 AM to 6:30 PM (Mon - Sat)'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          topBar: { ...(content.topBar || {}), officeHours: e.target.value },
+                        })
+                      }
+                      className="w-full border border-slate-300 rounded-lg p-1.5 text-xs font-semibold mt-6"
+                    />
+                  </div>
 
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                        Or Enter Logo Image URL
+                  {/* GSTIN Number */}
+                  <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="font-bold text-slate-700 text-[11px]">GSTIN Number</label>
+                      <label className="flex items-center gap-1 text-[10px] text-slate-500 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={content.topBar?.showGstin ?? true}
+                          onChange={(e) =>
+                            setContent({
+                              ...content,
+                              topBar: { ...(content.topBar || {}), showGstin: e.target.checked },
+                            })
+                          }
+                          className="rounded text-green-600 h-3 w-3"
+                        />
+                        <span>Show</span>
                       </label>
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="08DTUPM4205B1Z0"
+                      value={content.topBar?.gstin ?? '08DTUPM4205B1Z0'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          topBar: { ...(content.topBar || {}), gstin: e.target.value },
+                        })
+                      }
+                      className="w-full border border-slate-300 rounded-lg p-1.5 text-xs font-mono uppercase mt-6"
+                    />
+                  </div>
+
+                  {/* Location City */}
+                  <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="font-bold text-slate-700 text-[11px]">Plant Location</label>
+                      <label className="flex items-center gap-1 text-[10px] text-slate-500 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={content.topBar?.showLocation ?? true}
+                          onChange={(e) =>
+                            setContent({
+                              ...content,
+                              topBar: { ...(content.topBar || {}), showLocation: e.target.checked },
+                            })
+                          }
+                          className="rounded text-green-600 h-3 w-3"
+                        />
+                        <span>Show</span>
+                      </label>
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Kota, Rajasthan"
+                      value={content.topBar?.location ?? 'Kota, Rajasthan'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          topBar: { ...(content.topBar || {}), location: e.target.value },
+                        })
+                      }
+                      className="w-full border border-slate-300 rounded-lg p-1.5 text-xs font-semibold mt-6"
+                    />
+                  </div>
+                </div>
+
+                {/* Top Bar Colors */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 bg-white rounded-xl border border-slate-200 text-xs">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Bar Background Color</label>
+                    <div className="flex items-center gap-2">
                       <input
-                        type="text"
-                        placeholder="https://example.com/logo.png or /assets/brand-logo.png"
-                        value={content.hero.logoImage || ''}
+                        type="color"
+                        value={content.topBar?.bgColor || '#0f172a'}
                         onChange={(e) =>
                           setContent({
                             ...content,
-                            hero: { ...content.hero, logoImage: e.target.value },
+                            topBar: { ...(content.topBar || {}), bgColor: e.target.value },
                           })
                         }
-                        className="w-full border border-slate-300 rounded-lg p-2 text-xs bg-white focus:ring-1 focus:ring-green-500 font-mono"
+                        className="w-8 h-8 rounded-lg cursor-pointer border border-slate-300 p-0.5 bg-white"
+                      />
+                      <input
+                        type="text"
+                        value={content.topBar?.bgColor || '#0f172a'}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            topBar: { ...(content.topBar || {}), bgColor: e.target.value },
+                          })
+                        }
+                        className="w-full border border-slate-300 rounded-lg p-1.5 text-xs font-mono uppercase bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Text Color</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={content.topBar?.textColor || '#cbd5e1'}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            topBar: { ...(content.topBar || {}), textColor: e.target.value },
+                          })
+                        }
+                        className="w-8 h-8 rounded-lg cursor-pointer border border-slate-300 p-0.5 bg-white"
+                      />
+                      <input
+                        type="text"
+                        value={content.topBar?.textColor || '#cbd5e1'}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            topBar: { ...(content.topBar || {}), textColor: e.target.value },
+                          })
+                        }
+                        className="w-full border border-slate-300 rounded-lg p-1.5 text-xs font-mono uppercase bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Accent & Phone Color</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={content.topBar?.accentColor || '#34d399'}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            topBar: { ...(content.topBar || {}), accentColor: e.target.value },
+                          })
+                        }
+                        className="w-8 h-8 rounded-lg cursor-pointer border border-slate-300 p-0.5 bg-white"
+                      />
+                      <input
+                        type="text"
+                        value={content.topBar?.accentColor || '#34d399'}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            topBar: { ...(content.topBar || {}), accentColor: e.target.value },
+                          })
+                        }
+                        className="w-full border border-slate-300 rounded-lg p-1.5 text-xs font-mono uppercase bg-white"
                       />
                     </div>
                   </div>
@@ -2407,7 +2649,431 @@ const ContentManager = () => {
             )}
           </div>
 
-          {/* Complaint Registration Form Sidebar Logo Configuration */}
+          {/* 2. MAIN HEADER NAVBAR & BRAND IDENTITY (100% SOFT-CODED) */}
+          <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-5">
+            <div>
+              <label className="font-bold text-slate-800 text-xs flex items-center gap-2">
+                <ImageIcon size={16} className="text-green-600" />
+                <span>Main Navigation Bar & Brand Emblem / Title</span>
+              </label>
+              <p className="text-[11px] text-slate-500">
+                Customize the company brand logo, emblem title/subtitle, navbar buttons, colors, and account controls.
+              </p>
+            </div>
+
+            {/* Brand Title, Subtitle, & Logo Mode Toggle */}
+            <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-4">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                <span className="font-bold text-slate-800 text-xs">Brand Emblem & Logo Configuration</span>
+                <div className="flex bg-slate-200 p-0.5 rounded-lg text-xs self-start sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setContent({
+                        ...content,
+                        hero: { ...content.hero, logoType: 'preset' },
+                        headerNav: { ...(content.headerNav || {}), logoType: 'preset' },
+                      })
+                    }
+                    className={`px-3 py-1 rounded-md font-bold text-[11px] transition cursor-pointer ${
+                      ((content.headerNav?.logoType || content.hero.logoType) || 'preset') === 'preset'
+                        ? 'bg-white text-green-700 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Preset SVG Emblem
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setContent({
+                        ...content,
+                        hero: { ...content.hero, logoType: 'image' },
+                        headerNav: { ...(content.headerNav || {}), logoType: 'image' },
+                      })
+                    }
+                    className={`px-3 py-1 rounded-md font-bold text-[11px] transition cursor-pointer ${
+                      (content.headerNav?.logoType || content.hero.logoType) === 'image'
+                        ? 'bg-white text-green-700 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Custom Image Logo
+                  </button>
+                </div>
+              </div>
+
+              {((content.headerNav?.logoType || content.hero.logoType) || 'preset') === 'preset' ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">Brand Title (e.g. EBS EKOSMART)</label>
+                    <input
+                      type="text"
+                      value={content.headerNav?.brandTitle ?? 'EBS EKOSMART'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          headerNav: { ...(content.headerNav || {}), brandTitle: e.target.value },
+                        })
+                      }
+                      placeholder="EBS EKOSMART"
+                      className="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold text-slate-800 bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">Brand Subtitle (e.g. Battery Solution • Li-ion & LFP)</label>
+                    <input
+                      type="text"
+                      value={content.headerNav?.brandSubtitle ?? 'Battery Solution • Li-ion & LFP'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          headerNav: { ...(content.headerNav || {}), brandSubtitle: e.target.value },
+                        })
+                      }
+                      placeholder="Battery Solution • Li-ion & LFP"
+                      className="w-full border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-700 bg-white"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
+                    <div className="sm:col-span-3 flex flex-col items-center justify-center p-3 bg-white rounded-xl border border-slate-200 text-center">
+                      <div className="w-24 h-16 bg-slate-100 rounded-xl flex items-center justify-center border border-slate-300 overflow-hidden shadow-xs">
+                        {content.headerNav?.logoImage || content.hero.logoImage ? (
+                          <img
+                            src={resolveImageUrl(content.headerNav?.logoImage || content.hero.logoImage || '')}
+                            alt="Header Logo Preview"
+                            className="w-full h-full object-contain p-1"
+                          />
+                        ) : (
+                          <ImageIcon size={28} className="text-slate-400" />
+                        )}
+                      </div>
+                      <span className="text-[10px] font-bold text-slate-500 mt-1">Logo Preview</span>
+                    </div>
+
+                    <div className="sm:col-span-9 space-y-2.5">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                          Upload Custom Logo Image
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <label className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs">
+                            <Upload size={14} />
+                            <span>Choose Image File</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  try {
+                                    const res = await compressImageFile(file, 800, 400, 0.9);
+                                    if (res) {
+                                      setContent({
+                                        ...content,
+                                        hero: { ...content.hero, logoImage: res },
+                                        headerNav: { ...(content.headerNav || {}), logoImage: res },
+                                      });
+                                    }
+                                  } catch (err) {
+                                    console.error('Failed to compress logo:', err);
+                                  }
+                                }
+                              }}
+                            />
+                          </label>
+                          {(content.headerNav?.logoImage || content.hero.logoImage) && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setContent({
+                                  ...content,
+                                  hero: { ...content.hero, logoImage: '' },
+                                  headerNav: { ...(content.headerNav || {}), logoImage: '' },
+                                })
+                              }
+                              className="px-2.5 py-1.5 text-red-600 hover:bg-red-50 rounded-lg text-xs font-semibold border border-red-200 transition cursor-pointer"
+                            >
+                              Clear
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                          Or Enter Logo Image URL
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="https://example.com/logo.png"
+                          value={content.headerNav?.logoImage || content.hero.logoImage || ''}
+                          onChange={(e) =>
+                            setContent({
+                              ...content,
+                              hero: { ...content.hero, logoImage: e.target.value },
+                              headerNav: { ...(content.headerNav || {}), logoImage: e.target.value },
+                            })
+                          }
+                          className="w-full border border-slate-300 rounded-lg p-2 text-xs bg-white font-mono"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Navbar Navigation Buttons & Styling */}
+            <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-4 text-xs">
+              <span className="font-bold text-slate-800 text-xs block">Navbar Navigation Links & Account Button</span>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {/* 1. Home Link */}
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-700 text-[11px]">Home Link</span>
+                    <label className="flex items-center gap-1 text-[10px] text-slate-500 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={content.headerNav?.showHome ?? true}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            headerNav: { ...(content.headerNav || {}), showHome: e.target.checked },
+                          })
+                        }
+                        className="rounded text-green-600 h-3 w-3"
+                      />
+                      <span>Show</span>
+                    </label>
+                  </div>
+                  <input
+                    type="text"
+                    value={content.headerNav?.homeLabel ?? 'Home'}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        headerNav: { ...(content.headerNav || {}), homeLabel: e.target.value },
+                      })
+                    }
+                    placeholder="Home"
+                    className="w-full border border-slate-300 rounded-lg p-1.5 text-xs bg-white font-semibold"
+                  />
+                </div>
+
+                {/* 2. Wallet & Coins */}
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-700 text-[11px]">Wallet & Coins</span>
+                    <label className="flex items-center gap-1 text-[10px] text-slate-500 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={content.headerNav?.showWallet ?? true}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            headerNav: { ...(content.headerNav || {}), showWallet: e.target.checked },
+                          })
+                        }
+                        className="rounded text-green-600 h-3 w-3"
+                      />
+                      <span>Show</span>
+                    </label>
+                  </div>
+                  <input
+                    type="text"
+                    value={content.headerNav?.walletLabel ?? 'Wallet & Coins'}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        headerNav: { ...(content.headerNav || {}), walletLabel: e.target.value },
+                      })
+                    }
+                    placeholder="Wallet & Coins"
+                    className="w-full border border-slate-300 rounded-lg p-1.5 text-xs bg-white font-semibold"
+                  />
+                  <label className="flex items-center gap-1.5 text-[10px] text-slate-600 cursor-pointer pt-1">
+                    <input
+                      type="checkbox"
+                      checked={content.headerNav?.showWalletBadge ?? true}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          headerNav: { ...(content.headerNav || {}), showWalletBadge: e.target.checked },
+                        })
+                      }
+                      className="rounded text-amber-600 h-3 w-3"
+                    />
+                    <span>Show customer balance badge</span>
+                  </label>
+                </div>
+
+                {/* 3. Refer & Earn */}
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-700 text-[11px]">Refer & Earn</span>
+                    <label className="flex items-center gap-1 text-[10px] text-slate-500 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={content.headerNav?.showRefer ?? true}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            headerNav: { ...(content.headerNav || {}), showRefer: e.target.checked },
+                          })
+                        }
+                        className="rounded text-green-600 h-3 w-3"
+                      />
+                      <span>Show</span>
+                    </label>
+                  </div>
+                  <input
+                    type="text"
+                    value={content.headerNav?.referLabel ?? 'Refer & Earn'}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        headerNav: { ...(content.headerNav || {}), referLabel: e.target.value },
+                      })
+                    }
+                    placeholder="Refer & Earn"
+                    className="w-full border border-slate-300 rounded-lg p-1.5 text-xs bg-white font-semibold"
+                  />
+                </div>
+
+                {/* 4. Account / Login Button */}
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-700 text-[11px]">Account Button</span>
+                    <label className="flex items-center gap-1 text-[10px] text-slate-500 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={content.headerNav?.showAccount ?? true}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            headerNav: { ...(content.headerNav || {}), showAccount: e.target.checked },
+                          })
+                        }
+                        className="rounded text-green-600 h-3 w-3"
+                      />
+                      <span>Show</span>
+                    </label>
+                  </div>
+                  <input
+                    type="text"
+                    value={content.headerNav?.accountLabel ?? 'Account / Login'}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        headerNav: { ...(content.headerNav || {}), accountLabel: e.target.value },
+                      })
+                    }
+                    placeholder="Account / Login"
+                    className="w-full border border-slate-300 rounded-lg p-1.5 text-xs bg-white font-semibold"
+                  />
+                  <div className="flex items-center gap-2 pt-1">
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="color"
+                        value={content.headerNav?.accountBtnBg || '#059669'}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            headerNav: { ...(content.headerNav || {}), accountBtnBg: e.target.value },
+                          })
+                        }
+                        className="w-6 h-6 rounded cursor-pointer border p-0 bg-white"
+                        title="Button Background"
+                      />
+                      <span className="text-[10px] text-slate-500">Bg</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="color"
+                        value={content.headerNav?.accountBtnText || '#ffffff'}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            headerNav: { ...(content.headerNav || {}), accountBtnText: e.target.value },
+                          })
+                        }
+                        className="w-6 h-6 rounded cursor-pointer border p-0 bg-white"
+                        title="Button Text"
+                      />
+                      <span className="text-[10px] text-slate-500">Text</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Navbar Background & Border Color */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Navbar Background Color</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={content.headerNav?.navBgColor || '#ffffff'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          headerNav: { ...(content.headerNav || {}), navBgColor: e.target.value },
+                        })
+                      }
+                      className="w-8 h-8 rounded-lg cursor-pointer border border-slate-300 p-0.5 bg-white"
+                    />
+                    <input
+                      type="text"
+                      value={content.headerNav?.navBgColor || '#ffffff'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          headerNav: { ...(content.headerNav || {}), navBgColor: e.target.value },
+                        })
+                      }
+                      className="w-full border border-slate-300 rounded-lg p-1.5 text-xs font-mono uppercase bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Navbar Bottom Border Color</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={content.headerNav?.navBorderColor || '#e2e8f0'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          headerNav: { ...(content.headerNav || {}), navBorderColor: e.target.value },
+                        })
+                      }
+                      className="w-8 h-8 rounded-lg cursor-pointer border border-slate-300 p-0.5 bg-white"
+                    />
+                    <input
+                      type="text"
+                      value={content.headerNav?.navBorderColor || '#e2e8f0'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          headerNav: { ...(content.headerNav || {}), navBorderColor: e.target.value },
+                        })
+                      }
+                      className="w-full border border-slate-300 rounded-lg p-1.5 text-xs font-mono uppercase bg-white"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. COMPLAINT REGISTRATION SIDEBAR LOGO */}
           <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
               <div>
@@ -2420,7 +3086,6 @@ const ContentManager = () => {
                 </p>
               </div>
 
-              {/* Mode Toggle Button Group */}
               <div className="flex bg-slate-200 p-0.5 rounded-lg text-xs self-start sm:self-auto">
                 <button
                   type="button"
@@ -2472,7 +3137,6 @@ const ContentManager = () => {
             ) : (
               <div className="space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
-                  {/* Image Preview Thumbnail */}
                   <div className="sm:col-span-3 flex flex-col items-center justify-center p-3 bg-white rounded-xl border border-slate-200 text-center">
                     <div className="w-24 h-16 bg-slate-100 rounded-xl flex items-center justify-center border border-slate-300 overflow-hidden shadow-xs">
                       {content.hero.complaintLogoImage ? (
@@ -2482,14 +3146,12 @@ const ContentManager = () => {
                           className="w-full h-full object-contain p-1"
                         />
                       ) : (
-
                         <ImageIcon size={28} className="text-slate-400" />
                       )}
                     </div>
                     <span className="text-[10px] font-bold text-slate-500 mt-1">Sidebar Logo Preview</span>
                   </div>
 
-                  {/* Upload from Computer & URL Input */}
                   <div className="sm:col-span-9 space-y-2.5">
                     <div>
                       <label className="block text-[11px] font-semibold text-slate-700 mb-1">
@@ -2544,7 +3206,7 @@ const ContentManager = () => {
                       </label>
                       <input
                         type="text"
-                        placeholder="https://example.com/smart-drive.png or /assets/logo.png"
+                        placeholder="https://example.com/smart-drive.png"
                         value={content.hero.complaintLogoImage || ''}
                         onChange={(e) =>
                           setContent({
@@ -2552,7 +3214,7 @@ const ContentManager = () => {
                             hero: { ...content.hero, complaintLogoImage: e.target.value },
                           })
                         }
-                        className="w-full border border-slate-300 rounded-lg p-2 text-xs bg-white focus:ring-1 focus:ring-green-500 font-mono"
+                        className="w-full border border-slate-300 rounded-lg p-2 text-xs bg-white font-mono"
                       />
                     </div>
                   </div>
@@ -2561,7 +3223,7 @@ const ContentManager = () => {
             )}
           </div>
 
-          {/* HERO BACKGROUND & VISUAL STYLING SOFT-CODING MANAGER */}
+          {/* 4. HERO BACKGROUND & VISUAL STYLING SOFT-CODING MANAGER */}
           <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-5">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
               <div>
@@ -2574,7 +3236,6 @@ const ContentManager = () => {
                 </p>
               </div>
 
-              {/* Background Mode Selector */}
               <div className="flex bg-slate-200 p-0.5 rounded-lg text-xs self-start sm:self-auto">
                 <button
                   type="button"
@@ -2630,69 +3291,20 @@ const ContentManager = () => {
             {/* GRADIENT MODE CONTROLS */}
             {(content.hero.bgType || 'gradient') === 'gradient' && (
               <div className="space-y-4 bg-white p-4 rounded-xl border border-slate-200">
-                {/* Gradient Quick Presets */}
                 <div>
                   <label className="block text-[11px] font-bold text-slate-700 mb-2">
                     Quick Preset Color Palettes:
                   </label>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {[
-                      {
-                        name: 'EBS Deep Emerald',
-                        start: '#022c22',
-                        mid: '#064e3b',
-                        end: '#115e59',
-                        dir: 'to-r',
-                      },
-                      {
-                        name: 'Midnight Slate',
-                        start: '#0f172a',
-                        mid: '#1e293b',
-                        end: '#0d9488',
-                        dir: 'to-r',
-                      },
-                      {
-                        name: 'Electric Blue Tech',
-                        start: '#0c1e40',
-                        mid: '#1e3a8a',
-                        end: '#2563eb',
-                        dir: 'to-r',
-                      },
-                      {
-                        name: 'Royal Purple & Indigo',
-                        start: '#1e1b4b',
-                        mid: '#312e81',
-                        end: '#6366f1',
-                        dir: 'to-r',
-                      },
-                      {
-                        name: 'Dark Carbon Minimal',
-                        start: '#0a0a0a',
-                        mid: '#171717',
-                        end: '#262626',
-                        dir: 'to-r',
-                      },
-                      {
-                        name: 'Forest Green Glow',
-                        start: '#052e16',
-                        mid: '#14532d',
-                        end: '#15803d',
-                        dir: 'to-r',
-                      },
-                      {
-                        name: 'Sunset Gold & Amber',
-                        start: '#451a03',
-                        mid: '#78350f',
-                        end: '#b45309',
-                        dir: 'to-r',
-                      },
-                      {
-                        name: 'Cyber Teal Radial',
-                        start: '#022c22',
-                        mid: '#064e3b',
-                        end: '#042f2e',
-                        dir: 'radial',
-                      },
+                      { name: 'EBS Deep Emerald', start: '#022c22', mid: '#064e3b', end: '#115e59', dir: 'to-r' },
+                      { name: 'Midnight Slate', start: '#0f172a', mid: '#1e293b', end: '#0d9488', dir: 'to-r' },
+                      { name: 'Electric Blue Tech', start: '#0c1e40', mid: '#1e3a8a', end: '#2563eb', dir: 'to-r' },
+                      { name: 'Royal Purple & Indigo', start: '#1e1b4b', mid: '#312e81', end: '#6366f1', dir: 'to-r' },
+                      { name: 'Dark Carbon Minimal', start: '#0a0a0a', mid: '#171717', end: '#262626', dir: 'to-r' },
+                      { name: 'Forest Green Glow', start: '#052e16', mid: '#14532d', end: '#15803d', dir: 'to-r' },
+                      { name: 'Sunset Gold & Amber', start: '#451a03', mid: '#78350f', end: '#b45309', dir: 'to-r' },
+                      { name: 'Cyber Teal Radial', start: '#022c22', mid: '#064e3b', end: '#042f2e', dir: 'radial' },
                     ].map((preset) => (
                       <button
                         key={preset.name}
@@ -2725,12 +3337,9 @@ const ContentManager = () => {
                   </div>
                 </div>
 
-                {/* Granular Gradient Colors & Direction */}
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs pt-2">
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                      Gradient Start Color
-                    </label>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Start Color</label>
                     <div className="flex items-center gap-2">
                       <input
                         type="color"
@@ -2758,9 +3367,7 @@ const ContentManager = () => {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                      Gradient Middle Color
-                    </label>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Middle Color</label>
                     <div className="flex items-center gap-2">
                       <input
                         type="color"
@@ -2788,9 +3395,7 @@ const ContentManager = () => {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                      Gradient End Color
-                    </label>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">End Color</label>
                     <div className="flex items-center gap-2">
                       <input
                         type="color"
@@ -2818,9 +3423,7 @@ const ContentManager = () => {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                      Gradient Angle / Flow
-                    </label>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Flow Direction</label>
                     <select
                       value={content.hero.bgGradientDirection || 'to-r'}
                       onChange={(e) =>
@@ -2845,9 +3448,7 @@ const ContentManager = () => {
             {/* SOLID COLOR CONTROLS */}
             {content.hero.bgType === 'solid' && (
               <div className="space-y-3 bg-white p-4 rounded-xl border border-slate-200">
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                  Choose Solid Background Color
-                </label>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">Choose Solid Color</label>
                 <div className="flex items-center gap-3 max-w-sm">
                   <input
                     type="color"
@@ -2880,9 +3481,7 @@ const ContentManager = () => {
               <div className="space-y-4 bg-white p-4 rounded-xl border border-slate-200">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                      Upload Background Image File
-                    </label>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Upload Banner Image</label>
                     <label className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-xs w-fit">
                       <Upload size={14} />
                       <span>Choose Banner Image</span>
@@ -2911,12 +3510,10 @@ const ContentManager = () => {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                      Or Background Image URL
-                    </label>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Or Background Image URL</label>
                     <input
                       type="text"
-                      placeholder="https://images.unsplash.com/photo-... or /assets/hero.jpg"
+                      placeholder="https://images.unsplash.com/photo-..."
                       value={content.hero.bgImage || ''}
                       onChange={(e) =>
                         setContent({
@@ -2955,9 +3552,7 @@ const ContentManager = () => {
             {/* Pattern Overlay & Text Color */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs pt-1">
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                  Ambient Tech Pattern
-                </label>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">Ambient Tech Pattern</label>
                 <select
                   value={content.hero.bgPattern || 'mesh'}
                   onChange={(e) =>
@@ -2974,9 +3569,7 @@ const ContentManager = () => {
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                  Text & Headings Color
-                </label>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">Hero Text & Headings Color</label>
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
@@ -3005,131 +3598,112 @@ const ContentManager = () => {
             </div>
           </div>
 
-          {/* BADGE PILL & 3 CORE HIGHLIGHTS SOFT-CODING */}
+          {/* 5. TOP PILL BADGE & MAIN SLOGANS (100% SOFT-CODED) */}
           <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4 text-xs">
             <label className="font-bold text-slate-800 text-sm flex items-center gap-2">
               <Sparkles size={16} className="text-amber-500" />
-              <span>Top Badge & Core Highlight Badges</span>
+              <span>Top Pill Badge, Heading & Welcome Subheading</span>
             </label>
 
-            <div>
-              <label className="block text-slate-700 font-bold mb-1">Top Pill Badge Text</label>
-              <input
-                type="text"
-                value={content.hero.badgeText || ''}
-                onChange={(e) =>
-                  setContent({
-                    ...content,
-                    hero: { ...content.hero, badgeText: e.target.value },
-                  })
-                }
-                placeholder="Official EBS Battery Solution Portal • Kota, Rajasthan"
-                className="w-full border border-slate-300 rounded-lg p-2.5 text-xs bg-white font-semibold"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">Highlight 1 (e.g. Power)</label>
-                <input
-                  type="text"
-                  value={content.hero.highlight1Text || ''}
-                  onChange={(e) =>
-                    setContent({
-                      ...content,
-                      hero: { ...content.hero, highlight1Text: e.target.value },
-                    })
-                  }
-                  placeholder="High Charging Power"
-                  className="w-full border border-slate-300 rounded-lg p-2 text-xs bg-white"
-                />
+            {/* Pill Badge */}
+            <div className="p-4 bg-white rounded-xl border border-slate-200 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-slate-800 text-xs">Top Badge Pill</span>
+                <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-600 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={content.hero.badgeVisible ?? true}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        hero: { ...content.hero, badgeVisible: e.target.checked },
+                      })
+                    }
+                    className="rounded text-green-600 h-3.5 w-3.5"
+                  />
+                  <span>Show Badge Pill</span>
+                </label>
               </div>
 
               <div>
-                <label className="block text-slate-700 font-bold mb-1">Highlight 2 (e.g. Warranty)</label>
+                <label className="block text-slate-700 font-bold mb-1 text-[11px]">Badge Text</label>
                 <input
                   type="text"
-                  value={content.hero.highlight2Text || ''}
+                  value={content.hero.badgeText || ''}
                   onChange={(e) =>
                     setContent({
                       ...content,
-                      hero: { ...content.hero, highlight2Text: e.target.value },
+                      hero: { ...content.hero, badgeText: e.target.value },
                     })
                   }
-                  placeholder="Long Life (3 & 1.5 Year Warranty)"
-                  className="w-full border border-slate-300 rounded-lg p-2 text-xs bg-white"
+                  placeholder="Official EBS Battery Solution Portal • Kota, Rajasthan"
+                  className="w-full border border-slate-300 rounded-lg p-2 text-xs font-semibold"
                 />
               </div>
 
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">Highlight 3 (e.g. Service)</label>
-                <input
-                  type="text"
-                  value={content.hero.highlight3Text || ''}
-                  onChange={(e) =>
-                    setContent({
-                      ...content,
-                      hero: { ...content.hero, highlight3Text: e.target.value },
-                    })
-                  }
-                  placeholder="Low Maintenance"
-                  className="w-full border border-slate-300 rounded-lg p-2 text-xs bg-white"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* REAL-TIME LIVE HERO PREVIEW */}
-          <div className="space-y-2">
-            <label className="block font-bold text-slate-800 text-xs flex items-center gap-1.5">
-              <Sparkles size={14} className="text-emerald-600" />
-              <span>Real-Time Live Hero Banner Preview</span>
-            </label>
-            <div
-              style={{
-                background:
-                  content.hero.bgType === 'solid'
-                    ? content.hero.bgSolidColor || '#064e3b'
-                    : content.hero.bgType === 'image' && content.hero.bgImage
-                    ? `url(${resolveImageUrl(content.hero.bgImage)})`
-                    : content.hero.bgGradientDirection === 'radial'
-                    ? `radial-gradient(circle at center, ${content.hero.bgGradientMiddle || '#064e3b'} 0%, ${content.hero.bgGradientStart || '#022c22'} 70%, ${content.hero.bgGradientEnd || '#115e59'} 100%)`
-                    : `linear-gradient(to right, ${content.hero.bgGradientStart || '#022c22'}, ${content.hero.bgGradientMiddle || '#064e3b'}, ${content.hero.bgGradientEnd || '#115e59'})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                color: content.hero.textColor || '#ffffff',
-              }}
-              className="p-8 rounded-2xl text-center space-y-4 relative overflow-hidden shadow-md border border-slate-200/40"
-            >
-              {content.hero.bgPattern !== 'none' && (
-                <div className="absolute inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:20px_20px] opacity-10 pointer-events-none" />
-              )}
-              <div className="relative z-10 space-y-3 max-w-2xl mx-auto">
-                <div className="inline-flex items-center gap-1.5 bg-white/10 backdrop-blur-md px-3.5 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase border border-white/20">
-                  <Sparkles size={12} className="text-amber-300" />
-                  <span>{content.hero.badgeText || 'Official EBS Battery Solution Portal'}</span>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                <div>
+                  <label className="block text-slate-600 text-[10px] font-bold mb-1">Badge Background Color</label>
+                  <input
+                    type="text"
+                    value={content.hero.badgeBgColor || 'rgba(6, 78, 59, 0.6)'}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        hero: { ...content.hero, badgeBgColor: e.target.value },
+                      })
+                    }
+                    placeholder="rgba(6, 78, 59, 0.6) or #064e3b"
+                    className="w-full border border-slate-300 rounded-lg p-1.5 text-xs font-mono"
+                  />
                 </div>
-                <h3 className="text-2xl sm:text-3xl font-black whitespace-pre-line leading-tight">
-                  {content.hero.heading}
-                </h3>
-                <p className="text-xs opacity-85 leading-relaxed">
-                  {content.hero.subheading}
-                </p>
-                <div className="flex flex-wrap justify-center gap-2 pt-2">
-                  <span className="px-5 py-2 bg-emerald-500 text-slate-950 font-black rounded-full text-xs shadow">
-                    {content.hero.primaryButtonText}
-                  </span>
-                  <span className="px-5 py-2 bg-white/10 text-white font-bold rounded-full text-xs border border-white/20">
-                    {content.hero.secondaryButtonText}
-                  </span>
+                <div>
+                  <label className="block text-slate-600 text-[10px] font-bold mb-1">Badge Text Color</label>
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="color"
+                      value={content.hero.badgeTextColor || '#6ee7b7'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          hero: { ...content.hero, badgeTextColor: e.target.value },
+                        })
+                      }
+                      className="w-7 h-7 rounded cursor-pointer border p-0 bg-white shrink-0"
+                    />
+                    <input
+                      type="text"
+                      value={content.hero.badgeTextColor || '#6ee7b7'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          hero: { ...content.hero, badgeTextColor: e.target.value },
+                        })
+                      }
+                      className="w-full border border-slate-300 rounded-lg p-1.5 text-xs font-mono"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-slate-600 text-[10px] font-bold mb-1">Badge Border Color</label>
+                  <input
+                    type="text"
+                    value={content.hero.badgeBorderColor || 'rgba(16, 185, 129, 0.4)'}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        hero: { ...content.hero, badgeBorderColor: e.target.value },
+                      })
+                    }
+                    placeholder="rgba(16, 185, 129, 0.4)"
+                    className="w-full border border-slate-300 rounded-lg p-1.5 text-xs font-mono"
+                  />
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="space-y-4 text-xs">
             <div>
-              <label className="block font-bold text-slate-700 mb-1">Main Heading</label>
+              <label className="block font-bold text-slate-700 mb-1">Main Heading (Line break: press Enter)</label>
               <textarea
                 rows={2}
                 value={content.hero.heading}
@@ -3139,12 +3713,12 @@ const ContentManager = () => {
                     hero: { ...content.hero, heading: e.target.value },
                   })
                 }
-                className="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-1 focus:ring-green-500 font-medium"
+                className="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-1 focus:ring-green-500 font-bold bg-white"
               />
             </div>
 
             <div>
-              <label className="block font-bold text-slate-700 mb-1">Subheading / Description</label>
+              <label className="block font-bold text-slate-700 mb-1">Subheading Description</label>
               <textarea
                 rows={3}
                 value={content.hero.subheading}
@@ -3154,15 +3728,316 @@ const ContentManager = () => {
                     hero: { ...content.hero, subheading: e.target.value },
                   })
                 }
-                className="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-1 focus:ring-green-500"
+                className="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-1 focus:ring-green-500 bg-white"
               />
             </div>
+          </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
-                <span className="font-bold text-xs text-slate-800">Primary CTA Button</span>
+          {/* 6. 3 CORE FEATURE HIGHLIGHTS (100% SOFT-CODED) */}
+          <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4 text-xs">
+            <div>
+              <label className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                <Zap size={16} className="text-yellow-500" />
+                <span>3 Feature Highlight Badges (Under Subheading)</span>
+              </label>
+              <p className="text-[11px] text-slate-500">
+                Customize the icon, label, accent color, and visibility for each of the 3 highlights.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Highlight 1 */}
+              <div className="p-4 bg-white rounded-xl border border-slate-200 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-800 text-xs">Highlight 1</span>
+                  <label className="flex items-center gap-1 text-[10px] text-slate-500 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={content.hero.highlight1Visible ?? true}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          hero: { ...content.hero, highlight1Visible: e.target.checked },
+                        })
+                      }
+                      className="rounded text-green-600 h-3 w-3"
+                    />
+                    <span>Show</span>
+                  </label>
+                </div>
                 <div>
-                  <label className="block text-slate-600 mb-1">Button Label</label>
+                  <label className="block text-[10px] font-bold text-slate-600 mb-1">Label Text</label>
+                  <input
+                    type="text"
+                    value={content.hero.highlight1Text || ''}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        hero: { ...content.hero, highlight1Text: e.target.value },
+                      })
+                    }
+                    placeholder="High Charging Power"
+                    className="w-full border border-slate-300 rounded-lg p-1.5 text-xs font-semibold"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">Icon</label>
+                    <select
+                      value={content.hero.highlight1Icon || 'Zap'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          hero: { ...content.hero, highlight1Icon: e.target.value },
+                        })
+                      }
+                      className="w-full border border-slate-300 rounded-lg p-1.5 text-xs bg-white font-medium"
+                    >
+                      <option value="Zap">Zap (Lightning)</option>
+                      <option value="Battery">Battery</option>
+                      <option value="Wrench">Wrench (Tools)</option>
+                      <option value="ShieldCheck">Shield Check</option>
+                      <option value="Sparkles">Sparkles</option>
+                      <option value="CheckCircle2">Check Circle</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">Color</label>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="color"
+                        value={content.hero.highlight1Color || '#facc15'}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            hero: { ...content.hero, highlight1Color: e.target.value },
+                          })
+                        }
+                        className="w-7 h-7 rounded cursor-pointer border p-0 bg-white shrink-0"
+                      />
+                      <input
+                        type="text"
+                        value={content.hero.highlight1Color || '#facc15'}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            hero: { ...content.hero, highlight1Color: e.target.value },
+                          })
+                        }
+                        className="w-full border border-slate-300 rounded-lg p-1 text-[11px] font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Highlight 2 */}
+              <div className="p-4 bg-white rounded-xl border border-slate-200 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-800 text-xs">Highlight 2</span>
+                  <label className="flex items-center gap-1 text-[10px] text-slate-500 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={content.hero.highlight2Visible ?? true}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          hero: { ...content.hero, highlight2Visible: e.target.checked },
+                        })
+                      }
+                      className="rounded text-green-600 h-3 w-3"
+                    />
+                    <span>Show</span>
+                  </label>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-600 mb-1">Label Text</label>
+                  <input
+                    type="text"
+                    value={content.hero.highlight2Text || ''}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        hero: { ...content.hero, highlight2Text: e.target.value },
+                      })
+                    }
+                    placeholder="Long Life (3 & 1.5 Year Warranty)"
+                    className="w-full border border-slate-300 rounded-lg p-1.5 text-xs font-semibold"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">Icon</label>
+                    <select
+                      value={content.hero.highlight2Icon || 'Battery'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          hero: { ...content.hero, highlight2Icon: e.target.value },
+                        })
+                      }
+                      className="w-full border border-slate-300 rounded-lg p-1.5 text-xs bg-white font-medium"
+                    >
+                      <option value="Battery">Battery</option>
+                      <option value="Zap">Zap (Lightning)</option>
+                      <option value="Wrench">Wrench (Tools)</option>
+                      <option value="ShieldCheck">Shield Check</option>
+                      <option value="Sparkles">Sparkles</option>
+                      <option value="CheckCircle2">Check Circle</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">Color</label>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="color"
+                        value={content.hero.highlight2Color || '#4ade80'}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            hero: { ...content.hero, highlight2Color: e.target.value },
+                          })
+                        }
+                        className="w-7 h-7 rounded cursor-pointer border p-0 bg-white shrink-0"
+                      />
+                      <input
+                        type="text"
+                        value={content.hero.highlight2Color || '#4ade80'}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            hero: { ...content.hero, highlight2Color: e.target.value },
+                          })
+                        }
+                        className="w-full border border-slate-300 rounded-lg p-1 text-[11px] font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Highlight 3 */}
+              <div className="p-4 bg-white rounded-xl border border-slate-200 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-800 text-xs">Highlight 3</span>
+                  <label className="flex items-center gap-1 text-[10px] text-slate-500 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={content.hero.highlight3Visible ?? true}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          hero: { ...content.hero, highlight3Visible: e.target.checked },
+                        })
+                      }
+                      className="rounded text-green-600 h-3 w-3"
+                    />
+                    <span>Show</span>
+                  </label>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-600 mb-1">Label Text</label>
+                  <input
+                    type="text"
+                    value={content.hero.highlight3Text || ''}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        hero: { ...content.hero, highlight3Text: e.target.value },
+                      })
+                    }
+                    placeholder="Low Maintenance"
+                    className="w-full border border-slate-300 rounded-lg p-1.5 text-xs font-semibold"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">Icon</label>
+                    <select
+                      value={content.hero.highlight3Icon || 'Wrench'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          hero: { ...content.hero, highlight3Icon: e.target.value },
+                        })
+                      }
+                      className="w-full border border-slate-300 rounded-lg p-1.5 text-xs bg-white font-medium"
+                    >
+                      <option value="Wrench">Wrench (Tools)</option>
+                      <option value="Zap">Zap (Lightning)</option>
+                      <option value="Battery">Battery</option>
+                      <option value="ShieldCheck">Shield Check</option>
+                      <option value="Sparkles">Sparkles</option>
+                      <option value="CheckCircle2">Check Circle</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">Color</label>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="color"
+                        value={content.hero.highlight3Color || '#5eead4'}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            hero: { ...content.hero, highlight3Color: e.target.value },
+                          })
+                        }
+                        className="w-7 h-7 rounded cursor-pointer border p-0 bg-white shrink-0"
+                      />
+                      <input
+                        type="text"
+                        value={content.hero.highlight3Color || '#5eead4'}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            hero: { ...content.hero, highlight3Color: e.target.value },
+                          })
+                        }
+                        className="w-full border border-slate-300 rounded-lg p-1 text-[11px] font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 7. HERO CTA ACTION BUTTONS (100% SOFT-CODED) */}
+          <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4 text-xs">
+            <div>
+              <label className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                <CheckCircle size={16} className="text-green-600" />
+                <span>Hero Call-to-Action (CTA) Action Buttons</span>
+              </label>
+              <p className="text-[11px] text-slate-500">
+                Configure labels, URLs, window target, background colors, text colors, and visibility switches.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Primary CTA Button */}
+              <div className="p-4 bg-white rounded-xl border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-xs text-slate-800">Primary CTA Button (e.g. Register Complaint)</span>
+                  <label className="flex items-center gap-1 text-[10px] text-slate-500 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={content.hero.primaryButtonVisible ?? true}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          hero: { ...content.hero, primaryButtonVisible: e.target.checked },
+                        })
+                      }
+                      className="rounded text-green-600 h-3 w-3"
+                    />
+                    <span>Show Button</span>
+                  </label>
+                </div>
+
+                <div>
+                  <label className="block text-slate-600 text-[11px] mb-1 font-semibold">Button Label</label>
                   <input
                     type="text"
                     value={content.hero.primaryButtonText}
@@ -3172,29 +4047,125 @@ const ContentManager = () => {
                         hero: { ...content.hero, primaryButtonText: e.target.value },
                       })
                     }
-                    className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+                    placeholder="Register Complaint"
+                    className="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold"
                   />
                 </div>
-                <div>
-                  <label className="block text-slate-600 mb-1">Target Link</label>
-                  <input
-                    type="text"
-                    value={content.hero.primaryButtonLink}
-                    onChange={(e) =>
-                      setContent({
-                        ...content,
-                        hero: { ...content.hero, primaryButtonLink: e.target.value },
-                      })
-                    }
-                    className="w-full border border-slate-300 rounded-lg p-2 text-xs font-mono"
-                  />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-slate-600 text-[11px] mb-1 font-semibold">Target Link URL</label>
+                    <input
+                      type="text"
+                      value={content.hero.primaryButtonLink}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          hero: { ...content.hero, primaryButtonLink: e.target.value },
+                        })
+                      }
+                      placeholder="/complaint/register"
+                      className="w-full border border-slate-300 rounded-lg p-2 text-xs font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-600 text-[11px] mb-1 font-semibold">Open Target</label>
+                    <select
+                      value={content.hero.primaryButtonTarget || '_self'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          hero: { ...content.hero, primaryButtonTarget: e.target.value as any },
+                        })
+                      }
+                      className="w-full border border-slate-300 rounded-lg p-2 text-xs bg-white font-medium"
+                    >
+                      <option value="_self">Same Tab (_self)</option>
+                      <option value="_blank">New Tab / Window (_blank)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">Button Background</label>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="color"
+                        value={content.hero.primaryButtonBgColor || '#10b981'}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            hero: { ...content.hero, primaryButtonBgColor: e.target.value },
+                          })
+                        }
+                        className="w-7 h-7 rounded cursor-pointer border p-0 bg-white shrink-0"
+                      />
+                      <input
+                        type="text"
+                        value={content.hero.primaryButtonBgColor || '#10b981'}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            hero: { ...content.hero, primaryButtonBgColor: e.target.value },
+                          })
+                        }
+                        className="w-full border border-slate-300 rounded-lg p-1 text-[11px] font-mono"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">Text Color</label>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="color"
+                        value={content.hero.primaryButtonTextColor || '#020617'}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            hero: { ...content.hero, primaryButtonTextColor: e.target.value },
+                          })
+                        }
+                        className="w-7 h-7 rounded cursor-pointer border p-0 bg-white shrink-0"
+                      />
+                      <input
+                        type="text"
+                        value={content.hero.primaryButtonTextColor || '#020617'}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            hero: { ...content.hero, primaryButtonTextColor: e.target.value },
+                          })
+                        }
+                        className="w-full border border-slate-300 rounded-lg p-1 text-[11px] font-mono"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
-                <span className="font-bold text-xs text-slate-800">Secondary CTA Button</span>
+              {/* Secondary CTA Button */}
+              <div className="p-4 bg-white rounded-xl border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-xs text-slate-800">Secondary CTA Button (e.g. Check Warranty)</span>
+                  <label className="flex items-center gap-1 text-[10px] text-slate-500 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={content.hero.secondaryButtonVisible ?? true}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          hero: { ...content.hero, secondaryButtonVisible: e.target.checked },
+                        })
+                      }
+                      className="rounded text-green-600 h-3 w-3"
+                    />
+                    <span>Show Button</span>
+                  </label>
+                </div>
+
                 <div>
-                  <label className="block text-slate-600 mb-1">Button Label</label>
+                  <label className="block text-slate-600 text-[11px] mb-1 font-semibold">Button Label</label>
                   <input
                     type="text"
                     value={content.hero.secondaryButtonText}
@@ -3204,22 +4175,344 @@ const ContentManager = () => {
                         hero: { ...content.hero, secondaryButtonText: e.target.value },
                       })
                     }
-                    className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+                    placeholder="Check Battery Warranty"
+                    className="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold"
                   />
                 </div>
-                <div>
-                  <label className="block text-slate-600 mb-1">Target Link</label>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-slate-600 text-[11px] mb-1 font-semibold">Target Link URL</label>
+                    <input
+                      type="text"
+                      value={content.hero.secondaryButtonLink}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          hero: { ...content.hero, secondaryButtonLink: e.target.value },
+                        })
+                      }
+                      placeholder="/warranty/check"
+                      className="w-full border border-slate-300 rounded-lg p-2 text-xs font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-600 text-[11px] mb-1 font-semibold">Open Target</label>
+                    <select
+                      value={content.hero.secondaryButtonTarget || '_blank'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          hero: { ...content.hero, secondaryButtonTarget: e.target.value as any },
+                        })
+                      }
+                      className="w-full border border-slate-300 rounded-lg p-2 text-xs bg-white font-medium"
+                    >
+                      <option value="_blank">New Tab / Window (_blank)</option>
+                      <option value="_self">Same Tab (_self)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">Button Background</label>
+                    <input
+                      type="text"
+                      value={content.hero.secondaryButtonBgColor || 'rgba(255, 255, 255, 0.1)'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          hero: { ...content.hero, secondaryButtonBgColor: e.target.value },
+                        })
+                      }
+                      className="w-full border border-slate-300 rounded-lg p-1.5 text-[11px] font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">Text Color</label>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="color"
+                        value={content.hero.secondaryButtonTextColor || '#ffffff'}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            hero: { ...content.hero, secondaryButtonTextColor: e.target.value },
+                          })
+                        }
+                        className="w-7 h-7 rounded cursor-pointer border p-0 bg-white shrink-0"
+                      />
+                      <input
+                        type="text"
+                        value={content.hero.secondaryButtonTextColor || '#ffffff'}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            hero: { ...content.hero, secondaryButtonTextColor: e.target.value },
+                          })
+                        }
+                        className="w-full border border-slate-300 rounded-lg p-1 text-[11px] font-mono"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">Border Color</label>
+                    <input
+                      type="text"
+                      value={content.hero.secondaryButtonBorderColor || 'rgba(255, 255, 255, 0.2)'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          hero: { ...content.hero, secondaryButtonBorderColor: e.target.value },
+                        })
+                      }
+                      className="w-full border border-slate-300 rounded-lg p-1.5 text-[11px] font-mono"
+                    />
+                  </div>
+                </div>
+
+                <label className="flex items-center gap-1.5 text-[11px] text-slate-600 cursor-pointer pt-1 font-semibold">
                   <input
-                    type="text"
-                    value={content.hero.secondaryButtonLink}
+                    type="checkbox"
+                    checked={content.hero.secondaryButtonShowIcon ?? true}
                     onChange={(e) =>
                       setContent({
                         ...content,
-                        hero: { ...content.hero, secondaryButtonLink: e.target.value },
+                        hero: { ...content.hero, secondaryButtonShowIcon: e.target.checked },
                       })
                     }
-                    className="w-full border border-slate-300 rounded-lg p-2 text-xs font-mono"
+                    className="rounded text-green-600 h-3.5 w-3.5"
                   />
+                  <span>Show External Arrow Icon (↗)</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* 8. REAL-TIME LIVE COMPLETE HEADER & HERO PREVIEW */}
+          <div className="space-y-3 pt-2">
+            <label className="block font-bold text-slate-800 text-sm flex items-center gap-2">
+              <Sparkles size={16} className="text-emerald-600" />
+              <span>Real-Time Live Header & Hero Banner Preview</span>
+            </label>
+
+            <div className="rounded-2xl border border-slate-300 overflow-hidden shadow-lg">
+              {/* Preview Top Bar */}
+              {(content.topBar?.isVisible ?? true) && (
+                <div
+                  style={{
+                    backgroundColor: content.topBar?.bgColor || '#0f172a',
+                    color: content.topBar?.textColor || '#cbd5e1',
+                  }}
+                  className="px-4 py-2 text-[10px] flex flex-wrap justify-between items-center gap-2 border-b border-white/10"
+                >
+                  <div className="flex items-center gap-3">
+                    {(content.topBar?.showPhone ?? true) && (
+                      <span
+                        style={{ color: content.topBar?.accentColor || '#34d399' }}
+                        className="flex items-center gap-1 font-semibold"
+                      >
+                        <Phone size={10} />
+                        <span>
+                          {content.topBar?.phoneLabel || 'Helpline:'} {content.topBar?.phone || '+91 8949049003'}
+                        </span>
+                      </span>
+                    )}
+                    {(content.topBar?.showOfficeHours ?? true) && (
+                      <span className="flex items-center gap-1 opacity-80">
+                        <Clock size={10} />
+                        <span>{content.topBar?.officeHours || '10:00 AM to 6:30 PM (Mon - Sat)'}</span>
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 opacity-80">
+                    {(content.topBar?.showGstin ?? true) && (
+                      <span className="font-mono">GSTIN: {content.topBar?.gstin || '08DTUPM4205B1Z0'}</span>
+                    )}
+                    {(content.topBar?.showLocation ?? true) && (
+                      <span
+                        style={{ color: content.topBar?.accentColor || '#34d399' }}
+                        className="flex items-center gap-1 font-semibold opacity-100"
+                      >
+                        <MapPin size={10} />
+                        <span>{content.topBar?.location || 'Kota, Rajasthan'}</span>
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Preview Main Navbar */}
+              <div
+                style={{
+                  backgroundColor: content.headerNav?.navBgColor || '#ffffff',
+                  borderColor: content.headerNav?.navBorderColor || '#e2e8f0',
+                }}
+                className="px-4 py-3 flex items-center justify-between border-b"
+              >
+                <div className="flex items-center gap-2.5">
+                  {(content.headerNav?.logoType || content.hero.logoType) === 'image' && (content.headerNav?.logoImage || content.hero.logoImage) ? (
+                    <img
+                      src={resolveImageUrl(content.headerNav?.logoImage || content.hero.logoImage || '')}
+                      alt="Brand Logo"
+                      className="h-8 max-w-[120px] object-contain"
+                    />
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-950 flex items-center justify-center text-white text-[11px] font-black border border-emerald-500/40">
+                        EBS
+                      </div>
+                      <div className="text-left leading-tight">
+                        <span className="font-black text-xs text-slate-900 tracking-tight block">
+                          {content.headerNav?.brandTitle || 'EBS EKOSMART'}
+                        </span>
+                        <span className="text-[9px] font-bold text-emerald-700 tracking-wider uppercase block">
+                          {content.headerNav?.brandSubtitle || 'Battery Solution • Li-ion & LFP'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-3 text-xs font-bold text-slate-800">
+                  {(content.headerNav?.showHome ?? true) && (
+                    <span className="text-emerald-700 flex items-center gap-1 border-b-2 border-emerald-600 pb-0.5">
+                      <Home size={12} />
+                      <span>{content.headerNav?.homeLabel || 'Home'}</span>
+                    </span>
+                  )}
+                  {(content.headerNav?.showWallet ?? true) && (
+                    <span className="px-2 py-1 rounded-lg bg-amber-50 text-amber-900 border border-amber-200 flex items-center gap-1 text-[11px]">
+                      <Coins size={12} className="text-amber-600" />
+                      <span>{content.headerNav?.walletLabel || 'Wallet & Coins'}</span>
+                      {(content.headerNav?.showWalletBadge ?? true) && (
+                        <span className="bg-amber-200 text-amber-950 text-[9px] px-1 rounded font-black">500</span>
+                      )}
+                    </span>
+                  )}
+                  {(content.headerNav?.showRefer ?? true) && (
+                    <span className="px-2 py-1 rounded-lg bg-purple-50 text-purple-900 border border-purple-200 flex items-center gap-1 text-[11px]">
+                      <Gift size={12} className="text-purple-600" />
+                      <span>{content.headerNav?.referLabel || 'Refer & Earn'} (+500)</span>
+                    </span>
+                  )}
+                  {(content.headerNav?.showAccount ?? true) && (
+                    <span
+                      style={{
+                        backgroundColor: content.headerNav?.accountBtnBg || '#059669',
+                        color: content.headerNav?.accountBtnText || '#ffffff',
+                      }}
+                      className="px-3 py-1 rounded-lg text-[11px] font-bold shadow-xs flex items-center gap-1"
+                    >
+                      <User size={11} />
+                      <span>{content.headerNav?.accountLabel || 'Account / Login'}</span>
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Preview Hero Banner */}
+              <div
+                style={{
+                  background:
+                    content.hero.bgType === 'solid'
+                      ? content.hero.bgSolidColor || '#064e3b'
+                      : content.hero.bgType === 'image' && content.hero.bgImage
+                      ? `url(${resolveImageUrl(content.hero.bgImage)})`
+                      : content.hero.bgGradientDirection === 'radial'
+                      ? `radial-gradient(circle at center, ${content.hero.bgGradientMiddle || '#064e3b'} 0%, ${content.hero.bgGradientStart || '#022c22'} 70%, ${content.hero.bgGradientEnd || '#115e59'} 100%)`
+                      : `linear-gradient(to right, ${content.hero.bgGradientStart || '#022c22'}, ${content.hero.bgGradientMiddle || '#064e3b'}, ${content.hero.bgGradientEnd || '#115e59'})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  color: content.hero.textColor || '#ffffff',
+                }}
+                className="p-8 sm:p-12 text-center space-y-5 relative overflow-hidden"
+              >
+                {content.hero.bgPattern !== 'none' && (
+                  <div className="absolute inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:20px_20px] opacity-10 pointer-events-none" />
+                )}
+
+                <div className="relative z-10 space-y-4 max-w-2xl mx-auto">
+                  {(content.hero.badgeVisible ?? true) && (
+                    <div
+                      style={{
+                        backgroundColor: content.hero.badgeBgColor || 'rgba(6, 78, 59, 0.6)',
+                        color: content.hero.badgeTextColor || '#6ee7b7',
+                        borderColor: content.hero.badgeBorderColor || 'rgba(16, 185, 129, 0.4)',
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase border"
+                    >
+                      <Sparkles size={12} />
+                      <span>{content.hero.badgeText || 'Official EBS Battery Solution Portal'}</span>
+                    </div>
+                  )}
+
+                  <h3 className="text-2xl sm:text-3xl font-black whitespace-pre-line leading-tight">
+                    {content.hero.heading}
+                  </h3>
+
+                  <p className="text-xs opacity-90 leading-relaxed max-w-xl mx-auto">
+                    {content.hero.subheading}
+                  </p>
+
+                  {/* Highlights in Preview */}
+                  <div className="flex flex-wrap justify-center gap-3 pt-1">
+                    {(content.hero.highlight1Visible ?? true) && (
+                      <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1 rounded-lg border border-white/10 text-[11px] font-bold">
+                        <span style={{ color: content.hero.highlight1Color || '#facc15' }}>
+                          <Zap size={13} />
+                        </span>
+                        <span>{content.hero.highlight1Text || 'High Charging Power'}</span>
+                      </div>
+                    )}
+                    {(content.hero.highlight2Visible ?? true) && (
+                      <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1 rounded-lg border border-white/10 text-[11px] font-bold">
+                        <span style={{ color: content.hero.highlight2Color || '#4ade80' }}>
+                          <Battery size={13} />
+                        </span>
+                        <span>{content.hero.highlight2Text || 'Long Life'}</span>
+                      </div>
+                    )}
+                    {(content.hero.highlight3Visible ?? true) && (
+                      <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1 rounded-lg border border-white/10 text-[11px] font-bold">
+                        <span style={{ color: content.hero.highlight3Color || '#5eead4' }}>
+                          <Wrench size={13} />
+                        </span>
+                        <span>{content.hero.highlight3Text || 'Low Maintenance'}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Buttons in Preview */}
+                  <div className="flex flex-wrap justify-center gap-3 pt-2">
+                    {(content.hero.primaryButtonVisible ?? true) && content.hero.primaryButtonText && (
+                      <span
+                        style={{
+                          backgroundColor: content.hero.primaryButtonBgColor || '#10b981',
+                          color: content.hero.primaryButtonTextColor || '#020617',
+                        }}
+                        className="px-6 py-2.5 font-black rounded-full text-xs shadow-md cursor-default"
+                      >
+                        {content.hero.primaryButtonText}
+                      </span>
+                    )}
+                    {(content.hero.secondaryButtonVisible ?? true) && content.hero.secondaryButtonText && (
+                      <span
+                        style={{
+                          backgroundColor: content.hero.secondaryButtonBgColor || 'rgba(255, 255, 255, 0.1)',
+                          color: content.hero.secondaryButtonTextColor || '#ffffff',
+                          borderColor: content.hero.secondaryButtonBorderColor || 'rgba(255, 255, 255, 0.2)',
+                        }}
+                        className="px-6 py-2.5 font-bold rounded-full text-xs border shadow-sm cursor-default inline-flex items-center gap-1.5"
+                      >
+                        <span>{content.hero.secondaryButtonText}</span>
+                        {(content.hero.secondaryButtonShowIcon ?? true) && (
+                          <ExternalLink size={12} className="text-emerald-300" />
+                        )}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

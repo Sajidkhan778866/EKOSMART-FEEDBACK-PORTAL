@@ -75,8 +75,18 @@ interface HeroContent {
   subheading: string;
   primaryButtonText: string;
   primaryButtonLink: string;
+  primaryButtonTarget?: '_self' | '_blank';
+  primaryButtonVisible?: boolean;
+  primaryButtonBgColor?: string;
+  primaryButtonTextColor?: string;
   secondaryButtonText: string;
   secondaryButtonLink: string;
+  secondaryButtonTarget?: '_self' | '_blank';
+  secondaryButtonVisible?: boolean;
+  secondaryButtonBgColor?: string;
+  secondaryButtonTextColor?: string;
+  secondaryButtonBorderColor?: string;
+  secondaryButtonShowIcon?: boolean;
   logoType?: 'preset' | 'image';
   logoImage?: string;
   complaintLogoType?: 'preset' | 'image';
@@ -93,12 +103,22 @@ interface HeroContent {
   bgPattern?: string;
   badgeText?: string;
   badgeIcon?: string;
+  badgeVisible?: boolean;
+  badgeBgColor?: string;
+  badgeTextColor?: string;
+  badgeBorderColor?: string;
   highlight1Text?: string;
   highlight1Icon?: string;
+  highlight1Color?: string;
+  highlight1Visible?: boolean;
   highlight2Text?: string;
   highlight2Icon?: string;
+  highlight2Color?: string;
+  highlight2Visible?: boolean;
   highlight3Text?: string;
   highlight3Icon?: string;
+  highlight3Color?: string;
+  highlight3Visible?: boolean;
   textColor?: string;
 }
 
@@ -107,8 +127,18 @@ const defaultHero: HeroContent = {
   subheading: 'High Charging Power • Long Life • Low Maintenance. Official customer support portal for EV scooter & E-rickshaw batteries, genuine spare parts, and warranty verification.',
   primaryButtonText: 'Register Complaint',
   primaryButtonLink: '/complaint/register',
+  primaryButtonTarget: '_self',
+  primaryButtonVisible: true,
+  primaryButtonBgColor: '#10b981',
+  primaryButtonTextColor: '#020617',
   secondaryButtonText: 'Check Battery Warranty',
   secondaryButtonLink: '/warranty/check',
+  secondaryButtonTarget: '_blank',
+  secondaryButtonVisible: true,
+  secondaryButtonBgColor: 'rgba(255, 255, 255, 0.1)',
+  secondaryButtonTextColor: '#ffffff',
+  secondaryButtonBorderColor: 'rgba(255, 255, 255, 0.2)',
+  secondaryButtonShowIcon: true,
   logoType: 'preset',
   logoImage: '',
   complaintLogoType: 'preset',
@@ -125,12 +155,22 @@ const defaultHero: HeroContent = {
   bgPattern: 'mesh',
   badgeText: 'Official EBS Battery Solution Portal • Kota, Rajasthan',
   badgeIcon: 'Sparkles',
+  badgeVisible: true,
+  badgeBgColor: 'rgba(6, 78, 59, 0.6)',
+  badgeTextColor: '#6ee7b7',
+  badgeBorderColor: 'rgba(16, 185, 129, 0.4)',
   highlight1Text: 'High Charging Power',
   highlight1Icon: 'Zap',
+  highlight1Color: '#facc15',
+  highlight1Visible: true,
   highlight2Text: 'Long Life (3 & 1.5 Year Warranty)',
   highlight2Icon: 'Battery',
+  highlight2Color: '#4ade80',
+  highlight2Visible: true,
   highlight3Text: 'Low Maintenance',
   highlight3Icon: 'Wrench',
+  highlight3Color: '#5eead4',
+  highlight3Visible: true,
   textColor: '#ffffff',
 };
 
@@ -630,26 +670,42 @@ const Home = () => {
         )}
 
         <div className="max-w-6xl mx-auto text-center space-y-8 relative z-10">
-          {hero.logoType === 'image' && hero.logoImage ? (
-            <div className="flex flex-col items-center gap-3">
-              <div className="bg-white/10 backdrop-blur-md p-3 rounded-2xl border border-white/20 inline-block shadow-lg">
-                <img
-                  src={resolveImageUrl(hero.logoImage)}
-                  alt="Brand Logo"
-                  className="h-14 max-h-16 w-auto max-w-[240px] object-contain"
-                />
-              </div>
+          {(hero.badgeVisible ?? true) && (
+            hero.logoType === 'image' && hero.logoImage ? (
+              <div className="flex flex-col items-center gap-3">
+                <div className="bg-white/10 backdrop-blur-md p-3 rounded-2xl border border-white/20 inline-block shadow-lg">
+                  <img
+                    src={resolveImageUrl(hero.logoImage)}
+                    alt="Brand Logo"
+                    className="h-14 max-h-16 w-auto max-w-[240px] object-contain"
+                  />
+                </div>
 
-              <div className="inline-flex items-center gap-2 bg-emerald-800/60 border border-emerald-500/40 px-4 py-1.5 rounded-full text-emerald-300 text-xs font-bold tracking-widest uppercase">
+                <div
+                  style={{
+                    backgroundColor: hero.badgeBgColor || 'rgba(6, 78, 59, 0.6)',
+                    color: hero.badgeTextColor || '#6ee7b7',
+                    borderColor: hero.badgeBorderColor || 'rgba(16, 185, 129, 0.4)',
+                  }}
+                  className="inline-flex items-center gap-2 border px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase transition-colors"
+                >
+                  <Sparkles size={14} />
+                  <span>{hero.badgeText || 'Official EBS Battery Solution Portal • Kota, Rajasthan'}</span>
+                </div>
+              </div>
+            ) : (
+              <div
+                style={{
+                  backgroundColor: hero.badgeBgColor || 'rgba(6, 78, 59, 0.6)',
+                  color: hero.badgeTextColor || '#6ee7b7',
+                  borderColor: hero.badgeBorderColor || 'rgba(16, 185, 129, 0.4)',
+                }}
+                className="inline-flex items-center gap-2 border px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase transition-colors"
+              >
                 <Sparkles size={14} />
                 <span>{hero.badgeText || 'Official EBS Battery Solution Portal • Kota, Rajasthan'}</span>
               </div>
-            </div>
-          ) : (
-            <div className="inline-flex items-center gap-2 bg-emerald-800/60 border border-emerald-500/40 px-4 py-1.5 rounded-full text-emerald-300 text-xs font-bold tracking-widest uppercase">
-              <Sparkles size={14} />
-              <span>{hero.badgeText || 'Official EBS Battery Solution Portal • Kota, Rajasthan'}</span>
-            </div>
+            )
           )}
 
           <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight whitespace-pre-line leading-tight">
@@ -662,39 +718,94 @@ const Home = () => {
 
           {/* 3 Core Highlights (Fully Soft-Coded) */}
           <div className="flex flex-wrap justify-center gap-6 pt-2 pb-2">
-            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-xs px-4 py-2 rounded-xl border border-white/10 text-xs font-bold">
-              {renderHighlightIcon(hero.highlight1Icon || 'Zap')}
-              <span>{hero.highlight1Text || 'High Charging Power'}</span>
-            </div>
-            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-xs px-4 py-2 rounded-xl border border-white/10 text-xs font-bold">
-              {renderHighlightIcon(hero.highlight2Icon || 'Battery')}
-              <span>{hero.highlight2Text || 'Long Life (3 & 1.5 Year Warranty)'}</span>
-            </div>
-            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-xs px-4 py-2 rounded-xl border border-white/10 text-xs font-bold">
-              {renderHighlightIcon(hero.highlight3Icon || 'Wrench')}
-              <span>{hero.highlight3Text || 'Low Maintenance'}</span>
-            </div>
+            {(hero.highlight1Visible ?? true) && (
+              <div className="flex items-center gap-2 bg-white/10 backdrop-blur-xs px-4 py-2 rounded-xl border border-white/10 text-xs font-bold">
+                <span style={{ color: hero.highlight1Color || '#facc15' }}>
+                  {renderHighlightIcon(hero.highlight1Icon || 'Zap')}
+                </span>
+                <span>{hero.highlight1Text || 'High Charging Power'}</span>
+              </div>
+            )}
+            {(hero.highlight2Visible ?? true) && (
+              <div className="flex items-center gap-2 bg-white/10 backdrop-blur-xs px-4 py-2 rounded-xl border border-white/10 text-xs font-bold">
+                <span style={{ color: hero.highlight2Color || '#4ade80' }}>
+                  {renderHighlightIcon(hero.highlight2Icon || 'Battery')}
+                </span>
+                <span>{hero.highlight2Text || 'Long Life (3 & 1.5 Year Warranty)'}</span>
+              </div>
+            )}
+            {(hero.highlight3Visible ?? true) && (
+              <div className="flex items-center gap-2 bg-white/10 backdrop-blur-xs px-4 py-2 rounded-xl border border-white/10 text-xs font-bold">
+                <span style={{ color: hero.highlight3Color || '#5eead4' }}>
+                  {renderHighlightIcon(hero.highlight3Icon || 'Wrench')}
+                </span>
+                <span>{hero.highlight3Text || 'Low Maintenance'}</span>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-wrap justify-center gap-4 pt-4">
-            {hero.primaryButtonText && (
-              <Link
-                to={hero.primaryButtonLink || '/complaint/register'}
-                className="px-8 py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-full transition shadow-xl hover:shadow-emerald-500/30 text-sm tracking-wide"
-              >
-                {hero.primaryButtonText}
-              </Link>
+            {(hero.primaryButtonVisible ?? true) && hero.primaryButtonText && (
+              (hero.primaryButtonTarget === '_blank' || (hero.primaryButtonLink && hero.primaryButtonLink.startsWith('http'))) ? (
+                <a
+                  href={hero.primaryButtonLink || '/complaint/register'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    backgroundColor: hero.primaryButtonBgColor || '#10b981',
+                    color: hero.primaryButtonTextColor || '#020617',
+                  }}
+                  className="px-8 py-3.5 font-black rounded-full transition shadow-xl hover:opacity-90 text-sm tracking-wide"
+                >
+                  {hero.primaryButtonText}
+                </a>
+              ) : (
+                <Link
+                  to={hero.primaryButtonLink || '/complaint/register'}
+                  style={{
+                    backgroundColor: hero.primaryButtonBgColor || '#10b981',
+                    color: hero.primaryButtonTextColor || '#020617',
+                  }}
+                  className="px-8 py-3.5 font-black rounded-full transition shadow-xl hover:opacity-90 text-sm tracking-wide"
+                >
+                  {hero.primaryButtonText}
+                </Link>
+              )
             )}
-            {hero.secondaryButtonText && (
-              <a
-                href={hero.secondaryButtonLink || '/warranty/check'}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-8 py-3.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-full border border-white/20 transition shadow-lg text-sm inline-flex items-center gap-2"
-              >
-                <span>{hero.secondaryButtonText}</span>
-                <ExternalLink size={14} className="text-emerald-300" />
-              </a>
+            {(hero.secondaryButtonVisible ?? true) && hero.secondaryButtonText && (
+              (hero.secondaryButtonTarget === '_self' && hero.secondaryButtonLink && !hero.secondaryButtonLink.startsWith('http')) ? (
+                <Link
+                  to={hero.secondaryButtonLink || '/warranty/check'}
+                  style={{
+                    backgroundColor: hero.secondaryButtonBgColor || 'rgba(255, 255, 255, 0.1)',
+                    color: hero.secondaryButtonTextColor || '#ffffff',
+                    borderColor: hero.secondaryButtonBorderColor || 'rgba(255, 255, 255, 0.2)',
+                  }}
+                  className="px-8 py-3.5 font-bold rounded-full border transition shadow-lg text-sm inline-flex items-center gap-2 hover:bg-white/20"
+                >
+                  <span>{hero.secondaryButtonText}</span>
+                  {(hero.secondaryButtonShowIcon ?? true) && (
+                    <ExternalLink size={14} className="text-emerald-300" />
+                  )}
+                </Link>
+              ) : (
+                <a
+                  href={hero.secondaryButtonLink || '/warranty/check'}
+                  target={hero.secondaryButtonTarget || '_blank'}
+                  rel="noopener noreferrer"
+                  style={{
+                    backgroundColor: hero.secondaryButtonBgColor || 'rgba(255, 255, 255, 0.1)',
+                    color: hero.secondaryButtonTextColor || '#ffffff',
+                    borderColor: hero.secondaryButtonBorderColor || 'rgba(255, 255, 255, 0.2)',
+                  }}
+                  className="px-8 py-3.5 font-bold rounded-full border transition shadow-lg text-sm inline-flex items-center gap-2 hover:bg-white/20"
+                >
+                  <span>{hero.secondaryButtonText}</span>
+                  {(hero.secondaryButtonShowIcon ?? true) && (
+                    <ExternalLink size={14} className="text-emerald-300" />
+                  )}
+                </a>
+              )
             )}
           </div>
         </div>

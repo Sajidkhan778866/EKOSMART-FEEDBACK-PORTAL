@@ -35,6 +35,78 @@ interface HeaderLogoContent {
   logoText?: string;
 }
 
+interface TopBarContent {
+  isVisible?: boolean;
+  phone?: string;
+  phoneLabel?: string;
+  showPhone?: boolean;
+  officeHours?: string;
+  showOfficeHours?: boolean;
+  gstin?: string;
+  showGstin?: boolean;
+  location?: string;
+  showLocation?: boolean;
+  bgColor?: string;
+  textColor?: string;
+  accentColor?: string;
+}
+
+const defaultTopBar: TopBarContent = {
+  isVisible: true,
+  phone: '+91 8949049003',
+  phoneLabel: 'Helpline:',
+  showPhone: true,
+  officeHours: '10:00 AM to 6:30 PM (Mon - Sat)',
+  showOfficeHours: true,
+  gstin: '08DTUPM4205B1Z0',
+  showGstin: true,
+  location: 'Kota, Rajasthan',
+  showLocation: true,
+  bgColor: '#0f172a',
+  textColor: '#cbd5e1',
+  accentColor: '#34d399',
+};
+
+interface HeaderNavContent {
+  brandTitle?: string;
+  brandSubtitle?: string;
+  logoType?: 'preset' | 'image';
+  logoImage?: string;
+  homeLabel?: string;
+  showHome?: boolean;
+  walletLabel?: string;
+  showWallet?: boolean;
+  showWalletBadge?: boolean;
+  referLabel?: string;
+  showRefer?: boolean;
+  accountLabel?: string;
+  showAccount?: boolean;
+  accountBtnBg?: string;
+  accountBtnText?: string;
+  navBgColor?: string;
+  navBorderColor?: string;
+}
+
+const defaultHeaderNav: HeaderNavContent = {
+  brandTitle: 'EBS EKOSMART',
+  brandSubtitle: 'Battery Solution • Li-ion & LFP',
+  logoType: 'preset',
+  logoImage: '',
+  homeLabel: 'Home',
+  showHome: true,
+  walletLabel: 'Wallet & Coins',
+  showWallet: true,
+  showWalletBadge: true,
+  referLabel: 'Refer & Earn',
+  showRefer: true,
+  accountLabel: 'Account / Login',
+  showAccount: true,
+  accountBtnBg: '#059669',
+  accountBtnText: '#ffffff',
+  navBgColor: '#ffffff',
+  navBorderColor: '#e2e8f0',
+};
+
 interface FooterContent {
   companyName: string;
   copyrightText: string;
@@ -74,6 +146,8 @@ const defaultFooter: FooterContent = {
 const Layout = () => {
   const { customer, isAuthenticated, logout } = useCustomerAuth();
   const { theme } = useTheme();
+  const [topBar, setTopBar] = useState<TopBarContent>(defaultTopBar);
+  const [headerNav, setHeaderNav] = useState<HeaderNavContent>(defaultHeaderNav);
   const [footer, setFooter] = useState<FooterContent>(defaultFooter);
   const [headerLogo, setHeaderLogo] = useState<HeaderLogoContent>({ logoType: 'preset', logoImage: '' });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -130,6 +204,12 @@ const Layout = () => {
       .then((res) => res.json())
       .then((data) => {
         if (data.success && data.data) {
+          if (data.data.topBar) {
+            setTopBar((prev) => ({ ...prev, ...data.data.topBar }));
+          }
+          if (data.data.headerNav) {
+            setHeaderNav((prev) => ({ ...prev, ...data.data.headerNav }));
+          }
           if (data.data.footer && !theme.footer) {
             setFooter({ ...defaultFooter, ...data.data.footer });
           }
@@ -178,31 +258,63 @@ const Layout = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Top Notification Bar */}
-      <div className="bg-slate-900 text-slate-300 text-[11px] py-1.5 px-4 border-b border-slate-800">
-        <div className="container mx-auto flex flex-wrap justify-between items-center gap-2">
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1 text-emerald-400 font-semibold">
-              <Phone size={12} />
-              <span>Helpline: {footer.phone || '+91 8949049003'}</span>
-            </span>
-            <span className="hidden sm:flex items-center gap-1 text-slate-400">
-              <Clock size={12} />
-              <span>{footer.officeHours || '10:00 AM to 6:30 PM'}</span>
-            </span>
-          </div>
-          <div className="flex items-center gap-4 text-slate-400">
-            <span className="hidden md:inline font-mono">GSTIN: {footer.gstin || '08DTUPM4205B1Z0'}</span>
-            <span className="flex items-center gap-1 text-emerald-400">
-              <MapPin size={12} />
-              <span>Kota, Rajasthan</span>
-            </span>
+      {/* Top Notification Bar (100% Soft-Coded) */}
+      {(topBar.isVisible ?? true) && (
+        <div
+          style={{
+            backgroundColor: topBar.bgColor || '#0f172a',
+            color: topBar.textColor || '#cbd5e1',
+          }}
+          className="text-[11px] py-1.5 px-4 border-b border-slate-800 transition-colors"
+        >
+          <div className="container mx-auto flex flex-wrap justify-between items-center gap-2">
+            <div className="flex items-center gap-4">
+              {(topBar.showPhone ?? true) && (
+                <span
+                  style={{ color: topBar.accentColor || '#34d399' }}
+                  className="flex items-center gap-1 font-semibold"
+                >
+                  <Phone size={12} />
+                  <span>
+                    {topBar.phoneLabel || 'Helpline:'} {topBar.phone || footer.phone || '+91 8949049003'}
+                  </span>
+                </span>
+              )}
+              {(topBar.showOfficeHours ?? true) && (
+                <span className="hidden sm:flex items-center gap-1 opacity-80">
+                  <Clock size={12} />
+                  <span>{topBar.officeHours || footer.officeHours || '10:00 AM to 6:30 PM'}</span>
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-4 opacity-80">
+              {(topBar.showGstin ?? true) && (
+                <span className="hidden md:inline font-mono">
+                  GSTIN: {topBar.gstin || footer.gstin || '08DTUPM4205B1Z0'}
+                </span>
+              )}
+              {(topBar.showLocation ?? true) && (
+                <span
+                  style={{ color: topBar.accentColor || '#34d399' }}
+                  className="flex items-center gap-1 font-semibold opacity-100"
+                >
+                  <MapPin size={12} />
+                  <span>{topBar.location || 'Kota, Rajasthan'}</span>
+                </span>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Main Header with Official EBS Logo, Navigation & Customer Wallet */}
-      <header className="bg-white shadow-xs border-b border-slate-200 sticky top-0 z-30">
+      {/* Main Header with Official EBS Logo, Navigation & Customer Wallet (100% Soft-Coded) */}
+      <header
+        style={{
+          backgroundColor: headerNav.navBgColor || '#ffffff',
+          borderColor: headerNav.navBorderColor || '#e2e8f0',
+        }}
+        className="shadow-xs border-b sticky top-0 z-30 transition-colors"
+      >
         <div className="container mx-auto px-4 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {/* Mobile Three-Dot Left Menu Trigger (⋮) */}
@@ -216,14 +328,19 @@ const Layout = () => {
             </button>
 
             <NavLink to="/" className="flex items-center gap-3">
-              {headerLogo.logoType === 'image' && headerLogo.logoImage ? (
+              {(headerNav.logoType === 'image' && headerNav.logoImage) || (headerLogo.logoType === 'image' && headerLogo.logoImage) ? (
                 <img
-                  src={resolveImageUrl(headerLogo.logoImage)}
+                  src={resolveImageUrl(headerNav.logoImage || headerLogo.logoImage || '')}
                   alt="Ekosmart Logo"
                   className="h-11 max-h-13 w-auto max-w-[200px] object-contain"
                 />
               ) : (
-                <EbsLogo variant="battery" size="md" />
+                <EbsLogo
+                  variant="battery"
+                  size="md"
+                  customTitle={headerNav.brandTitle}
+                  customSubtitle={headerNav.brandSubtitle}
+                />
               )}
             </NavLink>
           </div>
@@ -231,143 +348,159 @@ const Layout = () => {
           {/* Desktop Navigation Links */}
           <nav className="hidden md:block">
             <ul className="flex items-center space-x-5 text-xs font-bold text-slate-800">
-              <li>
-                <NavLink
-                  to="/"
-                  className={({ isActive }) =>
-                    isActive
-                      ? 'text-emerald-700 flex items-center gap-1.5 border-b-2 border-emerald-600 pb-1 font-bold'
-                      : 'hover:text-emerald-700 flex items-center gap-1.5 transition font-bold'
-                  }
-                >
-                  <Home size={15} className="text-emerald-600" />
-                  <span>Home</span>
-                </NavLink>
-              </li>
+              {(headerNav.showHome ?? true) && (
+                <li>
+                  <NavLink
+                    to="/"
+                    className={({ isActive }) =>
+                      isActive
+                        ? 'text-emerald-700 flex items-center gap-1.5 border-b-2 border-emerald-600 pb-1 font-bold'
+                        : 'hover:text-emerald-700 flex items-center gap-1.5 transition font-bold'
+                    }
+                  >
+                    <Home size={15} className="text-emerald-600" />
+                    <span>{headerNav.homeLabel || 'Home'}</span>
+                  </NavLink>
+                </li>
+              )}
 
               {/* Customer Wallet Option */}
-              <li>
-                <NavLink
-                  to="/customer/wallet"
-                  className={({ isActive }) =>
-                    isActive
-                      ? 'text-amber-800 bg-amber-100/80 border border-amber-300 px-3 py-1.5 rounded-xl flex items-center gap-1.5 font-bold shadow-xs'
-                      : 'text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition font-bold shadow-xs'
-                  }
-                >
-                  <Coins size={15} className="text-amber-600 animate-pulse" />
-                  <span>Wallet & Coins</span>
-                  {isAuthenticated && (
-                    <span className="bg-amber-200 text-amber-950 text-[10px] px-1.5 py-0.5 rounded-md font-black">
-                      {customer?.walletBalance ?? 0}
-                    </span>
-                  )}
-                </NavLink>
-              </li>
+              {(headerNav.showWallet ?? true) && (
+                <li>
+                  <NavLink
+                    to="/customer/wallet"
+                    className={({ isActive }) =>
+                      isActive
+                        ? 'text-amber-800 bg-amber-100/80 border border-amber-300 px-3 py-1.5 rounded-xl flex items-center gap-1.5 font-bold shadow-xs'
+                        : 'text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition font-bold shadow-xs'
+                    }
+                  >
+                    <Coins size={15} className="text-amber-600 animate-pulse" />
+                    <span>{headerNav.walletLabel || 'Wallet & Coins'}</span>
+                    {(headerNav.showWalletBadge ?? true) && isAuthenticated && (
+                      <span className="bg-amber-200 text-amber-950 text-[10px] px-1.5 py-0.5 rounded-md font-black">
+                        {customer?.walletBalance ?? 0}
+                      </span>
+                    )}
+                  </NavLink>
+                </li>
+              )}
 
               {/* Refer & Earn Option */}
-              <li>
-                <NavLink
-                  to="/customer/referrals"
-                  className={({ isActive }) =>
-                    isActive
-                      ? 'text-purple-800 bg-purple-100/80 border border-purple-300 px-3 py-1.5 rounded-xl flex items-center gap-1.5 font-bold shadow-xs'
-                      : 'text-purple-900 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition font-bold shadow-xs'
-                  }
-                >
-                  <Gift size={15} className="text-purple-600" />
-                  <span>Refer & Earn (+{referrerCoins})</span>
-                </NavLink>
-              </li>
+              {(headerNav.showRefer ?? true) && (
+                <li>
+                  <NavLink
+                    to="/customer/referrals"
+                    className={({ isActive }) =>
+                      isActive
+                        ? 'text-purple-800 bg-purple-100/80 border border-purple-300 px-3 py-1.5 rounded-xl flex items-center gap-1.5 font-bold shadow-xs'
+                        : 'text-purple-900 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition font-bold shadow-xs'
+                    }
+                  >
+                    <Gift size={15} className="text-purple-600" />
+                    <span>
+                      {headerNav.referLabel
+                        ? `${headerNav.referLabel} (+${referrerCoins})`
+                        : `Refer & Earn (+${referrerCoins})`}
+                    </span>
+                  </NavLink>
+                </li>
+              )}
 
               {/* Customer Account / Login Profile if authenticated */}
-              {isAuthenticated && customer ? (
-                <li className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                    className="flex items-center gap-2 px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-800 transition cursor-pointer border border-slate-200"
-                  >
-                    <div className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[11px] font-bold">
-                      {customer.name?.[0] || 'C'}
-                    </div>
-                    <span className="max-w-[120px] truncate">{customer.name}</span>
-                  </button>
+              {(headerNav.showAccount ?? true) && (
+                isAuthenticated && customer ? (
+                  <li className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                      className="flex items-center gap-2 px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-800 transition cursor-pointer border border-slate-200"
+                    >
+                      <div className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[11px] font-bold">
+                        {customer.name?.[0] || 'C'}
+                      </div>
+                      <span className="max-w-[120px] truncate">{customer.name}</span>
+                    </button>
 
-                  {userDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 text-xs font-medium animate-in fade-in">
-                      <div className="px-4 py-2 border-b border-slate-100">
-                        <p className="font-bold text-slate-900 truncate">{customer.name}</p>
-                        <p className="text-[11px] text-slate-500 font-mono">{customer.customerId}</p>
-                        <p className="text-[11px] text-amber-600 font-bold mt-0.5">
-                          {customer.walletBalance || 0} Coins Available
-                        </p>
-                      </div>
-                      <Link
-                        to="/customer/dashboard"
-                        onClick={() => setUserDropdownOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2 hover:bg-slate-50 text-slate-700"
-                      >
-                        <Home size={14} className="text-emerald-600" />
-                        <span>Dashboard</span>
-                      </Link>
-                      <Link
-                        to="/customer/wallet"
-                        onClick={() => setUserDropdownOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2 hover:bg-slate-50 text-slate-700"
-                      >
-                        <Coins size={14} className="text-amber-500" />
-                        <span>My Wallet ({customer.walletBalance || 0} Coins)</span>
-                      </Link>
-                      <Link
-                        to="/customer/referrals"
-                        onClick={() => setUserDropdownOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2 hover:bg-slate-50 text-slate-700"
-                      >
-                        <Gift size={14} className="text-purple-500" />
-                        <span>My Referrals ({customer.referralCode})</span>
-                      </Link>
-                      <Link
-                        to="/customer/purchases"
-                        onClick={() => setUserDropdownOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2 hover:bg-slate-50 text-slate-700"
-                      >
-                        <ShoppingBag size={14} className="text-blue-500" />
-                        <span>My Purchases & Bills</span>
-                      </Link>
-                      <Link
-                        to="/customer/profile"
-                        onClick={() => setUserDropdownOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2 hover:bg-slate-50 text-slate-700"
-                      >
-                        <User size={14} className="text-slate-500" />
-                        <span>My Profile</span>
-                      </Link>
-                      <div className="border-t border-slate-100 mt-1 pt-1">
-                        <button
-                          onClick={() => {
-                            setUserDropdownOpen(false);
-                            logout();
-                          }}
-                          className="w-full flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 text-left cursor-pointer"
+                    {userDropdownOpen && (
+                      <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 text-xs font-medium animate-in fade-in">
+                        <div className="px-4 py-2 border-b border-slate-100">
+                          <p className="font-bold text-slate-900 truncate">{customer.name}</p>
+                          <p className="text-[11px] text-slate-500 font-mono">{customer.customerId}</p>
+                          <p className="text-[11px] text-amber-600 font-bold mt-0.5">
+                            {customer.walletBalance || 0} Coins Available
+                          </p>
+                        </div>
+                        <Link
+                          to="/customer/dashboard"
+                          onClick={() => setUserDropdownOpen(false)}
+                          className="flex items-center gap-2 px-4 py-2 hover:bg-slate-50 text-slate-700"
                         >
-                          <LogOut size={14} />
-                          <span>Logout</span>
-                        </button>
+                          <Home size={14} className="text-emerald-600" />
+                          <span>Dashboard</span>
+                        </Link>
+                        <Link
+                          to="/customer/wallet"
+                          onClick={() => setUserDropdownOpen(false)}
+                          className="flex items-center gap-2 px-4 py-2 hover:bg-slate-50 text-slate-700"
+                        >
+                          <Coins size={14} className="text-amber-500" />
+                          <span>My Wallet ({customer.walletBalance || 0} Coins)</span>
+                        </Link>
+                        <Link
+                          to="/customer/referrals"
+                          onClick={() => setUserDropdownOpen(false)}
+                          className="flex items-center gap-2 px-4 py-2 hover:bg-slate-50 text-slate-700"
+                        >
+                          <Gift size={14} className="text-purple-500" />
+                          <span>My Referrals ({customer.referralCode})</span>
+                        </Link>
+                        <Link
+                          to="/customer/purchases"
+                          onClick={() => setUserDropdownOpen(false)}
+                          className="flex items-center gap-2 px-4 py-2 hover:bg-slate-50 text-slate-700"
+                        >
+                          <ShoppingBag size={14} className="text-blue-500" />
+                          <span>My Purchases & Bills</span>
+                        </Link>
+                        <Link
+                          to="/customer/profile"
+                          onClick={() => setUserDropdownOpen(false)}
+                          className="flex items-center gap-2 px-4 py-2 hover:bg-slate-50 text-slate-700"
+                        >
+                          <User size={14} className="text-slate-500" />
+                          <span>My Profile</span>
+                        </Link>
+                        <div className="border-t border-slate-100 mt-1 pt-1">
+                          <button
+                            onClick={() => {
+                              setUserDropdownOpen(false);
+                              logout();
+                            }}
+                            className="w-full flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 text-left cursor-pointer"
+                          >
+                            <LogOut size={14} />
+                            <span>Logout</span>
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </li>
-              ) : (
-                <li>
-                  <Link
-                    to="/customer/login"
-                    className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
-                  >
-                    <User size={13} />
-                    <span>Account / Login</span>
-                  </Link>
-                </li>
+                    )}
+                  </li>
+                ) : (
+                  <li>
+                    <Link
+                      to="/customer/login"
+                      style={{
+                        backgroundColor: headerNav.accountBtnBg || '#059669',
+                        color: headerNav.accountBtnText || '#ffffff',
+                      }}
+                      className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-xs hover:opacity-90"
+                    >
+                      <User size={13} />
+                      <span>{headerNav.accountLabel || 'Account / Login'}</span>
+                    </Link>
+                  </li>
+                )
               )}
             </ul>
           </nav>
@@ -405,7 +538,13 @@ const Layout = () => {
           <div className="relative w-4/5 max-w-sm bg-slate-900 text-white min-h-full shadow-2xl flex flex-col z-10 border-r border-slate-800">
             {/* Drawer Header */}
             <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950">
-              <EbsLogo variant="battery" size="sm" showText={true} />
+              <EbsLogo
+                variant="battery"
+                size="sm"
+                showText={true}
+                customTitle={headerNav.brandTitle}
+                customSubtitle={headerNav.brandSubtitle}
+              />
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
@@ -474,59 +613,65 @@ const Layout = () => {
                   <span>Portal Navigation</span>
                 </div>
                 <nav className="space-y-1">
-                  <NavLink
-                    to="/"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={({ isActive }) =>
-                      `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
-                        isActive
-                          ? 'bg-emerald-900/50 text-emerald-400 border border-emerald-700/50'
-                          : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                      }`
-                    }
-                  >
-                    <span className="flex items-center gap-2.5">
-                      <Home size={15} className="text-emerald-400" />
-                      <span>Home</span>
-                    </span>
-                    <ChevronRight size={14} className="text-slate-600" />
-                  </NavLink>
+                  {(headerNav.showHome ?? true) && (
+                    <NavLink
+                      to="/"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={({ isActive }) =>
+                        `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
+                          isActive
+                            ? 'bg-emerald-900/50 text-emerald-400 border border-emerald-700/50'
+                            : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                        }`
+                      }
+                    >
+                      <span className="flex items-center gap-2.5">
+                        <Home size={15} className="text-emerald-400" />
+                        <span>{headerNav.homeLabel || 'Home'}</span>
+                      </span>
+                      <ChevronRight size={14} className="text-slate-600" />
+                    </NavLink>
+                  )}
 
-                  <NavLink
-                    to="/customer/wallet"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={({ isActive }) =>
-                      `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
-                        isActive
-                          ? 'bg-amber-900/50 text-amber-400 border border-amber-700/50'
-                          : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                      }`
-                    }
-                  >
-                    <span className="flex items-center gap-2.5">
-                      <Coins size={15} className="text-amber-400" />
-                      <span>My Wallet ({customer?.walletBalance || 0} Coins)</span>
-                    </span>
-                    <ChevronRight size={14} className="text-slate-600" />
-                  </NavLink>
+                  {(headerNav.showWallet ?? true) && (
+                    <NavLink
+                      to="/customer/wallet"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={({ isActive }) =>
+                        `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
+                          isActive
+                            ? 'bg-amber-900/50 text-amber-400 border border-amber-700/50'
+                            : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                        }`
+                      }
+                    >
+                      <span className="flex items-center gap-2.5">
+                        <Coins size={15} className="text-amber-400" />
+                        <span>{headerNav.walletLabel || 'My Wallet'} ({customer?.walletBalance || 0} Coins)</span>
+                      </span>
+                      <ChevronRight size={14} className="text-slate-600" />
+                    </NavLink>
+                  )}
 
-                  <NavLink
-                    to="/customer/referrals"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={({ isActive }) =>
-                      `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
-                        isActive
-                          ? 'bg-purple-900/50 text-purple-400 border border-purple-700/50'
-                          : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                      }`
-                    }
-                  >
-                    <span className="flex items-center gap-2.5">
-                      <Gift size={15} className="text-purple-400" />
-                      <span>My Referrals ({customer?.referralCode || 'Referral Code'})</span>
-                    </span>
-                    <ChevronRight size={14} className="text-slate-600" />
-                  </NavLink>
+                  {(headerNav.showRefer ?? true) && (
+                    <NavLink
+                      to="/customer/referrals"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={({ isActive }) =>
+                        `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
+                          isActive
+                            ? 'bg-purple-900/50 text-purple-400 border border-purple-700/50'
+                            : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                        }`
+                      }
+                    >
+                      <span className="flex items-center gap-2.5">
+                        <Gift size={15} className="text-purple-400" />
+                        <span>{headerNav.referLabel || 'My Referrals'} ({customer?.referralCode || 'Referral Code'})</span>
+                      </span>
+                      <ChevronRight size={14} className="text-slate-600" />
+                    </NavLink>
+                  )}
 
                   <NavLink
                     to="/customer/purchases"
