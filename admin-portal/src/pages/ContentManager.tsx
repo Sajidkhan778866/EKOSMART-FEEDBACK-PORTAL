@@ -991,6 +991,8 @@ const ContentManager = () => {
           ? 'Uploaded image files are too large. Please upload smaller images.'
           : err.response?.status === 401
           ? 'Admin session expired. Please log in again.'
+          : err.message === 'Network Error'
+          ? 'Network Error: Cannot connect to Backend API. Please check backend server status or custom API URL.'
           : err.message || 'Failed to save CMS changes');
       setNotification({
         type: 'error',

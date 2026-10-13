@@ -18,7 +18,7 @@ const router = Router();
 // Public routes
 router.get('/public', getPublicNavPages);
 router.get('/public/by-slug', getPublicPage);
-router.get('/public/*', getPublicPage);
+router.get('/public/*slug', getPublicPage);
 
 // Admin routes
 router.get('/admin', protect, getAdminPages);
