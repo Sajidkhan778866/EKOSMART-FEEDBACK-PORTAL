@@ -190,6 +190,12 @@ interface ICMSContent {
     bgSolidColor?: string;
     bgImage?: string;
     bgOverlayOpacity?: number;
+    bgOverlayColor?: string;
+    bgPosition?: string;
+    bgSize?: string;
+    bgAttachment?: string;
+    bgBlur?: number;
+    showHeroLogo?: boolean;
     bgPattern?: string;
     badgeText?: string;
     badgeIcon?: string;
@@ -379,6 +385,12 @@ const defaultFallbackContent: ICMSContent = {
     bgSolidColor: '#064e3b',
     bgImage: '',
     bgOverlayOpacity: 0.8,
+    bgOverlayColor: '#000000',
+    bgPosition: 'center',
+    bgSize: 'cover',
+    bgAttachment: 'scroll',
+    bgBlur: 0,
+    showHeroLogo: false,
     bgPattern: 'mesh',
     badgeText: 'Official EBS Battery Solution Portal • Kota, Rajasthan',
     badgeIcon: 'Sparkles',
@@ -2789,19 +2801,46 @@ const ContentManager = () => {
                             />
                           </label>
                           {(content.headerNav?.logoImage || content.hero.logoImage) && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setContent({
-                                  ...content,
-                                  hero: { ...content.hero, logoImage: '' },
-                                  headerNav: { ...(content.headerNav || {}), logoImage: '' },
-                                })
-                              }
-                              className="px-2.5 py-1.5 text-red-600 hover:bg-red-50 rounded-lg text-xs font-semibold border border-red-200 transition cursor-pointer"
-                            >
-                              Clear
-                            </button>
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const img = content.hero.logoImage || content.headerNav?.logoImage || '';
+                                  setContent({
+                                    ...content,
+                                    hero: {
+                                      ...content.hero,
+                                      bgType: 'image',
+                                      bgImage: img,
+                                      showHeroLogo: false,
+                                    },
+                                  });
+                                  setNotification({
+                                    type: 'success',
+                                    message: 'Applied image as Hero Background! Scroll to Hero Background below to adjust dark overlay.',
+                                  });
+                                  setTimeout(() => setNotification(null), 4000);
+                                }}
+                                className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold border border-emerald-300 transition cursor-pointer flex items-center gap-1.5"
+                                title="Set this photo as the full background of your homepage hero section"
+                              >
+                                <ImageIcon size={13} />
+                                <span>Use as Hero Background Image</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setContent({
+                                    ...content,
+                                    hero: { ...content.hero, logoImage: '' },
+                                    headerNav: { ...(content.headerNav || {}), logoImage: '' },
+                                  })
+                                }
+                                className="px-2.5 py-1.5 text-red-600 hover:bg-red-50 rounded-lg text-xs font-semibold border border-red-200 transition cursor-pointer"
+                              >
+                                Clear
+                              </button>
+                            </>
                           )}
                         </div>
                       </div>
@@ -2823,6 +2862,23 @@ const ContentManager = () => {
                           }
                           className="w-full border border-slate-300 rounded-lg p-2 text-xs bg-white font-mono"
                         />
+                      </div>
+
+                      <div className="pt-1">
+                        <label className="flex items-center gap-2 text-[11px] text-slate-600 cursor-pointer font-medium hover:text-slate-900">
+                          <input
+                            type="checkbox"
+                            checked={content.hero.showHeroLogo ?? false}
+                            onChange={(e) =>
+                              setContent({
+                                ...content,
+                                hero: { ...content.hero, showHeroLogo: e.target.checked },
+                              })
+                            }
+                            className="rounded text-green-600 h-3.5 w-3.5"
+                          />
+                          <span>Also display this logo emblem inside the Hero Banner (above heading)</span>
+                        </label>
                       </div>
                     </div>
                   </div>
@@ -3238,7 +3294,7 @@ const ContentManager = () => {
                 </p>
               </div>
 
-              <div className="flex bg-slate-200 p-0.5 rounded-lg text-xs self-start sm:self-auto">
+              <div className="flex bg-slate-200 p-1 rounded-xl text-xs self-start sm:self-auto gap-1">
                 <button
                   type="button"
                   onClick={() =>
@@ -3247,13 +3303,14 @@ const ContentManager = () => {
                       hero: { ...content.hero, bgType: 'gradient' },
                     })
                   }
-                  className={`px-3 py-1 rounded-md font-bold text-[11px] transition cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg font-bold text-xs transition cursor-pointer flex items-center gap-1.5 ${
                     (content.hero.bgType || 'gradient') === 'gradient'
-                      ? 'bg-white text-emerald-700 shadow-xs'
+                      ? 'bg-white text-emerald-700 shadow-sm'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  Gradient
+                  <Sparkles size={13} />
+                  <span>Gradient Palettes</span>
                 </button>
                 <button
                   type="button"
@@ -3263,13 +3320,14 @@ const ContentManager = () => {
                       hero: { ...content.hero, bgType: 'solid' },
                     })
                   }
-                  className={`px-3 py-1 rounded-md font-bold text-[11px] transition cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg font-bold text-xs transition cursor-pointer flex items-center gap-1.5 ${
                     content.hero.bgType === 'solid'
-                      ? 'bg-white text-emerald-700 shadow-xs'
+                      ? 'bg-white text-emerald-700 shadow-sm'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  Solid Color
+                  <Palette size={13} />
+                  <span>Solid Color</span>
                 </button>
                 <button
                   type="button"
@@ -3279,13 +3337,17 @@ const ContentManager = () => {
                       hero: { ...content.hero, bgType: 'image' },
                     })
                   }
-                  className={`px-3 py-1 rounded-md font-bold text-[11px] transition cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg font-bold text-xs transition cursor-pointer flex items-center gap-1.5 relative ${
                     content.hero.bgType === 'image'
-                      ? 'bg-white text-emerald-700 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-emerald-600 text-white shadow-sm'
+                      : 'text-slate-700 hover:text-emerald-700 bg-white/60'
                   }`}
                 >
-                  Image Background
+                  <ImageIcon size={14} />
+                  <span>Background Image</span>
+                  {content.hero.bgImage && (
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 absolute -top-0.5 -right-0.5 animate-pulse" />
+                  )}
                 </button>
               </div>
             </div>
@@ -3480,39 +3542,139 @@ const ContentManager = () => {
 
             {/* IMAGE BACKGROUND CONTROLS */}
             {content.hero.bgType === 'image' && (
-              <div className="space-y-4 bg-white p-4 rounded-xl border border-slate-200">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Upload Banner Image</label>
-                    <label className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-xs w-fit">
-                      <Upload size={14} />
-                      <span>Choose Banner Image</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            try {
-                              const res = await compressImageFile(file, 1920, 1080, 0.85);
-                              if (res) {
-                                setContent({
-                                  ...content,
-                                  hero: { ...content.hero, bgImage: res },
-                                });
-                              }
-                            } catch (err) {
-                              console.error('Failed to compress banner image:', err);
-                            }
-                          }
+              <div className="space-y-5 bg-white p-5 rounded-xl border border-slate-200">
+                {/* 1. Live Banner Preview & Quick Status */}
+                <div className="relative rounded-xl overflow-hidden border border-slate-300 h-44 flex items-center justify-center text-center p-4 shadow-inner">
+                  {content.hero.bgImage ? (
+                    <>
+                      <div
+                        className="absolute inset-0 bg-cover bg-center transition-all duration-300"
+                        style={{
+                          backgroundImage: `url(${resolveImageUrl(content.hero.bgImage)})`,
+                          backgroundSize: content.hero.bgSize || 'cover',
+                          backgroundPosition: content.hero.bgPosition || 'center',
+                          filter: content.hero.bgBlur ? `blur(${content.hero.bgBlur}px)` : undefined,
                         }}
                       />
+                      <div
+                        className="absolute inset-0 pointer-events-none transition-opacity"
+                        style={{
+                          backgroundColor: content.hero.bgOverlayColor || '#000000',
+                          opacity: content.hero.bgOverlayOpacity ?? 0.75,
+                        }}
+                      />
+                      <div className="relative z-10 text-white space-y-1">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/80 text-white inline-block">
+                          Active Background Image
+                        </span>
+                        <h4 className="text-base font-black truncate max-w-md">
+                          {content.hero.heading?.split('\n')[0] || 'Ekosmart Battery Solution'}
+                        </h4>
+                        <p className="text-[11px] opacity-80">
+                          Dark Overlay: {Math.round((content.hero.bgOverlayOpacity ?? 0.75) * 100)}% • Tint: {content.hero.bgOverlayColor || '#000000'}
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-slate-400 flex flex-col items-center gap-1.5">
+                      <ImageIcon size={32} className="opacity-50" />
+                      <span className="text-xs font-semibold">No Background Image Configured Yet</span>
+                      <span className="text-[11px] text-slate-400">Upload a photo below or click one of the pre-tested EV presets</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* If user has an image in logoImage, prompt 1-click migration */}
+                {(content.hero.logoImage || content.headerNav?.logoImage) && !content.hero.bgImage && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 text-xs text-amber-900 font-medium">
+                      <Sparkles size={16} className="text-amber-600 shrink-0" />
+                      <span>Found image in Logo Uploader. Would you like to use it as this hero background?</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const img = content.hero.logoImage || content.headerNav?.logoImage || '';
+                        setContent({
+                          ...content,
+                          hero: {
+                            ...content.hero,
+                            bgType: 'image',
+                            bgImage: img,
+                            showHeroLogo: false,
+                          },
+                        });
+                      }}
+                      className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold transition shrink-0 cursor-pointer shadow-xs"
+                    >
+                      Use as Background Image
+                    </button>
+                  </div>
+                )}
+
+                {/* Upload & URL Controls */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                    <label className="block text-xs font-bold text-slate-800">
+                      Option A: Upload Background Image File
                     </label>
+                    <p className="text-[11px] text-slate-500">
+                      Upload any high-res wallpaper, plant photo, or product banner (PNG, JPG, WEBP).
+                    </p>
+                    <div className="flex items-center gap-2 pt-1">
+                      <label className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-xs">
+                        <Upload size={14} />
+                        <span>Choose Banner Image File</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              try {
+                                const res = await compressImageFile(file, 1920, 1080, 0.88);
+                                if (res) {
+                                  setContent({
+                                    ...content,
+                                    hero: {
+                                      ...content.hero,
+                                      bgType: 'image',
+                                      bgImage: res,
+                                    },
+                                  });
+                                }
+                              } catch (err) {
+                                console.error('Failed to compress banner image:', err);
+                              }
+                            }
+                          }}
+                        />
+                      </label>
+                      {content.hero.bgImage && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setContent({
+                              ...content,
+                              hero: { ...content.hero, bgImage: '' },
+                            })
+                          }
+                          className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg text-xs font-semibold border border-red-200 transition cursor-pointer"
+                        >
+                          Remove Image
+                        </button>
+                      )}
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Or Background Image URL</label>
+                  <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                    <label className="block text-xs font-bold text-slate-800">
+                      Option B: Or Enter Public Image URL
+                    </label>
+                    <p className="text-[11px] text-slate-500">
+                      Paste a direct HTTPS link from Unsplash, Cloudinary, AWS S3, or your CDN.
+                    </p>
                     <input
                       type="text"
                       placeholder="https://images.unsplash.com/photo-..."
@@ -3520,7 +3682,11 @@ const ContentManager = () => {
                       onChange={(e) =>
                         setContent({
                           ...content,
-                          hero: { ...content.hero, bgImage: e.target.value },
+                          hero: {
+                            ...content.hero,
+                            bgType: 'image',
+                            bgImage: e.target.value,
+                          },
                         })
                       }
                       className="w-full border border-slate-300 rounded-lg p-2 text-xs font-mono bg-white"
@@ -3528,25 +3694,190 @@ const ContentManager = () => {
                   </div>
                 </div>
 
-                <div>
-                  <div className="flex justify-between items-center text-[11px] font-bold text-slate-700 mb-1">
-                    <span>Dark Overlay Darkness</span>
-                    <span>{Math.round((content.hero.bgOverlayOpacity ?? 0.8) * 100)}%</span>
+                {/* Curated Pre-Tested Background Presets */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-slate-800">
+                      Option C: One-Click Curated EV & Battery Presets
+                    </label>
+                    <span className="text-[10px] text-slate-500">Click to apply instantly</span>
                   </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.05"
-                    value={content.hero.bgOverlayOpacity ?? 0.8}
-                    onChange={(e) =>
-                      setContent({
-                        ...content,
-                        hero: { ...content.hero, bgOverlayOpacity: parseFloat(e.target.value) },
-                      })
-                    }
-                    className="w-full accent-emerald-600"
-                  />
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+                    {[
+                      {
+                        title: 'Lithium Cells',
+                        url: 'https://images.unsplash.com/photo-1558441719-8b449c6ff673?auto=format&fit=crop&w=1920&q=80',
+                      },
+                      {
+                        title: 'EV Mobility',
+                        url: 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=1920&q=80',
+                      },
+                      {
+                        title: 'High-Tech Circuit',
+                        url: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1920&q=80',
+                      },
+                      {
+                        title: 'EV Factory Plant',
+                        url: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1920&q=80',
+                      },
+                      {
+                        title: 'Emerald Wave',
+                        url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1920&q=80',
+                      },
+                      {
+                        title: 'EV Charging Grid',
+                        url: 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7?auto=format&fit=crop&w=1920&q=80',
+                      },
+                    ].map((preset) => (
+                      <button
+                        key={preset.title}
+                        type="button"
+                        onClick={() =>
+                          setContent({
+                            ...content,
+                            hero: {
+                              ...content.hero,
+                              bgType: 'image',
+                              bgImage: preset.url,
+                            },
+                          })
+                        }
+                        className={`group relative rounded-xl overflow-hidden border p-1 text-left transition hover:scale-[1.02] cursor-pointer ${
+                          content.hero.bgImage === preset.url
+                            ? 'border-emerald-500 ring-2 ring-emerald-500/30'
+                            : 'border-slate-200'
+                        }`}
+                      >
+                        <div
+                          className="h-14 w-full rounded-lg bg-cover bg-center"
+                          style={{ backgroundImage: `url(${preset.url})` }}
+                        />
+                        <span className="block text-[10px] font-bold text-slate-700 truncate mt-1 group-hover:text-emerald-700">
+                          {preset.title}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Overlay, Tint, Position & Blur Fine-Tuning */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2 border-t border-slate-200 text-xs">
+                  {/* Overlay Darkness Slider */}
+                  <div>
+                    <div className="flex justify-between items-center text-[11px] font-bold text-slate-700 mb-1">
+                      <span>Dark Overlay Darkness</span>
+                      <span className="text-emerald-700 font-extrabold">
+                        {Math.round((content.hero.bgOverlayOpacity ?? 0.75) * 100)}%
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      value={content.hero.bgOverlayOpacity ?? 0.75}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          hero: { ...content.hero, bgOverlayOpacity: parseFloat(e.target.value) },
+                        })
+                      }
+                      className="w-full accent-emerald-600"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1">Recommended: 70% - 85% for crystal-clear text contrast</p>
+                  </div>
+
+                  {/* Overlay Color Tint */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Overlay Tint Color</label>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="color"
+                        value={content.hero.bgOverlayColor || '#000000'}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            hero: { ...content.hero, bgOverlayColor: e.target.value },
+                          })
+                        }
+                        className="w-7 h-7 rounded cursor-pointer border p-0 bg-white shrink-0"
+                      />
+                      <input
+                        type="text"
+                        value={content.hero.bgOverlayColor || '#000000'}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            hero: { ...content.hero, bgOverlayColor: e.target.value },
+                          })
+                        }
+                        placeholder="#000000"
+                        className="w-full border border-slate-300 rounded-lg p-1.5 text-xs font-mono"
+                      />
+                    </div>
+                    <div className="flex gap-1 mt-1">
+                      {[
+                        { label: 'Black', val: '#000000' },
+                        { label: 'Emerald', val: '#022c22' },
+                        { label: 'Navy', val: '#0f172a' },
+                      ].map((t) => (
+                        <button
+                          key={t.label}
+                          type="button"
+                          onClick={() =>
+                            setContent({
+                              ...content,
+                              hero: { ...content.hero, bgOverlayColor: t.val },
+                            })
+                          }
+                          className="text-[9px] px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer"
+                        >
+                          {t.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Background Position */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Focal Position</label>
+                    <select
+                      value={content.hero.bgPosition || 'center'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          hero: { ...content.hero, bgPosition: e.target.value },
+                        })
+                      }
+                      className="w-full border border-slate-300 rounded-lg p-2 text-xs bg-white font-medium"
+                    >
+                      <option value="center">Center (Recommended)</option>
+                      <option value="top">Top Focused</option>
+                      <option value="bottom">Bottom Focused</option>
+                    </select>
+                  </div>
+
+                  {/* Parallax / Attachment */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Parallax Scroll</label>
+                    <label className="flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={content.hero.bgAttachment === 'fixed'}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            hero: {
+                              ...content.hero,
+                              bgAttachment: e.target.checked ? 'fixed' : 'scroll',
+                            },
+                          })
+                        }
+                        className="rounded text-green-600 h-4 w-4"
+                      />
+                      <span className="text-[11px] font-semibold text-slate-700">Fixed Parallax Effect</span>
+                    </label>
+                  </div>
                 </div>
               </div>
             )}
@@ -4420,22 +4751,55 @@ const ContentManager = () => {
                   background:
                     content.hero.bgType === 'solid'
                       ? content.hero.bgSolidColor || '#064e3b'
-                      : content.hero.bgType === 'image' && content.hero.bgImage
-                      ? `url(${resolveImageUrl(content.hero.bgImage)})`
                       : content.hero.bgGradientDirection === 'radial'
                       ? `radial-gradient(circle at center, ${content.hero.bgGradientMiddle || '#064e3b'} 0%, ${content.hero.bgGradientStart || '#022c22'} 70%, ${content.hero.bgGradientEnd || '#115e59'} 100%)`
                       : `linear-gradient(to right, ${content.hero.bgGradientStart || '#022c22'}, ${content.hero.bgGradientMiddle || '#064e3b'}, ${content.hero.bgGradientEnd || '#115e59'})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
                   color: content.hero.textColor || '#ffffff',
                 }}
                 className="p-8 sm:p-12 text-center space-y-5 relative overflow-hidden"
               >
+                {/* Full Hero Background Image Layer if image mode or bgImage exists */}
+                {(content.hero.bgType === 'image' || Boolean(content.hero.bgImage)) && content.hero.bgImage && (
+                  <div
+                    className="absolute inset-0 pointer-events-none transition-all duration-300"
+                    style={{
+                      backgroundImage: `url(${resolveImageUrl(content.hero.bgImage)})`,
+                      backgroundSize: content.hero.bgSize || 'cover',
+                      backgroundPosition: content.hero.bgPosition || 'center',
+                      backgroundRepeat: 'no-repeat',
+                      filter: content.hero.bgBlur ? `blur(${content.hero.bgBlur}px)` : undefined,
+                    }}
+                  />
+                )}
+
+                {/* Dark Overlay Tint Layer */}
+                {(content.hero.bgType === 'image' || Boolean(content.hero.bgImage)) && content.hero.bgImage && (
+                  <div
+                    className="absolute inset-0 pointer-events-none transition-opacity"
+                    style={{
+                      backgroundColor: content.hero.bgOverlayColor || '#000000',
+                      opacity: content.hero.bgOverlayOpacity ?? 0.75,
+                    }}
+                  />
+                )}
+
                 {content.hero.bgPattern !== 'none' && (
                   <div className="absolute inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:20px_20px] opacity-10 pointer-events-none" />
                 )}
 
                 <div className="relative z-10 space-y-4 max-w-2xl mx-auto">
+                  {/* Optional Emblem/Logo in Hero */}
+                  {(content.hero.showHeroLogo ?? false) && content.hero.logoImage && (
+                    <div className="flex justify-center mb-2">
+                      <div className="bg-white/10 backdrop-blur-md p-2 rounded-xl border border-white/20 inline-block shadow-sm">
+                        <img
+                          src={resolveImageUrl(content.hero.logoImage)}
+                          alt="Hero Logo"
+                          className="h-10 max-h-12 w-auto max-w-[180px] object-contain"
+                        />
+                      </div>
+                    </div>
+                  )}
                   {(content.hero.badgeVisible ?? true) && (
                     <div
                       style={{

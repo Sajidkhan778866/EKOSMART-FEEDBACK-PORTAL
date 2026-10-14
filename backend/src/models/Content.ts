@@ -147,6 +147,12 @@ export interface IHeroContent {
   bgSolidColor?: string;
   bgImage?: string;
   bgOverlayOpacity?: number;
+  bgOverlayColor?: string;
+  bgPosition?: string;
+  bgSize?: string;
+  bgAttachment?: string;
+  bgBlur?: number;
+  showHeroLogo?: boolean;
   bgPattern?: string;
   badgeText?: string;
   badgeIcon?: string;
@@ -363,6 +369,12 @@ const contentSchema = new Schema<IContent>(
       bgSolidColor: { type: String, default: '#064e3b' },
       bgImage: { type: String, default: '' },
       bgOverlayOpacity: { type: Number, default: 0.8 },
+      bgOverlayColor: { type: String, default: '#000000' },
+      bgPosition: { type: String, default: 'center' },
+      bgSize: { type: String, default: 'cover' },
+      bgAttachment: { type: String, default: 'scroll' },
+      bgBlur: { type: Number, default: 0 },
+      showHeroLogo: { type: Boolean, default: false },
       bgPattern: { type: String, default: 'mesh' },
       badgeText: { type: String, default: 'Official EBS Battery Solution Portal • Kota, Rajasthan' },
       badgeIcon: { type: String, default: 'Sparkles' },

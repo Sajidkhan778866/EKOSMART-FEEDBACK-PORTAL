@@ -100,6 +100,12 @@ interface HeroContent {
   bgSolidColor?: string;
   bgImage?: string;
   bgOverlayOpacity?: number;
+  bgOverlayColor?: string;
+  bgPosition?: string;
+  bgSize?: string;
+  bgAttachment?: string;
+  bgBlur?: number;
+  showHeroLogo?: boolean;
   bgPattern?: string;
   badgeText?: string;
   badgeIcon?: string;
@@ -152,6 +158,12 @@ const defaultHero: HeroContent = {
   bgSolidColor: '#064e3b',
   bgImage: '',
   bgOverlayOpacity: 0.8,
+  bgOverlayColor: '#000000',
+  bgPosition: 'center',
+  bgSize: 'cover',
+  bgAttachment: 'scroll',
+  bgBlur: 0,
+  showHeroLogo: false,
   bgPattern: 'mesh',
   badgeText: 'Official EBS Battery Solution Portal • Kota, Rajasthan',
   badgeIcon: 'Sparkles',
@@ -594,13 +606,6 @@ const Home = () => {
     if (hero.bgType === 'solid') {
       return { backgroundColor: hero.bgSolidColor || '#064e3b' };
     }
-    if (hero.bgType === 'image' && hero.bgImage) {
-      return {
-        backgroundImage: `url(${resolveImageUrl(hero.bgImage)})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      };
-    }
     const dirMap: Record<string, string> = {
       'to-r': 'to right',
       'to-b': 'to bottom',
@@ -656,11 +661,30 @@ const Home = () => {
         }}
         className="text-white py-16 md:py-20 px-4 relative overflow-hidden transition-all duration-300 shadow-inner"
       >
-        {/* Background Image Overlay */}
-        {hero.bgType === 'image' && hero.bgImage && (
+        {/* Full Hero Background Image Layer (Active if bgType === 'image' OR if hero.bgImage exists) */}
+        {(hero.bgType === 'image' || Boolean(hero.bgImage)) && hero.bgImage && (
           <div
-            className="absolute inset-0 bg-slate-950 pointer-events-none transition-opacity"
-            style={{ opacity: hero.bgOverlayOpacity ?? 0.75 }}
+            className="absolute inset-0 pointer-events-none transition-all duration-500 bg-cover"
+            style={{
+              backgroundImage: `url(${resolveImageUrl(hero.bgImage)})`,
+              backgroundSize: hero.bgSize || 'cover',
+              backgroundPosition: hero.bgPosition || 'center',
+              backgroundRepeat: 'no-repeat',
+              backgroundAttachment: hero.bgAttachment === 'fixed' ? 'fixed' : 'scroll',
+              filter: hero.bgBlur ? `blur(${hero.bgBlur}px)` : undefined,
+              transform: hero.bgBlur ? 'scale(1.05)' : undefined,
+            }}
+          />
+        )}
+
+        {/* Dynamic Dark Overlay Layer for Text Readability */}
+        {(hero.bgType === 'image' || Boolean(hero.bgImage)) && hero.bgImage && (
+          <div
+            className="absolute inset-0 pointer-events-none transition-opacity duration-300"
+            style={{
+              backgroundColor: hero.bgOverlayColor || '#000000',
+              opacity: hero.bgOverlayOpacity ?? 0.75,
+            }}
           />
         )}
 
@@ -670,30 +694,22 @@ const Home = () => {
         )}
 
         <div className="max-w-6xl mx-auto text-center space-y-8 relative z-10">
-          {(hero.badgeVisible ?? true) && (
-            hero.logoType === 'image' && hero.logoImage ? (
-              <div className="flex flex-col items-center gap-3">
-                <div className="bg-white/10 backdrop-blur-md p-3 rounded-2xl border border-white/20 inline-block shadow-lg">
-                  <img
-                    src={resolveImageUrl(hero.logoImage)}
-                    alt="Brand Logo"
-                    className="h-14 max-h-16 w-auto max-w-[240px] object-contain"
-                  />
-                </div>
-
-                <div
-                  style={{
-                    backgroundColor: hero.badgeBgColor || 'rgba(6, 78, 59, 0.6)',
-                    color: hero.badgeTextColor || '#6ee7b7',
-                    borderColor: hero.badgeBorderColor || 'rgba(16, 185, 129, 0.4)',
-                  }}
-                  className="inline-flex items-center gap-2 border px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase transition-colors"
-                >
-                  <Sparkles size={14} />
-                  <span>{hero.badgeText || 'Official EBS Battery Solution Portal • Kota, Rajasthan'}</span>
-                </div>
+          {/* Optional Hero Brand Emblem/Logo inside Hero (Only shown if showHeroLogo is true) */}
+          {(hero.showHeroLogo ?? false) && hero.logoImage && (
+            <div className="flex flex-col items-center gap-3">
+              <div className="bg-white/10 backdrop-blur-md p-3 rounded-2xl border border-white/20 inline-block shadow-lg">
+                <img
+                  src={resolveImageUrl(hero.logoImage)}
+                  alt="Brand Logo"
+                  className="h-14 max-h-16 w-auto max-w-[240px] object-contain"
+                />
               </div>
-            ) : (
+            </div>
+          )}
+
+          {/* Top Pill Badge */}
+          {(hero.badgeVisible ?? true) && (
+            <div>
               <div
                 style={{
                   backgroundColor: hero.badgeBgColor || 'rgba(6, 78, 59, 0.6)',
@@ -705,7 +721,7 @@ const Home = () => {
                 <Sparkles size={14} />
                 <span>{hero.badgeText || 'Official EBS Battery Solution Portal • Kota, Rajasthan'}</span>
               </div>
-            )
+            </div>
           )}
 
           <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight whitespace-pre-line leading-tight">
