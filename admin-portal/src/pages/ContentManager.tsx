@@ -375,6 +375,37 @@ interface ICMSContent {
     dropdownOptions: string[];
     divisionContacts?: IDivisionContact[];
     isPublished: boolean;
+    // Softcoded Contact Cards
+    cardHelplineTitle?: string;
+    cardHelplineSubtitle?: string;
+    cardHelplineCallBtnText?: string;
+    cardHelplineWhatsappBtnText?: string;
+    cardEmailTitle?: string;
+    cardEmailSubtitle?: string;
+    cardEmailBtnText?: string;
+    cardAddressTitle?: string;
+    cardAddressFacility?: string;
+    cardAddressBtnText?: string;
+    cardHoursTitle?: string;
+    cardHoursSubtitle?: string;
+    cardHoursNote?: string;
+    // Plant Dossier Card
+    dossierTitle?: string;
+    dossierSubtitle?: string;
+    dossierDescription?: string;
+    corporateEntity?: string;
+    dossierBadgeText?: string;
+    // Inquiry Form
+    formTitle?: string;
+    formSubtitle?: string;
+    formQuickSelectLabel?: string;
+    formButtonText?: string;
+    formSuccessTitle?: string;
+    formSuccessMessage?: string;
+    // Division Section Directory
+    divisionSectionBadge?: string;
+    divisionSectionTitle?: string;
+    divisionSectionSubtitle?: string;
   };
   customerLoginTimer?: {
     enabled: boolean;
@@ -701,6 +732,42 @@ const defaultFallbackContent: ICMSContent = {
       },
     ],
     isPublished: true,
+    // Softcoded Contact Cards
+    cardHelplineTitle: 'Direct Helpline',
+    cardHelplineSubtitle: 'Customer support & battery technician hotline',
+    cardHelplineCallBtnText: 'Call Now',
+    cardHelplineWhatsappBtnText: 'WhatsApp Us',
+    cardEmailTitle: 'Official Email',
+    cardEmailSubtitle: 'Direct technical query & corporate warranty inbox',
+    cardEmailBtnText: 'Send Email',
+    cardAddressTitle: 'Manufacturing Plant',
+    cardAddressFacility: 'Kota Central Facility',
+    cardAddressBtnText: 'View on Map',
+    cardHoursTitle: 'Office & Plant Hours',
+    cardHoursSubtitle: 'Technical dispatch & customer reception',
+    cardHoursNote: 'Mon - Sat (Sun Closed)',
+    // Plant Dossier Card
+    dossierTitle: 'EBS EKOSMART',
+    dossierSubtitle: 'BATTERY SOLUTION • LI-ION & LFP',
+    dossierDescription:
+      'Ekosmart Battery Solution (EBS) & Ekosmart EV Spare Parts operates a state-of-the-art battery assembly, testing, and laboratory diagnostics facility in Kota, Rajasthan.',
+    corporateEntity: 'Ekosmart Battery Solution (EBS)',
+    dossierBadgeText:
+      'Pan-India technical assistance, battery replacement logistics, and warranty coverage active.',
+    // Inquiry Form
+    formTitle: 'Send an Official Inquiry',
+    formSubtitle:
+      'Have questions regarding dealership, bulk battery orders, or spare parts? Fill out the form below.',
+    formQuickSelectLabel: 'QUICK SELECT DIVISION / CONCERN:',
+    formButtonText: 'SUBMIT INQUIRY TO KOTA PLANT',
+    formSuccessTitle: 'Inquiry Received!',
+    formSuccessMessage:
+      'Thank you. Our customer response team in Kota has received your message and will contact you shortly.',
+    // Division Section Directory
+    divisionSectionBadge: 'Department & Division Directory',
+    divisionSectionTitle: 'Direct Contact Channels by Division',
+    divisionSectionSubtitle:
+      'Connect directly with our dedicated division engineers, parts managers, and franchise officers in Kota.',
   },
   customerLoginTimer: {
     enabled: true,
@@ -10180,6 +10247,487 @@ const ContentManager = () => {
                     })
                   }
                   className="w-full border border-slate-300 rounded-lg p-2 text-xs font-medium"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2B: Top 4 Contact Cards Content */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+            <h3 className="text-base font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3">
+              <Layers className="text-green-600" size={20} />
+              Top 4 Contact Cards Labels & Action Buttons
+            </h3>
+
+            {/* Card 1: Direct Helpline Card */}
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+              <div className="flex items-center gap-2 font-bold text-xs text-slate-800">
+                <Phone size={14} className="text-emerald-600" />
+                <span>Card 1: Direct Helpline Card</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                <div>
+                  <label className="block font-semibold text-slate-600 mb-1">Card Title</label>
+                  <input
+                    type="text"
+                    value={content.contactInfo?.cardHelplineTitle || ''}
+                    placeholder="Direct Helpline"
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        contactInfo: { ...content.contactInfo, cardHelplineTitle: e.target.value },
+                      })
+                    }
+                    className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-600 mb-1">Card Subtitle / Description</label>
+                  <input
+                    type="text"
+                    value={content.contactInfo?.cardHelplineSubtitle || ''}
+                    placeholder="Customer support & battery technician hotline"
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        contactInfo: { ...content.contactInfo, cardHelplineSubtitle: e.target.value },
+                      })
+                    }
+                    className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-600 mb-1">Call Button Label</label>
+                  <input
+                    type="text"
+                    value={content.contactInfo?.cardHelplineCallBtnText || ''}
+                    placeholder="Call Now"
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        contactInfo: { ...content.contactInfo, cardHelplineCallBtnText: e.target.value },
+                      })
+                    }
+                    className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-600 mb-1">WhatsApp Button Label</label>
+                  <input
+                    type="text"
+                    value={content.contactInfo?.cardHelplineWhatsappBtnText || ''}
+                    placeholder="WhatsApp Us"
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        contactInfo: { ...content.contactInfo, cardHelplineWhatsappBtnText: e.target.value },
+                      })
+                    }
+                    className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Card 2: Official Email Card */}
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+              <div className="flex items-center gap-2 font-bold text-xs text-slate-800">
+                <Mail size={14} className="text-blue-600" />
+                <span>Card 2: Official Email Card</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                <div>
+                  <label className="block font-semibold text-slate-600 mb-1">Card Title</label>
+                  <input
+                    type="text"
+                    value={content.contactInfo?.cardEmailTitle || ''}
+                    placeholder="Official Email"
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        contactInfo: { ...content.contactInfo, cardEmailTitle: e.target.value },
+                      })
+                    }
+                    className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-600 mb-1">Card Subtitle / Description</label>
+                  <input
+                    type="text"
+                    value={content.contactInfo?.cardEmailSubtitle || ''}
+                    placeholder="Direct technical query & corporate warranty inbox"
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        contactInfo: { ...content.contactInfo, cardEmailSubtitle: e.target.value },
+                      })
+                    }
+                    className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-600 mb-1">Send Email Button Label</label>
+                  <input
+                    type="text"
+                    value={content.contactInfo?.cardEmailBtnText || ''}
+                    placeholder="Send Email"
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        contactInfo: { ...content.contactInfo, cardEmailBtnText: e.target.value },
+                      })
+                    }
+                    className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Card 3: Manufacturing Plant Card */}
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+              <div className="flex items-center gap-2 font-bold text-xs text-slate-800">
+                <MapPin size={14} className="text-purple-600" />
+                <span>Card 3: Manufacturing Plant Card</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                <div>
+                  <label className="block font-semibold text-slate-600 mb-1">Card Title</label>
+                  <input
+                    type="text"
+                    value={content.contactInfo?.cardAddressTitle || ''}
+                    placeholder="Manufacturing Plant"
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        contactInfo: { ...content.contactInfo, cardAddressTitle: e.target.value },
+                      })
+                    }
+                    className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-600 mb-1">Facility Name / Facility Area</label>
+                  <input
+                    type="text"
+                    value={content.contactInfo?.cardAddressFacility || ''}
+                    placeholder="Kota Central Facility"
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        contactInfo: { ...content.contactInfo, cardAddressFacility: e.target.value },
+                      })
+                    }
+                    className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-600 mb-1">View Map Button Label</label>
+                  <input
+                    type="text"
+                    value={content.contactInfo?.cardAddressBtnText || ''}
+                    placeholder="View on Map"
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        contactInfo: { ...content.contactInfo, cardAddressBtnText: e.target.value },
+                      })
+                    }
+                    className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Card 4: Office & Plant Hours Card */}
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+              <div className="flex items-center gap-2 font-bold text-xs text-slate-800">
+                <Clock size={14} className="text-amber-600" />
+                <span>Card 4: Office & Plant Hours Card</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                <div>
+                  <label className="block font-semibold text-slate-600 mb-1">Card Title</label>
+                  <input
+                    type="text"
+                    value={content.contactInfo?.cardHoursTitle || ''}
+                    placeholder="Office & Plant Hours"
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        contactInfo: { ...content.contactInfo, cardHoursTitle: e.target.value },
+                      })
+                    }
+                    className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-600 mb-1">Card Subtitle / Description</label>
+                  <input
+                    type="text"
+                    value={content.contactInfo?.cardHoursSubtitle || ''}
+                    placeholder="Technical dispatch & customer reception"
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        contactInfo: { ...content.contactInfo, cardHoursSubtitle: e.target.value },
+                      })
+                    }
+                    className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-600 mb-1">Working Days / Holiday Note</label>
+                  <input
+                    type="text"
+                    value={content.contactInfo?.cardHoursNote || ''}
+                    placeholder="Mon - Sat (Sun Closed)"
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        contactInfo: { ...content.contactInfo, cardHoursNote: e.target.value },
+                      })
+                    }
+                    className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2C: Plant Dossier Card (Left Column) */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+            <h3 className="text-base font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3">
+              <Building2 className="text-emerald-600" size={20} />
+              Company Dossier Card (Plant Credentials & Overview)
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Brand Title</label>
+                <input
+                  type="text"
+                  value={content.contactInfo?.dossierTitle || ''}
+                  placeholder="EBS EKOSMART"
+                  onChange={(e) =>
+                    setContent({
+                      ...content,
+                      contactInfo: { ...content.contactInfo, dossierTitle: e.target.value },
+                    })
+                  }
+                  className="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Brand Subtitle</label>
+                <input
+                  type="text"
+                  value={content.contactInfo?.dossierSubtitle || ''}
+                  placeholder="BATTERY SOLUTION • LI-ION & LFP"
+                  onChange={(e) =>
+                    setContent({
+                      ...content,
+                      contactInfo: { ...content.contactInfo, dossierSubtitle: e.target.value },
+                    })
+                  }
+                  className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Corporate Entity Name</label>
+                <input
+                  type="text"
+                  value={content.contactInfo?.corporateEntity || ''}
+                  placeholder="Ekosmart Battery Solution (EBS)"
+                  onChange={(e) =>
+                    setContent({
+                      ...content,
+                      contactInfo: { ...content.contactInfo, corporateEntity: e.target.value },
+                    })
+                  }
+                  className="w-full border border-slate-300 rounded-lg p-2 text-xs font-semibold"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Pan-India Warranty Badge Text</label>
+                <input
+                  type="text"
+                  value={content.contactInfo?.dossierBadgeText || ''}
+                  placeholder="Pan-India technical assistance, battery replacement logistics, and warranty coverage active."
+                  onChange={(e) =>
+                    setContent({
+                      ...content,
+                      contactInfo: { ...content.contactInfo, dossierBadgeText: e.target.value },
+                    })
+                  }
+                  className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block font-semibold text-slate-700 mb-1">Plant Facility & Diagnostics Overview</label>
+                <textarea
+                  rows={2}
+                  value={content.contactInfo?.dossierDescription || ''}
+                  placeholder="Ekosmart Battery Solution (EBS) & Ekosmart EV Spare Parts operates a state-of-the-art battery assembly, testing, and laboratory diagnostics facility in Kota, Rajasthan."
+                  onChange={(e) =>
+                    setContent({
+                      ...content,
+                      contactInfo: { ...content.contactInfo, dossierDescription: e.target.value },
+                    })
+                  }
+                  className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2D: Send an Official Inquiry Form Settings */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+            <h3 className="text-base font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3">
+              <FileText className="text-blue-600" size={20} />
+              Inquiry Form Content & Submission Labels
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Form Heading</label>
+                <input
+                  type="text"
+                  value={content.contactInfo?.formTitle || ''}
+                  placeholder="Send an Official Inquiry"
+                  onChange={(e) =>
+                    setContent({
+                      ...content,
+                      contactInfo: { ...content.contactInfo, formTitle: e.target.value },
+                    })
+                  }
+                  className="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Submit Button Text</label>
+                <input
+                  type="text"
+                  value={content.contactInfo?.formButtonText || ''}
+                  placeholder="SUBMIT INQUIRY TO KOTA PLANT"
+                  onChange={(e) =>
+                    setContent({
+                      ...content,
+                      contactInfo: { ...content.contactInfo, formButtonText: e.target.value },
+                    })
+                  }
+                  className="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold uppercase tracking-wider"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block font-semibold text-slate-700 mb-1">Form Subtitle / Instructions</label>
+                <input
+                  type="text"
+                  value={content.contactInfo?.formSubtitle || ''}
+                  placeholder="Have questions regarding dealership, bulk battery orders, or spare parts? Fill out the form below."
+                  onChange={(e) =>
+                    setContent({
+                      ...content,
+                      contactInfo: { ...content.contactInfo, formSubtitle: e.target.value },
+                    })
+                  }
+                  className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Quick Select Division Label</label>
+                <input
+                  type="text"
+                  value={content.contactInfo?.formQuickSelectLabel || ''}
+                  placeholder="QUICK SELECT DIVISION / CONCERN:"
+                  onChange={(e) =>
+                    setContent({
+                      ...content,
+                      contactInfo: { ...content.contactInfo, formQuickSelectLabel: e.target.value },
+                    })
+                  }
+                  className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Submission Success Heading</label>
+                <input
+                  type="text"
+                  value={content.contactInfo?.formSuccessTitle || ''}
+                  placeholder="Inquiry Received!"
+                  onChange={(e) =>
+                    setContent({
+                      ...content,
+                      contactInfo: { ...content.contactInfo, formSuccessTitle: e.target.value },
+                    })
+                  }
+                  className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2E: Division Directory Section Settings */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+            <h3 className="text-base font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3">
+              <Building2 className="text-purple-600" size={20} />
+              Department Directory Section Headings
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Section Badge</label>
+                <input
+                  type="text"
+                  value={content.contactInfo?.divisionSectionBadge || ''}
+                  placeholder="Department & Division Directory"
+                  onChange={(e) =>
+                    setContent({
+                      ...content,
+                      contactInfo: { ...content.contactInfo, divisionSectionBadge: e.target.value },
+                    })
+                  }
+                  className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Section Title</label>
+                <input
+                  type="text"
+                  value={content.contactInfo?.divisionSectionTitle || ''}
+                  placeholder="Direct Contact Channels by Division"
+                  onChange={(e) =>
+                    setContent({
+                      ...content,
+                      contactInfo: { ...content.contactInfo, divisionSectionTitle: e.target.value },
+                    })
+                  }
+                  className="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block font-semibold text-slate-700 mb-1">Section Subtitle</label>
+                <input
+                  type="text"
+                  value={content.contactInfo?.divisionSectionSubtitle || ''}
+                  placeholder="Connect directly with our dedicated division engineers, parts managers, and franchise officers in Kota."
+                  onChange={(e) =>
+                    setContent({
+                      ...content,
+                      contactInfo: { ...content.contactInfo, divisionSectionSubtitle: e.target.value },
+                    })
+                  }
+                  className="w-full border border-slate-300 rounded-lg p-2 text-xs"
                 />
               </div>
             </div>

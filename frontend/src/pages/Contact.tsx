@@ -47,6 +47,37 @@ interface ContactCMSData {
   dropdownOptions: string[];
   divisionContacts?: IDivisionContact[];
   isPublished: boolean;
+  // Softcoded Contact Cards
+  cardHelplineTitle?: string;
+  cardHelplineSubtitle?: string;
+  cardHelplineCallBtnText?: string;
+  cardHelplineWhatsappBtnText?: string;
+  cardEmailTitle?: string;
+  cardEmailSubtitle?: string;
+  cardEmailBtnText?: string;
+  cardAddressTitle?: string;
+  cardAddressFacility?: string;
+  cardAddressBtnText?: string;
+  cardHoursTitle?: string;
+  cardHoursSubtitle?: string;
+  cardHoursNote?: string;
+  // Plant Dossier Card
+  dossierTitle?: string;
+  dossierSubtitle?: string;
+  dossierDescription?: string;
+  corporateEntity?: string;
+  dossierBadgeText?: string;
+  // Inquiry Form
+  formTitle?: string;
+  formSubtitle?: string;
+  formQuickSelectLabel?: string;
+  formButtonText?: string;
+  formSuccessTitle?: string;
+  formSuccessMessage?: string;
+  // Division Section Directory
+  divisionSectionBadge?: string;
+  divisionSectionTitle?: string;
+  divisionSectionSubtitle?: string;
 }
 
 const defaultContactCMS: ContactCMSData = {
@@ -119,6 +150,42 @@ const defaultContactCMS: ContactCMSData = {
     },
   ],
   isPublished: true,
+  // Softcoded Contact Cards
+  cardHelplineTitle: 'Direct Helpline',
+  cardHelplineSubtitle: 'Customer support & battery technician hotline',
+  cardHelplineCallBtnText: 'Call Now',
+  cardHelplineWhatsappBtnText: 'WhatsApp Us',
+  cardEmailTitle: 'Official Email',
+  cardEmailSubtitle: 'Direct technical query & corporate warranty inbox',
+  cardEmailBtnText: 'Send Email',
+  cardAddressTitle: 'Manufacturing Plant',
+  cardAddressFacility: 'Kota Central Facility',
+  cardAddressBtnText: 'View on Map',
+  cardHoursTitle: 'Office & Plant Hours',
+  cardHoursSubtitle: 'Technical dispatch & customer reception',
+  cardHoursNote: 'Mon - Sat (Sun Closed)',
+  // Plant Dossier Card
+  dossierTitle: 'EBS EKOSMART',
+  dossierSubtitle: 'BATTERY SOLUTION • LI-ION & LFP',
+  dossierDescription:
+    'Ekosmart Battery Solution (EBS) & Ekosmart EV Spare Parts operates a state-of-the-art battery assembly, testing, and laboratory diagnostics facility in Kota, Rajasthan.',
+  corporateEntity: 'Ekosmart Battery Solution (EBS)',
+  dossierBadgeText:
+    'Pan-India technical assistance, battery replacement logistics, and warranty coverage active.',
+  // Inquiry Form
+  formTitle: 'Send an Official Inquiry',
+  formSubtitle:
+    'Have questions regarding dealership, bulk battery orders, or spare parts? Fill out the form below.',
+  formQuickSelectLabel: 'QUICK SELECT DIVISION / CONCERN:',
+  formButtonText: 'SUBMIT INQUIRY TO KOTA PLANT',
+  formSuccessTitle: 'Inquiry Received!',
+  formSuccessMessage:
+    'Thank you. Our customer response team in Kota has received your message and will contact you shortly.',
+  // Division Section Directory
+  divisionSectionBadge: 'Department & Division Directory',
+  divisionSectionTitle: 'Direct Contact Channels by Division',
+  divisionSectionSubtitle:
+    'Connect directly with our dedicated division engineers, parts managers, and franchise officers in Kota.',
 };
 
 export const Contact = () => {
@@ -216,8 +283,8 @@ export const Contact = () => {
             <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto border border-emerald-200 shadow-xs">
               <Phone size={24} />
             </div>
-            <h3 className="font-extrabold text-slate-800 text-base">Direct Helpline</h3>
-            <p className="text-slate-500 text-xs">Customer support & battery technician hotline</p>
+            <h3 className="font-extrabold text-slate-800 text-base">{cms.cardHelplineTitle || 'Direct Helpline'}</h3>
+            <p className="text-slate-500 text-xs">{cms.cardHelplineSubtitle || 'Customer support & battery technician hotline'}</p>
             <div className="space-y-1">
               <div className="font-mono font-bold text-emerald-700 text-sm">{cms.helplinePhone}</div>
               {cms.alternatePhone && (
@@ -230,7 +297,7 @@ export const Contact = () => {
               href={`tel:${cleanHelpline}`}
               className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full font-bold text-xs transition block shadow-sm"
             >
-              Call Now
+              {cms.cardHelplineCallBtnText || 'Call Now'}
             </a>
             {cms.whatsappNumber && (
               <a
@@ -240,7 +307,7 @@ export const Contact = () => {
                 className="w-full py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-full font-bold text-xs transition flex items-center justify-center gap-1.5"
               >
                 <MessageSquare size={13} />
-                <span>WhatsApp Us</span>
+                <span>{cms.cardHelplineWhatsappBtnText || 'WhatsApp Us'}</span>
               </a>
             )}
           </div>
@@ -252,8 +319,8 @@ export const Contact = () => {
             <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto border border-blue-200 shadow-xs">
               <Mail size={24} />
             </div>
-            <h3 className="font-extrabold text-slate-800 text-base">Official Email</h3>
-            <p className="text-slate-500 text-xs">Direct technical query & corporate warranty inbox</p>
+            <h3 className="font-extrabold text-slate-800 text-base">{cms.cardEmailTitle || 'Official Email'}</h3>
+            <p className="text-slate-500 text-xs">{cms.cardEmailSubtitle || 'Direct technical query & corporate warranty inbox'}</p>
             <div className="space-y-1">
               <div className="font-mono font-bold text-blue-700 text-xs truncate">{cms.supportEmail}</div>
               {cms.salesEmail && (
@@ -265,7 +332,7 @@ export const Contact = () => {
             href={`mailto:${cms.supportEmail}`}
             className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-bold text-xs transition block shadow-sm"
           >
-            Send Email
+            {cms.cardEmailBtnText || 'Send Email'}
           </a>
         </div>
 
@@ -275,9 +342,9 @@ export const Contact = () => {
             <div className="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mx-auto border border-purple-200 shadow-xs">
               <MapPin size={24} />
             </div>
-            <h3 className="font-extrabold text-slate-800 text-base">Manufacturing Plant</h3>
+            <h3 className="font-extrabold text-slate-800 text-base">{cms.cardAddressTitle || 'Manufacturing Plant'}</h3>
             <p className="text-slate-500 text-xs line-clamp-2">{cms.plantAddress}</p>
-            <div className="font-bold text-purple-700 text-xs">Kota Central Facility</div>
+            <div className="font-bold text-purple-700 text-xs">{cms.cardAddressFacility || 'Kota Central Facility'}</div>
           </div>
           <a
             href={cms.mapUrl || 'https://maps.google.com/?q=Kota,Rajasthan'}
@@ -285,7 +352,7 @@ export const Contact = () => {
             rel="noreferrer"
             className="w-full py-2.5 bg-purple-700 hover:bg-purple-800 text-white rounded-full font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-sm"
           >
-            <span>View on Map</span>
+            <span>{cms.cardAddressBtnText || 'View on Map'}</span>
             <ExternalLink size={13} />
           </a>
         </div>
@@ -296,12 +363,12 @@ export const Contact = () => {
             <div className="w-14 h-14 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mx-auto border border-amber-200 shadow-xs">
               <Clock size={24} />
             </div>
-            <h3 className="font-extrabold text-slate-800 text-base">Office & Plant Hours</h3>
-            <p className="text-slate-500 text-xs">Technical dispatch & customer reception</p>
+            <h3 className="font-extrabold text-slate-800 text-base">{cms.cardHoursTitle || 'Office & Plant Hours'}</h3>
+            <p className="text-slate-500 text-xs">{cms.cardHoursSubtitle || 'Technical dispatch & customer reception'}</p>
             <div className="font-bold text-amber-700 text-xs">{cms.officeHours}</div>
           </div>
           <div className="w-full py-2.5 bg-slate-100 text-slate-700 rounded-full font-bold text-xs block">
-            Mon - Sat (Sun Closed)
+            {cms.cardHoursNote || 'Mon - Sat (Sun Closed)'}
           </div>
         </div>
       </div>
@@ -314,13 +381,13 @@ export const Contact = () => {
           <div>
             <div className="flex items-center gap-2 text-emerald-700 font-bold text-xs uppercase tracking-wider">
               <Building2 size={16} />
-              <span>Department & Division Directory</span>
+              <span>{cms.divisionSectionBadge || 'Department & Division Directory'}</span>
             </div>
             <h2 className="text-2xl font-extrabold text-slate-900 mt-1">
-              Direct Contact Channels by Division
+              {cms.divisionSectionTitle || 'Direct Contact Channels by Division'}
             </h2>
             <p className="text-slate-500 text-xs mt-0.5">
-              Connect directly with our dedicated division engineers, parts managers, and franchise officers in Kota.
+              {cms.divisionSectionSubtitle || 'Connect directly with our dedicated division engineers, parts managers, and franchise officers in Kota.'}
             </p>
           </div>
           <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold px-3 py-1.5 rounded-xl self-start sm:self-auto shadow-xs">
@@ -480,9 +547,20 @@ export const Contact = () => {
         {/* Left Column: Official Company Dossier (Soft-coded from CMS) */}
         <div className="lg:col-span-5 bg-gradient-to-br from-slate-900 to-slate-950 text-white rounded-3xl p-8 space-y-6 border border-slate-800 shadow-xl">
           <div className="space-y-3">
-            <EbsLogo variant="battery" size="md" />
-            <p className="text-slate-300 text-xs leading-relaxed pt-2">
-              Ekosmart Battery Solution (EBS) & Ekosmart EV Spare Parts operates a state-of-the-art battery assembly, testing, and laboratory diagnostics facility in Kota, Rajasthan.
+            <div className="flex items-center gap-3">
+              <EbsLogo variant="battery" size="md" />
+              <div>
+                <h3 className="font-extrabold text-white text-base tracking-wide uppercase">
+                  {cms.dossierTitle || 'EBS EKOSMART'}
+                </h3>
+                <p className="text-[11px] text-emerald-400 font-semibold tracking-wider uppercase">
+                  {cms.dossierSubtitle || 'BATTERY SOLUTION • LI-ION & LFP'}
+                </p>
+              </div>
+            </div>
+            <p className="text-slate-300 text-xs leading-relaxed pt-1">
+              {cms.dossierDescription ||
+                'Ekosmart Battery Solution (EBS) & Ekosmart EV Spare Parts operates a state-of-the-art battery assembly, testing, and laboratory diagnostics facility in Kota, Rajasthan.'}
             </p>
           </div>
 
@@ -491,7 +569,7 @@ export const Contact = () => {
               <Building2 size={18} className="text-emerald-400 flex-shrink-0 mt-0.5" />
               <div>
                 <span className="text-slate-400 uppercase font-bold text-[10px] block">Corporate Entity</span>
-                <span className="font-semibold text-slate-100">Ekosmart Battery Solution (EBS)</span>
+                <span className="font-semibold text-slate-100">{cms.corporateEntity || 'Ekosmart Battery Solution (EBS)'}</span>
               </div>
             </div>
 
@@ -538,16 +616,17 @@ export const Contact = () => {
 
           <div className="bg-emerald-950/60 rounded-2xl p-4 border border-emerald-500/30 text-xs text-emerald-200 flex items-center gap-3">
             <ShieldCheck size={24} className="text-emerald-400 flex-shrink-0" />
-            <span>Pan-India technical assistance, battery replacement logistics, and warranty coverage active.</span>
+            <span>{cms.dossierBadgeText || 'Pan-India technical assistance, battery replacement logistics, and warranty coverage active.'}</span>
           </div>
         </div>
 
         {/* Right Column: Send Message / Inquiry Form with Soft-Coded Dropdown */}
         <div className="lg:col-span-7 bg-white rounded-3xl p-8 border border-slate-200 shadow-sm space-y-6">
           <div>
-            <h3 className="text-2xl font-bold text-slate-800">Send an Official Inquiry</h3>
+            <h3 className="text-2xl font-bold text-slate-800">{cms.formTitle || 'Send an Official Inquiry'}</h3>
             <p className="text-slate-500 text-xs mt-1">
-              Have questions regarding dealership, bulk battery orders, or spare parts? Fill out the form below.
+              {cms.formSubtitle ||
+                'Have questions regarding dealership, bulk battery orders, or spare parts? Fill out the form below.'}
             </p>
           </div>
 
@@ -556,7 +635,7 @@ export const Contact = () => {
             <div className="space-y-1.5">
               <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
                 <Sparkles size={12} className="text-emerald-600" />
-                <span>Quick Select Division / Concern:</span>
+                <span>{cms.formQuickSelectLabel || 'Quick Select Division / Concern:'}</span>
               </label>
               <div className="flex flex-wrap gap-1.5">
                 {cms.dropdownOptions.map((opt) => {
@@ -661,10 +740,19 @@ export const Contact = () => {
               <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
                 <CheckCircle2 size={32} />
               </div>
-              <h4 className="text-xl font-bold text-emerald-900">Inquiry Received!</h4>
+              <h4 className="text-xl font-bold text-emerald-900">{cms.formSuccessTitle || 'Inquiry Received!'}</h4>
               <p className="text-xs text-emerald-700 max-w-md mx-auto">
-                Thank you, <b>{formData.name}</b>. Our customer response team in Kota has received your message regarding{' '}
-                <b>{formData.division}</b> and will contact you at <b>{formData.mobile}</b> shortly.
+                {cms.formSuccessMessage ? (
+                  cms.formSuccessMessage
+                    .replace('{name}', formData.name)
+                    .replace('{division}', formData.division)
+                    .replace('{mobile}', formData.mobile)
+                ) : (
+                  <>
+                    Thank you, <b>{formData.name}</b>. Our customer response team in Kota has received your message regarding{' '}
+                    <b>{formData.division}</b> and will contact you at <b>{formData.mobile}</b> shortly.
+                  </>
+                )}
               </p>
               <button
                 onClick={() => {
@@ -784,7 +872,7 @@ export const Contact = () => {
                 className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs transition shadow-md flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Send size={15} />
-                <span>SUBMIT INQUIRY TO KOTA PLANT</span>
+                <span>{cms.formButtonText || 'SUBMIT INQUIRY TO KOTA PLANT'}</span>
               </button>
             </form>
           )}

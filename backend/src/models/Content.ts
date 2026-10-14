@@ -356,6 +356,37 @@ export interface IContent extends Document {
     dropdownOptions: string[];
     divisionContacts?: IDivisionContact[];
     isPublished: boolean;
+    // Softcoded Contact Cards
+    cardHelplineTitle?: string;
+    cardHelplineSubtitle?: string;
+    cardHelplineCallBtnText?: string;
+    cardHelplineWhatsappBtnText?: string;
+    cardEmailTitle?: string;
+    cardEmailSubtitle?: string;
+    cardEmailBtnText?: string;
+    cardAddressTitle?: string;
+    cardAddressFacility?: string;
+    cardAddressBtnText?: string;
+    cardHoursTitle?: string;
+    cardHoursSubtitle?: string;
+    cardHoursNote?: string;
+    // Plant Dossier Card
+    dossierTitle?: string;
+    dossierSubtitle?: string;
+    dossierDescription?: string;
+    corporateEntity?: string;
+    dossierBadgeText?: string;
+    // Inquiry Form
+    formTitle?: string;
+    formSubtitle?: string;
+    formQuickSelectLabel?: string;
+    formButtonText?: string;
+    formSuccessTitle?: string;
+    formSuccessMessage?: string;
+    // Division Section Directory
+    divisionSectionBadge?: string;
+    divisionSectionTitle?: string;
+    divisionSectionSubtitle?: string;
   };
   footer: IFooterContent;
   privacyPolicy: {
@@ -539,6 +570,54 @@ const contentSchema = new Schema<IContent>(
       },
       divisionContacts: [divisionContactSchema],
       isPublished: { type: Boolean, default: true },
+      // Softcoded Contact Cards
+      cardHelplineTitle: { type: String, default: 'Direct Helpline' },
+      cardHelplineSubtitle: { type: String, default: 'Customer support & battery technician hotline' },
+      cardHelplineCallBtnText: { type: String, default: 'Call Now' },
+      cardHelplineWhatsappBtnText: { type: String, default: 'WhatsApp Us' },
+      cardEmailTitle: { type: String, default: 'Official Email' },
+      cardEmailSubtitle: { type: String, default: 'Direct technical query & corporate warranty inbox' },
+      cardEmailBtnText: { type: String, default: 'Send Email' },
+      cardAddressTitle: { type: String, default: 'Manufacturing Plant' },
+      cardAddressFacility: { type: String, default: 'Kota Central Facility' },
+      cardAddressBtnText: { type: String, default: 'View on Map' },
+      cardHoursTitle: { type: String, default: 'Office & Plant Hours' },
+      cardHoursSubtitle: { type: String, default: 'Technical dispatch & customer reception' },
+      cardHoursNote: { type: String, default: 'Mon - Sat (Sun Closed)' },
+      // Plant Dossier Card
+      dossierTitle: { type: String, default: 'EBS EKOSMART' },
+      dossierSubtitle: { type: String, default: 'BATTERY SOLUTION • LI-ION & LFP' },
+      dossierDescription: {
+        type: String,
+        default:
+          'Ekosmart Battery Solution (EBS) & Ekosmart EV Spare Parts operates a state-of-the-art battery assembly, testing, and laboratory diagnostics facility in Kota, Rajasthan.',
+      },
+      corporateEntity: { type: String, default: 'Ekosmart Battery Solution (EBS)' },
+      dossierBadgeText: {
+        type: String,
+        default: 'Pan-India technical assistance, battery replacement logistics, and warranty coverage active.',
+      },
+      // Inquiry Form
+      formTitle: { type: String, default: 'Send an Official Inquiry' },
+      formSubtitle: {
+        type: String,
+        default: 'Have questions regarding dealership, bulk battery orders, or spare parts? Fill out the form below.',
+      },
+      formQuickSelectLabel: { type: String, default: 'QUICK SELECT DIVISION / CONCERN:' },
+      formButtonText: { type: String, default: 'SUBMIT INQUIRY TO KOTA PLANT' },
+      formSuccessTitle: { type: String, default: 'Inquiry Received!' },
+      formSuccessMessage: {
+        type: String,
+        default:
+          'Thank you. Our customer response team in Kota has received your message and will contact you shortly.',
+      },
+      // Division Section Directory
+      divisionSectionBadge: { type: String, default: 'Department & Division Directory' },
+      divisionSectionTitle: { type: String, default: 'Direct Contact Channels by Division' },
+      divisionSectionSubtitle: {
+        type: String,
+        default: 'Connect directly with our dedicated division engineers, parts managers, and franchise officers in Kota.',
+      },
     },
     footer: {
       companyName: { type: String, default: 'Ekosmart Battery Solution (EBS) & EV Spare Parts' },

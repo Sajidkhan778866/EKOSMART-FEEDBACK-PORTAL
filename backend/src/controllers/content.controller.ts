@@ -367,6 +367,42 @@ export const defaultContactData = {
   ],
   divisionContacts: defaultDivisionContacts,
   isPublished: true,
+  // Softcoded Contact Cards
+  cardHelplineTitle: 'Direct Helpline',
+  cardHelplineSubtitle: 'Customer support & battery technician hotline',
+  cardHelplineCallBtnText: 'Call Now',
+  cardHelplineWhatsappBtnText: 'WhatsApp Us',
+  cardEmailTitle: 'Official Email',
+  cardEmailSubtitle: 'Direct technical query & corporate warranty inbox',
+  cardEmailBtnText: 'Send Email',
+  cardAddressTitle: 'Manufacturing Plant',
+  cardAddressFacility: 'Kota Central Facility',
+  cardAddressBtnText: 'View on Map',
+  cardHoursTitle: 'Office & Plant Hours',
+  cardHoursSubtitle: 'Technical dispatch & customer reception',
+  cardHoursNote: 'Mon - Sat (Sun Closed)',
+  // Plant Dossier Card
+  dossierTitle: 'EBS EKOSMART',
+  dossierSubtitle: 'BATTERY SOLUTION • LI-ION & LFP',
+  dossierDescription:
+    'Ekosmart Battery Solution (EBS) & Ekosmart EV Spare Parts operates a state-of-the-art battery assembly, testing, and laboratory diagnostics facility in Kota, Rajasthan.',
+  corporateEntity: 'Ekosmart Battery Solution (EBS)',
+  dossierBadgeText:
+    'Pan-India technical assistance, battery replacement logistics, and warranty coverage active.',
+  // Inquiry Form
+  formTitle: 'Send an Official Inquiry',
+  formSubtitle:
+    'Have questions regarding dealership, bulk battery orders, or spare parts? Fill out the form below.',
+  formQuickSelectLabel: 'QUICK SELECT DIVISION / CONCERN:',
+  formButtonText: 'SUBMIT INQUIRY TO KOTA PLANT',
+  formSuccessTitle: 'Inquiry Received!',
+  formSuccessMessage:
+    'Thank you. Our customer response team in Kota has received your message and will contact you shortly.',
+  // Division Section Directory
+  divisionSectionBadge: 'Department & Division Directory',
+  divisionSectionTitle: 'Direct Contact Channels by Division',
+  divisionSectionSubtitle:
+    'Connect directly with our dedicated division engineers, parts managers, and franchise officers in Kota.',
 };
 
 export const defaultRefundPolicyData = {
