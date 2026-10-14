@@ -216,12 +216,34 @@ const defaultFooter: FooterContent = {
   contactDropdownTitle: 'Quick Department Directory',
 };
 
+interface DivisionContactItem {
+  id?: string;
+  name: string;
+  phone?: string;
+  email?: string;
+  whatsapp?: string;
+  inCharge?: string;
+  officeHours?: string;
+  address?: string;
+}
+
+interface ContactInfoData {
+  helplinePhone?: string;
+  whatsappNumber?: string;
+  supportEmail?: string;
+  plantAddress?: string;
+  mapUrl?: string;
+  dropdownOptions?: string[];
+  divisionContacts?: DivisionContactItem[];
+}
+
 const Layout = () => {
   const { customer, isAuthenticated, logout } = useCustomerAuth();
   const { theme } = useTheme();
   const [topBar, setTopBar] = useState<TopBarContent>(defaultTopBar);
   const [headerNav, setHeaderNav] = useState<HeaderNavContent>(defaultHeaderNav);
   const [footer, setFooter] = useState<FooterContent>(defaultFooter);
+  const [contactInfo, setContactInfo] = useState<ContactInfoData | null>(null);
   const [headerLogo, setHeaderLogo] = useState<HeaderLogoContent>({ logoType: 'preset', logoImage: '' });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -290,6 +312,9 @@ const Layout = () => {
           if (data.data.footer && !theme.footer) {
             setFooter({ ...defaultFooter, ...data.data.footer });
           }
+          if (data.data.contactInfo) {
+            setContactInfo(data.data.contactInfo);
+          }
           if (data.data.hero && !theme.header) {
             setHeaderLogo({
               logoType: data.data.hero.logoType || 'preset',
@@ -331,6 +356,35 @@ const Layout = () => {
   const handleCloseLoginModal = () => {
     sessionStorage.setItem('ekosmart_login_prompt_dismissed', 'true');
     setLoginModalOpen(false);
+  };
+
+  const activeDivisions =
+    contactInfo?.dropdownOptions && contactInfo.dropdownOptions.length > 0
+      ? contactInfo.dropdownOptions
+      : [
+          'Lithium Battery Solution (EBS)',
+          'EV Spare Parts Wholesale/Retail',
+          'Drive Rental Assistance',
+          'Showroom & Dealership Inquiries',
+          'Plant Commercial Warranty Inspection',
+        ];
+
+  const getDivContact = (divName: string): DivisionContactItem => {
+    return (
+      contactInfo?.divisionContacts?.find(
+        (c) => c.name.trim().toLowerCase() === divName.trim().toLowerCase()
+      ) ||
+      contactInfo?.divisionContacts?.find(
+        (c) =>
+          divName.toLowerCase().includes(c.name.toLowerCase()) ||
+          c.name.toLowerCase().includes(divName.toLowerCase())
+      ) || {
+        name: divName,
+        phone: footer.phone || '+91 8949049003',
+        email: footer.email || 'support@ekosmartdrive.in',
+        whatsapp: footer.whatsappNumber || footer.phone || '+91 8949049003',
+      }
+    );
   };
 
   return (
@@ -503,7 +557,7 @@ const Layout = () => {
                 </button>
 
                 {navContactDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 text-xs font-medium animate-in fade-in">
+                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 text-xs font-medium animate-in fade-in max-h-[85vh] overflow-y-auto">
                     <div className="px-4 py-2 border-b border-slate-100 bg-slate-50 rounded-t-xl">
                       <p className="font-bold text-slate-900 text-xs">Direct Support & Helplines</p>
                       <p className="text-[11px] text-slate-500">Every option connects you instantly</p>
@@ -518,7 +572,7 @@ const Layout = () => {
                         <Phone size={14} />
                       </div>
                       <div>
-                        <div className="font-bold text-slate-900 text-xs">Call Helpline</div>
+                        <div className="font-bold text-slate-900 text-xs">Central Helpline</div>
                         <div className="text-[11px] text-emerald-700 font-mono font-semibold">
                           {footer.phone || '+91 8949049003'}
                         </div>
@@ -578,6 +632,72 @@ const Layout = () => {
                         </div>
                       </div>
                     </a>
+
+                    {/* Concern Division / Department Contacts Section */}
+                    <div className="px-4 pt-2.5 pb-1 border-t border-slate-100 bg-slate-50/60">
+                      <p className="font-bold text-slate-800 text-[11px] uppercase tracking-wider flex items-center justify-between">
+                        <span>Concern Division Contacts</span>
+                        <span className="text-emerald-700 font-mono text-[10px]">({activeDivisions.length} Active)</span>
+                      </p>
+                    </div>
+
+                    <div className="divide-y divide-slate-100">
+                      {activeDivisions.map((opt) => {
+                        const divContact = getDivContact(opt);
+                        const cleanPhone = (divContact.phone || footer.phone || '+918949049003').replace(/[^0-9+]/g, '');
+                        const cleanWa = (divContact.whatsapp || divContact.phone || footer.whatsappNumber || '918949049003').replace(/[^0-9]/g, '');
+                        const waUrl = `https://wa.me/${cleanWa.length === 10 ? `91${cleanWa}` : cleanWa}?text=${encodeURIComponent(`Hello Ekosmart ${opt}, I have an inquiry.`)}`;
+
+                        return (
+                          <div key={opt} className="px-4 py-2 hover:bg-slate-50 transition">
+                            <div className="flex items-center justify-between gap-1">
+                              <NavLink
+                                to={`/contact?division=${encodeURIComponent(opt)}`}
+                                onClick={() => setNavContactDropdownOpen(false)}
+                                className="font-bold text-slate-900 text-xs hover:text-emerald-700 transition"
+                              >
+                                {opt}
+                              </NavLink>
+                              {divContact.inCharge && (
+                                <span className="text-[10px] text-slate-400 truncate max-w-[110px]">
+                                  {divContact.inCharge}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-3 text-[11px] pt-1">
+                              <a
+                                href={`tel:${cleanPhone}`}
+                                className="font-mono text-emerald-700 hover:underline flex items-center gap-1 font-semibold"
+                                title="Call Department"
+                              >
+                                <Phone size={10} />
+                                <span>{divContact.phone || footer.phone}</span>
+                              </a>
+                              <a
+                                href={waUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-emerald-600 hover:underline flex items-center gap-1 font-semibold"
+                                title="WhatsApp Chat"
+                              >
+                                <WhatsAppIcon size={11} />
+                                <span>WhatsApp</span>
+                              </a>
+                              {divContact.email && (
+                                <a
+                                  href={`mailto:${divContact.email}`}
+                                  className="text-blue-600 hover:underline flex items-center gap-1 truncate max-w-[90px]"
+                                  title="Email"
+                                >
+                                  <Mail size={10} />
+                                  <span>Email</span>
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
 
                     <div className="border-t border-slate-100 my-1 pt-1">
                       <NavLink
@@ -1251,61 +1371,88 @@ const Layout = () => {
                   </button>
 
                   {footerContactDropdownOpen && (
-                    <div className="mt-2 p-2 bg-slate-900/95 border border-slate-700/80 rounded-xl space-y-1.5 shadow-xl text-[11px] animate-in fade-in">
-                      <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                        Clickable Direct Options
+                    <div className="mt-2 p-2 bg-slate-900/95 border border-slate-700/80 rounded-xl space-y-1.5 shadow-xl text-[11px] animate-in fade-in max-h-96 overflow-y-auto">
+                      <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                        <span>Direct Department Desks</span>
+                        <span className="text-emerald-400 font-mono">({activeDivisions.length} Active)</span>
                       </div>
-                      <a
-                        href={`tel:${(footer.phone || '+918949049003').replace(/\s+/g, '')}`}
-                        className="flex items-center justify-between p-2 rounded-lg bg-slate-800/80 hover:bg-slate-800 text-slate-200 hover:text-emerald-400 transition"
-                      >
-                        <span className="font-semibold">⚡ Battery Sales & AMC</span>
-                        <span className="font-mono text-emerald-400">{footer.phone || '+91 8949049003'}</span>
-                      </a>
-                      <a
-                        href={`tel:${(footer.phone || '+918949049003').replace(/\s+/g, '')}`}
-                        className="flex items-center justify-between p-2 rounded-lg bg-slate-800/80 hover:bg-slate-800 text-slate-200 hover:text-emerald-400 transition"
-                      >
-                        <span className="font-semibold">🔩 EV Spare Parts Desk</span>
-                        <span className="font-mono text-emerald-400">{footer.phone || '+91 8949049003'}</span>
-                      </a>
-                      {(footer.showWhatsapp ?? true) && (
+
+                      {activeDivisions.map((opt) => {
+                        const divContact = getDivContact(opt);
+                        const cleanPhone = (divContact.phone || footer.phone || '+918949049003').replace(/[^0-9+]/g, '');
+                        const cleanWa = (divContact.whatsapp || divContact.phone || footer.whatsappNumber || '918949049003').replace(/[^0-9]/g, '');
+                        const waUrl = `https://wa.me/${cleanWa.length === 10 ? `91${cleanWa}` : cleanWa}?text=${encodeURIComponent(`Hello Ekosmart ${opt}, I have an inquiry.`)}`;
+
+                        return (
+                          <div
+                            key={opt}
+                            className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-800 text-slate-200 transition space-y-1"
+                          >
+                            <div className="flex items-center justify-between gap-1">
+                              <NavLink
+                                to={`/contact?division=${encodeURIComponent(opt)}`}
+                                className="font-semibold text-xs text-slate-100 hover:text-emerald-400 transition"
+                              >
+                                {opt}
+                              </NavLink>
+                              {divContact.inCharge && (
+                                <span className="text-[10px] text-slate-400 truncate max-w-[120px]">
+                                  {divContact.inCharge}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-3 text-[11px] pt-0.5 border-t border-slate-700/40">
+                              <a
+                                href={`tel:${cleanPhone}`}
+                                className="font-mono text-emerald-400 hover:underline flex items-center gap-1 font-semibold"
+                                title="Click to call"
+                              >
+                                <Phone size={10} />
+                                <span>{divContact.phone || footer.phone}</span>
+                              </a>
+                              <a
+                                href={waUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-emerald-300 hover:underline flex items-center gap-1 font-semibold"
+                                title="Chat on WhatsApp"
+                              >
+                                <WhatsAppIcon size={11} />
+                                <span>WhatsApp</span>
+                              </a>
+                              {divContact.email && (
+                                <a
+                                  href={`mailto:${divContact.email}`}
+                                  className="text-blue-400 hover:underline flex items-center gap-1 truncate max-w-[110px]"
+                                  title="Send email"
+                                >
+                                  <Mail size={10} />
+                                  <span>Email</span>
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      <div className="pt-1 border-t border-slate-800 space-y-1">
                         <a
-                          href={getWhatsAppUrl(footer.whatsappNumber || footer.phone, 'Inquiry: Ekosmart Drive Rental Program')}
+                          href={footer.mapUrl || `https://maps.google.com/?q=${encodeURIComponent(footer.address || 'Rang Talab, Near by Star Kids School, Kota, Rajasthan - 324002')}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center justify-between p-2 rounded-lg bg-emerald-950/40 hover:bg-emerald-950/70 text-emerald-300 border border-emerald-800/40 transition"
+                          className="flex items-center justify-between p-2 rounded-lg bg-slate-800/60 hover:bg-slate-800 text-slate-200 hover:text-amber-400 transition"
                         >
-                          <span className="flex items-center gap-1.5 font-semibold">
-                            <WhatsAppIcon size={12} className="text-emerald-400" />
-                            <span>🛵 Drive Rental WhatsApp</span>
-                          </span>
-                          <ExternalLink size={11} className="text-emerald-400" />
+                          <span className="font-semibold">🏭 Kota Plant Navigation</span>
+                          <span className="text-amber-400 text-[10px]">Google Maps &rarr;</span>
                         </a>
-                      )}
-                      <a
-                        href={footer.mapUrl || `https://maps.google.com/?q=${encodeURIComponent(footer.address || 'Rang Talab, Near by Star Kids School, Kota, Rajasthan - 324002')}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-between p-2 rounded-lg bg-slate-800/80 hover:bg-slate-800 text-slate-200 hover:text-amber-400 transition"
-                      >
-                        <span className="font-semibold">🏭 Kota Plant Navigation</span>
-                        <span className="text-amber-400 text-[10px]">Google Maps &rarr;</span>
-                      </a>
-                      <NavLink
-                        to="/warranty/check"
-                        className="flex items-center justify-between p-2 rounded-lg bg-slate-800/80 hover:bg-slate-800 text-slate-200 hover:text-purple-400 transition"
-                      >
-                        <span className="font-semibold">🛡️ Battery Warranty Verification</span>
-                        <span className="text-purple-400 text-[10px]">Check &rarr;</span>
-                      </NavLink>
-                      <NavLink
-                        to="/contact"
-                        className="flex items-center justify-between p-2 rounded-lg bg-slate-800/80 hover:bg-slate-800 text-slate-200 hover:text-emerald-400 transition font-bold"
-                      >
-                        <span>📞 All Departments Directory</span>
-                        <ChevronRight size={12} className="text-slate-400" />
-                      </NavLink>
+                        <NavLink
+                          to="/contact"
+                          className="flex items-center justify-between p-2 rounded-lg bg-slate-800/60 hover:bg-slate-800 text-slate-200 hover:text-emerald-400 transition font-bold"
+                        >
+                          <span>📞 View Full Contact Directory</span>
+                          <ChevronRight size={12} className="text-slate-400" />
+                        </NavLink>
+                      </div>
                     </div>
                   )}
                 </div>

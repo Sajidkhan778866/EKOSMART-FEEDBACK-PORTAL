@@ -293,6 +293,59 @@ Service complaints are categorized and handled under four designated divisions: 
   isPublished: true,
 };
 
+export const defaultDivisionContacts = [
+  {
+    id: 'div-contact-1',
+    name: 'Lithium Battery Solution (EBS)',
+    phone: '+91 8949049003',
+    email: 'battery@ekosmartdrive.in',
+    whatsapp: '+91 8949049003',
+    inCharge: 'Lead Battery Diagnostic Engineer',
+    officeHours: '10:00 AM - 6:30 PM (Mon - Sat)',
+    address: 'Kota Central Plant - Testing Bay 1',
+  },
+  {
+    id: 'div-contact-2',
+    name: 'EV Spare Parts Wholesale/Retail',
+    phone: '+91 8949049003',
+    email: 'parts@ekosmartdrive.in',
+    whatsapp: '+91 8949049003',
+    inCharge: 'Parts Logistics Manager',
+    officeHours: '10:00 AM - 6:30 PM (Mon - Sat)',
+    address: 'Kota Central Plant - Warehouse A',
+  },
+  {
+    id: 'div-contact-3',
+    name: 'Drive Rental Assistance',
+    phone: '+91 8949049003',
+    email: 'rental@ekosmartdrive.in',
+    whatsapp: '+91 8949049003',
+    inCharge: 'Fleet Mobility Lead',
+    officeHours: '24/7 Helpline Support',
+    address: 'Kota Mobility Desk',
+  },
+  {
+    id: 'div-contact-4',
+    name: 'Showroom & Dealership Inquiries',
+    phone: '+91 8949049003',
+    email: 'showroom@ekosmartdrive.in',
+    whatsapp: '+91 8949049003',
+    inCharge: 'Dealership Franchise Head',
+    officeHours: '10:00 AM - 7:00 PM (Mon - Sat)',
+    address: 'Kota Flagship Experience Center',
+  },
+  {
+    id: 'div-contact-5',
+    name: 'Plant Commercial Warranty Inspection',
+    phone: '+91 8949049003',
+    email: 'warranty@ekosmartdrive.in',
+    whatsapp: '+91 8949049003',
+    inCharge: 'Chief Quality & Warranty Officer',
+    officeHours: '10:00 AM - 6:00 PM (Mon - Sat)',
+    address: 'Kota Plant - Quality Control Bay',
+  },
+];
+
 export const defaultContactData = {
   heading: 'Get in Touch With Us',
   subheading:
@@ -304,6 +357,7 @@ export const defaultContactData = {
   officeHours: '10:00 AM to 6:30 PM (Mon - Sat)',
   gstin: '08DTUPM4205B1Z0',
   website: 'www.ekosmartdrive.in',
+  mapUrl: 'https://maps.google.com/?q=Rang+Talab,+Near+by+Star+Kids+School,+Kota,+Rajasthan+324002',
   dropdownOptions: [
     'Lithium Battery Solution (EBS)',
     'EV Spare Parts Wholesale/Retail',
@@ -311,6 +365,7 @@ export const defaultContactData = {
     'Showroom & Dealership Inquiries',
     'Plant Commercial Warranty Inspection',
   ],
+  divisionContacts: defaultDivisionContacts,
   isPublished: true,
 };
 
@@ -568,8 +623,31 @@ export const getOrCreateDefaultContent = async () => {
       content.customerLoginTimer = defaultCustomerLoginTimer;
       modified = true;
     }
-    if (!content.contactInfo || !content.contactInfo.dropdownOptions || content.contactInfo.dropdownOptions.length === 0) {
-      content.contactInfo = defaultContactData;
+    if (
+      !content.contactInfo ||
+      !content.contactInfo.dropdownOptions ||
+      content.contactInfo.dropdownOptions.length === 0 ||
+      !content.contactInfo.divisionContacts ||
+      content.contactInfo.divisionContacts.length === 0
+    ) {
+      const existingInfo = content.contactInfo
+        ? ((content.contactInfo as any).toObject
+          ? (content.contactInfo as any).toObject()
+          : content.contactInfo)
+        : {};
+      content.contactInfo = {
+        ...defaultContactData,
+        ...existingInfo,
+        dropdownOptions:
+          existingInfo.dropdownOptions && existingInfo.dropdownOptions.length > 0
+            ? existingInfo.dropdownOptions
+            : defaultContactData.dropdownOptions,
+        divisionContacts:
+          existingInfo.divisionContacts && existingInfo.divisionContacts.length > 0
+            ? existingInfo.divisionContacts
+            : defaultDivisionContacts,
+      };
+      content.markModified('contactInfo');
       modified = true;
     }
     if (!content.footer?.phone || !content.footer?.address || typeof (content.footer as any)?.whatsappNumber === 'undefined') {
@@ -658,7 +736,16 @@ export const getPublicContent = async (_req: Request, res: Response) => {
         quickActionsConfig: content.quickActionsConfig || defaultQuickActionsConfig,
         quickActions: (content.quickActions || []).filter((q) => q.isVisible !== false),
         referralSettings,
-        contactInfo: content.contactInfo || defaultContactData,
+        contactInfo: {
+          ...defaultContactData,
+          ...((content.contactInfo as any)?.toObject
+            ? (content.contactInfo as any).toObject()
+            : content.contactInfo),
+          divisionContacts:
+            content.contactInfo?.divisionContacts && content.contactInfo.divisionContacts.length > 0
+              ? content.contactInfo.divisionContacts
+              : defaultDivisionContacts,
+        },
         footer: content.footer,
         privacyPolicy: content.privacyPolicy,
         termsConditions: content.termsConditions,

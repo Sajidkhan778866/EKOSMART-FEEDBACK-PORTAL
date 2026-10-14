@@ -108,6 +108,15 @@ const defaultContactCMS: ContactCMSData = {
       officeHours: '10:00 AM - 7:00 PM (Mon - Sat)',
       address: 'Kota Flagship Experience Center',
     },
+    {
+      name: 'Plant Commercial Warranty Inspection',
+      phone: '+91 8949049003',
+      email: 'warranty@ekosmartdrive.in',
+      whatsapp: '+91 8949049003',
+      inCharge: 'Chief Quality & Warranty Officer',
+      officeHours: '10:00 AM - 6:00 PM (Mon - Sat)',
+      address: 'Kota Central Plant - Quality Control Bay',
+    },
   ],
   isPublished: true,
 };
@@ -128,19 +137,31 @@ export const Contact = () => {
   const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const divParam = params.get('division');
+
     fetch(`${API_BASE}/content/public`)
       .then((res) => res.json())
       .then((data) => {
         if (data.success && data.data?.contactInfo) {
           const loaded = { ...defaultContactCMS, ...data.data.contactInfo };
-          setCms(loaded);
-          if (loaded.dropdownOptions && loaded.dropdownOptions.length > 0) {
-            setFormData((prev) => ({ ...prev, division: prev.division || loaded.dropdownOptions[0] }));
+          if (!loaded.divisionContacts || loaded.divisionContacts.length === 0) {
+            loaded.divisionContacts = defaultContactCMS.divisionContacts;
           }
+          setCms(loaded);
+          const initialDiv =
+            divParam ||
+            (loaded.dropdownOptions && loaded.dropdownOptions.length > 0
+              ? loaded.dropdownOptions[0]
+              : '');
+          setFormData((prev) => ({ ...prev, division: prev.division || initialDiv }));
         }
       })
       .catch((err) => {
         console.warn('Failed to load dynamic CMS contact data, using defaults:', err);
+        if (divParam) {
+          setFormData((prev) => ({ ...prev, division: divParam }));
+        }
       });
   }, []);
 
@@ -285,8 +306,177 @@ export const Contact = () => {
         </div>
       </div>
 
+      {/* ============================================================ */}
+      {/* CONCERN DIVISION & DEPARTMENT DIRECTORY (ALL CONTACTS SHOWN) */}
+      {/* ============================================================ */}
+      <section className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
+          <div>
+            <div className="flex items-center gap-2 text-emerald-700 font-bold text-xs uppercase tracking-wider">
+              <Building2 size={16} />
+              <span>Department & Division Directory</span>
+            </div>
+            <h2 className="text-2xl font-extrabold text-slate-900 mt-1">
+              Direct Contact Channels by Division
+            </h2>
+            <p className="text-slate-500 text-xs mt-0.5">
+              Connect directly with our dedicated division engineers, parts managers, and franchise officers in Kota.
+            </p>
+          </div>
+          <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold px-3 py-1.5 rounded-xl self-start sm:self-auto shadow-xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>{(cms.dropdownOptions || []).length} Active Departments</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {(cms.dropdownOptions || []).map((opt, idx) => {
+            const contact =
+              cms.divisionContacts?.find(
+                (c) => c.name.trim().toLowerCase() === opt.trim().toLowerCase()
+              ) ||
+              cms.divisionContacts?.find(
+                (c) =>
+                  opt.toLowerCase().includes(c.name.toLowerCase()) ||
+                  c.name.toLowerCase().includes(opt.toLowerCase())
+              ) || {
+                name: opt,
+                phone: cms.helplinePhone,
+                email: cms.supportEmail,
+                whatsapp: cms.whatsappNumber || cms.helplinePhone,
+                inCharge: 'Division Specialist',
+                officeHours: cms.officeHours,
+                address: cms.plantAddress,
+              };
+
+            const cleanPhone = (contact.phone || cms.helplinePhone || '+918949049003').replace(/[^0-9+]/g, '');
+            const cleanWa = (contact.whatsapp || contact.phone || cms.whatsappNumber || '918949049003').replace(/[^0-9]/g, '');
+            const waNumberFormatted = cleanWa.length === 10 ? `91${cleanWa}` : cleanWa;
+
+            return (
+              <div
+                key={opt}
+                className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm hover:shadow-md hover:border-emerald-300 transition-all flex flex-col justify-between space-y-4 group"
+              >
+                <div className="space-y-3">
+                  {/* Division Badge & Header */}
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="w-7 h-7 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 font-extrabold text-xs flex items-center justify-center shrink-0">
+                      {idx + 1}
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">
+                      Division {idx + 1}
+                    </span>
+                  </div>
+
+                  <div>
+                    <h3 className="font-extrabold text-slate-900 text-sm leading-snug group-hover:text-emerald-700 transition">
+                      {opt}
+                    </h3>
+                    {contact.inCharge && (
+                      <p className="text-[11px] text-emerald-800 font-semibold flex items-center gap-1.5 mt-1">
+                        <UserCheck size={12} className="text-emerald-600 shrink-0" />
+                        <span>{contact.inCharge}</span>
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Coordinates List */}
+                  <div className="space-y-2 pt-2 border-t border-slate-100 text-xs">
+                    {/* Helpline */}
+                    <div className="flex items-center gap-2">
+                      <Phone size={13} className="text-emerald-600 shrink-0" />
+                      <span className="text-slate-400 text-[11px]">Helpline:</span>
+                      <a
+                        href={`tel:${cleanPhone}`}
+                        className="font-mono font-bold text-slate-800 hover:text-emerald-700 transition ml-auto"
+                        title="Click to Call"
+                      >
+                        {contact.phone || cms.helplinePhone}
+                      </a>
+                    </div>
+
+                    {/* Email */}
+                    {contact.email && (
+                      <div className="flex items-center gap-2">
+                        <Mail size={13} className="text-blue-600 shrink-0" />
+                        <span className="text-slate-400 text-[11px]">Email:</span>
+                        <a
+                          href={`mailto:${contact.email}`}
+                          className="font-mono font-medium text-blue-700 hover:underline truncate max-w-[150px] ml-auto text-[11px]"
+                          title="Click to Email"
+                        >
+                          {contact.email}
+                        </a>
+                      </div>
+                    )}
+
+                    {/* Hours */}
+                    {contact.officeHours && (
+                      <div className="flex items-center gap-2 text-slate-500 text-[11px]">
+                        <Clock size={13} className="text-amber-500 shrink-0" />
+                        <span className="text-slate-400">Hours:</span>
+                        <span className="ml-auto font-medium">{contact.officeHours}</span>
+                      </div>
+                    )}
+
+                    {/* Address / Facility Bay */}
+                    {contact.address && (
+                      <div className="flex items-start gap-2 text-slate-500 text-[11px]">
+                        <MapPin size={13} className="text-purple-500 shrink-0 mt-0.5" />
+                        <span className="text-slate-400">Location:</span>
+                        <span className="ml-auto font-medium text-right truncate max-w-[170px]" title={contact.address}>
+                          {contact.address}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Direct Action Buttons */}
+                <div className="space-y-2 pt-2 border-t border-slate-100">
+                  <div className="grid grid-cols-2 gap-2">
+                    <a
+                      href={`tel:${cleanPhone}`}
+                      className="py-2 px-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs"
+                    >
+                      <Phone size={12} />
+                      <span>Call Desk</span>
+                    </a>
+
+                    <a
+                      href={`https://wa.me/${waNumberFormatted}?text=Hello%20Ekosmart%20${encodeURIComponent(opt)},%20I%20have%20an%20inquiry.`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs"
+                    >
+                      <MessageSquare size={12} />
+                      <span>WhatsApp</span>
+                    </a>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData((prev) => ({ ...prev, division: opt }));
+                      const formElem = document.getElementById('inquiry-form');
+                      if (formElem) {
+                        formElem.scrollIntoView({ behavior: 'smooth' });
+                      }
+                    }}
+                    className="w-full py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer"
+                  >
+                    <span>Send Inquiry to this Division &darr;</span>
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
       {/* Main Section: Interactive Form + Plant Dossier */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div id="inquiry-form" className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start scroll-mt-24">
         {/* Left Column: Official Company Dossier (Soft-coded from CMS) */}
         <div className="lg:col-span-5 bg-gradient-to-br from-slate-900 to-slate-950 text-white rounded-3xl p-8 space-y-6 border border-slate-800 shadow-xl">
           <div className="space-y-3">
