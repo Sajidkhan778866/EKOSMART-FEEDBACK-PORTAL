@@ -150,15 +150,71 @@ export interface IQuickActionsConfig {
 }
 
 export interface IBatteryBanner {
+  isVisible?: boolean;
   badgeText: string;
+  badgeIcon?: string;
+  showBadge?: boolean;
+  badgeBgColor?: string;
+  badgeTextColor?: string;
+  badgeBorderColor?: string;
   heading: string;
+  headingColor?: string;
   subheading: string;
+  subheadingColor?: string;
   highlight1: string;
+  highlight1Icon?: string;
+  highlight1Color?: string;
   highlight2: string;
+  highlight2Icon?: string;
+  highlight2Color?: string;
+  highlight3?: string;
+  highlight3Icon?: string;
+  highlight3Color?: string;
+  highlight4?: string;
+  highlight4Icon?: string;
+  highlight4Color?: string;
+  // Background Image Suite
+  bgType?: 'gradient' | 'solid' | 'image' | 'transparent';
+  bgSolidColor?: string;
+  bgGradientStart?: string;
+  bgGradientEnd?: string;
+  bgGradientDirection?: string;
+  bgImage?: string;
+  bgOverlayOpacity?: number;
+  bgOverlayColor?: string;
+  bgPosition?: string;
+  bgSize?: string;
+  bgBlur?: number;
+  cardBorderColor?: string;
+  cardBorderRadius?: string;
+  cardShadow?: string;
+  // Contacts & Assistance Card
+  showContactCard?: boolean;
+  contactCardTitle?: string;
+  contactCardSubtitle?: string;
+  contactCardBgColor?: string;
+  contactCardBorderColor?: string;
+  contactLogoType?: 'preset' | 'text' | 'image';
+  contactLogoText?: string;
+  contactLogoImage?: string;
+  contactLogoBgColor?: string;
+  contactLogoTextColor?: string;
   helplinePhone: string;
   helplineBtnText: string;
+  helplineBtnBg?: string;
+  helplineBtnTextColor?: string;
   plantBtnText: string;
   plantBtnLink: string;
+  plantBtnTarget?: '_self' | '_blank';
+  plantBtnBg?: string;
+  plantBtnTextColor?: string;
+  showWhatsappBtn?: boolean;
+  whatsappNumber?: string;
+  whatsappBtnText?: string;
+  whatsappBtnBg?: string;
+  whatsappBtnTextColor?: string;
+  alternatePhone?: string;
+  supportEmail?: string;
 }
 
 export interface ITopBarConfig {
@@ -633,16 +689,72 @@ const defaultFallbackContent: ICMSContent = {
     message: 'Please login with your email to access your customer account, wallet, referrals, bills and personalized services.',
   },
   batteryBanner: {
+    isVisible: true,
     badgeText: 'GET HIGH POWER OF LITHIUM',
+    badgeIcon: 'Zap',
+    showBadge: true,
+    badgeBgColor: '#059669',
+    badgeTextColor: '#ecfdf5',
+    badgeBorderColor: 'rgba(52, 211, 153, 0.4)',
     heading: 'Genuine Li-ion & LFP Batteries For E-Scooter & E-Rickshaw',
+    headingColor: '#ffffff',
     subheading:
       'Engineered with advanced Smart BMS, thermal protection, and high energy density cells. Tested at our Kota plant with Pan-India dispatch & replacement support.',
+    subheadingColor: '#93c5fd',
     highlight1: '48V Series (3 Year Warranty)',
+    highlight1Icon: 'ShieldCheck',
+    highlight1Color: '#34d399',
     highlight2: '60V / 72V Series (1.5 Year Warranty)',
+    highlight2Icon: 'CheckCircle2',
+    highlight2Color: '#38bdf8',
+    highlight3: '100% Genuine Cells & Kota Plant Support',
+    highlight3Icon: 'Award',
+    highlight3Color: '#fbbf24',
+    highlight4: 'Pan-India Replacement & Express Dispatch',
+    highlight4Icon: 'Truck',
+    highlight4Color: '#a78bfa',
+    // Background Image Suite
+    bgType: 'gradient',
+    bgSolidColor: '#0f172a',
+    bgGradientStart: '#0f172a',
+    bgGradientEnd: '#1e3a8a',
+    bgGradientDirection: 'to-br',
+    bgImage: '',
+    bgOverlayOpacity: 0.85,
+    bgOverlayColor: '#090d16',
+    bgPosition: 'center',
+    bgSize: 'cover',
+    bgBlur: 0,
+    cardBorderColor: 'rgba(59, 130, 246, 0.3)',
+    cardBorderRadius: 'rounded-2xl',
+    cardShadow: 'shadow-xl',
+    // Contacts & Assistance Card
+    showContactCard: true,
+    contactCardTitle: 'Need Battery Assistance?',
+    contactCardSubtitle: 'Contact our factory technical engineers in Kota, Rajasthan',
+    contactCardBgColor: 'rgba(255, 255, 255, 0.08)',
+    contactCardBorderColor: 'rgba(255, 255, 255, 0.15)',
+    contactLogoType: 'preset',
+    contactLogoText: 'EBS KOTA PLANT',
+    contactLogoImage: '',
+    contactLogoBgColor: '#059669',
+    contactLogoTextColor: '#ffffff',
     helplinePhone: '8949049003',
     helplineBtnText: 'Call +91 8949049003',
+    helplineBtnBg: '#2563eb',
+    helplineBtnTextColor: '#ffffff',
     plantBtnText: 'View Plant Contact Details',
     plantBtnLink: '/contact',
+    plantBtnTarget: '_self',
+    plantBtnBg: 'rgba(255, 255, 255, 0.12)',
+    plantBtnTextColor: '#ffffff',
+    showWhatsappBtn: true,
+    whatsappNumber: '8949049003',
+    whatsappBtnText: 'Chat on WhatsApp',
+    whatsappBtnBg: '#25D366',
+    whatsappBtnTextColor: '#ffffff',
+    alternatePhone: '+91 8949049003',
+    supportEmail: 'support@ekosmartdrive.in',
   },
   quickActionsConfig: {
     isVisible: true,
@@ -953,6 +1065,7 @@ const ContentManager = () => {
   const [editingActionIndex, setEditingActionIndex] = useState<number | null>(null);
   const [actionDraft, setActionDraft] = useState<IQuickActionItem | null>(null);
   const [quickActionPreviewDevice, setQuickActionPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
+  const [batteryPreviewDevice, setBatteryPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
 
   const getDivisionContact = (optName: string): IDivisionContact => {
     const existing = (content.contactInfo?.divisionContacts || []).find(
@@ -5446,238 +5559,1951 @@ const ContentManager = () => {
       {/* TAB: BATTERY ASSISTANCE & QUICK ACTIONS */}
       {activeTab === 'banner' && (
         <div className="space-y-6">
-          {/* Section 1: Dark Plant Battery Assistance Banner */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-5 shadow-sm">
-            <div className="border-b border-slate-100 pb-3">
-              <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                <Battery className="text-teal-600" size={20} />
-                <span>EBS Factory Battery Assistance Banner</span>
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Soft-code the dark Kota plant engineering support banner located at the bottom of the public homepage.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+          {/* Section 1: EBS Factory Battery Assistance Banner - Fully Softcoded Suite */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-6 shadow-sm">
+            {/* 1.1 Header & Section Visibility Toggle */}
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-slate-100 pb-4">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Badge Tagline</label>
-                <input
-                  type="text"
-                  value={content.batteryBanner?.badgeText || ''}
-                  onChange={(e) =>
+                <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                  <Battery className="text-teal-600" size={20} />
+                  <span>EBS Factory Battery Assistance Banner Configuration</span>
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Fully soft-code background image, solid/gradient styling, custom typography, technical highlights, and technical contacts card with direct WhatsApp chat.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-slate-600">Section Visibility:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const current = content.batteryBanner || defaultFallbackContent.batteryBanner!;
                     setContent({
                       ...content,
                       batteryBanner: {
-                        ...(content.batteryBanner || defaultFallbackContent.batteryBanner!),
-                        badgeText: e.target.value,
+                        ...current,
+                        isVisible: current.isVisible === false ? true : false,
                       },
-                    })
-                  }
-                  placeholder="GET HIGH POWER OF LITHIUM"
-                  className="w-full border border-slate-300 rounded-lg p-2 text-xs font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Helpline Phone Number</label>
-                <input
-                  type="text"
-                  value={content.batteryBanner?.helplinePhone || ''}
-                  onChange={(e) =>
-                    setContent({
-                      ...content,
-                      batteryBanner: {
-                        ...(content.batteryBanner || defaultFallbackContent.batteryBanner!),
-                        helplinePhone: e.target.value,
-                      },
-                    })
-                  }
-                  placeholder="8949049003"
-                  className="w-full border border-slate-300 rounded-lg p-2 text-xs font-mono"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block font-semibold text-slate-700 mb-1">Banner Main Heading</label>
-                <input
-                  type="text"
-                  value={content.batteryBanner?.heading || ''}
-                  onChange={(e) =>
-                    setContent({
-                      ...content,
-                      batteryBanner: {
-                        ...(content.batteryBanner || defaultFallbackContent.batteryBanner!),
-                        heading: e.target.value,
-                      },
-                    })
-                  }
-                  placeholder="Genuine Li-ion & LFP Batteries For E-Scooter & E-Rickshaw"
-                  className="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block font-semibold text-slate-700 mb-1">Subheading Description</label>
-                <textarea
-                  rows={2}
-                  value={content.batteryBanner?.subheading || ''}
-                  onChange={(e) =>
-                    setContent({
-                      ...content,
-                      batteryBanner: {
-                        ...(content.batteryBanner || defaultFallbackContent.batteryBanner!),
-                        subheading: e.target.value,
-                      },
-                    })
-                  }
-                  className="w-full border border-slate-300 rounded-lg p-2 text-xs leading-relaxed"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Technical Highlight 1</label>
-                <input
-                  type="text"
-                  value={content.batteryBanner?.highlight1 || ''}
-                  onChange={(e) =>
-                    setContent({
-                      ...content,
-                      batteryBanner: {
-                        ...(content.batteryBanner || defaultFallbackContent.batteryBanner!),
-                        highlight1: e.target.value,
-                      },
-                    })
-                  }
-                  placeholder="48V Series (3 Year Warranty)"
-                  className="w-full border border-slate-300 rounded-lg p-2 text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Technical Highlight 2</label>
-                <input
-                  type="text"
-                  value={content.batteryBanner?.highlight2 || ''}
-                  onChange={(e) =>
-                    setContent({
-                      ...content,
-                      batteryBanner: {
-                        ...(content.batteryBanner || defaultFallbackContent.batteryBanner!),
-                        highlight2: e.target.value,
-                      },
-                    })
-                  }
-                  placeholder="60V / 72V Series (1.5 Year Warranty)"
-                  className="w-full border border-slate-300 rounded-lg p-2 text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Helpline Button Label</label>
-                <input
-                  type="text"
-                  value={content.batteryBanner?.helplineBtnText || ''}
-                  onChange={(e) =>
-                    setContent({
-                      ...content,
-                      batteryBanner: {
-                        ...(content.batteryBanner || defaultFallbackContent.batteryBanner!),
-                        helplineBtnText: e.target.value,
-                      },
-                    })
-                  }
-                  placeholder="Call +91 8949049003"
-                  className="w-full border border-slate-300 rounded-lg p-2 text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Plant Details Button Label & Link</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="text"
-                    value={content.batteryBanner?.plantBtnText || ''}
-                    onChange={(e) =>
-                      setContent({
-                        ...content,
-                        batteryBanner: {
-                          ...(content.batteryBanner || defaultFallbackContent.batteryBanner!),
-                          plantBtnText: e.target.value,
-                        },
-                      })
-                    }
-                    placeholder="View Plant Contact Details"
-                    className="w-full border border-slate-300 rounded-lg p-2 text-xs"
-                  />
-                  <input
-                    type="text"
-                    value={content.batteryBanner?.plantBtnLink || ''}
-                    onChange={(e) =>
-                      setContent({
-                        ...content,
-                        batteryBanner: {
-                          ...(content.batteryBanner || defaultFallbackContent.batteryBanner!),
-                          plantBtnLink: e.target.value,
-                        },
-                      })
-                    }
-                    placeholder="/contact"
-                    className="w-full border border-slate-300 rounded-lg p-2 text-xs font-mono"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Live Visual Preview */}
-            <div className="pt-2">
-              <span className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <Eye size={14} className="text-teal-600" />
-                <span>Live Battery Assistance Banner Preview</span>
-              </span>
-              <div className="bg-gradient-to-br from-slate-900 to-slate-950 text-white rounded-3xl p-6 md:p-8 border border-slate-800 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
-                <div className="space-y-3 max-w-lg">
-                  {content.batteryBanner?.badgeText && (
-                    <div className="inline-block bg-emerald-500/20 text-emerald-400 font-mono text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-500/30">
-                      {content.batteryBanner.badgeText}
-                    </div>
+                    });
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition cursor-pointer ${
+                    (content.batteryBanner?.isVisible ?? true)
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                      : 'bg-slate-100 text-slate-500 border-slate-200'
+                  }`}
+                >
+                  {(content.batteryBanner?.isVisible ?? true) ? (
+                    <>
+                      <Eye size={14} />
+                      <span>Enabled on Homepage</span>
+                    </>
+                  ) : (
+                    <>
+                      <EyeOff size={14} />
+                      <span>Hidden on Homepage</span>
+                    </>
                   )}
-                  <h3 className="text-xl md:text-2xl font-extrabold leading-tight">
-                    {content.batteryBanner?.heading || 'Genuine Li-ion & LFP Batteries For E-Scooter & E-Rickshaw'}
-                  </h3>
-                  <p className="text-slate-400 text-xs leading-relaxed">
-                    {content.batteryBanner?.subheading ||
-                      'Engineered with advanced Smart BMS, thermal protection, and high energy density cells. Tested at our Kota plant.'}
-                  </p>
-                  <div className="flex flex-wrap gap-3 text-xs font-semibold text-slate-300 pt-1">
-                    {content.batteryBanner?.highlight1 && (
-                      <span className="flex items-center gap-1.5 text-emerald-400">
-                        <CheckCircle2 size={14} />
-                        <span>{content.batteryBanner.highlight1}</span>
-                      </span>
-                    )}
-                    {content.batteryBanner?.highlight2 && (
-                      <span className="flex items-center gap-1.5 text-emerald-400">
-                        <CheckCircle2 size={14} />
-                        <span>{content.batteryBanner.highlight2}</span>
-                      </span>
-                    )}
+                </button>
+              </div>
+            </div>
+
+            {/* 1.2 Container Background & Styling Manager */}
+            <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-200/80 space-y-4">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                  <Palette size={15} className="text-teal-600" />
+                  <span>Banner Background Mode & Styling</span>
+                </label>
+                <span className="text-[11px] font-mono text-slate-500">
+                  Mode: <strong className="text-teal-700 uppercase">{content.batteryBanner?.bgType || 'gradient'}</strong>
+                </span>
+              </div>
+
+              {/* Mode Selector Tabs */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {[
+                  { id: 'gradient', label: 'Linear Gradient' },
+                  { id: 'color', label: 'Solid Color' },
+                  { id: 'image', label: 'Background Image' },
+                  { id: 'transparent', label: 'Transparent' },
+                ].map((mode) => {
+                  const currentMode = content.batteryBanner?.bgType === 'solid' ? 'color' : (content.batteryBanner?.bgType || 'gradient');
+                  const isSelected = currentMode === mode.id;
+                  return (
+                    <button
+                      key={mode.id}
+                      type="button"
+                      onClick={() => {
+                        const current = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                        setContent({
+                          ...content,
+                          batteryBanner: {
+                            ...current,
+                            bgType: mode.id === 'color' ? 'solid' : (mode.id as any),
+                          },
+                        });
+                      }}
+                      className={`py-2 px-3 rounded-xl text-xs font-bold transition border cursor-pointer ${
+                        isSelected
+                          ? 'bg-teal-600 text-white border-teal-600 shadow-sm'
+                          : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
+                      }`}
+                    >
+                      {mode.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Sub-panel: Linear Gradient */}
+              {(content.batteryBanner?.bgType === 'gradient' || !content.batteryBanner?.bgType) && (
+                <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">Start Color</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={content.batteryBanner?.bgGradientStart || '#0f172a'}
+                          onChange={(e) => {
+                            const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                            setContent({
+                              ...content,
+                              batteryBanner: { ...cur, bgGradientStart: e.target.value },
+                            });
+                          }}
+                          className="w-8 h-8 rounded cursor-pointer border p-0.5"
+                        />
+                        <input
+                          type="text"
+                          value={content.batteryBanner?.bgGradientStart || '#0f172a'}
+                          onChange={(e) => {
+                            const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                            setContent({
+                              ...content,
+                              batteryBanner: { ...cur, bgGradientStart: e.target.value },
+                            });
+                          }}
+                          className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-mono"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">End Color</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={content.batteryBanner?.bgGradientEnd || '#1e3a8a'}
+                          onChange={(e) => {
+                            const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                            setContent({
+                              ...content,
+                              batteryBanner: { ...cur, bgGradientEnd: e.target.value },
+                            });
+                          }}
+                          className="w-8 h-8 rounded cursor-pointer border p-0.5"
+                        />
+                        <input
+                          type="text"
+                          value={content.batteryBanner?.bgGradientEnd || '#1e3a8a'}
+                          onChange={(e) => {
+                            const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                            setContent({
+                              ...content,
+                              batteryBanner: { ...cur, bgGradientEnd: e.target.value },
+                            });
+                          }}
+                          className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-mono"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">Direction</label>
+                      <select
+                        value={content.batteryBanner?.bgGradientDirection || 'to-br'}
+                        onChange={(e) => {
+                          const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                          setContent({
+                            ...content,
+                            batteryBanner: { ...cur, bgGradientDirection: e.target.value },
+                          });
+                        }}
+                        className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs"
+                      >
+                        <option value="to-br">Top-Left to Bottom-Right (Diagonal)</option>
+                        <option value="to-r">Left to Right (Horizontal)</option>
+                        <option value="to-b">Top to Bottom (Vertical)</option>
+                        <option value="to-tr">Bottom-Left to Top-Right</option>
+                      </select>
+                    </div>
+                  </div>
+                  {/* Preset Swatches */}
+                  <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100 text-[11px]">
+                    <span className="font-semibold text-slate-500">Curated Presets:</span>
+                    {[
+                      { label: 'Deep Blue Night', start: '#0f172a', end: '#1e3a8a' },
+                      { label: 'Kota Plant Emerald', start: '#022c22', end: '#064e3b' },
+                      { label: 'Dark Carbon', start: '#090d16', end: '#1e293b' },
+                      { label: 'High Power Violet', start: '#0f172a', end: '#3b0764' },
+                    ].map((sw) => (
+                      <button
+                        key={sw.label}
+                        type="button"
+                        onClick={() => {
+                          const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                          setContent({
+                            ...content,
+                            batteryBanner: {
+                              ...cur,
+                              bgGradientStart: sw.start,
+                              bgGradientEnd: sw.end,
+                            },
+                          });
+                        }}
+                        className="px-2 py-1 bg-slate-50 hover:bg-slate-100 border border-slate-300 rounded-md font-medium text-slate-700"
+                      >
+                        {sw.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Sub-panel: Solid Color */}
+              {(content.batteryBanner?.bgType === 'solid' || (content.batteryBanner?.bgType as any) === 'color') && (
+                <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-slate-700">Solid Background Color</label>
+                    <div className="flex items-center gap-2">
+                      {[
+                        { label: 'Dark Slate', color: '#0f172a' },
+                        { label: 'Kota Emerald', color: '#064e3b' },
+                        { label: 'Deep Charcoal', color: '#1e293b' },
+                        { label: 'Pitch Black', color: '#020617' },
+                      ].map((sw) => (
+                        <button
+                          key={sw.color}
+                          type="button"
+                          onClick={() => {
+                            const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                            setContent({
+                              ...content,
+                              batteryBanner: { ...cur, bgSolidColor: sw.color },
+                            });
+                          }}
+                          className="px-2 py-1 bg-slate-50 border border-slate-300 rounded text-[10px] font-mono hover:border-teal-400"
+                        >
+                          {sw.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="color"
+                      value={content.batteryBanner?.bgSolidColor || '#0f172a'}
+                      onChange={(e) => {
+                        const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                        setContent({
+                          ...content,
+                          batteryBanner: { ...cur, bgSolidColor: e.target.value },
+                        });
+                      }}
+                      className="w-10 h-10 rounded-lg cursor-pointer border border-slate-300 p-0.5"
+                    />
+                    <input
+                      type="text"
+                      value={content.batteryBanner?.bgSolidColor || '#0f172a'}
+                      onChange={(e) => {
+                        const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                        setContent({
+                          ...content,
+                          batteryBanner: { ...cur, bgSolidColor: e.target.value },
+                        });
+                      }}
+                      placeholder="#0f172a"
+                      className="w-40 bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-mono font-bold"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Sub-panel: Background Image Suite */}
+              {content.batteryBanner?.bgType === 'image' && (
+                <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Image Source & Upload */}
+                    <div className="space-y-3">
+                      <label className="block text-xs font-bold text-slate-800">Background Image Source</label>
+                      <div className="flex flex-col gap-2">
+                        <label className="flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-teal-50 border border-teal-200 hover:border-teal-400 rounded-xl text-xs font-bold text-teal-800 transition cursor-pointer shadow-xs">
+                          <Upload size={14} className="text-teal-600" />
+                          <span>Upload Local Image File</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const dataUrl = await compressImageFile(file, 1920, 1080, 0.85);
+                                const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                                setContent({
+                                  ...content,
+                                  batteryBanner: { ...cur, bgImage: dataUrl },
+                                });
+                              }
+                            }}
+                          />
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={content.batteryBanner?.bgImage || ''}
+                            onChange={(e) => {
+                              const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                              setContent({
+                                ...content,
+                                batteryBanner: { ...cur, bgImage: e.target.value },
+                              });
+                            }}
+                            placeholder="https://... or paste image URL or data:image"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-mono"
+                          />
+                          {content.batteryBanner?.bgImage && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                                setContent({
+                                  ...content,
+                                  batteryBanner: { ...cur, bgImage: '' },
+                                });
+                              }}
+                              className="px-2.5 py-2 text-xs bg-red-50 text-red-600 hover:bg-red-100 rounded-lg border border-red-200 font-bold"
+                              title="Clear image"
+                            >
+                              <X size={14} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Image Preview Thumbnail */}
+                      {content.batteryBanner?.bgImage && (
+                        <div className="relative h-28 rounded-xl overflow-hidden border border-slate-300 bg-slate-900">
+                          <img
+                            src={resolveImageUrl(content.batteryBanner.bgImage)}
+                            alt="Preview"
+                            className="w-full h-full object-cover"
+                            style={{
+                              filter: content.batteryBanner.bgBlur ? `blur(${content.batteryBanner.bgBlur}px)` : undefined,
+                            }}
+                          />
+                          <div
+                            className="absolute inset-0"
+                            style={{
+                              backgroundColor: content.batteryBanner.bgOverlayColor || '#090d16',
+                              opacity: typeof content.batteryBanner.bgOverlayOpacity === 'number' ? content.batteryBanner.bgOverlayOpacity : 0.85,
+                            }}
+                          />
+                          <span className="absolute bottom-2 left-2 bg-black/60 text-white text-[10px] font-mono px-2 py-0.5 rounded backdrop-blur-xs">
+                            Active Preview with Tint & Blur
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Image Adjustments (Overlay Tint, Opacity, Blur, Position) */}
+                    <div className="space-y-3 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <label className="font-semibold text-slate-700">Dark Overlay Tint Color</label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={content.batteryBanner?.bgOverlayColor || '#090d16'}
+                            onChange={(e) => {
+                              const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                              setContent({
+                                ...content,
+                                batteryBanner: { ...cur, bgOverlayColor: e.target.value },
+                              });
+                            }}
+                            className="w-8 h-8 rounded cursor-pointer border p-0.5"
+                          />
+                          <input
+                            type="text"
+                            value={content.batteryBanner?.bgOverlayColor || '#090d16'}
+                            onChange={(e) => {
+                              const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                              setContent({
+                                ...content,
+                                batteryBanner: { ...cur, bgOverlayColor: e.target.value },
+                              });
+                            }}
+                            className="w-full bg-white border border-slate-300 rounded-lg p-1.5 text-xs font-mono"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <label className="font-semibold text-slate-700">Overlay Opacity</label>
+                          <span className="font-mono text-teal-700 font-bold">
+                            {Math.round(((content.batteryBanner?.bgOverlayOpacity ?? 0.85) * 100))}%
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="1"
+                          step="0.05"
+                          value={content.batteryBanner?.bgOverlayOpacity ?? 0.85}
+                          onChange={(e) => {
+                            const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                            setContent({
+                              ...content,
+                              batteryBanner: { ...cur, bgOverlayOpacity: parseFloat(e.target.value) },
+                            });
+                          }}
+                          className="w-full accent-teal-600 cursor-pointer"
+                        />
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <label className="font-semibold text-slate-700">Background Blur Filter</label>
+                          <span className="font-mono text-teal-700 font-bold">
+                            {content.batteryBanner?.bgBlur ?? 0}px
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="20"
+                          step="1"
+                          value={content.batteryBanner?.bgBlur ?? 0}
+                          onChange={(e) => {
+                            const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                            setContent({
+                              ...content,
+                              batteryBanner: { ...cur, bgBlur: parseInt(e.target.value, 10) },
+                            });
+                          }}
+                          className="w-full accent-teal-600 cursor-pointer"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">Image Alignment</label>
+                        <select
+                          value={content.batteryBanner?.bgPosition || 'center'}
+                          onChange={(e) => {
+                            const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                            setContent({
+                              ...content,
+                              batteryBanner: { ...cur, bgPosition: e.target.value },
+                            });
+                          }}
+                          className="w-full bg-white border border-slate-300 rounded-lg p-1.5 text-xs"
+                        >
+                          <option value="center">Center</option>
+                          <option value="top">Top</option>
+                          <option value="bottom">Bottom</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 6 Curated Presets Gallery */}
+                  <div className="pt-2 border-t border-slate-100">
+                    <span className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-2">
+                      Or Choose a Curated Technical Banner Preset:
+                    </span>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+                      {[
+                        {
+                          name: 'Battery Lab',
+                          url: 'https://images.unsplash.com/photo-1558441719-703350106297?auto=format&fit=crop&w=1920&q=80',
+                        },
+                        {
+                          name: 'Smart Factory',
+                          url: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1920&q=80',
+                        },
+                        {
+                          name: 'Lithium Cell',
+                          url: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&w=1920&q=80',
+                        },
+                        {
+                          name: 'Clean Grid',
+                          url: 'https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?auto=format&fit=crop&w=1920&q=80',
+                        },
+                        {
+                          name: 'BMS Circuit',
+                          url: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1920&q=80',
+                        },
+                        {
+                          name: 'Kota Workshop',
+                          url: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=1920&q=80',
+                        },
+                      ].map((preset) => (
+                        <button
+                          key={preset.name}
+                          type="button"
+                          onClick={() => {
+                            const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                            setContent({
+                              ...content,
+                              batteryBanner: {
+                                ...cur,
+                                bgType: 'image',
+                                bgImage: preset.url,
+                                bgOverlayOpacity: 0.85,
+                                bgOverlayColor: '#090d16',
+                              },
+                            });
+                          }}
+                          className="group relative rounded-lg overflow-hidden border border-slate-300 hover:border-teal-500 h-16 transition text-left cursor-pointer"
+                        >
+                          <img src={preset.url} alt={preset.name} className="w-full h-full object-cover group-hover:scale-105 transition" />
+                          <div className="absolute inset-0 bg-black/50 group-hover:bg-black/30 transition flex items-end p-1.5">
+                            <span className="text-[10px] font-bold text-white leading-tight">{preset.name}</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Container Borders & Geometry */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Corner Radius</label>
+                  <select
+                    value={content.batteryBanner?.cardBorderRadius || 'rounded-3xl'}
+                    onChange={(e) => {
+                      const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                      setContent({
+                        ...content,
+                        batteryBanner: { ...cur, cardBorderRadius: e.target.value },
+                      });
+                    }}
+                    className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs"
+                  >
+                    <option value="rounded-2xl">Rounded Medium (rounded-2xl)</option>
+                    <option value="rounded-3xl">Rounded Large (rounded-3xl - Default)</option>
+                    <option value="rounded-xl">Rounded Small (rounded-xl)</option>
+                    <option value="rounded-none">Square Corners (no radius)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Container Border Color</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={content.batteryBanner?.cardBorderColor?.startsWith('#') ? content.batteryBanner.cardBorderColor : '#1e3a8a'}
+                      onChange={(e) => {
+                        const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                        setContent({
+                          ...content,
+                          batteryBanner: { ...cur, cardBorderColor: e.target.value },
+                        });
+                      }}
+                      className="w-8 h-8 rounded cursor-pointer border p-0.5"
+                    />
+                    <input
+                      type="text"
+                      value={content.batteryBanner?.cardBorderColor || 'rgba(59, 130, 246, 0.3)'}
+                      onChange={(e) => {
+                        const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                        setContent({
+                          ...content,
+                          batteryBanner: { ...cur, cardBorderColor: e.target.value },
+                        });
+                      }}
+                      className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-mono"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Box Shadow</label>
+                  <select
+                    value={content.batteryBanner?.cardShadow || 'shadow-xl'}
+                    onChange={(e) => {
+                      const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                      setContent({
+                        ...content,
+                        batteryBanner: { ...cur, cardShadow: e.target.value },
+                      });
+                    }}
+                    className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs"
+                  >
+                    <option value="shadow-xl">Extra Large (shadow-xl)</option>
+                    <option value="shadow-2xl">Super Deep (shadow-2xl)</option>
+                    <option value="shadow-md">Medium (shadow-md)</option>
+                    <option value="shadow-none">None (Flat)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* 1.3 Badge Tagline & Typography Configuration */}
+            <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-200/80 space-y-4">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                  <Tag size={15} className="text-teal-600" />
+                  <span>Badge Tagline & Section Typography</span>
+                </label>
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={content.batteryBanner?.showBadge ?? true}
+                    onChange={(e) => {
+                      const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                      setContent({
+                        ...content,
+                        batteryBanner: { ...cur, showBadge: e.target.checked },
+                      });
+                    }}
+                    className="rounded text-teal-600 h-3.5 w-3.5"
+                  />
+                  <span>Show Tagline Badge</span>
+                </label>
+              </div>
+
+              {/* Badge controls */}
+              {(content.batteryBanner?.showBadge ?? true) && (
+                <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3 text-xs">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="md:col-span-2">
+                      <label className="block font-semibold text-slate-700 mb-1">Badge Tagline Text</label>
+                      <input
+                        type="text"
+                        value={content.batteryBanner?.badgeText || ''}
+                        onChange={(e) => {
+                          const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                          setContent({
+                            ...content,
+                            batteryBanner: { ...cur, badgeText: e.target.value },
+                          });
+                        }}
+                        placeholder="GET HIGH POWER OF LITHIUM"
+                        className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-mono text-xs font-bold"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">Badge Icon</label>
+                      <select
+                        value={content.batteryBanner?.badgeIcon || 'Zap'}
+                        onChange={(e) => {
+                          const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                          setContent({
+                            ...content,
+                            batteryBanner: { ...cur, badgeIcon: e.target.value },
+                          });
+                        }}
+                        className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs"
+                      >
+                        <option value="Zap">Zap (Lightning)</option>
+                        <option value="Sparkles">Sparkles</option>
+                        <option value="ShieldCheck">Shield Check</option>
+                        <option value="Award">Award Trophy</option>
+                        <option value="Battery">Battery</option>
+                        <option value="Activity">Activity Pulse</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                    <div>
+                      <label className="block font-semibold text-slate-600 mb-1">Badge Background Color</label>
+                      <input
+                        type="text"
+                        value={content.batteryBanner?.badgeBgColor || 'rgba(5, 150, 105, 0.2)'}
+                        onChange={(e) => {
+                          const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                          setContent({
+                            ...content,
+                            batteryBanner: { ...cur, badgeBgColor: e.target.value },
+                          });
+                        }}
+                        placeholder="rgba(5, 150, 105, 0.2) or #059669"
+                        className="w-full bg-slate-50 border border-slate-300 rounded-lg p-1.5 text-xs font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-slate-600 mb-1">Badge Text Color</label>
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="color"
+                          value={content.batteryBanner?.badgeTextColor || '#34d399'}
+                          onChange={(e) => {
+                            const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                            setContent({
+                              ...content,
+                              batteryBanner: { ...cur, badgeTextColor: e.target.value },
+                            });
+                          }}
+                          className="w-7 h-7 rounded cursor-pointer border p-0 bg-white shrink-0"
+                        />
+                        <input
+                          type="text"
+                          value={content.batteryBanner?.badgeTextColor || '#34d399'}
+                          onChange={(e) => {
+                            const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                            setContent({
+                              ...content,
+                              batteryBanner: { ...cur, badgeTextColor: e.target.value },
+                            });
+                          }}
+                          className="w-full bg-slate-50 border border-slate-300 rounded-lg p-1.5 text-xs font-mono"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-slate-600 mb-1">Badge Border Color</label>
+                      <input
+                        type="text"
+                        value={content.batteryBanner?.badgeBorderColor || 'rgba(52, 211, 153, 0.4)'}
+                        onChange={(e) => {
+                          const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                          setContent({
+                            ...content,
+                            batteryBanner: { ...cur, badgeBorderColor: e.target.value },
+                          });
+                        }}
+                        placeholder="rgba(52, 211, 153, 0.4)"
+                        className="w-full bg-slate-50 border border-slate-300 rounded-lg p-1.5 text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Main Heading & Subheading */}
+              <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3 text-xs">
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="font-semibold text-slate-700">Banner Main Heading</label>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] text-slate-500 font-semibold">Heading Color:</span>
+                      <input
+                        type="color"
+                        value={content.batteryBanner?.headingColor || '#ffffff'}
+                        onChange={(e) => {
+                          const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                          setContent({
+                            ...content,
+                            batteryBanner: { ...cur, headingColor: e.target.value },
+                          });
+                        }}
+                        className="w-6 h-6 rounded cursor-pointer border p-0 bg-white shrink-0"
+                      />
+                      <input
+                        type="text"
+                        value={content.batteryBanner?.headingColor || '#ffffff'}
+                        onChange={(e) => {
+                          const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                          setContent({
+                            ...content,
+                            batteryBanner: { ...cur, headingColor: e.target.value },
+                          });
+                        }}
+                        className="w-24 bg-slate-50 border border-slate-300 rounded p-1 text-[11px] font-mono"
+                      />
+                    </div>
+                  </div>
+                  <input
+                    type="text"
+                    value={content.batteryBanner?.heading || ''}
+                    onChange={(e) => {
+                      const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                      setContent({
+                        ...content,
+                        batteryBanner: { ...cur, heading: e.target.value },
+                      });
+                    }}
+                    placeholder="Genuine Li-ion & LFP Batteries For E-Scooter & E-Rickshaw"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-bold text-xs"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="font-semibold text-slate-700">Subheading Description</label>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] text-slate-500 font-semibold">Text Color:</span>
+                      <input
+                        type="color"
+                        value={content.batteryBanner?.subheadingColor || '#93c5fd'}
+                        onChange={(e) => {
+                          const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                          setContent({
+                            ...content,
+                            batteryBanner: { ...cur, subheadingColor: e.target.value },
+                          });
+                        }}
+                        className="w-6 h-6 rounded cursor-pointer border p-0 bg-white shrink-0"
+                      />
+                      <input
+                        type="text"
+                        value={content.batteryBanner?.subheadingColor || '#93c5fd'}
+                        onChange={(e) => {
+                          const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                          setContent({
+                            ...content,
+                            batteryBanner: { ...cur, subheadingColor: e.target.value },
+                          });
+                        }}
+                        className="w-24 bg-slate-50 border border-slate-300 rounded p-1 text-[11px] font-mono"
+                      />
+                    </div>
+                  </div>
+                  <textarea
+                    rows={2}
+                    value={content.batteryBanner?.subheading || ''}
+                    onChange={(e) => {
+                      const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                      setContent({
+                        ...content,
+                        batteryBanner: { ...cur, subheadingColor: cur.subheadingColor, subheading: e.target.value },
+                      });
+                    }}
+                    placeholder="Engineered with advanced Smart BMS, thermal protection..."
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs leading-relaxed"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 1.4 Technical Highlights Manager (Up to 4 Highlights) */}
+            <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-200/80 space-y-4">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                  <ShieldCheck size={15} className="text-teal-600" />
+                  <span>Technical Highlights Suite (Up to 4 Bullet Points)</span>
+                </label>
+                <span className="text-[11px] text-slate-500 font-medium">Leave text blank to hide a highlight</span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                {/* Highlight 1 */}
+                <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold text-slate-800">Highlight 1</span>
+                    <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded">Point 1</span>
+                  </div>
+                  <input
+                    type="text"
+                    value={content.batteryBanner?.highlight1 || ''}
+                    onChange={(e) => {
+                      const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                      setContent({
+                        ...content,
+                        batteryBanner: { ...cur, highlight1: e.target.value },
+                      });
+                    }}
+                    placeholder="48V Series (3 Year Warranty)"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-1.5 text-xs font-semibold"
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Icon</label>
+                      <select
+                        value={content.batteryBanner?.highlight1Icon || 'ShieldCheck'}
+                        onChange={(e) => {
+                          const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                          setContent({
+                            ...content,
+                            batteryBanner: { ...cur, highlight1Icon: e.target.value },
+                          });
+                        }}
+                        className="w-full bg-slate-50 border border-slate-300 rounded-lg p-1 text-xs"
+                      >
+                        <option value="ShieldCheck">Shield Check</option>
+                        <option value="CheckCircle2">Check Circle</option>
+                        <option value="Award">Award Trophy</option>
+                        <option value="Zap">Zap (Lightning)</option>
+                        <option value="Battery">Battery</option>
+                        <option value="Truck">Truck Delivery</option>
+                        <option value="Wrench">Wrench Tool</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Color</label>
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="color"
+                          value={content.batteryBanner?.highlight1Color || '#34d399'}
+                          onChange={(e) => {
+                            const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                            setContent({
+                              ...content,
+                              batteryBanner: { ...cur, highlight1Color: e.target.value },
+                            });
+                          }}
+                          className="w-6 h-6 rounded cursor-pointer border p-0 bg-white shrink-0"
+                        />
+                        <input
+                          type="text"
+                          value={content.batteryBanner?.highlight1Color || '#34d399'}
+                          onChange={(e) => {
+                            const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                            setContent({
+                              ...content,
+                              batteryBanner: { ...cur, highlight1Color: e.target.value },
+                            });
+                          }}
+                          className="w-full bg-slate-50 border border-slate-300 rounded p-1 text-[11px] font-mono"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <div className="bg-slate-800/80 p-5 rounded-2xl border border-slate-700 text-center space-y-2.5 flex-shrink-0 w-full md:w-64">
-                  <div className="w-10 h-10 bg-emerald-900 rounded-xl flex items-center justify-center text-white font-bold text-xs mx-auto">
-                    EBS
+                {/* Highlight 2 */}
+                <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold text-slate-800">Highlight 2</span>
+                    <span className="text-[10px] bg-sky-100 text-sky-800 font-bold px-1.5 py-0.5 rounded">Point 2</span>
                   </div>
-                  <h4 className="font-bold text-xs text-white">Need Battery Assistance?</h4>
-                  <p className="text-[10px] text-slate-400">Contact our factory technical engineers in Kota, Rajasthan</p>
-                  <div className="space-y-1.5 pt-1">
-                    <div className="w-full py-2 bg-emerald-600 text-white font-bold rounded-xl text-xs text-center shadow">
-                      {content.batteryBanner?.helplineBtnText || 'Call +91 8949049003'}
+                  <input
+                    type="text"
+                    value={content.batteryBanner?.highlight2 || ''}
+                    onChange={(e) => {
+                      const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                      setContent({
+                        ...content,
+                        batteryBanner: { ...cur, highlight2: e.target.value },
+                      });
+                    }}
+                    placeholder="60V / 72V Series (1.5 Year Warranty)"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-1.5 text-xs font-semibold"
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Icon</label>
+                      <select
+                        value={content.batteryBanner?.highlight2Icon || 'CheckCircle2'}
+                        onChange={(e) => {
+                          const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                          setContent({
+                            ...content,
+                            batteryBanner: { ...cur, highlight2Icon: e.target.value },
+                          });
+                        }}
+                        className="w-full bg-slate-50 border border-slate-300 rounded-lg p-1 text-xs"
+                      >
+                        <option value="CheckCircle2">Check Circle</option>
+                        <option value="ShieldCheck">Shield Check</option>
+                        <option value="Award">Award Trophy</option>
+                        <option value="Zap">Zap (Lightning)</option>
+                        <option value="Battery">Battery</option>
+                        <option value="Truck">Truck Delivery</option>
+                        <option value="Wrench">Wrench Tool</option>
+                      </select>
                     </div>
-                    <div className="w-full py-1.5 bg-white/10 text-slate-200 font-semibold rounded-xl text-xs text-center border border-white/20">
-                      {content.batteryBanner?.plantBtnText || 'View Plant Contact Details'}
+                    <div>
+                      <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Color</label>
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="color"
+                          value={content.batteryBanner?.highlight2Color || '#38bdf8'}
+                          onChange={(e) => {
+                            const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                            setContent({
+                              ...content,
+                              batteryBanner: { ...cur, highlight2Color: e.target.value },
+                            });
+                          }}
+                          className="w-6 h-6 rounded cursor-pointer border p-0 bg-white shrink-0"
+                        />
+                        <input
+                          type="text"
+                          value={content.batteryBanner?.highlight2Color || '#38bdf8'}
+                          onChange={(e) => {
+                            const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                            setContent({
+                              ...content,
+                              batteryBanner: { ...cur, highlight2Color: e.target.value },
+                            });
+                          }}
+                          className="w-full bg-slate-50 border border-slate-300 rounded p-1 text-[11px] font-mono"
+                        />
+                      </div>
                     </div>
                   </div>
+                </div>
+
+                {/* Highlight 3 */}
+                <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold text-slate-800">Highlight 3</span>
+                    <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded">Point 3</span>
+                  </div>
+                  <input
+                    type="text"
+                    value={content.batteryBanner?.highlight3 || ''}
+                    onChange={(e) => {
+                      const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                      setContent({
+                        ...content,
+                        batteryBanner: { ...cur, highlight3: e.target.value },
+                      });
+                    }}
+                    placeholder="100% Genuine Cells & Kota Plant Support"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-1.5 text-xs font-semibold"
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Icon</label>
+                      <select
+                        value={content.batteryBanner?.highlight3Icon || 'Award'}
+                        onChange={(e) => {
+                          const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                          setContent({
+                            ...content,
+                            batteryBanner: { ...cur, highlight3Icon: e.target.value },
+                          });
+                        }}
+                        className="w-full bg-slate-50 border border-slate-300 rounded-lg p-1 text-xs"
+                      >
+                        <option value="Award">Award Trophy</option>
+                        <option value="ShieldCheck">Shield Check</option>
+                        <option value="CheckCircle2">Check Circle</option>
+                        <option value="Zap">Zap (Lightning)</option>
+                        <option value="Battery">Battery</option>
+                        <option value="Truck">Truck Delivery</option>
+                        <option value="Wrench">Wrench Tool</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Color</label>
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="color"
+                          value={content.batteryBanner?.highlight3Color || '#fbbf24'}
+                          onChange={(e) => {
+                            const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                            setContent({
+                              ...content,
+                              batteryBanner: { ...cur, highlight3Color: e.target.value },
+                            });
+                          }}
+                          className="w-6 h-6 rounded cursor-pointer border p-0 bg-white shrink-0"
+                        />
+                        <input
+                          type="text"
+                          value={content.batteryBanner?.highlight3Color || '#fbbf24'}
+                          onChange={(e) => {
+                            const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                            setContent({
+                              ...content,
+                              batteryBanner: { ...cur, highlight3Color: e.target.value },
+                            });
+                          }}
+                          className="w-full bg-slate-50 border border-slate-300 rounded p-1 text-[11px] font-mono"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Highlight 4 */}
+                <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold text-slate-800">Highlight 4</span>
+                    <span className="text-[10px] bg-purple-100 text-purple-800 font-bold px-1.5 py-0.5 rounded">Point 4</span>
+                  </div>
+                  <input
+                    type="text"
+                    value={content.batteryBanner?.highlight4 || ''}
+                    onChange={(e) => {
+                      const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                      setContent({
+                        ...content,
+                        batteryBanner: { ...cur, highlight4: e.target.value },
+                      });
+                    }}
+                    placeholder="Pan-India Replacement & Express Dispatch"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-1.5 text-xs font-semibold"
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Icon</label>
+                      <select
+                        value={content.batteryBanner?.highlight4Icon || 'Truck'}
+                        onChange={(e) => {
+                          const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                          setContent({
+                            ...content,
+                            batteryBanner: { ...cur, highlight4Icon: e.target.value },
+                          });
+                        }}
+                        className="w-full bg-slate-50 border border-slate-300 rounded-lg p-1 text-xs"
+                      >
+                        <option value="Truck">Truck Delivery</option>
+                        <option value="Award">Award Trophy</option>
+                        <option value="ShieldCheck">Shield Check</option>
+                        <option value="CheckCircle2">Check Circle</option>
+                        <option value="Zap">Zap (Lightning)</option>
+                        <option value="Battery">Battery</option>
+                        <option value="Wrench">Wrench Tool</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Color</label>
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="color"
+                          value={content.batteryBanner?.highlight4Color || '#a78bfa'}
+                          onChange={(e) => {
+                            const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                            setContent({
+                              ...content,
+                              batteryBanner: { ...cur, highlight4Color: e.target.value },
+                            });
+                          }}
+                          className="w-6 h-6 rounded cursor-pointer border p-0 bg-white shrink-0"
+                        />
+                        <input
+                          type="text"
+                          value={content.batteryBanner?.highlight4Color || '#a78bfa'}
+                          onChange={(e) => {
+                            const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                            setContent({
+                              ...content,
+                              batteryBanner: { ...cur, highlight4Color: e.target.value },
+                            });
+                          }}
+                          className="w-full bg-slate-50 border border-slate-300 rounded p-1 text-[11px] font-mono"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 1.5 Contacts & Assistance Card Suite ("and contacts") */}
+            <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-200/80 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <Phone size={15} className="text-teal-600" />
+                    <span>Right-Side Contacts Card Suite (Helpline, WhatsApp, Plant)</span>
+                  </label>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Soft-code the direct technical assistance card displayed on the right side of the battery banner.
+                  </p>
+                </div>
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={content.batteryBanner?.showContactCard ?? true}
+                    onChange={(e) => {
+                      const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                      setContent({
+                        ...content,
+                        batteryBanner: { ...cur, showContactCard: e.target.checked },
+                      });
+                    }}
+                    className="rounded text-teal-600 h-3.5 w-3.5"
+                  />
+                  <span>Show Contact Card</span>
+                </label>
+              </div>
+
+              {(content.batteryBanner?.showContactCard ?? true) && (
+                <div className="space-y-4">
+                  {/* Card Colors, Logo Style, Titles */}
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3 text-xs">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">Card Background Color</label>
+                        <input
+                          type="text"
+                          value={content.batteryBanner?.contactCardBgColor || 'rgba(255, 255, 255, 0.08)'}
+                          onChange={(e) => {
+                            const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                            setContent({
+                              ...content,
+                              batteryBanner: { ...cur, contactCardBgColor: e.target.value },
+                            });
+                          }}
+                          placeholder="rgba(255, 255, 255, 0.08) or #1e293b"
+                          className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-mono text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">Card Border Color</label>
+                        <input
+                          type="text"
+                          value={content.batteryBanner?.contactCardBorderColor || 'rgba(255, 255, 255, 0.15)'}
+                          onChange={(e) => {
+                            const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                            setContent({
+                              ...content,
+                              batteryBanner: { ...cur, contactCardBorderColor: e.target.value },
+                            });
+                          }}
+                          placeholder="rgba(255, 255, 255, 0.15)"
+                          className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-mono text-xs"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Logo Type Selector */}
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1.5">Card Logo Representation</label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { id: 'preset', label: 'Preset EBS Logo' },
+                          { id: 'text', label: 'Custom Text Badge' },
+                          { id: 'image', label: 'Uploaded Logo Image' },
+                        ].map((lt) => {
+                          const isSelected = (content.batteryBanner?.contactLogoType || 'preset') === lt.id;
+                          return (
+                            <button
+                              key={lt.id}
+                              type="button"
+                              onClick={() => {
+                                const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                                setContent({
+                                  ...content,
+                                  batteryBanner: { ...cur, contactLogoType: lt.id as any },
+                                });
+                              }}
+                              className={`py-1.5 px-3 rounded-lg text-xs font-bold transition border cursor-pointer ${
+                                isSelected
+                                  ? 'bg-teal-600 text-white border-teal-600'
+                                  : 'bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100'
+                              }`}
+                            >
+                              {lt.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Text Badge settings */}
+                      {content.batteryBanner?.contactLogoType === 'text' && (
+                        <div className="mt-2 p-3 bg-slate-50 rounded-lg border border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                          <div>
+                            <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">Badge Text</label>
+                            <input
+                              type="text"
+                              value={content.batteryBanner?.contactLogoText || 'EBS KOTA PLANT'}
+                              onChange={(e) => {
+                                const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                                setContent({
+                                  ...content,
+                                  batteryBanner: { ...cur, contactLogoText: e.target.value },
+                                });
+                              }}
+                              className="w-full bg-white border border-slate-300 rounded p-1.5 text-xs font-bold uppercase"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">Badge Bg Color</label>
+                            <input
+                              type="color"
+                              value={content.batteryBanner?.contactLogoBgColor || '#059669'}
+                              onChange={(e) => {
+                                const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                                setContent({
+                                  ...content,
+                                  batteryBanner: { ...cur, contactLogoBgColor: e.target.value },
+                                });
+                              }}
+                              className="w-full h-8 rounded border p-0.5"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">Badge Text Color</label>
+                            <input
+                              type="color"
+                              value={content.batteryBanner?.contactLogoTextColor || '#ffffff'}
+                              onChange={(e) => {
+                                const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                                setContent({
+                                  ...content,
+                                  batteryBanner: { ...cur, contactLogoTextColor: e.target.value },
+                                });
+                              }}
+                              className="w-full h-8 rounded border p-0.5"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Custom Image Logo Upload */}
+                      {content.batteryBanner?.contactLogoType === 'image' && (
+                        <div className="mt-2 p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-2">
+                          <label className="block text-[10px] font-semibold text-slate-600">Logo Image File or URL</label>
+                          <div className="flex items-center gap-2">
+                            <label className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-700 cursor-pointer hover:bg-slate-100">
+                              <Upload size={13} className="text-teal-600" />
+                              <span>Upload</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    const dataUrl = await compressImageFile(file, 400, 200, 0.9);
+                                    const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                                    setContent({
+                                      ...content,
+                                      batteryBanner: { ...cur, contactLogoImage: dataUrl },
+                                    });
+                                  }
+                                }}
+                              />
+                            </label>
+                            <input
+                              type="text"
+                              value={content.batteryBanner?.contactLogoImage || ''}
+                              onChange={(e) => {
+                                const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                                setContent({
+                                  ...content,
+                                  batteryBanner: { ...cur, contactLogoImage: e.target.value },
+                                });
+                              }}
+                              placeholder="Image URL or Base64"
+                              className="w-full bg-white border border-slate-300 rounded p-1.5 text-xs font-mono"
+                            />
+                            {content.batteryBanner?.contactLogoImage && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                                  setContent({
+                                    ...content,
+                                    batteryBanner: { ...cur, contactLogoImage: '' },
+                                  });
+                                }}
+                                className="p-1.5 bg-red-50 text-red-600 rounded border border-red-200"
+                              >
+                                <X size={14} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Card Title & Subtitle */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">Contact Box Title</label>
+                        <input
+                          type="text"
+                          value={content.batteryBanner?.contactCardTitle || 'Need Battery Assistance?'}
+                          onChange={(e) => {
+                            const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                            setContent({
+                              ...content,
+                              batteryBanner: { ...cur, contactCardTitle: e.target.value },
+                            });
+                          }}
+                          placeholder="Need Battery Assistance?"
+                          className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-bold text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">Contact Box Subtitle</label>
+                        <input
+                          type="text"
+                          value={content.batteryBanner?.contactCardSubtitle || 'Contact our factory technical engineers in Kota, Rajasthan'}
+                          onChange={(e) => {
+                            const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                            setContent({
+                              ...content,
+                              batteryBanner: { ...cur, contactCardSubtitle: e.target.value },
+                            });
+                          }}
+                          placeholder="Contact our factory technical engineers in Kota, Rajasthan"
+                          className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Helpline Phone Button */}
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3 text-xs">
+                    <span className="font-bold text-slate-800 flex items-center gap-1.5 text-xs">
+                      <Phone size={14} className="text-blue-600" />
+                      <span>1. Primary Helpline Call Button</span>
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                      <div>
+                        <label className="block font-semibold text-slate-600 mb-1">Phone Number (Dial)</label>
+                        <input
+                          type="text"
+                          value={content.batteryBanner?.helplinePhone || ''}
+                          onChange={(e) => {
+                            const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                            setContent({
+                              ...content,
+                              batteryBanner: { ...cur, helplinePhone: e.target.value },
+                            });
+                          }}
+                          placeholder="8949049003"
+                          className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-mono text-xs font-bold"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-semibold text-slate-600 mb-1">Button Label</label>
+                        <input
+                          type="text"
+                          value={content.batteryBanner?.helplineBtnText || ''}
+                          onChange={(e) => {
+                            const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                            setContent({
+                              ...content,
+                              batteryBanner: { ...cur, helplineBtnText: e.target.value },
+                            });
+                          }}
+                          placeholder="Call +91 8949049003"
+                          className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-semibold"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-semibold text-slate-600 mb-1">Button Background</label>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="color"
+                            value={content.batteryBanner?.helplineBtnBg || '#2563eb'}
+                            onChange={(e) => {
+                              const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                              setContent({
+                                ...content,
+                                batteryBanner: { ...cur, helplineBtnBg: e.target.value },
+                              });
+                            }}
+                            className="w-7 h-7 rounded cursor-pointer border p-0 bg-white shrink-0"
+                          />
+                          <input
+                            type="text"
+                            value={content.batteryBanner?.helplineBtnBg || '#2563eb'}
+                            onChange={(e) => {
+                              const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                              setContent({
+                                ...content,
+                                batteryBanner: { ...cur, helplineBtnBg: e.target.value },
+                              });
+                            }}
+                            className="w-full bg-slate-50 border border-slate-300 rounded p-1.5 text-[11px] font-mono"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block font-semibold text-slate-600 mb-1">Button Text Color</label>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="color"
+                            value={content.batteryBanner?.helplineBtnTextColor || '#ffffff'}
+                            onChange={(e) => {
+                              const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                              setContent({
+                                ...content,
+                                batteryBanner: { ...cur, helplineBtnTextColor: e.target.value },
+                              });
+                            }}
+                            className="w-7 h-7 rounded cursor-pointer border p-0 bg-white shrink-0"
+                          />
+                          <input
+                            type="text"
+                            value={content.batteryBanner?.helplineBtnTextColor || '#ffffff'}
+                            onChange={(e) => {
+                              const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                              setContent({
+                                ...content,
+                                batteryBanner: { ...cur, helplineBtnTextColor: e.target.value },
+                              });
+                            }}
+                            className="w-full bg-slate-50 border border-slate-300 rounded p-1.5 text-[11px] font-mono"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* WhatsApp Direct Assistance Button */}
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-800 flex items-center gap-1.5 text-xs">
+                        <MessageSquare size={14} className="text-emerald-600" />
+                        <span>2. WhatsApp Direct Technical Chat Button</span>
+                      </span>
+                      <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={content.batteryBanner?.showWhatsappBtn ?? true}
+                          onChange={(e) => {
+                            const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                            setContent({
+                              ...content,
+                              batteryBanner: { ...cur, showWhatsappBtn: e.target.checked },
+                            });
+                          }}
+                          className="rounded text-emerald-600 h-3.5 w-3.5"
+                        />
+                        <span>Enable WhatsApp Button</span>
+                      </label>
+                    </div>
+
+                    {(content.batteryBanner?.showWhatsappBtn ?? true) && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                        <div>
+                          <label className="block font-semibold text-slate-600 mb-1">WhatsApp Mobile</label>
+                          <input
+                            type="text"
+                            value={content.batteryBanner?.whatsappNumber || '8949049003'}
+                            onChange={(e) => {
+                              const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                              setContent({
+                                ...content,
+                                batteryBanner: { ...cur, whatsappNumber: e.target.value },
+                              });
+                            }}
+                            placeholder="8949049003"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-mono text-xs font-bold"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-semibold text-slate-600 mb-1">Button Label</label>
+                          <input
+                            type="text"
+                            value={content.batteryBanner?.whatsappBtnText || 'Chat on WhatsApp'}
+                            onChange={(e) => {
+                              const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                              setContent({
+                                ...content,
+                                batteryBanner: { ...cur, whatsappBtnText: e.target.value },
+                              });
+                            }}
+                            placeholder="Chat on WhatsApp"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-semibold"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-semibold text-slate-600 mb-1">Button Background</label>
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="color"
+                              value={content.batteryBanner?.whatsappBtnBg || '#25D366'}
+                              onChange={(e) => {
+                                const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                                setContent({
+                                  ...content,
+                                  batteryBanner: { ...cur, whatsappBtnBg: e.target.value },
+                                });
+                              }}
+                              className="w-7 h-7 rounded cursor-pointer border p-0 bg-white shrink-0"
+                            />
+                            <input
+                              type="text"
+                              value={content.batteryBanner?.whatsappBtnBg || '#25D366'}
+                              onChange={(e) => {
+                                const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                                setContent({
+                                  ...content,
+                                  batteryBanner: { ...cur, whatsappBtnBg: e.target.value },
+                                });
+                              }}
+                              className="w-full bg-slate-50 border border-slate-300 rounded p-1.5 text-[11px] font-mono"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block font-semibold text-slate-600 mb-1">Button Text Color</label>
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="color"
+                              value={content.batteryBanner?.whatsappBtnTextColor || '#ffffff'}
+                              onChange={(e) => {
+                                const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                                setContent({
+                                  ...content,
+                                  batteryBanner: { ...cur, whatsappBtnTextColor: e.target.value },
+                                });
+                              }}
+                              className="w-7 h-7 rounded cursor-pointer border p-0 bg-white shrink-0"
+                            />
+                            <input
+                              type="text"
+                              value={content.batteryBanner?.whatsappBtnTextColor || '#ffffff'}
+                              onChange={(e) => {
+                                const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                                setContent({
+                                  ...content,
+                                  batteryBanner: { ...cur, whatsappBtnTextColor: e.target.value },
+                                });
+                              }}
+                              className="w-full bg-slate-50 border border-slate-300 rounded p-1.5 text-[11px] font-mono"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Secondary Plant Details Button */}
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3 text-xs">
+                    <span className="font-bold text-slate-800 flex items-center gap-1.5 text-xs">
+                      <ExternalLink size={14} className="text-slate-600" />
+                      <span>3. Secondary Plant Contact Details Button</span>
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                      <div>
+                        <label className="block font-semibold text-slate-600 mb-1">Button Label</label>
+                        <input
+                          type="text"
+                          value={content.batteryBanner?.plantBtnText || ''}
+                          onChange={(e) => {
+                            const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                            setContent({
+                              ...content,
+                              batteryBanner: { ...cur, plantBtnText: e.target.value },
+                            });
+                          }}
+                          placeholder="View Plant Contact Details"
+                          className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-semibold"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-semibold text-slate-600 mb-1">Route / Link Target</label>
+                        <input
+                          type="text"
+                          value={content.batteryBanner?.plantBtnLink || ''}
+                          onChange={(e) => {
+                            const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                            setContent({
+                              ...content,
+                              batteryBanner: { ...cur, plantBtnLink: e.target.value },
+                            });
+                          }}
+                          placeholder="/contact"
+                          className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-mono text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-semibold text-slate-600 mb-1">Button Background</label>
+                        <input
+                          type="text"
+                          value={content.batteryBanner?.plantBtnBg || 'rgba(255, 255, 255, 0.12)'}
+                          onChange={(e) => {
+                            const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                            setContent({
+                              ...content,
+                              batteryBanner: { ...cur, plantBtnBg: e.target.value },
+                            });
+                          }}
+                          placeholder="rgba(255, 255, 255, 0.12)"
+                          className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-mono text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-semibold text-slate-600 mb-1">Link Target</label>
+                        <select
+                          value={content.batteryBanner?.plantBtnTarget || '_self'}
+                          onChange={(e) => {
+                            const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                            setContent({
+                              ...content,
+                              batteryBanner: { ...cur, plantBtnTarget: e.target.value as any },
+                            });
+                          }}
+                          className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs"
+                        >
+                          <option value="_self">Same Tab (_self)</option>
+                          <option value="_blank">New Tab (_blank)</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Alternate Phone & Email */}
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">Alternate Phone (Footer Note)</label>
+                      <input
+                        type="text"
+                        value={content.batteryBanner?.alternatePhone || ''}
+                        onChange={(e) => {
+                          const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                          setContent({
+                            ...content,
+                            batteryBanner: { ...cur, alternatePhone: e.target.value },
+                          });
+                        }}
+                        placeholder="+91 8949049003"
+                        className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-mono text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">Technical Support Email</label>
+                      <input
+                        type="email"
+                        value={content.batteryBanner?.supportEmail || ''}
+                        onChange={(e) => {
+                          const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                          setContent({
+                            ...content,
+                            batteryBanner: { ...cur, supportEmail: e.target.value },
+                          });
+                        }}
+                        placeholder="support@ekosmartdrive.in"
+                        className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-mono text-xs"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 1.6 Real-Time Live Visual Preview with Device Switcher */}
+            <div className="pt-2">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-3">
+                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <Eye size={15} className="text-teal-600" />
+                  <span>Real-Time Battery Banner Live Preview</span>
+                </span>
+                {/* Device Switcher */}
+                <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 self-start sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={() => setBatteryPreviewDevice('desktop')}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      batteryPreviewDevice === 'desktop'
+                        ? 'bg-white text-slate-900 shadow-xs'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    <Monitor size={13} />
+                    <span>Desktop</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBatteryPreviewDevice('mobile')}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      batteryPreviewDevice === 'mobile'
+                        ? 'bg-white text-slate-900 shadow-xs'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    <Smartphone size={13} />
+                    <span>Mobile Stack</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Preview Container Container Frame */}
+              <div className="p-4 bg-slate-900/5 rounded-2xl border border-slate-200 overflow-x-auto flex justify-center">
+                <div
+                  className={`w-full transition-all duration-300 ${
+                    batteryPreviewDevice === 'mobile' ? 'max-w-sm' : 'max-w-5xl'
+                  }`}
+                >
+                  {(() => {
+                    const bb = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                    const hasBgImage = bb.bgType === 'image' && !!bb.bgImage;
+                    const containerStyle: React.CSSProperties = {
+                      borderColor: bb.cardBorderColor || 'rgba(59, 130, 246, 0.3)',
+                    };
+                    if (bb.bgType === 'solid') {
+                      containerStyle.backgroundColor = bb.bgSolidColor || '#0f172a';
+                    } else if (bb.bgType === 'transparent') {
+                      containerStyle.backgroundColor = 'transparent';
+                    } else if (!hasBgImage) {
+                      const dirMap: Record<string, string> = {
+                        'to-r': 'to right',
+                        'to-br': 'to bottom right',
+                        'to-b': 'to bottom',
+                        'to-tr': 'to top right',
+                      };
+                      const dir = dirMap[bb.bgGradientDirection || 'to-br'] || 'to bottom right';
+                      containerStyle.backgroundImage = `linear-gradient(${dir}, ${bb.bgGradientStart || '#0f172a'}, ${bb.bgGradientEnd || '#1e3a8a'})`;
+                    }
+
+                    const highlights = [
+                      { text: bb.highlight1, icon: bb.highlight1Icon, color: bb.highlight1Color || '#34d399' },
+                      { text: bb.highlight2, icon: bb.highlight2Icon, color: bb.highlight2Color || '#38bdf8' },
+                      { text: bb.highlight3, icon: bb.highlight3Icon, color: bb.highlight3Color || '#fbbf24' },
+                      { text: bb.highlight4, icon: bb.highlight4Icon, color: bb.highlight4Color || '#a78bfa' },
+                    ].filter((h) => !!h.text);
+
+                    return (
+                      <div
+                        className={`relative overflow-hidden ${bb.cardBorderRadius || 'rounded-3xl'} p-6 md:p-10 border ${bb.cardShadow || 'shadow-xl'} text-white`}
+                        style={containerStyle}
+                      >
+                        {/* Background Image Layer */}
+                        {hasBgImage && (
+                          <>
+                            <div
+                              className="absolute inset-0 bg-cover bg-no-repeat z-0 pointer-events-none"
+                              style={{
+                                backgroundImage: `url(${resolveImageUrl(bb.bgImage || '')})`,
+                                backgroundPosition: bb.bgPosition || 'center',
+                                filter: bb.bgBlur ? `blur(${bb.bgBlur}px)` : undefined,
+                                transform: bb.bgBlur ? 'scale(1.06)' : undefined,
+                              }}
+                            />
+                            <div
+                              className="absolute inset-0 z-0 pointer-events-none"
+                              style={{
+                                backgroundColor: bb.bgOverlayColor || '#090d16',
+                                opacity: typeof bb.bgOverlayOpacity === 'number' ? bb.bgOverlayOpacity : 0.85,
+                              }}
+                            />
+                          </>
+                        )}
+
+                        <div
+                          className={`relative z-10 flex ${
+                            batteryPreviewDevice === 'mobile' ? 'flex-col' : 'flex-col md:flex-row'
+                          } items-center justify-between gap-6`}
+                        >
+                          {/* Left Column: Technical Information */}
+                          <div className="space-y-3.5 max-w-lg">
+                            {bb.showBadge !== false && bb.badgeText && (
+                              <div
+                                className="inline-flex items-center gap-1.5 font-mono text-[11px] font-bold px-3 py-1 rounded-full border shadow-xs"
+                                style={{
+                                  backgroundColor: bb.badgeBgColor || 'rgba(5, 150, 105, 0.2)',
+                                  color: bb.badgeTextColor || '#34d399',
+                                  borderColor: bb.badgeBorderColor || 'rgba(52, 211, 153, 0.4)',
+                                }}
+                              >
+                                <Zap size={12} />
+                                <span>{bb.badgeText}</span>
+                              </div>
+                            )}
+
+                            <h3
+                              className="text-xl md:text-2xl font-extrabold leading-tight"
+                              style={{ color: bb.headingColor || '#ffffff' }}
+                            >
+                              {bb.heading || 'Genuine Li-ion & LFP Batteries For E-Scooter & E-Rickshaw'}
+                            </h3>
+
+                            <p
+                              className="text-xs leading-relaxed"
+                              style={{ color: bb.subheadingColor || '#93c5fd' }}
+                            >
+                              {bb.subheading ||
+                                'Engineered with advanced Smart BMS, thermal protection, and high energy density cells. Tested at our Kota plant with Pan-India dispatch & replacement support.'}
+                            </p>
+
+                            {highlights.length > 0 && (
+                              <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs font-semibold pt-1">
+                                {highlights.map((h, i) => (
+                                  <span key={i} className="flex items-center gap-1.5" style={{ color: h.color }}>
+                                    <CheckCircle2 size={15} />
+                                    <span>{h.text}</span>
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Right Column: Assistance Contacts Card */}
+                          {bb.showContactCard !== false && (
+                            <div
+                              className="p-5 rounded-2xl border text-center space-y-2.5 flex-shrink-0 w-full md:w-72 backdrop-blur-xs shadow-lg"
+                              style={{
+                                backgroundColor: bb.contactCardBgColor || 'rgba(255, 255, 255, 0.08)',
+                                borderColor: bb.contactCardBorderColor || 'rgba(255, 255, 255, 0.15)',
+                              }}
+                            >
+                              {/* Logo */}
+                              {bb.contactLogoType === 'image' && bb.contactLogoImage ? (
+                                <img
+                                  src={resolveImageUrl(bb.contactLogoImage)}
+                                  alt="Logo"
+                                  className="h-8 mx-auto object-contain"
+                                />
+                              ) : bb.contactLogoType === 'text' ? (
+                                <div
+                                  className="px-2.5 py-0.5 font-bold text-[10px] rounded inline-block uppercase tracking-wider mx-auto"
+                                  style={{
+                                    backgroundColor: bb.contactLogoBgColor || '#059669',
+                                    color: bb.contactLogoTextColor || '#ffffff',
+                                  }}
+                                >
+                                  {bb.contactLogoText || 'EBS KOTA PLANT'}
+                                </div>
+                              ) : (
+                                <div className="w-10 h-10 bg-emerald-900 rounded-xl flex items-center justify-center text-white font-bold text-xs mx-auto shadow">
+                                  EBS
+                                </div>
+                              )}
+
+                              <h4 className="font-bold text-xs text-white">
+                                {bb.contactCardTitle || 'Need Battery Assistance?'}
+                              </h4>
+                              <p className="text-[10px] text-slate-300">
+                                {bb.contactCardSubtitle || 'Contact our factory technical engineers in Kota, Rajasthan'}
+                              </p>
+
+                              <div className="space-y-1.5 pt-1">
+                                <div
+                                  className="w-full py-2 font-bold rounded-xl text-xs text-center shadow flex items-center justify-center gap-1.5"
+                                  style={{
+                                    backgroundColor: bb.helplineBtnBg || '#2563eb',
+                                    color: bb.helplineBtnTextColor || '#ffffff',
+                                  }}
+                                >
+                                  <Phone size={13} />
+                                  <span>{bb.helplineBtnText || 'Call +91 8949049003'}</span>
+                                </div>
+
+                                {bb.showWhatsappBtn !== false && (
+                                  <div
+                                    className="w-full py-2 font-bold rounded-xl text-xs text-center shadow flex items-center justify-center gap-1.5"
+                                    style={{
+                                      backgroundColor: bb.whatsappBtnBg || '#25D366',
+                                      color: bb.whatsappBtnTextColor || '#ffffff',
+                                    }}
+                                  >
+                                    <MessageSquare size={13} />
+                                    <span>{bb.whatsappBtnText || 'Chat on WhatsApp'}</span>
+                                  </div>
+                                )}
+
+                                <div
+                                  className="w-full py-1.5 font-semibold rounded-xl text-xs text-center border flex items-center justify-center gap-1.5"
+                                  style={{
+                                    backgroundColor: bb.plantBtnBg || 'rgba(255, 255, 255, 0.12)',
+                                    color: bb.plantBtnTextColor || '#ffffff',
+                                    borderColor: 'rgba(255, 255, 255, 0.2)',
+                                  }}
+                                >
+                                  <span>{bb.plantBtnText || 'View Plant Contact Details'}</span>
+                                  <ExternalLink size={11} />
+                                </div>
+                              </div>
+
+                              {(bb.alternatePhone || bb.supportEmail) && (
+                                <div className="pt-1 text-[9px] text-slate-300/80 space-y-0.5 border-t border-white/10">
+                                  {bb.alternatePhone && <div>Alt: {bb.alternatePhone}</div>}
+                                  {bb.supportEmail && <div>{bb.supportEmail}</div>}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             </div>

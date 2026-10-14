@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Content, IServiceCard, IQuickActionItem, IQuickActionsConfig } from '../models/Content';
+import { Content, IServiceCard, IQuickActionItem, IQuickActionsConfig, IBatteryBanner } from '../models/Content';
 import { ReferralSettings } from '../models/ReferralSettings';
 
 export const defaultServiceCards: IServiceCard[] = [
@@ -425,6 +425,75 @@ export const defaultQuickActions: IQuickActionItem[] = [
   },
 ];
 
+export const defaultBatteryBanner: IBatteryBanner = {
+  isVisible: true,
+  badgeText: 'GET HIGH POWER OF LITHIUM',
+  badgeIcon: 'Zap',
+  showBadge: true,
+  badgeBgColor: '#059669',
+  badgeTextColor: '#ecfdf5',
+  badgeBorderColor: 'rgba(52, 211, 153, 0.4)',
+  heading: 'Genuine Li-ion & LFP Batteries For E-Scooter & E-Rickshaw',
+  headingColor: '#ffffff',
+  subheading:
+    'Engineered with advanced Smart BMS, thermal protection, and high energy density cells. Tested at our Kota plant with Pan-India dispatch & replacement support.',
+  subheadingColor: '#93c5fd',
+  highlight1: '48V Series (3 Year Warranty)',
+  highlight1Icon: 'ShieldCheck',
+  highlight1Color: '#34d399',
+  highlight2: '60V / 72V Series (1.5 Year Warranty)',
+  highlight2Icon: 'CheckCircle2',
+  highlight2Color: '#38bdf8',
+  highlight3: '100% Genuine Cells & Kota Plant Support',
+  highlight3Icon: 'Award',
+  highlight3Color: '#fbbf24',
+  highlight4: 'Pan-India Replacement & Express Dispatch',
+  highlight4Icon: 'Truck',
+  highlight4Color: '#a78bfa',
+  // Background Image Suite
+  bgType: 'gradient',
+  bgSolidColor: '#0f172a',
+  bgGradientStart: '#0f172a',
+  bgGradientEnd: '#1e3a8a',
+  bgGradientDirection: 'to-br',
+  bgImage: '',
+  bgOverlayOpacity: 0.85,
+  bgOverlayColor: '#090d16',
+  bgPosition: 'center',
+  bgSize: 'cover',
+  bgBlur: 0,
+  cardBorderColor: 'rgba(59, 130, 246, 0.3)',
+  cardBorderRadius: 'rounded-2xl',
+  cardShadow: 'shadow-xl',
+  // Contacts & Assistance Card
+  showContactCard: true,
+  contactCardTitle: 'Need Battery Assistance?',
+  contactCardSubtitle: 'Contact our factory technical engineers in Kota, Rajasthan',
+  contactCardBgColor: 'rgba(255, 255, 255, 0.08)',
+  contactCardBorderColor: 'rgba(255, 255, 255, 0.15)',
+  contactLogoType: 'preset',
+  contactLogoText: 'EBS KOTA PLANT',
+  contactLogoImage: '',
+  contactLogoBgColor: '#059669',
+  contactLogoTextColor: '#ffffff',
+  helplinePhone: '8949049003',
+  helplineBtnText: 'Call +91 8949049003',
+  helplineBtnBg: '#2563eb',
+  helplineBtnTextColor: '#ffffff',
+  plantBtnText: 'View Plant Contact Details',
+  plantBtnLink: '/contact',
+  plantBtnTarget: '_self',
+  plantBtnBg: 'rgba(255, 255, 255, 0.12)',
+  plantBtnTextColor: '#ffffff',
+  showWhatsappBtn: true,
+  whatsappNumber: '8949049003',
+  whatsappBtnText: 'Chat on WhatsApp',
+  whatsappBtnBg: '#25D366',
+  whatsappBtnTextColor: '#ffffff',
+  alternatePhone: '+91 8949049003',
+  supportEmail: 'support@ekosmartdrive.in',
+};
+
 export const defaultCustomerLoginTimer = {
   enabled: true,
   durationSeconds: 20,
@@ -446,6 +515,9 @@ export const getOrCreateDefaultContent = async () => {
       billingConfig: defaultBillingConfig,
       portalLinks: defaultPortalLinks,
       customerLoginTimer: defaultCustomerLoginTimer,
+      batteryBanner: defaultBatteryBanner,
+      quickActionsConfig: defaultQuickActionsConfig,
+      quickActions: defaultQuickActions,
       contactInfo: defaultContactData,
       footer: defaultFooterData,
       privacyPolicy: defaultPrivacyPolicyData,
@@ -509,6 +581,16 @@ export const getOrCreateDefaultContent = async () => {
       content.quickActions = defaultQuickActions as any;
       modified = true;
     }
+    if (!content.batteryBanner || !content.batteryBanner.heading) {
+      content.batteryBanner = defaultBatteryBanner;
+      modified = true;
+    } else if (content.batteryBanner && typeof content.batteryBanner.bgType === 'undefined') {
+      content.batteryBanner = {
+        ...defaultBatteryBanner,
+        ...((content.batteryBanner as any).toObject ? (content.batteryBanner as any).toObject() : content.batteryBanner),
+      };
+      modified = true;
+    }
     if (modified) {
       await content.save();
     }
@@ -555,18 +637,14 @@ export const getPublicContent = async (_req: Request, res: Response) => {
         },
         portalLinks: content.portalLinks || defaultPortalLinks,
         customerLoginTimer: content.customerLoginTimer || defaultCustomerLoginTimer,
-        batteryBanner: content.batteryBanner || {
-          badgeText: 'GET HIGH POWER OF LITHIUM',
-          heading: 'Genuine Li-ion & LFP Batteries For E-Scooter & E-Rickshaw',
-          subheading:
-            'Engineered with advanced Smart BMS, thermal protection, and high energy density cells. Tested at our Kota plant with Pan-India dispatch & replacement support.',
-          highlight1: '48V Series (3 Year Warranty)',
-          highlight2: '60V / 72V Series (1.5 Year Warranty)',
-          helplinePhone: '8949049003',
-          helplineBtnText: 'Call +91 8949049003',
-          plantBtnText: 'View Plant Contact Details',
-          plantBtnLink: '/contact',
-        },
+        batteryBanner: content.batteryBanner
+          ? {
+              ...defaultBatteryBanner,
+              ...((content.batteryBanner as any).toObject
+                ? (content.batteryBanner as any).toObject()
+                : content.batteryBanner),
+            }
+          : defaultBatteryBanner,
         quickActionsConfig: content.quickActionsConfig || defaultQuickActionsConfig,
         quickActions: (content.quickActions || []).filter((q) => q.isVisible !== false),
         referralSettings,
@@ -748,18 +826,7 @@ export const resetContentToDefaults = async (_req: Request, res: Response) => {
     content.privacyPolicy = defaultPrivacyPolicyData;
     content.termsConditions = defaultTermsConditionsData;
     content.refundPolicy = defaultRefundPolicyData;
-    content.batteryBanner = {
-      badgeText: 'GET HIGH POWER OF LITHIUM',
-      heading: 'Genuine Li-ion & LFP Batteries For E-Scooter & E-Rickshaw',
-      subheading:
-        'Engineered with advanced Smart BMS, thermal protection, and high energy density cells. Tested at our Kota plant with Pan-India dispatch & replacement support.',
-      highlight1: '48V Series (3 Year Warranty)',
-      highlight2: '60V / 72V Series (1.5 Year Warranty)',
-      helplinePhone: '8949049003',
-      helplineBtnText: 'Call +91 8949049003',
-      plantBtnText: 'View Plant Contact Details',
-      plantBtnLink: '/contact',
-    };
+    content.batteryBanner = defaultBatteryBanner;
     content.quickActionsConfig = defaultQuickActionsConfig;
     content.quickActions = defaultQuickActions as any;
 

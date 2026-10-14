@@ -28,6 +28,8 @@ import {
   LifeBuoy,
   AlertTriangle,
   Mail,
+  Award,
+  MessageSquare,
 } from 'lucide-react';
 import { EbsLogo } from '../components/EbsLogo';
 import { API_BASE, resolveImageUrl } from '../config/api';
@@ -103,15 +105,71 @@ interface QuickActionsConfig {
 }
 
 interface BatteryBannerContent {
+  isVisible?: boolean;
   badgeText: string;
+  badgeIcon?: string;
+  showBadge?: boolean;
+  badgeBgColor?: string;
+  badgeTextColor?: string;
+  badgeBorderColor?: string;
   heading: string;
+  headingColor?: string;
   subheading: string;
+  subheadingColor?: string;
   highlight1: string;
+  highlight1Icon?: string;
+  highlight1Color?: string;
   highlight2: string;
+  highlight2Icon?: string;
+  highlight2Color?: string;
+  highlight3?: string;
+  highlight3Icon?: string;
+  highlight3Color?: string;
+  highlight4?: string;
+  highlight4Icon?: string;
+  highlight4Color?: string;
+  // Background Image Suite
+  bgType?: 'gradient' | 'solid' | 'image' | 'transparent';
+  bgSolidColor?: string;
+  bgGradientStart?: string;
+  bgGradientEnd?: string;
+  bgGradientDirection?: string;
+  bgImage?: string;
+  bgOverlayOpacity?: number;
+  bgOverlayColor?: string;
+  bgPosition?: string;
+  bgSize?: string;
+  bgBlur?: number;
+  cardBorderColor?: string;
+  cardBorderRadius?: string;
+  cardShadow?: string;
+  // Contacts & Assistance Card
+  showContactCard?: boolean;
+  contactCardTitle?: string;
+  contactCardSubtitle?: string;
+  contactCardBgColor?: string;
+  contactCardBorderColor?: string;
+  contactLogoType?: 'preset' | 'text' | 'image';
+  contactLogoText?: string;
+  contactLogoImage?: string;
+  contactLogoBgColor?: string;
+  contactLogoTextColor?: string;
   helplinePhone: string;
   helplineBtnText: string;
+  helplineBtnBg?: string;
+  helplineBtnTextColor?: string;
   plantBtnText: string;
   plantBtnLink: string;
+  plantBtnTarget?: '_self' | '_blank';
+  plantBtnBg?: string;
+  plantBtnTextColor?: string;
+  showWhatsappBtn?: boolean;
+  whatsappNumber?: string;
+  whatsappBtnText?: string;
+  whatsappBtnBg?: string;
+  whatsappBtnTextColor?: string;
+  alternatePhone?: string;
+  supportEmail?: string;
 }
 
 interface HeroContent {
@@ -231,16 +289,72 @@ const defaultHero: HeroContent = {
 };
 
 const defaultBatteryBanner: BatteryBannerContent = {
+  isVisible: true,
   badgeText: 'GET HIGH POWER OF LITHIUM',
+  badgeIcon: 'Zap',
+  showBadge: true,
+  badgeBgColor: '#059669',
+  badgeTextColor: '#ecfdf5',
+  badgeBorderColor: 'rgba(52, 211, 153, 0.4)',
   heading: 'Genuine Li-ion & LFP Batteries For E-Scooter & E-Rickshaw',
+  headingColor: '#ffffff',
   subheading:
     'Engineered with advanced Smart BMS, thermal protection, and high energy density cells. Tested at our Kota plant with Pan-India dispatch & replacement support.',
+  subheadingColor: '#93c5fd',
   highlight1: '48V Series (3 Year Warranty)',
+  highlight1Icon: 'ShieldCheck',
+  highlight1Color: '#34d399',
   highlight2: '60V / 72V Series (1.5 Year Warranty)',
+  highlight2Icon: 'CheckCircle2',
+  highlight2Color: '#38bdf8',
+  highlight3: '100% Genuine Cells & Kota Plant Support',
+  highlight3Icon: 'Award',
+  highlight3Color: '#fbbf24',
+  highlight4: 'Pan-India Replacement & Express Dispatch',
+  highlight4Icon: 'Truck',
+  highlight4Color: '#a78bfa',
+  // Background Image Suite
+  bgType: 'gradient',
+  bgSolidColor: '#0f172a',
+  bgGradientStart: '#0f172a',
+  bgGradientEnd: '#1e3a8a',
+  bgGradientDirection: 'to-br',
+  bgImage: '',
+  bgOverlayOpacity: 0.85,
+  bgOverlayColor: '#090d16',
+  bgPosition: 'center',
+  bgSize: 'cover',
+  bgBlur: 0,
+  cardBorderColor: 'rgba(59, 130, 246, 0.3)',
+  cardBorderRadius: 'rounded-2xl',
+  cardShadow: 'shadow-xl',
+  // Contacts & Assistance Card
+  showContactCard: true,
+  contactCardTitle: 'Need Battery Assistance?',
+  contactCardSubtitle: 'Contact our factory technical engineers in Kota, Rajasthan',
+  contactCardBgColor: 'rgba(255, 255, 255, 0.08)',
+  contactCardBorderColor: 'rgba(255, 255, 255, 0.15)',
+  contactLogoType: 'preset',
+  contactLogoText: 'EBS KOTA PLANT',
+  contactLogoImage: '',
+  contactLogoBgColor: '#059669',
+  contactLogoTextColor: '#ffffff',
   helplinePhone: '8949049003',
   helplineBtnText: 'Call +91 8949049003',
+  helplineBtnBg: '#2563eb',
+  helplineBtnTextColor: '#ffffff',
   plantBtnText: 'View Plant Contact Details',
   plantBtnLink: '/contact',
+  plantBtnTarget: '_self',
+  plantBtnBg: 'rgba(255, 255, 255, 0.12)',
+  plantBtnTextColor: '#ffffff',
+  showWhatsappBtn: true,
+  whatsappNumber: '8949049003',
+  whatsappBtnText: 'Chat on WhatsApp',
+  whatsappBtnBg: '#25D366',
+  whatsappBtnTextColor: '#ffffff',
+  alternatePhone: '+91 8949049003',
+  supportEmail: 'support@ekosmartdrive.in',
 };
 
 const defaultQuickActionsConfig: QuickActionsConfig = {
@@ -729,6 +843,48 @@ const getQuickActionColorStyles = (color: string, customBg?: string, customColor
         bg: 'bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white',
         text: 'group-hover:text-blue-600',
       };
+  }
+};
+
+const renderBannerIcon = (iconName?: string, defaultIcon: React.ReactNode = <CheckCircle2 size={16} />) => {
+  if (!iconName) return defaultIcon;
+  const lower = iconName.toLowerCase().replace(/[-_\s]/g, '');
+  const iconProps = { size: 16 };
+  switch (lower) {
+    case 'zap': return <Zap {...iconProps} />;
+    case 'shieldcheck':
+    case 'shield': return <ShieldCheck {...iconProps} />;
+    case 'shieldalert': return <ShieldAlert {...iconProps} />;
+    case 'check':
+    case 'checkcircle':
+    case 'checkcircle2': return <CheckCircle2 {...iconProps} />;
+    case 'award': return <Award {...iconProps} />;
+    case 'truck': return <Truck {...iconProps} />;
+    case 'battery': return <Battery {...iconProps} />;
+    case 'wrench':
+    case 'tool': return <Wrench {...iconProps} />;
+    case 'sparkles': return <Sparkles {...iconProps} />;
+    case 'activity': return <Activity {...iconProps} />;
+    case 'settings': return <Settings {...iconProps} />;
+    case 'phone': return <Phone {...iconProps} />;
+    case 'messagesquare':
+    case 'whatsapp': return <MessageSquare {...iconProps} />;
+    default: return defaultIcon;
+  }
+};
+
+const getGradientDirectionStyle = (dir?: string) => {
+  switch (dir) {
+    case 'to-r': return 'to right';
+    case 'to-l': return 'to left';
+    case 'to-b': return 'to bottom';
+    case 'to-t': return 'to top';
+    case 'to-tr': return 'to top right';
+    case 'to-tl': return 'to top left';
+    case 'to-bl': return 'to bottom left';
+    case 'to-br':
+    default:
+      return 'to bottom right';
   }
 };
 
@@ -1412,71 +1568,212 @@ const Home = () => {
       )}
 
       {/* EBS Battery Technical Highlights Banner */}
-      <section className="max-w-6xl mx-auto px-4 pb-12">
-        <div className="bg-gradient-to-br from-slate-900 to-slate-950 text-white rounded-3xl p-8 md:p-12 border border-slate-800 shadow-xl flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="space-y-4 max-w-xl">
-            {batteryBanner.badgeText && (
-              <div className="inline-block bg-emerald-500/20 text-emerald-400 font-mono text-xs font-bold px-3 py-1 rounded-full border border-emerald-500/30">
-                {batteryBanner.badgeText}
-              </div>
-            )}
-            <h3 className="text-2xl md:text-3xl font-extrabold leading-tight">
-              {batteryBanner.heading || 'Genuine Li-ion & LFP Batteries For E-Scooter & E-Rickshaw'}
-            </h3>
-            <p className="text-slate-400 text-xs md:text-sm leading-relaxed">
-              {batteryBanner.subheading ||
-                'Engineered with advanced Smart BMS, thermal protection, and high energy density cells. Tested at our Kota plant with Pan-India dispatch & replacement support.'}
-            </p>
-            {(batteryBanner.highlight1 || batteryBanner.highlight2) && (
-              <div className="flex flex-wrap gap-4 text-xs font-semibold text-slate-300 pt-2">
-                {batteryBanner.highlight1 && (
-                  <span className="flex items-center gap-1.5 text-emerald-400">
-                    <CheckCircle2 size={16} />
-                    <span>{batteryBanner.highlight1}</span>
-                  </span>
-                )}
-                {batteryBanner.highlight2 && (
-                  <span className="flex items-center gap-1.5 text-emerald-400">
-                    <CheckCircle2 size={16} />
-                    <span>{batteryBanner.highlight2}</span>
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
+      {batteryBanner.isVisible !== false && (
+        <section className="max-w-6xl mx-auto px-4 pb-12">
+          {(() => {
+            const hasBgImage = batteryBanner.bgType === 'image' && !!batteryBanner.bgImage;
+            const containerStyle: React.CSSProperties = {
+              borderColor: batteryBanner.cardBorderColor || 'rgba(59, 130, 246, 0.3)',
+            };
+            if (batteryBanner.bgType === 'solid') {
+              containerStyle.backgroundColor = batteryBanner.bgSolidColor || '#0f172a';
+            } else if (batteryBanner.bgType === 'transparent') {
+              containerStyle.backgroundColor = 'transparent';
+            } else if (!hasBgImage) {
+              containerStyle.backgroundImage = `linear-gradient(${getGradientDirectionStyle(batteryBanner.bgGradientDirection)}, ${batteryBanner.bgGradientStart || '#0f172a'}, ${batteryBanner.bgGradientEnd || '#1e3a8a'})`;
+            }
 
-          <div className="bg-slate-800/80 p-6 rounded-2xl border border-slate-700 text-center space-y-3 flex-shrink-0 w-full md:w-72">
-            <EbsLogo variant="battery" size="lg" showText={false} className="justify-center" />
-            <h4 className="font-bold text-sm text-white">Need Battery Assistance?</h4>
-            <p className="text-[11px] text-slate-400">Contact our factory technical engineers in Kota, Rajasthan</p>
-            <div className="space-y-2 pt-1">
-              <a
-                href={`tel:${(batteryBanner.helplinePhone || '8949049003').replace(/[^0-9]/g, '')}`}
-                className="inline-block w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition shadow cursor-pointer"
+            const highlights = [
+              { text: batteryBanner.highlight1, icon: batteryBanner.highlight1Icon, color: batteryBanner.highlight1Color || '#34d399' },
+              { text: batteryBanner.highlight2, icon: batteryBanner.highlight2Icon, color: batteryBanner.highlight2Color || '#38bdf8' },
+              { text: batteryBanner.highlight3, icon: batteryBanner.highlight3Icon, color: batteryBanner.highlight3Color || '#fbbf24' },
+              { text: batteryBanner.highlight4, icon: batteryBanner.highlight4Icon, color: batteryBanner.highlight4Color || '#a78bfa' },
+            ].filter((h) => !!h.text);
+
+            return (
+              <div
+                className={`relative overflow-hidden ${batteryBanner.cardBorderRadius || 'rounded-3xl'} p-8 md:p-12 border ${batteryBanner.cardShadow || 'shadow-xl'} text-white`}
+                style={containerStyle}
               >
-                {batteryBanner.helplineBtnText || 'Call +91 8949049003'}
-              </a>
-              {batteryBanner.plantBtnLink?.startsWith('http') ? (
-                <a
-                  href={batteryBanner.plantBtnLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block w-full py-2 bg-white/10 hover:bg-white/20 text-slate-200 font-semibold rounded-xl text-xs transition border border-white/20 cursor-pointer"
-                >
-                  {batteryBanner.plantBtnText || 'View Plant Contact Details'}
-                </a>
-              ) : (
-                <Link
-                  to={batteryBanner.plantBtnLink || '/contact'}
-                  className="inline-block w-full py-2 bg-white/10 hover:bg-white/20 text-slate-200 font-semibold rounded-xl text-xs transition border border-white/20 cursor-pointer"
-                >
-                  {batteryBanner.plantBtnText || 'View Plant Contact Details'}
-                </Link>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
+                {/* Background Image Layer */}
+                {hasBgImage && (
+                  <>
+                    <div
+                      className="absolute inset-0 bg-cover bg-no-repeat z-0 pointer-events-none"
+                      style={{
+                        backgroundImage: `url(${resolveImageUrl(batteryBanner.bgImage || '')})`,
+                        backgroundPosition: batteryBanner.bgPosition || 'center',
+                        filter: batteryBanner.bgBlur ? `blur(${batteryBanner.bgBlur}px)` : undefined,
+                        transform: batteryBanner.bgBlur ? 'scale(1.06)' : undefined,
+                      }}
+                    />
+                    <div
+                      className="absolute inset-0 z-0 pointer-events-none"
+                      style={{
+                        backgroundColor: batteryBanner.bgOverlayColor || '#090d16',
+                        opacity: typeof batteryBanner.bgOverlayOpacity === 'number' ? batteryBanner.bgOverlayOpacity : 0.85,
+                      }}
+                    />
+                  </>
+                )}
+
+                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+                  {/* Left Technical Info */}
+                  <div className="space-y-4 max-w-xl">
+                    {batteryBanner.showBadge !== false && batteryBanner.badgeText && (
+                      <div
+                        className="inline-flex items-center gap-1.5 font-mono text-xs font-bold px-3 py-1 rounded-full border shadow-sm"
+                        style={{
+                          backgroundColor: batteryBanner.badgeBgColor || 'rgba(5, 150, 105, 0.2)',
+                          color: batteryBanner.badgeTextColor || '#34d399',
+                          borderColor: batteryBanner.badgeBorderColor || 'rgba(52, 211, 153, 0.4)',
+                        }}
+                      >
+                        {renderBannerIcon(batteryBanner.badgeIcon, <Zap size={13} />)}
+                        <span>{batteryBanner.badgeText}</span>
+                      </div>
+                    )}
+                    <h3
+                      className="text-2xl md:text-3xl font-extrabold leading-tight"
+                      style={{ color: batteryBanner.headingColor || '#ffffff' }}
+                    >
+                      {batteryBanner.heading || 'Genuine Li-ion & LFP Batteries For E-Scooter & E-Rickshaw'}
+                    </h3>
+                    <p
+                      className="text-xs md:text-sm leading-relaxed"
+                      style={{ color: batteryBanner.subheadingColor || '#93c5fd' }}
+                    >
+                      {batteryBanner.subheading ||
+                        'Engineered with advanced Smart BMS, thermal protection, and high energy density cells. Tested at our Kota plant with Pan-India dispatch & replacement support.'}
+                    </p>
+
+                    {highlights.length > 0 && (
+                      <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs font-semibold pt-2">
+                        {highlights.map((h, idx) => (
+                          <span key={idx} className="flex items-center gap-1.5" style={{ color: h.color }}>
+                            {renderBannerIcon(h.icon, <CheckCircle2 size={16} />)}
+                            <span>{h.text}</span>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right Contacts & Assistance Box */}
+                  {batteryBanner.showContactCard !== false && (
+                    <div
+                      className="p-6 rounded-2xl border text-center space-y-3 flex-shrink-0 w-full md:w-80 backdrop-blur-sm shadow-lg"
+                      style={{
+                        backgroundColor: batteryBanner.contactCardBgColor || 'rgba(255, 255, 255, 0.08)',
+                        borderColor: batteryBanner.contactCardBorderColor || 'rgba(255, 255, 255, 0.15)',
+                      }}
+                    >
+                      {/* Logo */}
+                      {batteryBanner.contactLogoType === 'image' && batteryBanner.contactLogoImage ? (
+                        <img
+                          src={resolveImageUrl(batteryBanner.contactLogoImage)}
+                          alt="Contact Logo"
+                          className="h-10 mx-auto object-contain"
+                        />
+                      ) : batteryBanner.contactLogoType === 'text' ? (
+                        <div
+                          className="px-3 py-1 font-bold text-xs rounded-lg inline-block uppercase tracking-wider mx-auto"
+                          style={{
+                            backgroundColor: batteryBanner.contactLogoBgColor || '#059669',
+                            color: batteryBanner.contactLogoTextColor || '#ffffff',
+                          }}
+                        >
+                          {batteryBanner.contactLogoText || 'EBS KOTA PLANT'}
+                        </div>
+                      ) : (
+                        <EbsLogo variant="battery" size="lg" showText={false} className="justify-center" />
+                      )}
+
+                      <h4 className="font-bold text-sm text-white">
+                        {batteryBanner.contactCardTitle || 'Need Battery Assistance?'}
+                      </h4>
+                      <p className="text-[11px] text-slate-300">
+                        {batteryBanner.contactCardSubtitle || 'Contact our factory technical engineers in Kota, Rajasthan'}
+                      </p>
+
+                      <div className="space-y-2 pt-1">
+                        {/* Primary Phone Helpline */}
+                        <a
+                          href={`tel:${(batteryBanner.helplinePhone || '8949049003').replace(/[^0-9]/g, '')}`}
+                          className="flex items-center justify-center gap-2 w-full py-2.5 font-bold rounded-xl text-xs transition shadow cursor-pointer hover:opacity-95"
+                          style={{
+                            backgroundColor: batteryBanner.helplineBtnBg || '#2563eb',
+                            color: batteryBanner.helplineBtnTextColor || '#ffffff',
+                          }}
+                        >
+                          <Phone size={14} />
+                          <span>{batteryBanner.helplineBtnText || 'Call +91 8949049003'}</span>
+                        </a>
+
+                        {/* WhatsApp Direct Assistance */}
+                        {batteryBanner.showWhatsappBtn !== false && (
+                          <a
+                            href={`https://wa.me/91${(batteryBanner.whatsappNumber || batteryBanner.helplinePhone || '8949049003').replace(/[^0-9]/g, '')}?text=${encodeURIComponent('Hello Ekosmart Battery Team, I need technical battery assistance.')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center gap-2 w-full py-2.5 font-bold rounded-xl text-xs transition shadow cursor-pointer hover:opacity-95"
+                            style={{
+                              backgroundColor: batteryBanner.whatsappBtnBg || '#25D366',
+                              color: batteryBanner.whatsappBtnTextColor || '#ffffff',
+                            }}
+                          >
+                            <MessageSquare size={14} />
+                            <span>{batteryBanner.whatsappBtnText || 'Chat on WhatsApp'}</span>
+                          </a>
+                        )}
+
+                        {/* Plant Details Button */}
+                        {batteryBanner.plantBtnLink?.startsWith('http') ? (
+                          <a
+                            href={batteryBanner.plantBtnLink}
+                            target={batteryBanner.plantBtnTarget || '_blank'}
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center gap-2 w-full py-2 font-semibold rounded-xl text-xs transition border cursor-pointer hover:opacity-95"
+                            style={{
+                              backgroundColor: batteryBanner.plantBtnBg || 'rgba(255, 255, 255, 0.12)',
+                              color: batteryBanner.plantBtnTextColor || '#ffffff',
+                              borderColor: 'rgba(255, 255, 255, 0.2)',
+                            }}
+                          >
+                            <span>{batteryBanner.plantBtnText || 'View Plant Contact Details'}</span>
+                            <ExternalLink size={12} />
+                          </a>
+                        ) : (
+                          <Link
+                            to={batteryBanner.plantBtnLink || '/contact'}
+                            target={batteryBanner.plantBtnTarget || '_self'}
+                            className="flex items-center justify-center gap-2 w-full py-2 font-semibold rounded-xl text-xs transition border cursor-pointer hover:opacity-95"
+                            style={{
+                              backgroundColor: batteryBanner.plantBtnBg || 'rgba(255, 255, 255, 0.12)',
+                              color: batteryBanner.plantBtnTextColor || '#ffffff',
+                              borderColor: 'rgba(255, 255, 255, 0.2)',
+                            }}
+                          >
+                            <span>{batteryBanner.plantBtnText || 'View Plant Contact Details'}</span>
+                          </Link>
+                        )}
+                      </div>
+
+                      {/* Alternate contacts */}
+                      {(batteryBanner.alternatePhone || batteryBanner.supportEmail) && (
+                        <div className="pt-1.5 text-[10px] text-slate-300/80 space-y-0.5 border-t border-white/10">
+                          {batteryBanner.alternatePhone && <div>Alt: {batteryBanner.alternatePhone}</div>}
+                          {batteryBanner.supportEmail && <div>{batteryBanner.supportEmail}</div>}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+        </section>
+      )}
     </div>
   );
 };

@@ -224,6 +224,74 @@ export interface IQuickActionsConfig {
   layoutStyle?: 'horizontal' | 'grid';
 }
 
+export interface IBatteryBanner {
+  isVisible?: boolean;
+  badgeText: string;
+  badgeIcon?: string;
+  showBadge?: boolean;
+  badgeBgColor?: string;
+  badgeTextColor?: string;
+  badgeBorderColor?: string;
+  heading: string;
+  headingColor?: string;
+  subheading: string;
+  subheadingColor?: string;
+  highlight1: string;
+  highlight1Icon?: string;
+  highlight1Color?: string;
+  highlight2: string;
+  highlight2Icon?: string;
+  highlight2Color?: string;
+  highlight3?: string;
+  highlight3Icon?: string;
+  highlight3Color?: string;
+  highlight4?: string;
+  highlight4Icon?: string;
+  highlight4Color?: string;
+  // Background Image Suite
+  bgType?: 'gradient' | 'solid' | 'image' | 'transparent';
+  bgSolidColor?: string;
+  bgGradientStart?: string;
+  bgGradientEnd?: string;
+  bgGradientDirection?: string;
+  bgImage?: string;
+  bgOverlayOpacity?: number;
+  bgOverlayColor?: string;
+  bgPosition?: string;
+  bgSize?: string;
+  bgBlur?: number;
+  cardBorderColor?: string;
+  cardBorderRadius?: string;
+  cardShadow?: string;
+  // Contacts & Assistance Card
+  showContactCard?: boolean;
+  contactCardTitle?: string;
+  contactCardSubtitle?: string;
+  contactCardBgColor?: string;
+  contactCardBorderColor?: string;
+  contactLogoType?: 'preset' | 'text' | 'image';
+  contactLogoText?: string;
+  contactLogoImage?: string;
+  contactLogoBgColor?: string;
+  contactLogoTextColor?: string;
+  helplinePhone: string;
+  helplineBtnText: string;
+  helplineBtnBg?: string;
+  helplineBtnTextColor?: string;
+  plantBtnText: string;
+  plantBtnLink: string;
+  plantBtnTarget?: '_self' | '_blank';
+  plantBtnBg?: string;
+  plantBtnTextColor?: string;
+  showWhatsappBtn?: boolean;
+  whatsappNumber?: string;
+  whatsappBtnText?: string;
+  whatsappBtnBg?: string;
+  whatsappBtnTextColor?: string;
+  alternatePhone?: string;
+  supportEmail?: string;
+}
+
 export interface IContent extends Document {
   key: string;
   topBar?: ITopBarContent;
@@ -240,17 +308,7 @@ export interface IContent extends Document {
     title: string;
     message: string;
   };
-  batteryBanner?: {
-    badgeText: string;
-    heading: string;
-    subheading: string;
-    highlight1: string;
-    highlight2: string;
-    helplinePhone: string;
-    helplineBtnText: string;
-    plantBtnText: string;
-    plantBtnLink: string;
-  };
+  batteryBanner?: IBatteryBanner;
   quickActionsConfig?: IQuickActionsConfig;
   quickActions?: IQuickActionItem[];
   contactInfo: {
@@ -613,19 +671,73 @@ Bulk battery orders applicable as per Minimum Order Quantity (MOQ 5 / MOQ 10) te
       },
     },
     batteryBanner: {
+      isVisible: { type: Boolean, default: true },
       badgeText: { type: String, default: 'GET HIGH POWER OF LITHIUM' },
+      badgeIcon: { type: String, default: 'Sparkles' },
+      showBadge: { type: Boolean, default: true },
+      badgeBgColor: { type: String, default: 'rgba(16, 185, 129, 0.2)' },
+      badgeTextColor: { type: String, default: '#34d399' },
+      badgeBorderColor: { type: String, default: 'rgba(16, 185, 129, 0.3)' },
       heading: { type: String, default: 'Genuine Li-ion & LFP Batteries For E-Scooter & E-Rickshaw' },
+      headingColor: { type: String, default: '#ffffff' },
       subheading: {
         type: String,
         default:
           'Engineered with advanced Smart BMS, thermal protection, and high energy density cells. Tested at our Kota plant with Pan-India dispatch & replacement support.',
       },
+      subheadingColor: { type: String, default: '#94a3b8' },
       highlight1: { type: String, default: '48V Series (3 Year Warranty)' },
+      highlight1Icon: { type: String, default: 'CheckCircle2' },
+      highlight1Color: { type: String, default: '#34d399' },
       highlight2: { type: String, default: '60V / 72V Series (1.5 Year Warranty)' },
+      highlight2Icon: { type: String, default: 'CheckCircle2' },
+      highlight2Color: { type: String, default: '#34d399' },
+      highlight3: { type: String, default: 'Tested at Kota Plant with Smart BMS' },
+      highlight3Icon: { type: String, default: 'CheckCircle2' },
+      highlight3Color: { type: String, default: '#38bdf8' },
+      highlight4: { type: String, default: 'Pan-India Dispatch & Technical Support' },
+      highlight4Icon: { type: String, default: 'CheckCircle2' },
+      highlight4Color: { type: String, default: '#facc15' },
+      bgType: { type: String, enum: ['gradient', 'solid', 'image', 'transparent'], default: 'gradient' },
+      bgSolidColor: { type: String, default: '#0f172a' },
+      bgGradientStart: { type: String, default: '#0f172a' },
+      bgGradientEnd: { type: String, default: '#020617' },
+      bgGradientDirection: { type: String, default: 'to-br' },
+      bgImage: { type: String, default: '' },
+      bgOverlayOpacity: { type: Number, default: 0.85 },
+      bgOverlayColor: { type: String, default: '#000000' },
+      bgPosition: { type: String, default: 'center' },
+      bgSize: { type: String, default: 'cover' },
+      bgBlur: { type: Number, default: 0 },
+      cardBorderColor: { type: String, default: '#1e293b' },
+      cardBorderRadius: { type: String, default: 'rounded-3xl' },
+      cardShadow: { type: String, default: 'shadow-xl' },
+      showContactCard: { type: Boolean, default: true },
+      contactCardTitle: { type: String, default: 'Need Battery Assistance?' },
+      contactCardSubtitle: { type: String, default: 'Contact our factory technical engineers in Kota, Rajasthan' },
+      contactCardBgColor: { type: String, default: 'rgba(30, 41, 59, 0.8)' },
+      contactCardBorderColor: { type: String, default: 'rgba(51, 65, 85, 0.8)' },
+      contactLogoType: { type: String, enum: ['preset', 'text', 'image'], default: 'preset' },
+      contactLogoText: { type: String, default: 'EBS' },
+      contactLogoImage: { type: String, default: '' },
+      contactLogoBgColor: { type: String, default: '#064e3b' },
+      contactLogoTextColor: { type: String, default: '#ffffff' },
       helplinePhone: { type: String, default: '8949049003' },
       helplineBtnText: { type: String, default: 'Call +91 8949049003' },
+      helplineBtnBg: { type: String, default: '#059669' },
+      helplineBtnTextColor: { type: String, default: '#ffffff' },
       plantBtnText: { type: String, default: 'View Plant Contact Details' },
       plantBtnLink: { type: String, default: '/contact' },
+      plantBtnTarget: { type: String, enum: ['_self', '_blank'], default: '_self' },
+      plantBtnBg: { type: String, default: 'rgba(255, 255, 255, 0.1)' },
+      plantBtnTextColor: { type: String, default: '#e2e8f0' },
+      showWhatsappBtn: { type: Boolean, default: true },
+      whatsappNumber: { type: String, default: '8949049003' },
+      whatsappBtnText: { type: String, default: 'WhatsApp Chat Assistance' },
+      whatsappBtnBg: { type: String, default: '#25D366' },
+      whatsappBtnTextColor: { type: String, default: '#ffffff' },
+      alternatePhone: { type: String, default: '+91 9549730483' },
+      supportEmail: { type: String, default: 'support@ekosmartdrive.in' },
     },
     quickActionsConfig: {
       isVisible: { type: Boolean, default: true },
