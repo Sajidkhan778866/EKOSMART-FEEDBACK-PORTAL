@@ -332,6 +332,16 @@ interface ICMSContent {
     showRefundPolicy: boolean;
     logoType?: 'preset' | 'image';
     logoImage?: string;
+    instagramUrl?: string;
+    showInstagram?: boolean;
+    facebookUrl?: string;
+    showFacebook?: boolean;
+    whatsappNumber?: string;
+    showWhatsapp?: boolean;
+    whatsappText?: string;
+    mapUrl?: string;
+    showContactDropdown?: boolean;
+    contactDropdownTitle?: string;
   };
   privacyPolicy: {
     title: string;
@@ -594,6 +604,16 @@ const defaultFallbackContent: ICMSContent = {
     showRefundPolicy: true,
     logoType: 'preset',
     logoImage: '',
+    instagramUrl: 'https://www.instagram.com/ekosmartdrive',
+    showInstagram: true,
+    facebookUrl: 'https://www.facebook.com/ekosmartdrive',
+    showFacebook: true,
+    whatsappNumber: '+91 8949049003',
+    showWhatsapp: true,
+    whatsappText: 'Hello Ekosmart, I would like to inquire about battery service & support.',
+    mapUrl: 'https://maps.google.com/?q=Rang+Talab,+Near+by+Star+Kids+School,+Kota,+Rajasthan+324002',
+    showContactDropdown: true,
+    contactDropdownTitle: 'Quick Department Directory',
   },
   privacyPolicy: {
     title: 'Privacy Policy',
@@ -9432,6 +9452,275 @@ const ContentManager = () => {
                   />
                   <span>Show Refund Policy Link</span>
                 </label>
+              </div>
+            </div>
+
+            {/* Google Maps Plant Location Navigation */}
+            <div className="md:col-span-2 pt-3 border-t border-slate-100">
+              <label className="block font-semibold text-slate-700 mb-1">
+                Google Maps Plant / Office Location URL
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="https://maps.google.com/?q=..."
+                  value={content.footer.mapUrl || ''}
+                  onChange={(e) =>
+                    setContent({
+                      ...content,
+                      footer: { ...content.footer, mapUrl: e.target.value },
+                    })
+                  }
+                  className="flex-1 border border-slate-300 rounded-lg p-2 text-xs font-mono"
+                />
+                {content.footer.mapUrl && (
+                  <a
+                    href={content.footer.mapUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition"
+                  >
+                    <ExternalLink size={13} />
+                    <span>Test Map</span>
+                  </a>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-500 mt-1">
+                Makes the plant address in the footer and contact directory a clickable link that opens directly in Google Maps.
+              </p>
+            </div>
+
+            {/* Social Media & WhatsApp Suite Section */}
+            <div className="md:col-span-2 bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+              <div>
+                <h3 className="font-bold text-slate-800 text-xs flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  <span>Social Media & WhatsApp Number Suite (100% Soft-Coded)</span>
+                </h3>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Manage Instagram, Facebook, and the official WhatsApp chat button with real phone dialing & messaging.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Instagram Settings */}
+                <div className="bg-white p-3.5 rounded-lg border border-slate-200 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-800 text-xs flex items-center gap-1.5 text-pink-600">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+                        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                        <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+                      </svg>
+                      <span>Instagram Link</span>
+                    </span>
+                    <label className="flex items-center gap-1.5 text-[11px] text-slate-600 cursor-pointer font-medium">
+                      <input
+                        type="checkbox"
+                        checked={content.footer.showInstagram ?? true}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            footer: { ...content.footer, showInstagram: e.target.checked },
+                          })
+                        }
+                        className="rounded text-pink-600 focus:ring-pink-500 h-3.5 w-3.5"
+                      />
+                      <span>Visible</span>
+                    </label>
+                  </div>
+                  <div>
+                    <input
+                      type="text"
+                      placeholder="https://www.instagram.com/yourhandle"
+                      value={content.footer.instagramUrl || ''}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          footer: { ...content.footer, instagramUrl: e.target.value },
+                        })
+                      }
+                      className="w-full border border-slate-300 rounded-lg p-2 text-xs font-mono"
+                    />
+                  </div>
+                </div>
+
+                {/* Facebook Settings */}
+                <div className="bg-white p-3.5 rounded-lg border border-slate-200 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-800 text-xs flex items-center gap-1.5 text-blue-600">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                      </svg>
+                      <span>Facebook Link</span>
+                    </span>
+                    <label className="flex items-center gap-1.5 text-[11px] text-slate-600 cursor-pointer font-medium">
+                      <input
+                        type="checkbox"
+                        checked={content.footer.showFacebook ?? true}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            footer: { ...content.footer, showFacebook: e.target.checked },
+                          })
+                        }
+                        className="rounded text-blue-600 focus:ring-blue-500 h-3.5 w-3.5"
+                      />
+                      <span>Visible</span>
+                    </label>
+                  </div>
+                  <div>
+                    <input
+                      type="text"
+                      placeholder="https://www.facebook.com/yourpage"
+                      value={content.footer.facebookUrl || ''}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          footer: { ...content.footer, facebookUrl: e.target.value },
+                        })
+                      }
+                      className="w-full border border-slate-300 rounded-lg p-2 text-xs font-mono"
+                    />
+                  </div>
+                </div>
+
+                {/* WhatsApp Phone Number & Chat Suite */}
+                <div className="md:col-span-2 bg-white p-3.5 rounded-lg border border-slate-200 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-800 text-xs flex items-center gap-1.5 text-emerald-600">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17.472 14.382c-.301-.15-1.776-.876-2.051-.976-.275-.1-.476-.15-.676.15-.2.301-.776.976-.951 1.176-.176.2-.351.226-.652.076-.301-.15-1.272-.469-2.424-1.497-.896-.799-1.502-1.787-1.678-2.088-.175-.301-.019-.464.132-.614.136-.135.301-.351.451-.527.151-.175.201-.301.302-.502.1-.2.05-.376-.025-.526-.075-.15-.677-1.632-.927-2.235-.243-.587-.49-.508-.676-.517-.175-.01-.376-.01-.577-.01-.2 0-.527.075-.802.376-.276.301-1.053 1.028-1.053 2.508 0 1.48 1.078 2.909 1.228 3.11.151.2 2.122 3.24 5.141 4.544.718.31 1.279.496 1.716.634.721.23 1.378.197 1.897.12.578-.087 1.776-.726 2.027-1.428.251-.702.251-1.303.176-1.428-.076-.125-.276-.2-.577-.35zM12.04 2C6.52 2 2.04 6.48 2.04 12c0 1.94.55 3.75 1.51 5.28L2 22l4.86-1.51C8.34 21.39 10.14 22 12.04 22c5.52 0 10-4.48 10-10S17.56 2 12.04 2zm0 18.17c-1.68 0-3.24-.51-4.55-1.39l-.33-.22-2.88.9.92-2.81-.24-.35A8.134 8.134 0 0 1 3.86 12c0-4.51 3.67-8.17 8.18-8.17 4.51 0 8.18 3.66 8.18 8.17 0 4.51-3.67 8.17-8.18 8.17z" />
+                      </svg>
+                      <span>WhatsApp Number with Official Logo</span>
+                    </span>
+                    <label className="flex items-center gap-1.5 text-[11px] text-slate-600 cursor-pointer font-medium">
+                      <input
+                        type="checkbox"
+                        checked={content.footer.showWhatsapp ?? true}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            footer: { ...content.footer, showWhatsapp: e.target.checked },
+                          })
+                        }
+                        className="rounded text-emerald-600 focus:ring-emerald-500 h-3.5 w-3.5"
+                      />
+                      <span>Show WhatsApp Button & Logo</span>
+                    </label>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                        WhatsApp Contact Phone Number
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="+91 8949049003"
+                        value={content.footer.whatsappNumber || ''}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            footer: { ...content.footer, whatsappNumber: e.target.value },
+                          })
+                        }
+                        className="w-full border border-slate-300 rounded-lg p-2 text-xs font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                        Pre-filled WhatsApp Greeting Message
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Hello Ekosmart, I would like to inquire..."
+                        value={content.footer.whatsappText || ''}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            footer: { ...content.footer, whatsappText: e.target.value },
+                          })
+                        }
+                        className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-[11px] text-slate-500">
+                      Renders with official green WhatsApp badge, direct wa.me deep link, and one-click chat.
+                    </span>
+                    <a
+                      href={`https://wa.me/${(content.footer.whatsappNumber || content.footer.phone || '918949049003').replace(/\D/g, '')}?text=${encodeURIComponent(content.footer.whatsappText || 'Hello Ekosmart Support')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 rounded-lg text-xs font-bold flex items-center gap-1 transition shadow-xs"
+                    >
+                      <ExternalLink size={12} />
+                      <span>Test Chat on WhatsApp</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Contact & Department Directory Dropdown Configuration */}
+            <div className="md:col-span-2 bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-slate-800 text-xs flex items-center gap-2">
+                    <Phone size={14} className="text-emerald-600" />
+                    <span>Contact & Helpline Department Dropdown</span>
+                  </h3>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Display an interactive dropdown menu in the footer and desktop navigation where all options are clickable direct links.
+                  </p>
+                </div>
+                <label className="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer font-bold">
+                  <input
+                    type="checkbox"
+                    checked={content.footer.showContactDropdown ?? true}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        footer: { ...content.footer, showContactDropdown: e.target.checked },
+                      })
+                    }
+                    className="rounded text-green-600 focus:ring-green-500 h-4 w-4"
+                  />
+                  <span>Enable Contact Dropdown</span>
+                </label>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                  Dropdown Trigger Button Title
+                </label>
+                <input
+                  type="text"
+                  placeholder="Quick Department Directory"
+                  value={content.footer.contactDropdownTitle || ''}
+                  onChange={(e) =>
+                    setContent({
+                      ...content,
+                      footer: { ...content.footer, contactDropdownTitle: e.target.value },
+                    })
+                  }
+                  className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+                />
+              </div>
+
+              <div className="bg-emerald-50/80 p-3 rounded-lg border border-emerald-200 text-[11px] text-emerald-800 space-y-1">
+                <div className="font-bold">✓ All Dropdown Items are Clickable Links:</div>
+                <ul className="list-disc list-inside space-y-0.5 text-emerald-700">
+                  <li><strong>Helpline:</strong> Direct phone call link (<code className="bg-emerald-100 px-1 rounded">tel:{content.footer.phone || '+918949049003'}</code>)</li>
+                  <li><strong>WhatsApp:</strong> Direct encrypted chat link (<code className="bg-emerald-100 px-1 rounded">wa.me</code>)</li>
+                  <li><strong>Support Email:</strong> Mail client trigger (<code className="bg-emerald-100 px-1 rounded">mailto:{content.footer.email || 'support@ekosmartdrive.in'}</code>)</li>
+                  <li><strong>Kota Plant Address:</strong> Google Maps navigation link</li>
+                  <li><strong>Department Portals:</strong> One-click navigation to Warranty Check, Service Tickets, and Full Directory</li>
+                </ul>
               </div>
             </div>
           </div>

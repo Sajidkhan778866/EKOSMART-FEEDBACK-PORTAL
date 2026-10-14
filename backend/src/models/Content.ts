@@ -292,6 +292,34 @@ export interface IBatteryBanner {
   supportEmail?: string;
 }
 
+export interface IFooterContent {
+  companyName: string;
+  copyrightText: string;
+  disclaimer: string;
+  address: string;
+  phone: string;
+  email: string;
+  website: string;
+  gstin: string;
+  officeHours: string;
+  showPrivacyPolicy: boolean;
+  showTermsConditions: boolean;
+  showRefundPolicy: boolean;
+  logoType?: 'preset' | 'image';
+  logoImage?: string;
+  // Social Media & WhatsApp Suite
+  instagramUrl?: string;
+  showInstagram?: boolean;
+  facebookUrl?: string;
+  showFacebook?: boolean;
+  whatsappNumber?: string;
+  showWhatsapp?: boolean;
+  whatsappText?: string;
+  mapUrl?: string;
+  showContactDropdown?: boolean;
+  contactDropdownTitle?: string;
+}
+
 export interface IContent extends Document {
   key: string;
   topBar?: ITopBarContent;
@@ -329,22 +357,7 @@ export interface IContent extends Document {
     divisionContacts?: IDivisionContact[];
     isPublished: boolean;
   };
-  footer: {
-    companyName: string;
-    copyrightText: string;
-    disclaimer: string;
-    address: string;
-    phone: string;
-    email: string;
-    website: string;
-    gstin: string;
-    officeHours: string;
-    showPrivacyPolicy: boolean;
-    showTermsConditions: boolean;
-    showRefundPolicy: boolean;
-    logoType?: 'preset' | 'image';
-    logoImage?: string;
-  };
+  footer: IFooterContent;
   privacyPolicy: {
     title: string;
     content: string;
@@ -542,6 +555,17 @@ const contentSchema = new Schema<IContent>(
       showRefundPolicy: { type: Boolean, default: true },
       logoType: { type: String, enum: ['preset', 'image'], default: 'preset' },
       logoImage: { type: String, default: '' },
+      // Social Media & WhatsApp Suite
+      instagramUrl: { type: String, default: 'https://instagram.com/ekosmartdrive' },
+      showInstagram: { type: Boolean, default: true },
+      facebookUrl: { type: String, default: 'https://facebook.com/ekosmartdrive' },
+      showFacebook: { type: Boolean, default: true },
+      whatsappNumber: { type: String, default: '+91 8949049003' },
+      showWhatsapp: { type: Boolean, default: true },
+      whatsappText: { type: String, default: 'Hello Ekosmart Support Team, I need assistance with EV battery & services.' },
+      mapUrl: { type: String, default: 'https://maps.google.com/?q=Kota,Rajasthan' },
+      showContactDropdown: { type: Boolean, default: true },
+      contactDropdownTitle: { type: String, default: 'Quick Department Contacts' },
     },
     privacyPolicy: {
       title: { type: String, default: 'Privacy Policy & Battery Data Protection' },

@@ -23,11 +23,64 @@ import {
   User,
   LogOut,
   Receipt,
+  ChevronDown,
 } from 'lucide-react';
 import { API_BASE, ADMIN_PORTAL_URL, EMPLOYEE_PORTAL_URL, resolveImageUrl } from '../config/api';
 import { useCustomerAuth } from '../context/CustomerAuthContext';
 import { useTheme } from '../context/ThemeContext';
 import CustomerLoginModal from './CustomerLoginModal';
+
+const InstagramIcon = ({ size = 18, className = '' }: { size?: number; className?: string }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+  </svg>
+);
+
+const FacebookIcon = ({ size = 18, className = '' }: { size?: number; className?: string }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className={className}
+  >
+    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+  </svg>
+);
+
+const WhatsAppIcon = ({ size = 18, className = '' }: { size?: number; className?: string }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className={className}
+  >
+    <path d="M17.472 14.382c-.301-.15-1.776-.876-2.051-.976-.275-.1-.476-.15-.676.15-.2.301-.776.976-.951 1.176-.176.2-.351.226-.652.076-.301-.15-1.272-.469-2.424-1.497-.896-.799-1.502-1.787-1.678-2.088-.175-.301-.019-.464.132-.614.136-.135.301-.351.451-.527.151-.175.201-.301.302-.502.1-.2.05-.376-.025-.526-.075-.15-.677-1.632-.927-2.235-.243-.587-.49-.508-.676-.517-.175-.01-.376-.01-.577-.01-.2 0-.527.075-.802.376-.276.301-1.053 1.028-1.053 2.508 0 1.48 1.078 2.909 1.228 3.11.151.2 2.122 3.24 5.141 4.544.718.31 1.279.496 1.716.634.721.23 1.378.197 1.897.12.578-.087 1.776-.726 2.027-1.428.251-.702.251-1.303.176-1.428-.076-.125-.276-.2-.577-.35zM12.04 2C6.52 2 2.04 6.48 2.04 12c0 1.94.55 3.75 1.51 5.28L2 22l4.86-1.51C8.34 21.39 10.14 22 12.04 22c5.52 0 10-4.48 10-10S17.56 2 12.04 2zm0 18.17c-1.68 0-3.24-.51-4.55-1.39l-.33-.22-2.88.9.92-2.81-.24-.35A8.134 8.134 0 0 1 3.86 12c0-4.51 3.67-8.17 8.18-8.17 4.51 0 8.18 3.66 8.18 8.17 0 4.51-3.67 8.17-8.18 8.17z" />
+  </svg>
+);
+
+const getWhatsAppUrl = (phone?: string, text?: string) => {
+  const raw = phone || '+91 8949049003';
+  const digits = raw.replace(/\D/g, '');
+  const phoneFormatted = digits.length === 10 ? `91${digits}` : digits;
+  const msg = encodeURIComponent(
+    text || 'Hello Ekosmart, I would like to inquire about battery service & support.'
+  );
+  return `https://wa.me/${phoneFormatted}?text=${msg}`;
+};
 
 interface HeaderLogoContent {
   logoType?: 'preset' | 'image';
@@ -122,6 +175,16 @@ interface FooterContent {
   showRefundPolicy: boolean;
   logoType?: 'preset' | 'image';
   logoImage?: string;
+  instagramUrl?: string;
+  showInstagram?: boolean;
+  facebookUrl?: string;
+  showFacebook?: boolean;
+  whatsappNumber?: string;
+  showWhatsapp?: boolean;
+  whatsappText?: string;
+  mapUrl?: string;
+  showContactDropdown?: boolean;
+  contactDropdownTitle?: string;
   socialLinks?: Array<{ platform: string; url: string }>;
   columns?: Array<{ title: string; links: Array<{ label: string; href: string }> }>;
 }
@@ -130,7 +193,7 @@ const defaultFooter: FooterContent = {
   companyName: 'Ekosmart Battery Solution (EBS) & EV Spare Parts',
   copyrightText: '2026 Ekosmart Battery Solution. All rights reserved. GSTIN: 08DTUPM4205B1Z0',
   disclaimer: 'Official customer support, complaint tracking & battery warranty verification portal',
-  address: 'Plot No. 14, Electronic Complex, Road No. 1, IPIA, Kota, Rajasthan - 324005',
+  address: 'Rang Talab, Near by Star Kids School, Kota, Rajasthan - 324002',
   phone: '+91 8949049003',
   email: 'support@ekosmartdrive.in',
   website: 'www.ekosmartdrive.in',
@@ -141,6 +204,16 @@ const defaultFooter: FooterContent = {
   showRefundPolicy: true,
   logoType: 'preset',
   logoImage: '',
+  instagramUrl: 'https://www.instagram.com/ekosmartdrive',
+  showInstagram: true,
+  facebookUrl: 'https://www.facebook.com/ekosmartdrive',
+  showFacebook: true,
+  whatsappNumber: '+91 8949049003',
+  showWhatsapp: true,
+  whatsappText: 'Hello Ekosmart, I would like to inquire about battery service & support.',
+  mapUrl: 'https://maps.google.com/?q=Rang+Talab,+Near+by+Star+Kids+School,+Kota,+Rajasthan+324002',
+  showContactDropdown: true,
+  contactDropdownTitle: 'Quick Department Directory',
 };
 
 const Layout = () => {
@@ -152,6 +225,8 @@ const Layout = () => {
   const [headerLogo, setHeaderLogo] = useState<HeaderLogoContent>({ logoType: 'preset', logoImage: '' });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [navContactDropdownOpen, setNavContactDropdownOpen] = useState(false);
+  const [footerContactDropdownOpen, setFooterContactDropdownOpen] = useState(false);
   const location = useLocation();
 
   // 20-Second Customer Login Timer & Modal State
@@ -174,6 +249,8 @@ const Layout = () => {
   useEffect(() => {
     setMobileMenuOpen(false);
     setUserDropdownOpen(false);
+    setNavContactDropdownOpen(false);
+    setFooterContactDropdownOpen(false);
   }, [location.pathname]);
 
   // Sync theme changes into local state
@@ -406,6 +483,115 @@ const Layout = () => {
                   </NavLink>
                 </li>
               )}
+
+              {/* Contact & Support Dropdown (All items clickable <a> links) */}
+              <li className="relative">
+                <button
+                  type="button"
+                  onClick={() => setNavContactDropdownOpen(!navContactDropdownOpen)}
+                  className="flex items-center gap-1.5 text-slate-800 hover:text-emerald-700 transition font-bold py-1.5 cursor-pointer"
+                  aria-expanded={navContactDropdownOpen}
+                >
+                  <Phone size={14} className="text-emerald-600" />
+                  <span>Contact & Helpline</span>
+                  <ChevronDown
+                    size={13}
+                    className={`text-slate-500 transition-transform ${
+                      navContactDropdownOpen ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
+
+                {navContactDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 text-xs font-medium animate-in fade-in">
+                    <div className="px-4 py-2 border-b border-slate-100 bg-slate-50 rounded-t-xl">
+                      <p className="font-bold text-slate-900 text-xs">Direct Support & Helplines</p>
+                      <p className="text-[11px] text-slate-500">Every option connects you instantly</p>
+                    </div>
+
+                    <a
+                      href={`tel:${(footer.phone || '+918949049003').replace(/\s+/g, '')}`}
+                      onClick={() => setNavContactDropdownOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 transition"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                        <Phone size={14} />
+                      </div>
+                      <div>
+                        <div className="font-bold text-slate-900 text-xs">Call Helpline</div>
+                        <div className="text-[11px] text-emerald-700 font-mono font-semibold">
+                          {footer.phone || '+91 8949049003'}
+                        </div>
+                      </div>
+                    </a>
+
+                    {(footer.showWhatsapp ?? true) && (
+                      <a
+                        href={getWhatsAppUrl(footer.whatsappNumber || footer.phone, footer.whatsappText)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => setNavContactDropdownOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 transition"
+                      >
+                        <div className="w-7 h-7 rounded-lg bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                          <WhatsAppIcon size={14} />
+                        </div>
+                        <div>
+                          <div className="font-bold text-slate-900 text-xs">WhatsApp Chat Support</div>
+                          <div className="text-[11px] text-emerald-700 font-mono font-semibold">
+                            {footer.whatsappNumber || footer.phone || '+91 8949049003'}
+                          </div>
+                        </div>
+                      </a>
+                    )}
+
+                    <a
+                      href={`mailto:${footer.email || 'support@ekosmartdrive.in'}`}
+                      onClick={() => setNavContactDropdownOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-blue-50 text-slate-700 hover:text-blue-800 transition"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                        <Mail size={14} />
+                      </div>
+                      <div>
+                        <div className="font-bold text-slate-900 text-xs">Email Official Support</div>
+                        <div className="text-[11px] text-slate-500 font-mono truncate max-w-[180px]">
+                          {footer.email || 'support@ekosmartdrive.in'}
+                        </div>
+                      </div>
+                    </a>
+
+                    <a
+                      href={footer.mapUrl || `https://maps.google.com/?q=${encodeURIComponent(footer.address || 'Rang Talab, Near by Star Kids School, Kota, Rajasthan - 324002')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setNavContactDropdownOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-amber-50 text-slate-700 hover:text-amber-800 transition"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                        <MapPin size={14} />
+                      </div>
+                      <div>
+                        <div className="font-bold text-slate-900 text-xs">Kota Plant Location (Maps)</div>
+                        <div className="text-[11px] text-slate-500 truncate max-w-[180px]">
+                          {footer.address || 'Rang Talab, Kota'}
+                        </div>
+                      </div>
+                    </a>
+
+                    <div className="border-t border-slate-100 my-1 pt-1">
+                      <NavLink
+                        to="/contact"
+                        onClick={() => setNavContactDropdownOpen(false)}
+                        className="flex items-center justify-between px-4 py-2 hover:bg-slate-100 text-slate-700 font-bold text-xs"
+                      >
+                        <span>View Full Contact Directory</span>
+                        <ChevronRight size={13} className="text-slate-400" />
+                      </NavLink>
+                    </div>
+                  </div>
+                )}
+              </li>
 
               {/* Customer Account / Login Profile if authenticated */}
               {(headerNav.showAccount ?? true) && (
@@ -817,11 +1003,78 @@ const Layout = () => {
                 </div>
               </div>
 
-              {/* Helpline Quick Contact */}
-              <div className="p-3.5 bg-emerald-950/60 border border-emerald-800/50 rounded-2xl text-xs space-y-1.5">
-                <div className="font-bold text-emerald-300">Customer Support Helpline</div>
-                <div className="text-slate-300 font-mono text-[11px]">{footer.phone || '+91 8949049003'}</div>
-                <div className="text-slate-400 text-[10px]">{footer.officeHours || '10:00 AM - 6:30 PM (Mon-Sat)'}</div>
+              {/* Helpline Quick Contact (Clickable Hotline & Links) */}
+              <div className="p-3.5 bg-emerald-950/60 border border-emerald-800/50 rounded-2xl text-xs space-y-2.5">
+                <div className="font-bold text-emerald-300 flex items-center justify-between">
+                  <span>Customer Support Hotline</span>
+                  <span className="text-[10px] text-emerald-400/80 font-normal">Tap to Call</span>
+                </div>
+                <div className="space-y-1.5">
+                  <a
+                    href={`tel:${(footer.phone || '+918949049003').replace(/\s+/g, '')}`}
+                    className="flex items-center gap-2 text-slate-200 hover:text-emerald-400 font-mono text-xs font-bold transition"
+                  >
+                    <Phone size={13} className="text-emerald-400" />
+                    <span>{footer.phone || '+91 8949049003'}</span>
+                  </a>
+
+                  {(footer.showWhatsapp ?? true) && (
+                    <a
+                      href={getWhatsAppUrl(footer.whatsappNumber || footer.phone, footer.whatsappText)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-emerald-300 hover:text-emerald-200 font-semibold text-xs transition"
+                    >
+                      <WhatsAppIcon size={14} className="text-emerald-400" />
+                      <span>WhatsApp: {footer.whatsappNumber || footer.phone || '+91 8949049003'}</span>
+                    </a>
+                  )}
+
+                  <a
+                    href={`mailto:${footer.email || 'support@ekosmartdrive.in'}`}
+                    className="flex items-center gap-2 text-slate-400 hover:text-blue-400 text-[11px] font-mono transition"
+                  >
+                    <Mail size={13} className="text-blue-400" />
+                    <span className="truncate">{footer.email || 'support@ekosmartdrive.in'}</span>
+                  </a>
+
+                  <a
+                    href={footer.mapUrl || `https://maps.google.com/?q=${encodeURIComponent(footer.address || 'Rang Talab, Near by Star Kids School, Kota, Rajasthan - 324002')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-slate-400 hover:text-amber-400 text-[11px] transition"
+                  >
+                    <MapPin size={13} className="text-amber-400 shrink-0" />
+                    <span className="truncate">{footer.address || 'Rang Talab, Kota'}</span>
+                  </a>
+                </div>
+
+                {/* Mobile Drawer Socials */}
+                <div className="pt-2 border-t border-emerald-900/60 flex items-center gap-2">
+                  {(footer.showInstagram ?? true) && (
+                    <a
+                      href={footer.instagramUrl || 'https://www.instagram.com/ekosmartdrive'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Instagram"
+                      className="p-1.5 rounded-lg bg-pink-950/60 border border-pink-800/40 text-pink-400 hover:text-pink-300 transition"
+                    >
+                      <InstagramIcon size={14} />
+                    </a>
+                  )}
+                  {(footer.showFacebook ?? true) && (
+                    <a
+                      href={footer.facebookUrl || 'https://www.facebook.com/ekosmartdrive'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Facebook"
+                      className="p-1.5 rounded-lg bg-blue-950/60 border border-blue-800/40 text-blue-400 hover:text-blue-300 transition"
+                    >
+                      <FacebookIcon size={14} />
+                    </a>
+                  )}
+                  <span className="text-[10px] text-slate-400 ml-auto">{footer.officeHours || '10 AM - 6:30 PM'}</span>
+                </div>
               </div>
             </div>
 
@@ -860,27 +1113,203 @@ const Layout = () => {
               <div className="text-[11px] font-mono text-emerald-400 pt-1">
                 GSTIN: {footer.gstin || '08DTUPM4205B1Z0'}
               </div>
+
+              {/* Social Media & WhatsApp Suite (100% Soft-Coded) */}
+              <div className="pt-3 border-t border-slate-800/80 space-y-2">
+                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  Official Channels & Socials
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {(footer.showInstagram ?? true) && (
+                    <a
+                      href={footer.instagramUrl || 'https://www.instagram.com/ekosmartdrive'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Ekosmart on Instagram"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-pink-600/20 via-purple-600/20 to-orange-600/20 hover:from-pink-600/30 hover:via-purple-600/30 hover:to-orange-600/30 text-pink-300 hover:text-pink-200 border border-pink-500/30 transition text-xs font-semibold group shadow-xs"
+                      title="Follow us on Instagram"
+                    >
+                      <InstagramIcon size={14} className="group-hover:scale-110 transition-transform text-pink-400" />
+                      <span>Instagram</span>
+                    </a>
+                  )}
+
+                  {(footer.showFacebook ?? true) && (
+                    <a
+                      href={footer.facebookUrl || 'https://www.facebook.com/ekosmartdrive'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Ekosmart on Facebook"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 hover:text-blue-200 border border-blue-500/30 transition text-xs font-semibold group shadow-xs"
+                      title="Connect on Facebook"
+                    >
+                      <FacebookIcon size={14} className="group-hover:scale-110 transition-transform text-blue-400" />
+                      <span>Facebook</span>
+                    </a>
+                  )}
+
+                  {(footer.showWhatsapp ?? true) && (
+                    <a
+                      href={getWhatsAppUrl(footer.whatsappNumber || footer.phone, footer.whatsappText)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Chat with Ekosmart on WhatsApp"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 hover:text-emerald-200 border border-emerald-500/40 transition text-xs font-bold group shadow-xs"
+                      title="Direct WhatsApp Support"
+                    >
+                      <WhatsAppIcon size={15} className="text-emerald-400 group-hover:scale-110 transition-transform" />
+                      <span>{footer.whatsappNumber || footer.phone || '+91 8949049003'}</span>
+                    </a>
+                  )}
+                </div>
+              </div>
             </div>
 
-            {/* Column 2: Plant & Contact Details */}
-            <div className="space-y-2 text-xs">
-              <h4 className="text-slate-200 font-bold text-sm tracking-wide mb-3">Headquarters & Plant</h4>
-              <div className="flex items-start gap-2.5 text-slate-400">
-                <MapPin size={16} className="text-emerald-400 flex-shrink-0 mt-0.5" />
-                <span>{footer.address || 'Plot No. 14, Electronic Complex, Road No. 1, IPIA, Kota, Rajasthan - 324005'}</span>
-              </div>
-              <div className="flex items-center gap-2.5 text-slate-400">
-                <Phone size={15} className="text-emerald-400 flex-shrink-0" />
-                <span>Helpline: {footer.phone || '+91 8949049003'}</span>
-              </div>
-              <div className="flex items-center gap-2.5 text-slate-400">
-                <Mail size={15} className="text-emerald-400 flex-shrink-0" />
-                <span>{footer.email || 'support@ekosmartdrive.in'}</span>
-              </div>
-              <div className="flex items-center gap-2.5 text-slate-400">
-                <Clock size={15} className="text-emerald-400 flex-shrink-0" />
+            {/* Column 2: Plant & Contact Details (100% Clickable Links) */}
+            <div className="space-y-2.5 text-xs">
+              <h4 className="text-slate-200 font-bold text-sm tracking-wide mb-3 flex items-center justify-between">
+                <span>Headquarters & Plant</span>
+              </h4>
+
+              {/* Clickable Map Link */}
+              <a
+                href={footer.mapUrl || `https://maps.google.com/?q=${encodeURIComponent(footer.address || 'Rang Talab, Near by Star Kids School, Kota, Rajasthan - 324002')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-start gap-2.5 text-slate-300 hover:text-emerald-400 transition group"
+                title="Open Plant in Google Maps"
+              >
+                <MapPin size={16} className="text-emerald-400 shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
+                <span className="group-hover:underline underline-offset-2">
+                  {footer.address || 'Rang Talab, Near by Star Kids School, Kota, Rajasthan - 324002'}
+                </span>
+              </a>
+
+              {/* Clickable Helpline Phone */}
+              <a
+                href={`tel:${(footer.phone || '+918949049003').replace(/\s+/g, '')}`}
+                className="flex items-center gap-2.5 text-slate-300 hover:text-emerald-400 transition group"
+                title="Click to Call Helpline"
+              >
+                <Phone size={15} className="text-emerald-400 shrink-0 group-hover:scale-110 transition-transform" />
+                <span className="font-mono">
+                  Helpline: <strong className="text-emerald-400 group-hover:underline">{footer.phone || '+91 8949049003'}</strong>
+                </span>
+              </a>
+
+              {/* Clickable Email */}
+              <a
+                href={`mailto:${footer.email || 'support@ekosmartdrive.in'}`}
+                className="flex items-center gap-2.5 text-slate-300 hover:text-emerald-400 transition group"
+                title="Click to Compose Email"
+              >
+                <Mail size={15} className="text-emerald-400 shrink-0 group-hover:scale-110 transition-transform" />
+                <span className="font-mono group-hover:underline">{footer.email || 'support@ekosmartdrive.in'}</span>
+              </a>
+
+              {/* Clickable WhatsApp Hotline */}
+              {(footer.showWhatsapp ?? true) && (
+                <a
+                  href={getWhatsAppUrl(footer.whatsappNumber || footer.phone, footer.whatsappText)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2.5 text-emerald-300 hover:text-emerald-200 transition group font-semibold"
+                  title="Chat with Technical Team on WhatsApp"
+                >
+                  <WhatsAppIcon size={15} className="text-emerald-400 shrink-0 group-hover:scale-110 transition-transform" />
+                  <span className="font-mono">
+                    WhatsApp: <strong className="text-emerald-300 group-hover:underline">{footer.whatsappNumber || footer.phone || '+91 8949049003'}</strong>
+                  </span>
+                </a>
+              )}
+
+              {/* Office Hours */}
+              <div className="flex items-center gap-2.5 text-slate-400 pt-0.5">
+                <Clock size={15} className="text-emerald-400 shrink-0" />
                 <span>Office Hours: {footer.officeHours || '10:00 AM to 6:30 PM (Mon - Sat)'}</span>
               </div>
+
+              {/* Contact Department Dropdown (All items clickable <a> links) */}
+              {(footer.showContactDropdown ?? true) && (
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setFooterContactDropdownOpen(!footerContactDropdownOpen)}
+                    className="w-full flex items-center justify-between px-3 py-2 bg-slate-900 hover:bg-slate-850 border border-slate-700/80 rounded-xl text-xs text-slate-200 transition group shadow-xs cursor-pointer"
+                    aria-expanded={footerContactDropdownOpen}
+                  >
+                    <span className="flex items-center gap-2 font-bold text-emerald-400">
+                      <Phone size={13} className="text-emerald-400" />
+                      <span>{footer.contactDropdownTitle || 'Quick Department Directory'}</span>
+                    </span>
+                    <ChevronDown
+                      size={14}
+                      className={`text-slate-400 transition-transform ${
+                        footerContactDropdownOpen ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </button>
+
+                  {footerContactDropdownOpen && (
+                    <div className="mt-2 p-2 bg-slate-900/95 border border-slate-700/80 rounded-xl space-y-1.5 shadow-xl text-[11px] animate-in fade-in">
+                      <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        Clickable Direct Options
+                      </div>
+                      <a
+                        href={`tel:${(footer.phone || '+918949049003').replace(/\s+/g, '')}`}
+                        className="flex items-center justify-between p-2 rounded-lg bg-slate-800/80 hover:bg-slate-800 text-slate-200 hover:text-emerald-400 transition"
+                      >
+                        <span className="font-semibold">⚡ Battery Sales & AMC</span>
+                        <span className="font-mono text-emerald-400">{footer.phone || '+91 8949049003'}</span>
+                      </a>
+                      <a
+                        href={`tel:${(footer.phone || '+918949049003').replace(/\s+/g, '')}`}
+                        className="flex items-center justify-between p-2 rounded-lg bg-slate-800/80 hover:bg-slate-800 text-slate-200 hover:text-emerald-400 transition"
+                      >
+                        <span className="font-semibold">🔩 EV Spare Parts Desk</span>
+                        <span className="font-mono text-emerald-400">{footer.phone || '+91 8949049003'}</span>
+                      </a>
+                      {(footer.showWhatsapp ?? true) && (
+                        <a
+                          href={getWhatsAppUrl(footer.whatsappNumber || footer.phone, 'Inquiry: Ekosmart Drive Rental Program')}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-between p-2 rounded-lg bg-emerald-950/40 hover:bg-emerald-950/70 text-emerald-300 border border-emerald-800/40 transition"
+                        >
+                          <span className="flex items-center gap-1.5 font-semibold">
+                            <WhatsAppIcon size={12} className="text-emerald-400" />
+                            <span>🛵 Drive Rental WhatsApp</span>
+                          </span>
+                          <ExternalLink size={11} className="text-emerald-400" />
+                        </a>
+                      )}
+                      <a
+                        href={footer.mapUrl || `https://maps.google.com/?q=${encodeURIComponent(footer.address || 'Rang Talab, Near by Star Kids School, Kota, Rajasthan - 324002')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between p-2 rounded-lg bg-slate-800/80 hover:bg-slate-800 text-slate-200 hover:text-amber-400 transition"
+                      >
+                        <span className="font-semibold">🏭 Kota Plant Navigation</span>
+                        <span className="text-amber-400 text-[10px]">Google Maps &rarr;</span>
+                      </a>
+                      <NavLink
+                        to="/warranty/check"
+                        className="flex items-center justify-between p-2 rounded-lg bg-slate-800/80 hover:bg-slate-800 text-slate-200 hover:text-purple-400 transition"
+                      >
+                        <span className="font-semibold">🛡️ Battery Warranty Verification</span>
+                        <span className="text-purple-400 text-[10px]">Check &rarr;</span>
+                      </NavLink>
+                      <NavLink
+                        to="/contact"
+                        className="flex items-center justify-between p-2 rounded-lg bg-slate-800/80 hover:bg-slate-800 text-slate-200 hover:text-emerald-400 transition font-bold"
+                      >
+                        <span>📞 All Departments Directory</span>
+                        <ChevronRight size={12} className="text-slate-400" />
+                      </NavLink>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Column 3: Customer Support & Services */}

@@ -235,6 +235,16 @@ export const defaultFooterData = {
   showRefundPolicy: true,
   logoType: 'preset' as const,
   logoImage: '',
+  instagramUrl: 'https://www.instagram.com/ekosmartdrive',
+  showInstagram: true,
+  facebookUrl: 'https://www.facebook.com/ekosmartdrive',
+  showFacebook: true,
+  whatsappNumber: '+91 8949049003',
+  showWhatsapp: true,
+  whatsappText: 'Hello Ekosmart, I would like to inquire about battery service & support.',
+  mapUrl: 'https://maps.google.com/?q=Rang+Talab,+Near+by+Star+Kids+School,+Kota,+Rajasthan+324002',
+  showContactDropdown: true,
+  contactDropdownTitle: 'Quick Department & Helpline Directory',
 };
 
 export const defaultPrivacyPolicyData = {
@@ -562,7 +572,7 @@ export const getOrCreateDefaultContent = async () => {
       content.contactInfo = defaultContactData;
       modified = true;
     }
-    if (!content.footer?.phone || !content.footer?.address) {
+    if (!content.footer?.phone || !content.footer?.address || typeof (content.footer as any)?.whatsappNumber === 'undefined') {
       content.footer = { ...defaultFooterData, ...(content.footer ? ((content.footer as any).toObject ? (content.footer as any).toObject() : content.footer) : {}) };
       modified = true;
     }
