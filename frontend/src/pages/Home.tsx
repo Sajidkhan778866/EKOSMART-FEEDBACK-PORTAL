@@ -22,6 +22,12 @@ import {
   ExternalLink,
   Coins,
   Gift,
+  Clock,
+  MapPin,
+  Headphones,
+  LifeBuoy,
+  AlertTriangle,
+  Mail,
 } from 'lucide-react';
 import { EbsLogo } from '../components/EbsLogo';
 import { API_BASE, resolveImageUrl } from '../config/api';
@@ -53,9 +59,47 @@ interface QuickActionItem {
   subtitle: string;
   url: string;
   icon: string;
+  iconType?: 'icon' | 'image';
+  iconImage?: string;
   color: string;
+  customColor?: string;
+  customBg?: string;
+  customTextColor?: string;
   isVisible?: boolean;
   order?: number;
+  target?: '_self' | '_blank';
+  showExternalIcon?: boolean;
+  badge?: string;
+  badgeColor?: string;
+}
+
+interface QuickActionsConfig {
+  isVisible?: boolean;
+  sectionBadge?: string;
+  showSectionBadge?: boolean;
+  sectionTitle?: string;
+  sectionSubtitle?: string;
+  showSectionHeader?: boolean;
+  bgType?: 'color' | 'gradient' | 'image' | 'transparent';
+  bgColor?: string;
+  bgGradientStart?: string;
+  bgGradientEnd?: string;
+  bgGradientDirection?: string;
+  bgImage?: string;
+  bgOverlayOpacity?: number;
+  bgOverlayColor?: string;
+  bgPosition?: string;
+  bgSize?: string;
+  bgBlur?: number;
+  cardBgColor?: string;
+  cardBorderColor?: string;
+  cardBorderRadius?: string;
+  cardShadow?: string;
+  showDividers?: boolean;
+  dividerColor?: string;
+  textColor?: string;
+  subtitleColor?: string;
+  layoutStyle?: 'horizontal' | 'grid';
 }
 
 interface BatteryBannerContent {
@@ -199,6 +243,35 @@ const defaultBatteryBanner: BatteryBannerContent = {
   plantBtnLink: '/contact',
 };
 
+const defaultQuickActionsConfig: QuickActionsConfig = {
+  isVisible: true,
+  sectionBadge: 'QUICK UTILITIES',
+  showSectionBadge: false,
+  sectionTitle: 'Quick Access Directory',
+  sectionSubtitle: 'Essential customer services and warranty utilities',
+  showSectionHeader: false,
+  bgType: 'color',
+  bgColor: '#ffffff',
+  bgGradientStart: '#0f172a',
+  bgGradientEnd: '#1e293b',
+  bgGradientDirection: 'to-r',
+  bgImage: '',
+  bgOverlayOpacity: 0.8,
+  bgOverlayColor: '#000000',
+  bgPosition: 'center',
+  bgSize: 'cover',
+  bgBlur: 0,
+  cardBgColor: '#ffffff',
+  cardBorderColor: '#e2e8f0',
+  cardBorderRadius: 'rounded-3xl',
+  cardShadow: 'shadow-sm',
+  showDividers: true,
+  dividerColor: '#e2e8f0',
+  textColor: '#1e293b',
+  subtitleColor: '#64748b',
+  layoutStyle: 'horizontal',
+};
+
 const defaultQuickActions: QuickActionItem[] = [
   {
     id: 'act-track',
@@ -206,9 +279,18 @@ const defaultQuickActions: QuickActionItem[] = [
     subtitle: 'Live complaint inspection status',
     url: '/complaint/track',
     icon: 'Search',
+    iconType: 'icon',
+    iconImage: '',
     color: 'blue',
+    customColor: '',
+    customBg: '',
+    customTextColor: '',
     isVisible: true,
     order: 1,
+    target: '_self',
+    showExternalIcon: false,
+    badge: '',
+    badgeColor: '',
   },
   {
     id: 'act-warranty-reg',
@@ -216,9 +298,18 @@ const defaultQuickActions: QuickActionItem[] = [
     subtitle: 'Register new sales & serial number',
     url: '/warranty/register',
     icon: 'ShieldCheck',
+    iconType: 'icon',
+    iconImage: '',
     color: 'amber',
+    customColor: '',
+    customBg: '',
+    customTextColor: '',
     isVisible: true,
     order: 2,
+    target: '_blank',
+    showExternalIcon: true,
+    badge: '',
+    badgeColor: '',
   },
   {
     id: 'act-warranty-check',
@@ -226,9 +317,18 @@ const defaultQuickActions: QuickActionItem[] = [
     subtitle: '3-Yr (48V) & 1.5-Yr (60V/72V) status',
     url: '/warranty/check',
     icon: 'ShieldAlert',
+    iconType: 'icon',
+    iconImage: '',
     color: 'emerald',
+    customColor: '',
+    customBg: '',
+    customTextColor: '',
     isVisible: true,
     order: 3,
+    target: '_blank',
+    showExternalIcon: true,
+    badge: '',
+    badgeColor: '',
   },
   {
     id: 'act-contact',
@@ -236,9 +336,18 @@ const defaultQuickActions: QuickActionItem[] = [
     subtitle: 'Kota Plant +91 8949049003',
     url: '/contact',
     icon: 'Phone',
+    iconType: 'icon',
+    iconImage: '',
     color: 'purple',
+    customColor: '',
+    customBg: '',
+    customTextColor: '',
     isVisible: true,
     order: 4,
+    target: '_self',
+    showExternalIcon: false,
+    badge: '',
+    badgeColor: '',
   },
 ];
 
@@ -466,7 +575,26 @@ const getDivisionCardStyles = (color: string) => {
   }
 };
 
-const renderQuickActionIcon = (iconName: string) => {
+const renderQuickActionIcon = (action: QuickActionItem) => {
+  if (action.iconType === 'image' && action.iconImage) {
+    return (
+      <img
+        src={resolveImageUrl(action.iconImage)}
+        alt={action.title}
+        className="w-6 h-6 object-contain"
+      />
+    );
+  }
+  const iconName = action.icon;
+  if (iconName && (iconName.startsWith('data:image') || iconName.startsWith('http') || iconName.startsWith('/') || iconName.startsWith('uploads/'))) {
+    return (
+      <img
+        src={resolveImageUrl(iconName)}
+        alt={action.title}
+        className="w-6 h-6 object-contain"
+      />
+    );
+  }
   const iconProps = { size: 22 };
   switch (iconName?.toLowerCase()) {
     case 'search':
@@ -483,6 +611,38 @@ const renderQuickActionIcon = (iconName: string) => {
     case 'phone':
     case 'contact':
       return <Phone {...iconProps} />;
+    case 'wrench':
+    case 'tool':
+    case 'service':
+      return <Wrench {...iconProps} />;
+    case 'clock':
+    case 'time':
+      return <Clock {...iconProps} />;
+    case 'mappin':
+    case 'map-pin':
+    case 'map':
+    case 'location':
+      return <MapPin {...iconProps} />;
+    case 'headphones':
+    case 'headset':
+    case 'support':
+      return <Headphones {...iconProps} />;
+    case 'lifebuoy':
+    case 'helpdesk':
+      return <LifeBuoy {...iconProps} />;
+    case 'alerttriangle':
+    case 'alert-triangle':
+    case 'warning':
+      return <AlertTriangle {...iconProps} />;
+    case 'mail':
+    case 'email':
+      return <Mail {...iconProps} />;
+    case 'sparkles':
+      return <Sparkles {...iconProps} />;
+    case 'check':
+    case 'checkcircle':
+    case 'check-circle':
+      return <CheckCircle2 {...iconProps} />;
     case 'coins':
       return <Coins {...iconProps} />;
     case 'gift':
@@ -495,12 +655,28 @@ const renderQuickActionIcon = (iconName: string) => {
       return <Package {...iconProps} />;
     case 'settings':
       return <Settings {...iconProps} />;
+    case 'activity':
+      return <Activity {...iconProps} />;
+    case 'help':
+    case 'helpcircle':
+      return <HelpCircle {...iconProps} />;
     default:
       return <FileText {...iconProps} />;
   }
 };
 
-const getQuickActionColorStyles = (color: string) => {
+const getQuickActionColorStyles = (color: string, customBg?: string, customColor?: string) => {
+  if (customBg || customColor) {
+    return {
+      bg: '',
+      text: '',
+      customStyle: {
+        backgroundColor: customBg || 'rgba(59, 130, 246, 0.1)',
+        color: customColor || '#2563eb',
+      },
+      customTextHoverColor: customColor,
+    };
+  }
   switch (color?.toLowerCase()) {
     case 'amber':
     case 'orange':
@@ -520,6 +696,33 @@ const getQuickActionColorStyles = (color: string) => {
         bg: 'bg-purple-50 text-purple-600 group-hover:bg-purple-600 group-hover:text-white',
         text: 'group-hover:text-purple-600',
       };
+    case 'indigo':
+      return {
+        bg: 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white',
+        text: 'group-hover:text-indigo-600',
+      };
+    case 'rose':
+    case 'red':
+      return {
+        bg: 'bg-rose-50 text-rose-600 group-hover:bg-rose-600 group-hover:text-white',
+        text: 'group-hover:text-rose-600',
+      };
+    case 'cyan':
+      return {
+        bg: 'bg-cyan-50 text-cyan-600 group-hover:bg-cyan-600 group-hover:text-white',
+        text: 'group-hover:text-cyan-600',
+      };
+    case 'teal':
+      return {
+        bg: 'bg-teal-50 text-teal-600 group-hover:bg-teal-600 group-hover:text-white',
+        text: 'group-hover:text-teal-600',
+      };
+    case 'slate':
+    case 'dark':
+      return {
+        bg: 'bg-slate-100 text-slate-700 group-hover:bg-slate-800 group-hover:text-white',
+        text: 'group-hover:text-slate-900',
+      };
     case 'blue':
     default:
       return {
@@ -533,6 +736,7 @@ const Home = () => {
   const [hero, setHero] = useState<HeroContent>(defaultHero);
   const [cards, setCards] = useState<ServiceCard[]>(defaultCards);
   const [batteryBanner, setBatteryBanner] = useState<BatteryBannerContent>(defaultBatteryBanner);
+  const [quickActionsConfig, setQuickActionsConfig] = useState<QuickActionsConfig>(defaultQuickActionsConfig);
   const [quickActions, setQuickActions] = useState<QuickActionItem[]>(defaultQuickActions);
   const [selectedSection, setSelectedSection] = useState<string>('all');
   const [referralSettings, setReferralSettings] = useState<{
@@ -572,6 +776,12 @@ const Home = () => {
             setBatteryBanner((prev) => ({
               ...prev,
               ...data.data.batteryBanner,
+            }));
+          }
+          if (data.data.quickActionsConfig) {
+            setQuickActionsConfig((prev) => ({
+              ...prev,
+              ...data.data.quickActionsConfig,
             }));
           }
           if (data.data.quickActions && Array.isArray(data.data.quickActions) && data.data.quickActions.length > 0) {
@@ -1044,62 +1254,162 @@ const Home = () => {
       </section>
 
       {/* Quick Access Utility Actions Bar */}
-      <section className="max-w-6xl mx-auto px-4">
-        <div className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200 shadow-sm flex flex-wrap items-center justify-around gap-6 text-center">
-          {quickActions
-            .filter((act) => act.isVisible !== false)
-            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-            .map((act, idx, arr) => {
-              const styles = getQuickActionColorStyles(act.color);
-              const isExternal = act.url.startsWith('http') || act.url.includes('warranty');
-              return (
-                <div key={act.id || idx} className="flex items-center gap-6">
-                  {isExternal ? (
-                    <a
-                      href={act.url}
-                      target={act.url.startsWith('http') || act.url.startsWith('/warranty') ? '_blank' : undefined}
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-50 transition group cursor-pointer"
-                    >
-                      <div
-                        className={`w-12 h-12 rounded-xl flex items-center justify-center transition shadow-xs ${styles.bg}`}
-                      >
-                        {renderQuickActionIcon(act.icon)}
-                      </div>
-                      <div className="text-left">
-                        <div className="flex items-center gap-1.5">
-                          <h4 className={`font-bold text-sm text-slate-800 transition ${styles.text}`}>
-                            {act.title}
-                          </h4>
-                          <ExternalLink size={12} className={`text-slate-400 ${styles.text}`} />
-                        </div>
-                        <p className="text-[11px] text-slate-400">{act.subtitle}</p>
-                      </div>
-                    </a>
-                  ) : (
-                    <Link
-                      to={act.url}
-                      className="flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-50 transition group cursor-pointer"
-                    >
-                      <div
-                        className={`w-12 h-12 rounded-xl flex items-center justify-center transition shadow-xs ${styles.bg}`}
-                      >
-                        {renderQuickActionIcon(act.icon)}
-                      </div>
-                      <div className="text-left">
-                        <h4 className={`font-bold text-sm text-slate-800 transition ${styles.text}`}>
-                          {act.title}
-                        </h4>
-                        <p className="text-[11px] text-slate-400">{act.subtitle}</p>
-                      </div>
-                    </Link>
+      {quickActionsConfig.isVisible !== false && (
+        <section className="max-w-6xl mx-auto px-4">
+          <div
+            className={`relative overflow-hidden transition-all duration-300 ${quickActionsConfig.cardBorderRadius || 'rounded-3xl'} ${quickActionsConfig.cardShadow || 'shadow-sm'}`}
+            style={{
+              backgroundColor: quickActionsConfig.bgType === 'color' ? (quickActionsConfig.bgColor || quickActionsConfig.cardBgColor || '#ffffff') : undefined,
+              background: quickActionsConfig.bgType === 'gradient'
+                ? `linear-gradient(${quickActionsConfig.bgGradientDirection === 'to-b' ? 'to bottom' : quickActionsConfig.bgGradientDirection === 'to-br' ? 'to bottom right' : 'to right'}, ${quickActionsConfig.bgGradientStart || '#0f172a'}, ${quickActionsConfig.bgGradientEnd || '#1e293b'})`
+                : undefined,
+              borderColor: quickActionsConfig.cardBorderColor || '#e2e8f0',
+              borderWidth: '1px',
+              borderStyle: 'solid',
+            }}
+          >
+            {/* Background Image Layer if bgType === 'image' */}
+            {quickActionsConfig.bgType === 'image' && quickActionsConfig.bgImage && (
+              <div
+                className="absolute inset-0 pointer-events-none transition-all duration-500"
+                style={{
+                  backgroundImage: `url(${resolveImageUrl(quickActionsConfig.bgImage)})`,
+                  backgroundPosition: quickActionsConfig.bgPosition || 'center',
+                  backgroundSize: quickActionsConfig.bgSize || 'cover',
+                  filter: quickActionsConfig.bgBlur ? `blur(${quickActionsConfig.bgBlur}px)` : undefined,
+                }}
+              />
+            )}
+            {/* Background Image Dark/Color Overlay */}
+            {quickActionsConfig.bgType === 'image' && quickActionsConfig.bgImage && (
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  backgroundColor: quickActionsConfig.bgOverlayColor || '#000000',
+                  opacity: typeof quickActionsConfig.bgOverlayOpacity === 'number' ? quickActionsConfig.bgOverlayOpacity : 0.7,
+                }}
+              />
+            )}
+
+            <div className="relative z-10 p-6 md:p-8">
+              {/* Optional Section Header */}
+              {quickActionsConfig.showSectionHeader && (quickActionsConfig.sectionTitle || quickActionsConfig.sectionBadge) && (
+                <div className="text-center mb-6 space-y-1.5">
+                  {quickActionsConfig.showSectionBadge && quickActionsConfig.sectionBadge && (
+                    <span className="inline-block bg-blue-500/10 text-blue-600 dark:text-blue-400 font-mono text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-blue-500/20">
+                      {quickActionsConfig.sectionBadge}
+                    </span>
                   )}
-                  {idx < arr.length - 1 && <div className="hidden md:block w-px h-10 bg-slate-200" />}
+                  {quickActionsConfig.sectionTitle && (
+                    <h3
+                      className="text-lg md:text-xl font-bold tracking-tight"
+                      style={{ color: quickActionsConfig.textColor || '#1e293b' }}
+                    >
+                      {quickActionsConfig.sectionTitle}
+                    </h3>
+                  )}
+                  {quickActionsConfig.sectionSubtitle && (
+                    <p
+                      className="text-xs max-w-lg mx-auto"
+                      style={{ color: quickActionsConfig.subtitleColor || '#64748b' }}
+                    >
+                      {quickActionsConfig.sectionSubtitle}
+                    </p>
+                  )}
                 </div>
-              );
-            })}
-        </div>
-      </section>
+              )}
+
+              {/* Action Cards Container */}
+              <div
+                className={
+                  quickActionsConfig.layoutStyle === 'grid'
+                    ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'
+                    : 'flex flex-wrap items-center justify-around gap-6 text-center'
+                }
+              >
+                {quickActions
+                  .filter((act) => act.isVisible !== false)
+                  .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+                  .map((act, idx, arr) => {
+                    const styles = getQuickActionColorStyles(act.color, act.customBg, act.customColor);
+                    const target = act.target || (act.url.startsWith('http') || act.url.startsWith('/warranty') ? '_blank' : '_self');
+                    const showExtIcon = typeof act.showExternalIcon === 'boolean' ? act.showExternalIcon : (target === '_blank');
+                    const isRouterLink = !act.url.startsWith('http') && target !== '_blank';
+
+                    const cardInner = (
+                      <>
+                        <div
+                          className={`w-12 h-12 rounded-xl flex items-center justify-center transition shadow-xs shrink-0 ${styles.bg}`}
+                          style={styles.customStyle}
+                        >
+                          {renderQuickActionIcon(act)}
+                        </div>
+                        <div className="text-left">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <h4
+                              className={`font-bold text-sm transition ${styles.text}`}
+                              style={{ color: act.customTextColor || quickActionsConfig.textColor || undefined }}
+                            >
+                              {act.title}
+                            </h4>
+                            {act.badge && (
+                              <span
+                                className="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                                style={{
+                                  backgroundColor: act.badgeColor || 'rgba(16, 185, 129, 0.15)',
+                                  color: act.badgeColor ? '#ffffff' : '#059669',
+                                }}
+                              >
+                                {act.badge}
+                              </span>
+                            )}
+                            {showExtIcon && (
+                              <ExternalLink size={12} className={`opacity-60 transition ${styles.text}`} />
+                            )}
+                          </div>
+                          <p
+                            className="text-[11px]"
+                            style={{ color: quickActionsConfig.subtitleColor || '#94a3b8' }}
+                          >
+                            {act.subtitle}
+                          </p>
+                        </div>
+                      </>
+                    );
+
+                    return (
+                      <div key={act.id || idx} className="flex items-center gap-6">
+                        {isRouterLink ? (
+                          <Link
+                            to={act.url}
+                            className="flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition group cursor-pointer"
+                          >
+                            {cardInner}
+                          </Link>
+                        ) : (
+                          <a
+                            href={act.url}
+                            target={target}
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition group cursor-pointer"
+                          >
+                            {cardInner}
+                          </a>
+                        )}
+                        {quickActionsConfig.showDividers !== false && quickActionsConfig.layoutStyle !== 'grid' && idx < arr.length - 1 && (
+                          <div
+                            className="hidden md:block w-px h-10"
+                            style={{ backgroundColor: quickActionsConfig.dividerColor || '#e2e8f0' }}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* EBS Battery Technical Highlights Banner */}
       <section className="max-w-6xl mx-auto px-4 pb-12">

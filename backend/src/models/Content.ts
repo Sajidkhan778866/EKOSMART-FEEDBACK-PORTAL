@@ -175,6 +175,55 @@ export interface IHeroContent {
   textColor?: string;
 }
 
+export interface IQuickActionItem {
+  id: string;
+  title: string;
+  subtitle: string;
+  url: string;
+  icon: string;
+  iconType?: 'icon' | 'image';
+  iconImage?: string;
+  color: string;
+  customColor?: string;
+  customBg?: string;
+  customTextColor?: string;
+  isVisible: boolean;
+  order: number;
+  target?: '_self' | '_blank';
+  showExternalIcon?: boolean;
+  badge?: string;
+  badgeColor?: string;
+}
+
+export interface IQuickActionsConfig {
+  isVisible?: boolean;
+  sectionBadge?: string;
+  showSectionBadge?: boolean;
+  sectionTitle?: string;
+  sectionSubtitle?: string;
+  showSectionHeader?: boolean;
+  bgType?: 'color' | 'gradient' | 'image' | 'transparent';
+  bgColor?: string;
+  bgGradientStart?: string;
+  bgGradientEnd?: string;
+  bgGradientDirection?: string;
+  bgImage?: string;
+  bgOverlayOpacity?: number;
+  bgOverlayColor?: string;
+  bgPosition?: string;
+  bgSize?: string;
+  bgBlur?: number;
+  cardBgColor?: string;
+  cardBorderColor?: string;
+  cardBorderRadius?: string;
+  cardShadow?: string;
+  showDividers?: boolean;
+  dividerColor?: string;
+  textColor?: string;
+  subtitleColor?: string;
+  layoutStyle?: 'horizontal' | 'grid';
+}
+
 export interface IContent extends Document {
   key: string;
   topBar?: ITopBarContent;
@@ -202,16 +251,8 @@ export interface IContent extends Document {
     plantBtnText: string;
     plantBtnLink: string;
   };
-  quickActions?: Array<{
-    id: string;
-    title: string;
-    subtitle: string;
-    url: string;
-    icon: string;
-    color: string;
-    isVisible: boolean;
-    order: number;
-  }>;
+  quickActionsConfig?: IQuickActionsConfig;
+  quickActions?: IQuickActionItem[];
   contactInfo: {
     heading: string;
     subheading: string;
@@ -586,6 +627,34 @@ Bulk battery orders applicable as per Minimum Order Quantity (MOQ 5 / MOQ 10) te
       plantBtnText: { type: String, default: 'View Plant Contact Details' },
       plantBtnLink: { type: String, default: '/contact' },
     },
+    quickActionsConfig: {
+      isVisible: { type: Boolean, default: true },
+      sectionBadge: { type: String, default: 'QUICK UTILITIES' },
+      showSectionBadge: { type: Boolean, default: false },
+      sectionTitle: { type: String, default: 'Quick Access Directory' },
+      sectionSubtitle: { type: String, default: 'Essential customer services and warranty utilities' },
+      showSectionHeader: { type: Boolean, default: false },
+      bgType: { type: String, enum: ['color', 'gradient', 'image', 'transparent'], default: 'color' },
+      bgColor: { type: String, default: '#ffffff' },
+      bgGradientStart: { type: String, default: '#0f172a' },
+      bgGradientEnd: { type: String, default: '#1e293b' },
+      bgGradientDirection: { type: String, default: 'to-r' },
+      bgImage: { type: String, default: '' },
+      bgOverlayOpacity: { type: Number, default: 0.8 },
+      bgOverlayColor: { type: String, default: '#000000' },
+      bgPosition: { type: String, default: 'center' },
+      bgSize: { type: String, default: 'cover' },
+      bgBlur: { type: Number, default: 0 },
+      cardBgColor: { type: String, default: '#ffffff' },
+      cardBorderColor: { type: String, default: '#e2e8f0' },
+      cardBorderRadius: { type: String, default: 'rounded-3xl' },
+      cardShadow: { type: String, default: 'shadow-sm' },
+      showDividers: { type: Boolean, default: true },
+      dividerColor: { type: String, default: '#e2e8f0' },
+      textColor: { type: String, default: '#1e293b' },
+      subtitleColor: { type: String, default: '#64748b' },
+      layoutStyle: { type: String, enum: ['horizontal', 'grid'], default: 'horizontal' },
+    },
     quickActions: [
       {
         id: { type: String, default: 'act-track' },
@@ -593,9 +662,18 @@ Bulk battery orders applicable as per Minimum Order Quantity (MOQ 5 / MOQ 10) te
         subtitle: { type: String, default: 'Live complaint inspection status' },
         url: { type: String, default: '/complaint/track' },
         icon: { type: String, default: 'Search' },
+        iconType: { type: String, enum: ['icon', 'image'], default: 'icon' },
+        iconImage: { type: String, default: '' },
         color: { type: String, default: 'blue' },
+        customColor: { type: String, default: '' },
+        customBg: { type: String, default: '' },
+        customTextColor: { type: String, default: '' },
         isVisible: { type: Boolean, default: true },
         order: { type: Number, default: 1 },
+        target: { type: String, enum: ['_self', '_blank'], default: '_self' },
+        showExternalIcon: { type: Boolean, default: false },
+        badge: { type: String, default: '' },
+        badgeColor: { type: String, default: '' },
       },
       {
         id: { type: String, default: 'act-warranty-reg' },
@@ -603,9 +681,18 @@ Bulk battery orders applicable as per Minimum Order Quantity (MOQ 5 / MOQ 10) te
         subtitle: { type: String, default: 'Register new sales & serial number' },
         url: { type: String, default: '/warranty/register' },
         icon: { type: String, default: 'ShieldCheck' },
+        iconType: { type: String, enum: ['icon', 'image'], default: 'icon' },
+        iconImage: { type: String, default: '' },
         color: { type: String, default: 'amber' },
+        customColor: { type: String, default: '' },
+        customBg: { type: String, default: '' },
+        customTextColor: { type: String, default: '' },
         isVisible: { type: Boolean, default: true },
         order: { type: Number, default: 2 },
+        target: { type: String, enum: ['_self', '_blank'], default: '_blank' },
+        showExternalIcon: { type: Boolean, default: true },
+        badge: { type: String, default: '' },
+        badgeColor: { type: String, default: '' },
       },
       {
         id: { type: String, default: 'act-warranty-check' },
@@ -613,9 +700,18 @@ Bulk battery orders applicable as per Minimum Order Quantity (MOQ 5 / MOQ 10) te
         subtitle: { type: String, default: '3-Yr (48V) & 1.5-Yr (60V/72V) status' },
         url: { type: String, default: '/warranty/check' },
         icon: { type: String, default: 'ShieldAlert' },
+        iconType: { type: String, enum: ['icon', 'image'], default: 'icon' },
+        iconImage: { type: String, default: '' },
         color: { type: String, default: 'emerald' },
+        customColor: { type: String, default: '' },
+        customBg: { type: String, default: '' },
+        customTextColor: { type: String, default: '' },
         isVisible: { type: Boolean, default: true },
         order: { type: Number, default: 3 },
+        target: { type: String, enum: ['_self', '_blank'], default: '_blank' },
+        showExternalIcon: { type: Boolean, default: true },
+        badge: { type: String, default: '' },
+        badgeColor: { type: String, default: '' },
       },
       {
         id: { type: String, default: 'act-contact' },
@@ -623,9 +719,18 @@ Bulk battery orders applicable as per Minimum Order Quantity (MOQ 5 / MOQ 10) te
         subtitle: { type: String, default: 'Kota Plant +91 8949049003' },
         url: { type: String, default: '/contact' },
         icon: { type: String, default: 'Phone' },
+        iconType: { type: String, enum: ['icon', 'image'], default: 'icon' },
+        iconImage: { type: String, default: '' },
         color: { type: String, default: 'purple' },
+        customColor: { type: String, default: '' },
+        customBg: { type: String, default: '' },
+        customTextColor: { type: String, default: '' },
         isVisible: { type: Boolean, default: true },
         order: { type: Number, default: 4 },
+        target: { type: String, enum: ['_self', '_blank'], default: '_self' },
+        showExternalIcon: { type: Boolean, default: false },
+        badge: { type: String, default: '' },
+        badgeColor: { type: String, default: '' },
       },
     ],
   },

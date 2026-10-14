@@ -54,6 +54,8 @@ import {
   Palette,
   Home,
   User,
+  Smartphone,
+  Monitor,
 } from 'lucide-react';
 import { contentApi, customerApi, API_BASE_URL, resolveImageUrl } from '../api/client';
 
@@ -104,9 +106,47 @@ export interface IQuickActionItem {
   subtitle: string;
   url: string;
   icon: string;
+  iconType?: 'icon' | 'image';
+  iconImage?: string;
   color: string;
+  customColor?: string;
+  customBg?: string;
+  customTextColor?: string;
   isVisible: boolean;
   order: number;
+  target?: '_self' | '_blank';
+  showExternalIcon?: boolean;
+  badge?: string;
+  badgeColor?: string;
+}
+
+export interface IQuickActionsConfig {
+  isVisible?: boolean;
+  sectionBadge?: string;
+  showSectionBadge?: boolean;
+  sectionTitle?: string;
+  sectionSubtitle?: string;
+  showSectionHeader?: boolean;
+  bgType?: 'color' | 'gradient' | 'image' | 'transparent';
+  bgColor?: string;
+  bgGradientStart?: string;
+  bgGradientEnd?: string;
+  bgGradientDirection?: string;
+  bgImage?: string;
+  bgOverlayOpacity?: number;
+  bgOverlayColor?: string;
+  bgPosition?: string;
+  bgSize?: string;
+  bgBlur?: number;
+  cardBgColor?: string;
+  cardBorderColor?: string;
+  cardBorderRadius?: string;
+  cardShadow?: string;
+  showDividers?: boolean;
+  dividerColor?: string;
+  textColor?: string;
+  subtitleColor?: string;
+  layoutStyle?: 'horizontal' | 'grid';
 }
 
 export interface IBatteryBanner {
@@ -219,6 +259,7 @@ interface ICMSContent {
   };
   serviceCards: IServiceCard[];
   batteryBanner?: IBatteryBanner;
+  quickActionsConfig?: IQuickActionsConfig;
   quickActions?: IQuickActionItem[];
   footer: {
     companyName: string;
@@ -603,6 +644,34 @@ const defaultFallbackContent: ICMSContent = {
     plantBtnText: 'View Plant Contact Details',
     plantBtnLink: '/contact',
   },
+  quickActionsConfig: {
+    isVisible: true,
+    sectionBadge: 'QUICK UTILITIES',
+    showSectionBadge: false,
+    sectionTitle: 'Quick Access Directory',
+    sectionSubtitle: 'Essential customer services and warranty utilities',
+    showSectionHeader: false,
+    bgType: 'color',
+    bgColor: '#ffffff',
+    bgGradientStart: '#0f172a',
+    bgGradientEnd: '#1e293b',
+    bgGradientDirection: 'to-r',
+    bgImage: '',
+    bgOverlayOpacity: 0.8,
+    bgOverlayColor: '#000000',
+    bgPosition: 'center',
+    bgSize: 'cover',
+    bgBlur: 0,
+    cardBgColor: '#ffffff',
+    cardBorderColor: '#e2e8f0',
+    cardBorderRadius: 'rounded-3xl',
+    cardShadow: 'shadow-sm',
+    showDividers: true,
+    dividerColor: '#e2e8f0',
+    textColor: '#1e293b',
+    subtitleColor: '#64748b',
+    layoutStyle: 'horizontal',
+  },
   quickActions: [
     {
       id: 'act-track',
@@ -610,9 +679,18 @@ const defaultFallbackContent: ICMSContent = {
       subtitle: 'Live complaint inspection status',
       url: '/complaint/track',
       icon: 'Search',
+      iconType: 'icon',
+      iconImage: '',
       color: 'blue',
+      customColor: '',
+      customBg: '',
+      customTextColor: '',
       isVisible: true,
       order: 1,
+      target: '_self',
+      showExternalIcon: false,
+      badge: '',
+      badgeColor: '',
     },
     {
       id: 'act-warranty-reg',
@@ -620,9 +698,18 @@ const defaultFallbackContent: ICMSContent = {
       subtitle: 'Register new sales & serial number',
       url: '/warranty/register',
       icon: 'ShieldCheck',
+      iconType: 'icon',
+      iconImage: '',
       color: 'amber',
+      customColor: '',
+      customBg: '',
+      customTextColor: '',
       isVisible: true,
       order: 2,
+      target: '_blank',
+      showExternalIcon: true,
+      badge: '',
+      badgeColor: '',
     },
     {
       id: 'act-warranty-check',
@@ -630,9 +717,18 @@ const defaultFallbackContent: ICMSContent = {
       subtitle: '3-Yr (48V) & 1.5-Yr (60V/72V) status',
       url: '/warranty/check',
       icon: 'ShieldAlert',
+      iconType: 'icon',
+      iconImage: '',
       color: 'emerald',
+      customColor: '',
+      customBg: '',
+      customTextColor: '',
       isVisible: true,
       order: 3,
+      target: '_blank',
+      showExternalIcon: true,
+      badge: '',
+      badgeColor: '',
     },
     {
       id: 'act-contact',
@@ -640,9 +736,18 @@ const defaultFallbackContent: ICMSContent = {
       subtitle: 'Kota Plant +91 8949049003',
       url: '/contact',
       icon: 'Phone',
+      iconType: 'icon',
+      iconImage: '',
       color: 'purple',
+      customColor: '',
+      customBg: '',
+      customTextColor: '',
       isVisible: true,
       order: 4,
+      target: '_self',
+      showExternalIcon: false,
+      badge: '',
+      badgeColor: '',
     },
   ],
 };
@@ -843,6 +948,12 @@ const ContentManager = () => {
   const [cardDraft, setCardDraft] = useState<IServiceCard | null>(null);
   const [draftFeatureText, setDraftFeatureText] = useState<string>('');
 
+  // Dedicated Modal & Preview State for Quick Actions
+  const [actionModalOpen, setActionModalOpen] = useState<boolean>(false);
+  const [editingActionIndex, setEditingActionIndex] = useState<number | null>(null);
+  const [actionDraft, setActionDraft] = useState<IQuickActionItem | null>(null);
+  const [quickActionPreviewDevice, setQuickActionPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
+
   const getDivisionContact = (optName: string): IDivisionContact => {
     const existing = (content.contactInfo?.divisionContacts || []).find(
       (c) => c.name.trim().toLowerCase() === optName.trim().toLowerCase()
@@ -926,6 +1037,7 @@ const ContentManager = () => {
           serviceCards: normalizeServiceCards(d.serviceCards || defaultFallbackContent.serviceCards),
           contactInfo: d.contactInfo ? { ...defaultFallbackContent.contactInfo, ...d.contactInfo } : defaultFallbackContent.contactInfo,
           batteryBanner: d.batteryBanner ? { ...defaultFallbackContent.batteryBanner, ...d.batteryBanner } : defaultFallbackContent.batteryBanner,
+          quickActionsConfig: d.quickActionsConfig || defaultFallbackContent.quickActionsConfig,
           quickActions: d.quickActions && d.quickActions.length > 0 ? d.quickActions : defaultFallbackContent.quickActions,
         });
       }
@@ -951,6 +1063,7 @@ const ContentManager = () => {
             refundPolicy: pd.refundPolicy || defaultFallbackContent.refundPolicy,
             contactInfo: pd.contactInfo ? { ...defaultFallbackContent.contactInfo, ...pd.contactInfo } : defaultFallbackContent.contactInfo,
             batteryBanner: pd.batteryBanner || defaultFallbackContent.batteryBanner,
+            quickActionsConfig: pd.quickActionsConfig || defaultFallbackContent.quickActionsConfig,
             quickActions: pd.quickActions || defaultFallbackContent.quickActions,
           });
           if (pd.referralSettings) {
@@ -982,6 +1095,7 @@ const ContentManager = () => {
           ...res.data.data,
           serviceCards: normalizeServiceCards(res.data.data.serviceCards || defaultFallbackContent.serviceCards),
           batteryBanner: res.data.data.batteryBanner || defaultFallbackContent.batteryBanner,
+          quickActionsConfig: res.data.data.quickActionsConfig || defaultFallbackContent.quickActionsConfig,
           quickActions: res.data.data.quickActions || defaultFallbackContent.quickActions,
         });
         setNotification({
@@ -1304,6 +1418,194 @@ const ContentManager = () => {
       ...cardDraft,
       features: updatedFeatures,
     });
+  };
+
+  // Quick Actions Management Handlers
+  const handleOpenAddAction = () => {
+    const nextOrder = (content.quickActions?.length || 0) + 1;
+    setActionDraft({
+      id: `act-${Date.now()}`,
+      title: 'New Quick Utility',
+      subtitle: 'Instant access action description',
+      url: '/complaint/register',
+      icon: 'Zap',
+      iconType: 'icon',
+      iconImage: '',
+      color: 'blue',
+      customColor: '',
+      customBg: '',
+      customTextColor: '',
+      isVisible: true,
+      order: nextOrder,
+      target: '_self',
+      showExternalIcon: false,
+      badge: '',
+      badgeColor: '',
+    });
+    setEditingActionIndex(null);
+    setActionModalOpen(true);
+  };
+
+  const handleOpenEditAction = (index: number) => {
+    const item = (content.quickActions || defaultFallbackContent.quickActions || [])[index];
+    if (!item) return;
+    setActionDraft({ ...item });
+    setEditingActionIndex(index);
+    setActionModalOpen(true);
+  };
+
+  const handleSaveActionDraft = () => {
+    if (!actionDraft) return;
+    const currentActions = [...(content.quickActions || defaultFallbackContent.quickActions || [])];
+    if (editingActionIndex !== null && editingActionIndex >= 0 && editingActionIndex < currentActions.length) {
+      currentActions[editingActionIndex] = { ...actionDraft };
+    } else {
+      currentActions.push({ ...actionDraft, order: currentActions.length + 1 });
+    }
+    setContent({ ...content, quickActions: currentActions });
+    setActionModalOpen(false);
+    setActionDraft(null);
+    setEditingActionIndex(null);
+  };
+
+  const handleDeleteAction = (index: number) => {
+    const currentActions = [...(content.quickActions || defaultFallbackContent.quickActions || [])];
+    currentActions.splice(index, 1);
+    const reordered = currentActions.map((a, i) => ({ ...a, order: i + 1 }));
+    setContent({ ...content, quickActions: reordered });
+  };
+
+  const handleDuplicateAction = (index: number) => {
+    const currentActions = [...(content.quickActions || defaultFallbackContent.quickActions || [])];
+    const source = currentActions[index];
+    if (!source) return;
+    const cloned: IQuickActionItem = {
+      ...source,
+      id: `act-${Date.now()}`,
+      title: `${source.title} (Copy)`,
+      order: currentActions.length + 1,
+    };
+    currentActions.splice(index + 1, 0, cloned);
+    const reordered = currentActions.map((a, i) => ({ ...a, order: i + 1 }));
+    setContent({ ...content, quickActions: reordered });
+  };
+
+  const handleMoveAction = (index: number, direction: 'up' | 'down') => {
+    const currentActions = [...(content.quickActions || defaultFallbackContent.quickActions || [])];
+    const targetIdx = direction === 'up' ? index - 1 : index + 1;
+    if (targetIdx < 0 || targetIdx >= currentActions.length) return;
+    const temp = currentActions[index];
+    currentActions[index] = currentActions[targetIdx];
+    currentActions[targetIdx] = temp;
+    const reordered = currentActions.map((a, i) => ({ ...a, order: i + 1 }));
+    setContent({ ...content, quickActions: reordered });
+  };
+
+  const handleResetQuickActions = () => {
+    if (window.confirm('Reset Quick Actions section and items to factory default?')) {
+      setContent({
+        ...content,
+        quickActionsConfig: defaultFallbackContent.quickActionsConfig,
+        quickActions: defaultFallbackContent.quickActions,
+      });
+    }
+  };
+
+  const renderQuickActionIconPreview = (action: IQuickActionItem) => {
+    if (action.iconType === 'image' && action.iconImage) {
+      return (
+        <img
+          src={resolveImageUrl(action.iconImage)}
+          alt={action.title}
+          className="w-5 h-5 object-contain"
+        />
+      );
+    }
+    const iconProps = { size: 20 };
+    switch (action.icon?.toLowerCase()) {
+      case 'search':
+      case 'track':
+        return <Search {...iconProps} />;
+      case 'shieldcheck':
+      case 'shield-check':
+      case 'shield':
+      case 'warranty':
+        return <ShieldCheck {...iconProps} />;
+      case 'shieldalert':
+      case 'shield-alert':
+        return <ShieldAlert {...iconProps} />;
+      case 'phone':
+      case 'contact':
+        return <Phone {...iconProps} />;
+      case 'wrench':
+      case 'tool':
+        return <Wrench {...iconProps} />;
+      case 'clock':
+        return <Clock {...iconProps} />;
+      case 'mappin':
+      case 'map':
+        return <MapPin {...iconProps} />;
+      case 'mail':
+        return <Mail {...iconProps} />;
+      case 'zap':
+        return <Zap {...iconProps} />;
+      case 'battery':
+        return <Battery {...iconProps} />;
+      case 'coins':
+        return <Coins {...iconProps} />;
+      case 'gift':
+        return <Gift {...iconProps} />;
+      case 'package':
+        return <Package {...iconProps} />;
+      case 'settings':
+        return <Settings {...iconProps} />;
+      case 'activity':
+        return <Activity {...iconProps} />;
+      case 'helpcircle':
+      case 'help':
+        return <HelpCircle {...iconProps} />;
+      default:
+        return <FileText {...iconProps} />;
+    }
+  };
+
+  const getActionColorStylesAdmin = (color: string, customBg?: string, customColor?: string) => {
+    if (customBg || customColor) {
+      return {
+        bg: '',
+        text: '',
+        style: {
+          backgroundColor: customBg || 'rgba(59, 130, 246, 0.1)',
+          color: customColor || '#2563eb',
+        },
+      };
+    }
+    switch (color?.toLowerCase()) {
+      case 'amber':
+      case 'orange':
+        return { bg: 'bg-amber-50 text-amber-600', text: 'text-amber-600', style: {} };
+      case 'emerald':
+      case 'green':
+        return { bg: 'bg-emerald-50 text-emerald-600', text: 'text-emerald-600', style: {} };
+      case 'purple':
+      case 'violet':
+        return { bg: 'bg-purple-50 text-purple-600', text: 'text-purple-600', style: {} };
+      case 'indigo':
+        return { bg: 'bg-indigo-50 text-indigo-600', text: 'text-indigo-600', style: {} };
+      case 'rose':
+      case 'red':
+        return { bg: 'bg-rose-50 text-rose-600', text: 'text-rose-600', style: {} };
+      case 'cyan':
+        return { bg: 'bg-cyan-50 text-cyan-600', text: 'text-cyan-600', style: {} };
+      case 'teal':
+        return { bg: 'bg-teal-50 text-teal-600', text: 'text-teal-600', style: {} };
+      case 'slate':
+      case 'dark':
+        return { bg: 'bg-slate-100 text-slate-800', text: 'text-slate-900', style: {} };
+      case 'blue':
+      default:
+        return { bg: 'bg-blue-50 text-blue-600', text: 'text-blue-600', style: {} };
+    }
   };
 
   // Derive unique section list dynamically strictly from existing cards (no ghost sections)
@@ -5381,109 +5683,1401 @@ const ContentManager = () => {
             </div>
           </div>
 
-          {/* Section 2: Quick Access Utility Actions Cards */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-5 shadow-sm">
-            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-slate-100 pb-3">
-              <div>
-                <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                  <Search className="text-blue-600" size={20} />
-                  <span>Homepage Quick Actions Utility Bar (4 Cards)</span>
-                </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Customize the 4 horizontal utility action cards (Track Ticket, Warranty Registration, Check Warranty, Contact Directory).
-                </p>
+          {/* Section 2: Full Soft-Coded Quick Access Utility Actions Bar */}
+          <div className="space-y-6">
+            {/* 2.1 Section Styling, Header & Background Manager */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-5 shadow-sm">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-slate-100 pb-4">
+                <div>
+                  <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                    <Search className="text-blue-600" size={20} />
+                    <span>Quick Access Utility Actions Bar Configuration</span>
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Fully customize background image, solid/gradient styling, container borders, header text, and utility action items.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-slate-600">Section Visibility:</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const cfg = content.quickActionsConfig || defaultFallbackContent.quickActionsConfig!;
+                      setContent({
+                        ...content,
+                        quickActionsConfig: {
+                          ...cfg,
+                          isVisible: cfg.isVisible === false ? true : false,
+                        },
+                      });
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition cursor-pointer ${
+                      (content.quickActionsConfig?.isVisible ?? true)
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                        : 'bg-slate-100 text-slate-500 border-slate-200'
+                    }`}
+                  >
+                    {(content.quickActionsConfig?.isVisible ?? true) ? (
+                      <>
+                        <Eye size={14} />
+                        <span>Enabled on Homepage</span>
+                      </>
+                    ) : (
+                      <>
+                        <EyeOff size={14} />
+                        <span>Hidden on Homepage</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
-            </div>
 
-            {/* Quick Actions List Editor */}
-            <div className="space-y-3">
-              {(content.quickActions || defaultFallbackContent.quickActions || []).map((act, actIdx) => (
-                <div
-                  key={act.id || actIdx}
-                  className="bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 sm:grid-cols-12 gap-3 items-center"
-                >
-                  <div className="sm:col-span-1 text-center font-bold text-slate-400 text-xs">
-                    #{act.order || actIdx + 1}
+              {/* Background Mode Selector */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-2 flex items-center gap-1.5">
+                    <Palette size={14} className="text-blue-600" />
+                    <span>Container Background Mode</span>
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[
+                      { id: 'color', label: 'Solid Color' },
+                      { id: 'gradient', label: 'Linear Gradient' },
+                      { id: 'image', label: 'Background Image' },
+                      { id: 'transparent', label: 'Transparent' },
+                    ].map((mode) => {
+                      const currentMode = content.quickActionsConfig?.bgType || 'color';
+                      const isSelected = currentMode === mode.id;
+                      return (
+                        <button
+                          key={mode.id}
+                          type="button"
+                          onClick={() => {
+                            const cfg = content.quickActionsConfig || defaultFallbackContent.quickActionsConfig!;
+                            setContent({
+                              ...content,
+                              quickActionsConfig: { ...cfg, bgType: mode.id as any },
+                            });
+                          }}
+                          className={`py-2 px-3 rounded-xl border text-xs font-semibold transition cursor-pointer text-center ${
+                            isSelected
+                              ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                              : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                          }`}
+                        >
+                          {mode.label}
+                        </button>
+                      );
+                    })}
                   </div>
+                </div>
 
-                  <div className="sm:col-span-3">
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">Title</label>
-                    <input
-                      type="text"
-                      value={act.title}
-                      onChange={(e) => {
-                        const updated = [...(content.quickActions || defaultFallbackContent.quickActions!)];
-                        updated[actIdx] = { ...updated[actIdx], title: e.target.value };
-                        setContent({ ...content, quickActions: updated });
-                      }}
-                      className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-bold"
-                    />
+                {/* Sub-panel: Solid Color */}
+                {(content.quickActionsConfig?.bgType || 'color') === 'color' && (
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <label className="text-xs font-bold text-slate-700">Container Background Color</label>
+                      <div className="flex items-center gap-2">
+                        {[
+                          { label: 'White', color: '#ffffff' },
+                          { label: 'Clean Slate', color: '#f8fafc' },
+                          { label: 'Dark Plant', color: '#0f172a' },
+                          { label: 'Deep Emerald', color: '#022c22' },
+                        ].map((swatch) => (
+                          <button
+                            key={swatch.color}
+                            type="button"
+                            onClick={() => {
+                              const cfg = content.quickActionsConfig || defaultFallbackContent.quickActionsConfig!;
+                              setContent({
+                                ...content,
+                                quickActionsConfig: { ...cfg, bgColor: swatch.color, cardBgColor: swatch.color },
+                              });
+                            }}
+                            className="px-2 py-1 bg-white border border-slate-300 rounded text-[10px] font-mono hover:border-blue-400"
+                          >
+                            {swatch.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="color"
+                        value={content.quickActionsConfig?.bgColor || '#ffffff'}
+                        onChange={(e) => {
+                          const cfg = content.quickActionsConfig || defaultFallbackContent.quickActionsConfig!;
+                          setContent({
+                            ...content,
+                            quickActionsConfig: { ...cfg, bgColor: e.target.value, cardBgColor: e.target.value },
+                          });
+                        }}
+                        className="w-10 h-10 rounded-lg cursor-pointer border border-slate-300 p-0.5"
+                      />
+                      <input
+                        type="text"
+                        value={content.quickActionsConfig?.bgColor || '#ffffff'}
+                        onChange={(e) => {
+                          const cfg = content.quickActionsConfig || defaultFallbackContent.quickActionsConfig!;
+                          setContent({
+                            ...content,
+                            quickActionsConfig: { ...cfg, bgColor: e.target.value, cardBgColor: e.target.value },
+                          });
+                        }}
+                        placeholder="#ffffff"
+                        className="w-36 bg-white border border-slate-300 rounded-lg p-2 text-xs font-mono font-bold"
+                      />
+                    </div>
                   </div>
+                )}
 
-                  <div className="sm:col-span-3">
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">Subtitle</label>
-                    <input
-                      type="text"
-                      value={act.subtitle}
+                {/* Sub-panel: Linear Gradient */}
+                {content.quickActionsConfig?.bgType === 'gradient' && (
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">Start Color</label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={content.quickActionsConfig?.bgGradientStart || '#0f172a'}
+                            onChange={(e) => {
+                              const cfg = content.quickActionsConfig || defaultFallbackContent.quickActionsConfig!;
+                              setContent({
+                                ...content,
+                                quickActionsConfig: { ...cfg, bgGradientStart: e.target.value },
+                              });
+                            }}
+                            className="w-8 h-8 rounded cursor-pointer border p-0.5"
+                          />
+                          <input
+                            type="text"
+                            value={content.quickActionsConfig?.bgGradientStart || '#0f172a'}
+                            onChange={(e) => {
+                              const cfg = content.quickActionsConfig || defaultFallbackContent.quickActionsConfig!;
+                              setContent({
+                                ...content,
+                                quickActionsConfig: { ...cfg, bgGradientStart: e.target.value },
+                              });
+                            }}
+                            className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-mono"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">End Color</label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={content.quickActionsConfig?.bgGradientEnd || '#1e293b'}
+                            onChange={(e) => {
+                              const cfg = content.quickActionsConfig || defaultFallbackContent.quickActionsConfig!;
+                              setContent({
+                                ...content,
+                                quickActionsConfig: { ...cfg, bgGradientEnd: e.target.value },
+                              });
+                            }}
+                            className="w-8 h-8 rounded cursor-pointer border p-0.5"
+                          />
+                          <input
+                            type="text"
+                            value={content.quickActionsConfig?.bgGradientEnd || '#1e293b'}
+                            onChange={(e) => {
+                              const cfg = content.quickActionsConfig || defaultFallbackContent.quickActionsConfig!;
+                              setContent({
+                                ...content,
+                                quickActionsConfig: { ...cfg, bgGradientEnd: e.target.value },
+                              });
+                            }}
+                            className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-mono"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">Direction</label>
+                        <select
+                          value={content.quickActionsConfig?.bgGradientDirection || 'to-r'}
+                          onChange={(e) => {
+                            const cfg = content.quickActionsConfig || defaultFallbackContent.quickActionsConfig!;
+                            setContent({
+                              ...content,
+                              quickActionsConfig: { ...cfg, bgGradientDirection: e.target.value },
+                            });
+                          }}
+                          className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs"
+                        >
+                          <option value="to-r">Left to Right (Horizontal)</option>
+                          <option value="to-br">Top-Left to Bottom-Right (Diagonal)</option>
+                          <option value="to-b">Top to Bottom (Vertical)</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Sub-panel: Background Image Suite */}
+                {content.quickActionsConfig?.bgType === 'image' && (
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Image Source */}
+                      <div className="space-y-3">
+                        <label className="block text-xs font-bold text-slate-800">Background Image Source</label>
+                        <div className="flex flex-col gap-2">
+                          <label className="flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-white border border-slate-300 hover:border-blue-500 rounded-xl text-xs font-bold text-slate-700 transition cursor-pointer shadow-xs">
+                            <Upload size={14} className="text-blue-600" />
+                            <span>Upload Local Image File</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  const dataUrl = await compressImageFile(file, 1920, 1080, 0.85);
+                                  const cfg = content.quickActionsConfig || defaultFallbackContent.quickActionsConfig!;
+                                  setContent({
+                                    ...content,
+                                    quickActionsConfig: { ...cfg, bgImage: dataUrl },
+                                  });
+                                }
+                              }}
+                            />
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={content.quickActionsConfig?.bgImage || ''}
+                              onChange={(e) => {
+                                const cfg = content.quickActionsConfig || defaultFallbackContent.quickActionsConfig!;
+                                setContent({
+                                  ...content,
+                                  quickActionsConfig: { ...cfg, bgImage: e.target.value },
+                                });
+                              }}
+                              placeholder="Or paste image URL (https://...)"
+                              className="flex-1 bg-white border border-slate-300 rounded-xl p-2 text-xs font-mono"
+                            />
+                            {content.quickActionsConfig?.bgImage && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const cfg = content.quickActionsConfig || defaultFallbackContent.quickActionsConfig!;
+                                  setContent({
+                                    ...content,
+                                    quickActionsConfig: { ...cfg, bgImage: '' },
+                                  });
+                                }}
+                                className="px-3 py-2 bg-rose-50 text-rose-600 border border-rose-200 rounded-xl text-xs font-semibold hover:bg-rose-100"
+                              >
+                                Clear
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Image Controls: Opacity, Blur, Overlay */}
+                        <div className="grid grid-cols-2 gap-3 pt-2 text-xs">
+                          <div>
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="font-semibold text-slate-700">Dark Overlay</span>
+                              <span className="font-mono text-[10px] text-slate-500">
+                                {Math.round((content.quickActionsConfig?.bgOverlayOpacity ?? 0.8) * 100)}%
+                              </span>
+                            </div>
+                            <input
+                              type="range"
+                              min="0"
+                              max="1"
+                              step="0.05"
+                              value={content.quickActionsConfig?.bgOverlayOpacity ?? 0.8}
+                              onChange={(e) => {
+                                const cfg = content.quickActionsConfig || defaultFallbackContent.quickActionsConfig!;
+                                setContent({
+                                  ...content,
+                                  quickActionsConfig: { ...cfg, bgOverlayOpacity: parseFloat(e.target.value) },
+                                });
+                              }}
+                              className="w-full accent-blue-600"
+                            />
+                          </div>
+
+                          <div>
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="font-semibold text-slate-700">Blur Filter</span>
+                              <span className="font-mono text-[10px] text-slate-500">
+                                {content.quickActionsConfig?.bgBlur ?? 0}px
+                              </span>
+                            </div>
+                            <input
+                              type="range"
+                              min="0"
+                              max="20"
+                              step="1"
+                              value={content.quickActionsConfig?.bgBlur ?? 0}
+                              onChange={(e) => {
+                                const cfg = content.quickActionsConfig || defaultFallbackContent.quickActionsConfig!;
+                                setContent({
+                                  ...content,
+                                  quickActionsConfig: { ...cfg, bgBlur: parseInt(e.target.value, 10) },
+                                });
+                              }}
+                              className="w-full accent-blue-600"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block font-semibold text-slate-700 mb-1">Overlay Tint Color</label>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="color"
+                                value={content.quickActionsConfig?.bgOverlayColor || '#000000'}
+                                onChange={(e) => {
+                                  const cfg = content.quickActionsConfig || defaultFallbackContent.quickActionsConfig!;
+                                  setContent({
+                                    ...content,
+                                    quickActionsConfig: { ...cfg, bgOverlayColor: e.target.value },
+                                  });
+                                }}
+                                className="w-7 h-7 rounded cursor-pointer border p-0.5"
+                              />
+                              <input
+                                type="text"
+                                value={content.quickActionsConfig?.bgOverlayColor || '#000000'}
+                                onChange={(e) => {
+                                  const cfg = content.quickActionsConfig || defaultFallbackContent.quickActionsConfig!;
+                                  setContent({
+                                    ...content,
+                                    quickActionsConfig: { ...cfg, bgOverlayColor: e.target.value },
+                                  });
+                                }}
+                                className="w-full bg-white border border-slate-300 rounded-lg p-1.5 text-xs font-mono"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block font-semibold text-slate-700 mb-1">Image Position</label>
+                            <select
+                              value={content.quickActionsConfig?.bgPosition || 'center'}
+                              onChange={(e) => {
+                                const cfg = content.quickActionsConfig || defaultFallbackContent.quickActionsConfig!;
+                                setContent({
+                                  ...content,
+                                  quickActionsConfig: { ...cfg, bgPosition: e.target.value },
+                                });
+                              }}
+                              className="w-full bg-white border border-slate-300 rounded-lg p-1.5 text-xs"
+                            >
+                              <option value="center">Center</option>
+                              <option value="top">Top</option>
+                              <option value="bottom">Bottom</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Curated Presets */}
+                      <div className="space-y-2">
+                        <label className="block text-xs font-bold text-slate-800">
+                          One-Click Curated EV & Battery Presets
+                        </label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {[
+                            {
+                              title: 'Lithium Cells',
+                              url: 'https://images.unsplash.com/photo-1558441719-8b449c6ff673?auto=format&fit=crop&w=1920&q=80',
+                            },
+                            {
+                              title: 'EV Mobility',
+                              url: 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=1920&q=80',
+                            },
+                            {
+                              title: 'High-Tech Circuit',
+                              url: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1920&q=80',
+                            },
+                            {
+                              title: 'EV Factory Plant',
+                              url: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1920&q=80',
+                            },
+                            {
+                              title: 'Emerald Wave',
+                              url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1920&q=80',
+                            },
+                            {
+                              title: 'EV Charging Grid',
+                              url: 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7?auto=format&fit=crop&w=1920&q=80',
+                            },
+                          ].map((preset) => (
+                            <button
+                              key={preset.title}
+                              type="button"
+                              onClick={() => {
+                                const cfg = content.quickActionsConfig || defaultFallbackContent.quickActionsConfig!;
+                                setContent({
+                                  ...content,
+                                  quickActionsConfig: { ...cfg, bgImage: preset.url },
+                                });
+                              }}
+                              className={`group relative rounded-xl overflow-hidden border p-1 text-left transition hover:scale-[1.02] cursor-pointer ${
+                                content.quickActionsConfig?.bgImage === preset.url
+                                  ? 'border-blue-600 ring-2 ring-blue-500/20'
+                                  : 'border-slate-200 bg-white hover:border-slate-300'
+                              }`}
+                            >
+                              <div
+                                className="h-12 w-full rounded-lg bg-cover bg-center mb-1"
+                                style={{ backgroundImage: `url(${preset.url})` }}
+                              />
+                              <div className="text-[10px] font-semibold text-slate-700 truncate">{preset.title}</div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Container Card Styling & Header Controls */}
+              <div className="border-t border-slate-100 pt-4 space-y-4">
+                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <Settings size={14} className="text-slate-500" />
+                  <span>Card Borders, Dividers & Typography</span>
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">Border Corner Radius</label>
+                    <select
+                      value={content.quickActionsConfig?.cardBorderRadius || 'rounded-3xl'}
                       onChange={(e) => {
-                        const updated = [...(content.quickActions || defaultFallbackContent.quickActions!)];
-                        updated[actIdx] = { ...updated[actIdx], subtitle: e.target.value };
-                        setContent({ ...content, quickActions: updated });
+                        const cfg = content.quickActionsConfig || defaultFallbackContent.quickActionsConfig!;
+                        setContent({
+                          ...content,
+                          quickActionsConfig: { ...cfg, cardBorderRadius: e.target.value },
+                        });
                       }}
                       className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs"
-                    />
-                  </div>
-
-                  <div className="sm:col-span-3">
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">Target URL</label>
-                    <input
-                      type="text"
-                      value={act.url}
-                      onChange={(e) => {
-                        const updated = [...(content.quickActions || defaultFallbackContent.quickActions!)];
-                        updated[actIdx] = { ...updated[actIdx], url: e.target.value };
-                        setContent({ ...content, quickActions: updated });
-                      }}
-                      className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-mono"
-                    />
-                  </div>
-
-                  <div className="sm:col-span-2 flex items-center justify-end gap-2">
-                    <select
-                      value={act.color}
-                      onChange={(e) => {
-                        const updated = [...(content.quickActions || defaultFallbackContent.quickActions!)];
-                        updated[actIdx] = { ...updated[actIdx], color: e.target.value };
-                        setContent({ ...content, quickActions: updated });
-                      }}
-                      className="bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium"
                     >
-                      <option value="blue">Blue</option>
-                      <option value="amber">Amber</option>
-                      <option value="emerald">Green</option>
-                      <option value="purple">Purple</option>
+                      <option value="rounded-none">Square (None)</option>
+                      <option value="rounded-xl">Subtle (rounded-xl)</option>
+                      <option value="rounded-2xl">Medium (rounded-2xl)</option>
+                      <option value="rounded-3xl">Pill Curve (rounded-3xl - Default)</option>
+                      <option value="rounded-full">Fully Rounded (rounded-full)</option>
                     </select>
+                  </div>
 
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">Card Border Color</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={content.quickActionsConfig?.cardBorderColor || '#e2e8f0'}
+                        onChange={(e) => {
+                          const cfg = content.quickActionsConfig || defaultFallbackContent.quickActionsConfig!;
+                          setContent({
+                            ...content,
+                            quickActionsConfig: { ...cfg, cardBorderColor: e.target.value },
+                          });
+                        }}
+                        className="w-8 h-8 rounded cursor-pointer border p-0.5"
+                      />
+                      <input
+                        type="text"
+                        value={content.quickActionsConfig?.cardBorderColor || '#e2e8f0'}
+                        onChange={(e) => {
+                          const cfg = content.quickActionsConfig || defaultFallbackContent.quickActionsConfig!;
+                          setContent({
+                            ...content,
+                            quickActionsConfig: { ...cfg, cardBorderColor: e.target.value },
+                          });
+                        }}
+                        className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">Vertical Dividers</label>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const cfg = content.quickActionsConfig || defaultFallbackContent.quickActionsConfig!;
+                          setContent({
+                            ...content,
+                            quickActionsConfig: { ...cfg, showDividers: cfg.showDividers === false ? true : false },
+                          });
+                        }}
+                        className={`flex-1 py-2 px-2.5 rounded-lg border text-xs font-semibold ${
+                          (content.quickActionsConfig?.showDividers ?? true)
+                            ? 'bg-blue-50 text-blue-700 border-blue-200'
+                            : 'bg-slate-100 text-slate-500 border-slate-200'
+                        }`}
+                      >
+                        {(content.quickActionsConfig?.showDividers ?? true) ? 'Visible' : 'Hidden'}
+                      </button>
+                      <input
+                        type="color"
+                        value={content.quickActionsConfig?.dividerColor || '#e2e8f0'}
+                        onChange={(e) => {
+                          const cfg = content.quickActionsConfig || defaultFallbackContent.quickActionsConfig!;
+                          setContent({
+                            ...content,
+                            quickActionsConfig: { ...cfg, dividerColor: e.target.value },
+                          });
+                        }}
+                        className="w-8 h-8 rounded cursor-pointer border p-0.5"
+                        title="Divider Color"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">Title Text Color</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={content.quickActionsConfig?.textColor || '#1e293b'}
+                        onChange={(e) => {
+                          const cfg = content.quickActionsConfig || defaultFallbackContent.quickActionsConfig!;
+                          setContent({
+                            ...content,
+                            quickActionsConfig: { ...cfg, textColor: e.target.value },
+                          });
+                        }}
+                        className="w-8 h-8 rounded cursor-pointer border p-0.5"
+                      />
+                      <input
+                        type="text"
+                        value={content.quickActionsConfig?.textColor || '#1e293b'}
+                        onChange={(e) => {
+                          const cfg = content.quickActionsConfig || defaultFallbackContent.quickActionsConfig!;
+                          setContent({
+                            ...content,
+                            quickActionsConfig: { ...cfg, textColor: e.target.value },
+                          });
+                        }}
+                        placeholder="#1e293b"
+                        className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Optional Section Header Fields */}
+                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-700 flex items-center gap-2">
+                      <Tag size={14} className="text-blue-600" />
+                      <span>Optional Header (Title, Subtitle & Badge Tagline)</span>
+                    </span>
                     <button
                       type="button"
                       onClick={() => {
-                        const updated = [...(content.quickActions || defaultFallbackContent.quickActions!)];
-                        updated[actIdx] = { ...updated[actIdx], isVisible: !updated[actIdx].isVisible };
-                        setContent({ ...content, quickActions: updated });
+                        const cfg = content.quickActionsConfig || defaultFallbackContent.quickActionsConfig!;
+                        setContent({
+                          ...content,
+                          quickActionsConfig: {
+                            ...cfg,
+                            showSectionHeader: !cfg.showSectionHeader,
+                          },
+                        });
                       }}
-                      className={`p-2 rounded-lg border transition cursor-pointer ${
-                        act.isVisible !== false
-                          ? 'bg-green-50 text-green-700 border-green-200'
-                          : 'bg-slate-100 text-slate-400 border-slate-200'
+                      className={`text-xs font-bold px-2.5 py-1 rounded-lg border transition ${
+                        content.quickActionsConfig?.showSectionHeader
+                          ? 'bg-blue-600 text-white border-blue-600'
+                          : 'bg-white text-slate-600 border-slate-300'
                       }`}
-                      title={act.isVisible !== false ? 'Visible on Homepage' : 'Hidden'}
                     >
-                      {act.isVisible !== false ? <Eye size={14} /> : <EyeOff size={14} />}
+                      {content.quickActionsConfig?.showSectionHeader ? 'Header Shown' : 'Header Hidden (Clean Bar)'}
+                    </button>
+                  </div>
+
+                  {content.quickActionsConfig?.showSectionHeader && (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">Badge Tagline</label>
+                        <input
+                          type="text"
+                          value={content.quickActionsConfig?.sectionBadge || ''}
+                          onChange={(e) => {
+                            const cfg = content.quickActionsConfig || defaultFallbackContent.quickActionsConfig!;
+                            setContent({
+                              ...content,
+                              quickActionsConfig: { ...cfg, sectionBadge: e.target.value, showSectionBadge: true },
+                            });
+                          }}
+                          placeholder="QUICK UTILITIES"
+                          className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">Section Title</label>
+                        <input
+                          type="text"
+                          value={content.quickActionsConfig?.sectionTitle || ''}
+                          onChange={(e) => {
+                            const cfg = content.quickActionsConfig || defaultFallbackContent.quickActionsConfig!;
+                            setContent({
+                              ...content,
+                              quickActionsConfig: { ...cfg, sectionTitle: e.target.value },
+                            });
+                          }}
+                          placeholder="Quick Access Directory"
+                          className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-bold"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">Section Subtitle</label>
+                        <input
+                          type="text"
+                          value={content.quickActionsConfig?.sectionSubtitle || ''}
+                          onChange={(e) => {
+                            const cfg = content.quickActionsConfig || defaultFallbackContent.quickActionsConfig!;
+                            setContent({
+                              ...content,
+                              quickActionsConfig: { ...cfg, sectionSubtitle: e.target.value },
+                            });
+                          }}
+                          placeholder="Essential customer services and warranty utilities"
+                          className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* 2.2 Action Items Manager */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-5 shadow-sm">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-slate-100 pb-4">
+                <div>
+                  <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                    <List className="text-blue-600" size={20} />
+                    <span>Quick Action Items ({(content.quickActions || []).length})</span>
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Add, edit, duplicate, reorder, or toggle individual utility cards.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleResetQuickActions}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition cursor-pointer"
+                  >
+                    <RotateCcw size={14} />
+                    <span>Factory Reset</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleOpenAddAction}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+                  >
+                    <Plus size={15} />
+                    <span>Add New Action</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Action Items List */}
+              <div className="space-y-3">
+                {(content.quickActions || defaultFallbackContent.quickActions || []).map((act, actIdx) => {
+                  const colorStyles = getActionColorStylesAdmin(act.color, act.customBg, act.customColor);
+                  return (
+                    <div
+                      key={act.id || actIdx}
+                      className="bg-slate-50 hover:bg-slate-100/70 p-4 rounded-2xl border border-slate-200 transition flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+                    >
+                      {/* Left: Reorder & Info */}
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        {/* Reorder Buttons */}
+                        <div className="flex flex-col items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleMoveAction(actIdx, 'up')}
+                            disabled={actIdx === 0}
+                            className="p-1 rounded hover:bg-slate-200 text-slate-500 disabled:opacity-30 cursor-pointer"
+                            title="Move Up"
+                          >
+                            <ArrowUp size={13} />
+                          </button>
+                          <span className="text-[10px] font-bold text-slate-400">#{act.order || actIdx + 1}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleMoveAction(actIdx, 'down')}
+                            disabled={actIdx === (content.quickActions || []).length - 1}
+                            className="p-1 rounded hover:bg-slate-200 text-slate-500 disabled:opacity-30 cursor-pointer"
+                            title="Move Down"
+                          >
+                            <ArrowDown size={13} />
+                          </button>
+                        </div>
+
+                        {/* Icon Box */}
+                        <div
+                          className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border border-slate-200 shadow-xs ${colorStyles.bg}`}
+                          style={colorStyles.style}
+                        >
+                          {renderQuickActionIconPreview(act)}
+                        </div>
+
+                        {/* Title, Subtitle, Badges */}
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4
+                              className="font-bold text-sm text-slate-800 truncate"
+                              style={{ color: act.customTextColor || undefined }}
+                            >
+                              {act.title}
+                            </h4>
+                            {act.badge && (
+                              <span
+                                className="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                                style={{
+                                  backgroundColor: act.badgeColor || '#10b981',
+                                  color: '#ffffff',
+                                }}
+                              >
+                                {act.badge}
+                              </span>
+                            )}
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-600">
+                              {act.url}
+                            </span>
+                            {act.target === '_blank' && (
+                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
+                                New Tab ↗
+                              </span>
+                            )}
+                            {act.showExternalIcon && act.target !== '_blank' && (
+                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                                ↗ icon
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-500 truncate mt-0.5">{act.subtitle}</p>
+                        </div>
+                      </div>
+
+                      {/* Right: Controls */}
+                      <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
+                        {/* Visibility Switch */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = [...(content.quickActions || defaultFallbackContent.quickActions!)];
+                            updated[actIdx] = { ...updated[actIdx], isVisible: !updated[actIdx].isVisible };
+                            setContent({ ...content, quickActions: updated });
+                          }}
+                          className={`p-2 rounded-xl border transition cursor-pointer ${
+                            act.isVisible !== false
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                              : 'bg-slate-200 text-slate-400 border-slate-300'
+                          }`}
+                          title={act.isVisible !== false ? 'Card is visible' : 'Card is hidden'}
+                        >
+                          {act.isVisible !== false ? <Eye size={15} /> : <EyeOff size={15} />}
+                        </button>
+
+                        {/* Duplicate Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleDuplicateAction(actIdx)}
+                          className="p-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-600 transition cursor-pointer"
+                          title="Duplicate Card"
+                        >
+                          <Copy size={15} />
+                        </button>
+
+                        {/* Edit Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditAction(actIdx)}
+                          className="flex items-center gap-1 px-3 py-2 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold transition cursor-pointer"
+                        >
+                          <Edit3 size={14} />
+                          <span>Edit</span>
+                        </button>
+
+                        {/* Delete Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteAction(actIdx)}
+                          className="p-2 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-600 transition cursor-pointer"
+                          title="Delete Card"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 2.3 Interactive Real-Time Live Preview */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4 shadow-sm">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <span className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <Eye size={16} className="text-blue-600" />
+                  <span>Real-Time Quick Access Live Preview</span>
+                </span>
+                <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+                  <button
+                    type="button"
+                    onClick={() => setQuickActionPreviewDevice('desktop')}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition ${
+                      quickActionPreviewDevice === 'desktop'
+                        ? 'bg-white text-slate-800 shadow-xs'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    <Monitor size={14} />
+                    <span>Desktop Bar</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setQuickActionPreviewDevice('mobile')}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition ${
+                      quickActionPreviewDevice === 'mobile'
+                        ? 'bg-white text-slate-800 shadow-xs'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    <Smartphone size={14} />
+                    <span>Mobile Stack</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Live Preview Container Canvas */}
+              <div className="bg-slate-100/80 p-4 sm:p-8 rounded-2xl border border-slate-200 flex justify-center overflow-x-auto">
+                <div
+                  className={`w-full transition-all duration-300 ${
+                    quickActionPreviewDevice === 'mobile' ? 'max-w-sm' : 'max-w-5xl'
+                  }`}
+                >
+                  <div
+                    className={`relative overflow-hidden transition-all duration-300 ${
+                      content.quickActionsConfig?.cardBorderRadius || 'rounded-3xl'
+                    } ${content.quickActionsConfig?.cardShadow || 'shadow-sm'}`}
+                    style={{
+                      backgroundColor:
+                        (content.quickActionsConfig?.bgType || 'color') === 'color'
+                          ? content.quickActionsConfig?.bgColor || '#ffffff'
+                          : undefined,
+                      background:
+                        content.quickActionsConfig?.bgType === 'gradient'
+                          ? `linear-gradient(${
+                              content.quickActionsConfig?.bgGradientDirection === 'to-b'
+                                ? 'to bottom'
+                                : content.quickActionsConfig?.bgGradientDirection === 'to-br'
+                                ? 'to bottom right'
+                                : 'to right'
+                            }, ${content.quickActionsConfig?.bgGradientStart || '#0f172a'}, ${
+                              content.quickActionsConfig?.bgGradientEnd || '#1e293b'
+                            })`
+                          : undefined,
+                      borderColor: content.quickActionsConfig?.cardBorderColor || '#e2e8f0',
+                      borderWidth: '1px',
+                      borderStyle: 'solid',
+                    }}
+                  >
+                    {/* Background Image Layer */}
+                    {content.quickActionsConfig?.bgType === 'image' && content.quickActionsConfig?.bgImage && (
+                      <div
+                        className="absolute inset-0 pointer-events-none transition-all duration-500"
+                        style={{
+                          backgroundImage: `url(${resolveImageUrl(content.quickActionsConfig.bgImage)})`,
+                          backgroundPosition: content.quickActionsConfig.bgPosition || 'center',
+                          backgroundSize: content.quickActionsConfig.bgSize || 'cover',
+                          filter: content.quickActionsConfig.bgBlur
+                            ? `blur(${content.quickActionsConfig.bgBlur}px)`
+                            : undefined,
+                        }}
+                      />
+                    )}
+                    {/* Background Overlay */}
+                    {content.quickActionsConfig?.bgType === 'image' && content.quickActionsConfig?.bgImage && (
+                      <div
+                        className="absolute inset-0 pointer-events-none"
+                        style={{
+                          backgroundColor: content.quickActionsConfig.bgOverlayColor || '#000000',
+                          opacity: content.quickActionsConfig.bgOverlayOpacity ?? 0.8,
+                        }}
+                      />
+                    )}
+
+                    <div className="relative z-10 p-6 md:p-8">
+                      {/* Optional Header in Preview */}
+                      {content.quickActionsConfig?.showSectionHeader &&
+                        (content.quickActionsConfig.sectionTitle || content.quickActionsConfig.sectionBadge) && (
+                          <div className="text-center mb-6 space-y-1.5">
+                            {content.quickActionsConfig.showSectionBadge && content.quickActionsConfig.sectionBadge && (
+                              <span className="inline-block bg-blue-500/10 text-blue-600 font-mono text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-blue-500/20">
+                                {content.quickActionsConfig.sectionBadge}
+                              </span>
+                            )}
+                            {content.quickActionsConfig.sectionTitle && (
+                              <h3
+                                className="text-lg md:text-xl font-bold tracking-tight"
+                                style={{ color: content.quickActionsConfig.textColor || '#1e293b' }}
+                              >
+                                {content.quickActionsConfig.sectionTitle}
+                              </h3>
+                            )}
+                            {content.quickActionsConfig.sectionSubtitle && (
+                              <p
+                                className="text-xs max-w-lg mx-auto"
+                                style={{ color: content.quickActionsConfig.subtitleColor || '#64748b' }}
+                              >
+                                {content.quickActionsConfig.sectionSubtitle}
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                      {/* Items Row / Grid */}
+                      <div
+                        className={
+                          quickActionPreviewDevice === 'mobile'
+                            ? 'flex flex-col gap-3 text-left'
+                            : 'flex flex-wrap items-center justify-around gap-6 text-center'
+                        }
+                      >
+                        {(content.quickActions || defaultFallbackContent.quickActions || [])
+                          .filter((act) => act.isVisible !== false)
+                          .map((act, idx, arr) => {
+                            const styles = getActionColorStylesAdmin(act.color, act.customBg, act.customColor);
+                            const target = act.target || '_self';
+                            const showExt = typeof act.showExternalIcon === 'boolean' ? act.showExternalIcon : (target === '_blank');
+
+                            return (
+                              <div
+                                key={act.id || idx}
+                                className={`flex items-center gap-6 ${
+                                  quickActionPreviewDevice === 'mobile' ? 'w-full' : ''
+                                }`}
+                              >
+                                <div className="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-slate-50/50 transition cursor-pointer w-full">
+                                  <div
+                                    className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-xs ${styles.bg}`}
+                                    style={styles.style}
+                                  >
+                                    {renderQuickActionIconPreview(act)}
+                                  </div>
+                                  <div className="text-left min-w-0">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <h4
+                                        className="font-bold text-sm text-slate-800 truncate"
+                                        style={{
+                                          color:
+                                            act.customTextColor ||
+                                            content.quickActionsConfig?.textColor ||
+                                            undefined,
+                                        }}
+                                      >
+                                        {act.title}
+                                      </h4>
+                                      {act.badge && (
+                                        <span
+                                          className="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                                          style={{
+                                            backgroundColor: act.badgeColor || '#10b981',
+                                            color: '#ffffff',
+                                          }}
+                                        >
+                                          {act.badge}
+                                        </span>
+                                      )}
+                                      {showExt && <ExternalLink size={12} className="opacity-60 text-slate-400" />}
+                                    </div>
+                                    <p
+                                      className="text-[11px] truncate"
+                                      style={{ color: content.quickActionsConfig?.subtitleColor || '#94a3b8' }}
+                                    >
+                                      {act.subtitle}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {content.quickActionsConfig?.showDividers !== false &&
+                                  quickActionPreviewDevice !== 'mobile' &&
+                                  idx < arr.length - 1 && (
+                                    <div
+                                      className="hidden md:block w-px h-10"
+                                      style={{
+                                        backgroundColor: content.quickActionsConfig?.dividerColor || '#e2e8f0',
+                                      }}
+                                    />
+                                  )}
+                              </div>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal: Add / Edit Quick Action Item */}
+            {actionModalOpen && actionDraft && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-xs p-3 sm:p-6 overflow-y-auto">
+                <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                  {/* Modal Header */}
+                  <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
+                        <Edit3 size={18} />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-base text-slate-800">
+                          {editingActionIndex !== null ? 'Edit Quick Action Card' : 'Add New Quick Action Card'}
+                        </h3>
+                        <p className="text-xs text-slate-500">Configure title, subtitle, target URL, icon & custom color palette</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActionModalOpen(false)}
+                      className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition cursor-pointer"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+
+                  {/* Modal Body */}
+                  <div className="p-6 space-y-5 overflow-y-auto flex-1 text-xs">
+                    {/* Title & Subtitle */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">Action Title *</label>
+                        <input
+                          type="text"
+                          value={actionDraft.title}
+                          onChange={(e) => setActionDraft({ ...actionDraft, title: e.target.value })}
+                          placeholder="e.g. Track Ticket"
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-bold text-slate-800 focus:bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">Subtitle / Caption *</label>
+                        <input
+                          type="text"
+                          value={actionDraft.subtitle}
+                          onChange={(e) => setActionDraft({ ...actionDraft, subtitle: e.target.value })}
+                          placeholder="e.g. Live complaint inspection status"
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs text-slate-700 focus:bg-white"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Target URL with Quick Presets */}
+                    <div className="space-y-2">
+                      <label className="block font-semibold text-slate-700">Target URL / Route *</label>
+                      <input
+                        type="text"
+                        value={actionDraft.url}
+                        onChange={(e) => setActionDraft({ ...actionDraft, url: e.target.value })}
+                        placeholder="e.g. /complaint/track or https://..."
+                        className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-mono font-medium focus:bg-white"
+                      />
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        <span className="text-[10px] text-slate-400 font-semibold mr-1">Quick Auto-Fill:</span>
+                        {[
+                          { label: 'Track Ticket', url: '/complaint/track' },
+                          { label: 'Warranty Register', url: '/warranty/register' },
+                          { label: 'Check Warranty', url: '/warranty/check' },
+                          { label: 'Contact Directory', url: '/contact' },
+                          { label: 'Register Complaint', url: '/complaint/register' },
+                        ].map((preset) => (
+                          <button
+                            key={preset.url}
+                            type="button"
+                            onClick={() => setActionDraft({ ...actionDraft, url: preset.url })}
+                            className="px-2 py-1 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-600 border border-slate-200 rounded-lg text-[10px] font-medium transition cursor-pointer"
+                          >
+                            {preset.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Window Target, External Icon, Optional Badge */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">Window Target</label>
+                        <select
+                          value={actionDraft.target || '_self'}
+                          onChange={(e) =>
+                            setActionDraft({
+                              ...actionDraft,
+                              target: e.target.value as any,
+                              showExternalIcon: e.target.value === '_blank' ? true : actionDraft.showExternalIcon,
+                            })
+                          }
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-semibold"
+                        >
+                          <option value="_self">Same Window (_self)</option>
+                          <option value="_blank">New Tab (_blank)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">External Arrow Icon (↗)</label>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setActionDraft({
+                              ...actionDraft,
+                              showExternalIcon: !actionDraft.showExternalIcon,
+                            })
+                          }
+                          className={`w-full py-2.5 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                            actionDraft.showExternalIcon
+                              ? 'bg-blue-50 text-blue-700 border-blue-300'
+                              : 'bg-slate-100 text-slate-500 border-slate-200'
+                          }`}
+                        >
+                          <ExternalLink size={13} />
+                          <span>{actionDraft.showExternalIcon ? 'Arrow Visible' : 'Arrow Hidden'}</span>
+                        </button>
+                      </div>
+
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">Optional Mini Badge</label>
+                        <input
+                          type="text"
+                          value={actionDraft.badge || ''}
+                          onChange={(e) => setActionDraft({ ...actionDraft, badge: e.target.value })}
+                          placeholder="e.g. LIVE, 3-YR, 24/7"
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-mono font-bold"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Icon Selector */}
+                    <div className="space-y-2 border-t border-slate-100 pt-3">
+                      <div className="flex items-center justify-between">
+                        <label className="block font-semibold text-slate-800">Select Icon</label>
+                        <span className="text-[10px] text-slate-400">Current: {actionDraft.icon}</span>
+                      </div>
+
+                      {/* Icon Grid */}
+                      <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 max-h-40 overflow-y-auto p-1 bg-slate-50 rounded-xl border border-slate-200">
+                        {[
+                          { name: 'Search', label: 'Search' },
+                          { name: 'ShieldCheck', label: 'ShieldCheck' },
+                          { name: 'ShieldAlert', label: 'ShieldAlert' },
+                          { name: 'Phone', label: 'Phone' },
+                          { name: 'Wrench', label: 'Wrench' },
+                          { name: 'Battery', label: 'Battery' },
+                          { name: 'Zap', label: 'Zap' },
+                          { name: 'Clock', label: 'Clock' },
+                          { name: 'MapPin', label: 'MapPin' },
+                          { name: 'Mail', label: 'Mail' },
+                          { name: 'CheckCircle2', label: 'Check' },
+                          { name: 'Sparkles', label: 'Sparkles' },
+                          { name: 'Coins', label: 'Coins' },
+                          { name: 'Gift', label: 'Gift' },
+                          { name: 'Package', label: 'Package' },
+                          { name: 'Settings', label: 'Settings' },
+                          { name: 'Activity', label: 'Activity' },
+                          { name: 'HelpCircle', label: 'Help' },
+                          { name: 'FileText', label: 'FileText' },
+                          { name: 'Store', label: 'Store' },
+                          { name: 'Bike', label: 'Bike' },
+                        ].map((iconItem) => {
+                          const isSelected = (actionDraft.icon || '').toLowerCase() === iconItem.name.toLowerCase();
+                          return (
+                            <button
+                              key={iconItem.name}
+                              type="button"
+                              onClick={() =>
+                                setActionDraft({
+                                  ...actionDraft,
+                                  icon: iconItem.name,
+                                  iconType: 'icon',
+                                })
+                              }
+                              className={`flex flex-col items-center justify-center p-2 rounded-xl border text-[10px] font-semibold transition cursor-pointer ${
+                                isSelected
+                                  ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                              }`}
+                            >
+                              <div className="mb-1">
+                                {renderQuickActionIconPreview({ ...actionDraft, icon: iconItem.name, iconType: 'icon' })}
+                              </div>
+                              <span className="truncate max-w-full text-[9px]">{iconItem.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Custom Icon Image Upload */}
+                      <div className="flex items-center gap-2 pt-1">
+                        <label className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 hover:border-blue-400 rounded-lg text-slate-700 font-semibold cursor-pointer">
+                          <Upload size={12} className="text-blue-600" />
+                          <span>Upload Custom Icon PNG/SVG</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const dataUrl = await compressImageFile(file, 128, 128, 0.9);
+                                setActionDraft({
+                                  ...actionDraft,
+                                  iconType: 'image',
+                                  iconImage: dataUrl,
+                                });
+                              }
+                            }}
+                          />
+                        </label>
+                        {actionDraft.iconType === 'image' && actionDraft.iconImage && (
+                          <div className="flex items-center gap-2">
+                            <img
+                              src={resolveImageUrl(actionDraft.iconImage)}
+                              alt="Custom Icon"
+                              className="w-6 h-6 object-contain border rounded"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setActionDraft({ ...actionDraft, iconType: 'icon', iconImage: '' })}
+                              className="text-rose-600 hover:underline text-[11px]"
+                            >
+                              Reset to standard icon
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Color Theme & Custom Palette */}
+                    <div className="space-y-3 border-t border-slate-100 pt-3">
+                      <label className="block font-semibold text-slate-800">Card Color Theme</label>
+                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                        {[
+                          { id: 'blue', label: 'Blue Theme', bg: '#eff6ff', border: '#bfdbfe' },
+                          { id: 'amber', label: 'Amber / Gold', bg: '#fffbeb', border: '#fde68a' },
+                          { id: 'emerald', label: 'Green / Emerald', bg: '#ecfdf5', border: '#a7f3d0' },
+                          { id: 'purple', label: 'Purple / Violet', bg: '#faf5ff', border: '#e9d5ff' },
+                          { id: 'indigo', label: 'Indigo Theme', bg: '#eef2ff', border: '#c7d2fe' },
+                          { id: 'rose', label: 'Rose / Red', bg: '#fff1f2', border: '#fecdd3' },
+                          { id: 'cyan', label: 'Cyan / Teal', bg: '#ecfeff', border: '#a5f3fc' },
+                          { id: 'teal', label: 'Teal Theme', bg: '#f0fdfa', border: '#99f6e4' },
+                          { id: 'slate', label: 'Dark / Slate', bg: '#f1f5f9', border: '#cbd5e1' },
+                          { id: 'custom', label: 'Custom Hex', bg: '#ffffff', border: '#3b82f6' },
+                        ].map((c) => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => setActionDraft({ ...actionDraft, color: c.id })}
+                            className={`p-2 rounded-xl border text-center font-bold transition cursor-pointer text-[11px] ${
+                              actionDraft.color === c.id
+                                ? 'ring-2 ring-blue-500 border-blue-500 font-extrabold shadow-xs'
+                                : 'border-slate-200 hover:border-slate-300'
+                            }`}
+                            style={{ backgroundColor: c.bg }}
+                          >
+                            {c.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Custom Hex Inputs if color === 'custom' */}
+                      {actionDraft.color === 'custom' && (
+                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div>
+                            <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                              Icon Box Background
+                            </label>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="color"
+                                value={actionDraft.customBg || '#eff6ff'}
+                                onChange={(e) => setActionDraft({ ...actionDraft, customBg: e.target.value })}
+                                className="w-7 h-7 rounded cursor-pointer border p-0.5"
+                              />
+                              <input
+                                type="text"
+                                value={actionDraft.customBg || '#eff6ff'}
+                                onChange={(e) => setActionDraft({ ...actionDraft, customBg: e.target.value })}
+                                className="w-full bg-white border border-slate-300 rounded-lg p-1.5 text-xs font-mono"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                              Icon / Accent Color
+                            </label>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="color"
+                                value={actionDraft.customColor || '#2563eb'}
+                                onChange={(e) => setActionDraft({ ...actionDraft, customColor: e.target.value })}
+                                className="w-7 h-7 rounded cursor-pointer border p-0.5"
+                              />
+                              <input
+                                type="text"
+                                value={actionDraft.customColor || '#2563eb'}
+                                onChange={(e) => setActionDraft({ ...actionDraft, customColor: e.target.value })}
+                                className="w-full bg-white border border-slate-300 rounded-lg p-1.5 text-xs font-mono"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                              Title Text Color
+                            </label>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="color"
+                                value={actionDraft.customTextColor || '#1e293b'}
+                                onChange={(e) => setActionDraft({ ...actionDraft, customTextColor: e.target.value })}
+                                className="w-7 h-7 rounded cursor-pointer border p-0.5"
+                              />
+                              <input
+                                type="text"
+                                value={actionDraft.customTextColor || '#1e293b'}
+                                onChange={(e) => setActionDraft({ ...actionDraft, customTextColor: e.target.value })}
+                                className="w-full bg-white border border-slate-300 rounded-lg p-1.5 text-xs font-mono"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Modal Footer */}
+                  <div className="p-4 border-t border-slate-100 flex items-center justify-between bg-slate-50">
+                    <button
+                      type="button"
+                      onClick={() => setActionModalOpen(false)}
+                      className="px-5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-bold transition cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSaveActionDraft}
+                      className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition shadow-xs cursor-pointer flex items-center gap-1.5"
+                    >
+                      <CheckCircle2 size={16} />
+                      <span>{editingActionIndex !== null ? 'Save Changes' : 'Add Action Card'}</span>
                     </button>
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Bottom Save Bar */}

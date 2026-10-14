@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Content, IServiceCard } from '../models/Content';
+import { Content, IServiceCard, IQuickActionItem, IQuickActionsConfig } from '../models/Content';
 import { ReferralSettings } from '../models/ReferralSettings';
 
 export const defaultServiceCards: IServiceCard[] = [
@@ -317,6 +317,114 @@ Bulk battery orders applicable as per Minimum Order Quantity (MOQ 5 / MOQ 10) te
   isPublished: true,
 };
 
+export const defaultQuickActionsConfig: IQuickActionsConfig = {
+  isVisible: true,
+  sectionBadge: 'QUICK UTILITIES',
+  showSectionBadge: false,
+  sectionTitle: 'Quick Access Directory',
+  sectionSubtitle: 'Essential customer services and warranty utilities',
+  showSectionHeader: false,
+  bgType: 'color',
+  bgColor: '#ffffff',
+  bgGradientStart: '#0f172a',
+  bgGradientEnd: '#1e293b',
+  bgGradientDirection: 'to-r',
+  bgImage: '',
+  bgOverlayOpacity: 0.8,
+  bgOverlayColor: '#000000',
+  bgPosition: 'center',
+  bgSize: 'cover',
+  bgBlur: 0,
+  cardBgColor: '#ffffff',
+  cardBorderColor: '#e2e8f0',
+  cardBorderRadius: 'rounded-3xl',
+  cardShadow: 'shadow-sm',
+  showDividers: true,
+  dividerColor: '#e2e8f0',
+  textColor: '#1e293b',
+  subtitleColor: '#64748b',
+  layoutStyle: 'horizontal',
+};
+
+export const defaultQuickActions: IQuickActionItem[] = [
+  {
+    id: 'act-track',
+    title: 'Track Ticket',
+    subtitle: 'Live complaint inspection status',
+    url: '/complaint/track',
+    icon: 'Search',
+    iconType: 'icon',
+    iconImage: '',
+    color: 'blue',
+    customColor: '',
+    customBg: '',
+    customTextColor: '',
+    isVisible: true,
+    order: 1,
+    target: '_self',
+    showExternalIcon: false,
+    badge: '',
+    badgeColor: '',
+  },
+  {
+    id: 'act-warranty-reg',
+    title: 'Warranty Registration',
+    subtitle: 'Register new sales & serial number',
+    url: '/warranty/register',
+    icon: 'ShieldCheck',
+    iconType: 'icon',
+    iconImage: '',
+    color: 'amber',
+    customColor: '',
+    customBg: '',
+    customTextColor: '',
+    isVisible: true,
+    order: 2,
+    target: '_blank',
+    showExternalIcon: true,
+    badge: '',
+    badgeColor: '',
+  },
+  {
+    id: 'act-warranty-check',
+    title: 'Check Warranty',
+    subtitle: '3-Yr (48V) & 1.5-Yr (60V/72V) status',
+    url: '/warranty/check',
+    icon: 'ShieldAlert',
+    iconType: 'icon',
+    iconImage: '',
+    color: 'emerald',
+    customColor: '',
+    customBg: '',
+    customTextColor: '',
+    isVisible: true,
+    order: 3,
+    target: '_blank',
+    showExternalIcon: true,
+    badge: '',
+    badgeColor: '',
+  },
+  {
+    id: 'act-contact',
+    title: 'Contact Directory',
+    subtitle: 'Kota Plant +91 8949049003',
+    url: '/contact',
+    icon: 'Phone',
+    iconType: 'icon',
+    iconImage: '',
+    color: 'purple',
+    customColor: '',
+    customBg: '',
+    customTextColor: '',
+    isVisible: true,
+    order: 4,
+    target: '_self',
+    showExternalIcon: false,
+    badge: '',
+    badgeColor: '',
+  },
+];
+
 export const defaultCustomerLoginTimer = {
   enabled: true,
   durationSeconds: 20,
@@ -393,6 +501,14 @@ export const getOrCreateDefaultContent = async () => {
       content.hero = defaultHeroData;
       modified = true;
     }
+    if (!content.quickActionsConfig || typeof content.quickActionsConfig.isVisible === 'undefined') {
+      content.quickActionsConfig = defaultQuickActionsConfig;
+      modified = true;
+    }
+    if (!content.quickActions || content.quickActions.length === 0) {
+      content.quickActions = defaultQuickActions as any;
+      modified = true;
+    }
     if (modified) {
       await content.save();
     }
@@ -451,6 +567,7 @@ export const getPublicContent = async (_req: Request, res: Response) => {
           plantBtnText: 'View Plant Contact Details',
           plantBtnLink: '/contact',
         },
+        quickActionsConfig: content.quickActionsConfig || defaultQuickActionsConfig,
         quickActions: (content.quickActions || []).filter((q) => q.isVisible !== false),
         referralSettings,
         contactInfo: content.contactInfo || defaultContactData,
@@ -511,6 +628,7 @@ export const updateAdminContent = async (req: Request, res: Response) => {
       portalLinks,
       customerLoginTimer,
       batteryBanner,
+      quickActionsConfig,
       quickActions,
       footer,
       privacyPolicy,
@@ -558,6 +676,10 @@ export const updateAdminContent = async (req: Request, res: Response) => {
     if (batteryBanner) {
       content.batteryBanner = { ...(content.batteryBanner || {}), ...batteryBanner };
       content.markModified('batteryBanner');
+    }
+    if (quickActionsConfig) {
+      content.quickActionsConfig = { ...(content.quickActionsConfig || {}), ...quickActionsConfig };
+      content.markModified('quickActionsConfig');
     }
     if (quickActions) {
       content.quickActions = quickActions;
@@ -638,54 +760,15 @@ export const resetContentToDefaults = async (_req: Request, res: Response) => {
       plantBtnText: 'View Plant Contact Details',
       plantBtnLink: '/contact',
     };
-    content.quickActions = [
-      {
-        id: 'act-track',
-        title: 'Track Ticket',
-        subtitle: 'Live complaint inspection status',
-        url: '/complaint/track',
-        icon: 'Search',
-        color: 'blue',
-        isVisible: true,
-        order: 1,
-      },
-      {
-        id: 'act-warranty-reg',
-        title: 'Warranty Registration',
-        subtitle: 'Register new sales & serial number',
-        url: '/warranty/register',
-        icon: 'ShieldCheck',
-        color: 'amber',
-        isVisible: true,
-        order: 2,
-      },
-      {
-        id: 'act-warranty-check',
-        title: 'Check Warranty',
-        subtitle: '3-Yr (48V) & 1.5-Yr (60V/72V) status',
-        url: '/warranty/check',
-        icon: 'ShieldAlert',
-        color: 'emerald',
-        isVisible: true,
-        order: 3,
-      },
-      {
-        id: 'act-contact',
-        title: 'Contact Directory',
-        subtitle: 'Kota Plant +91 8949049003',
-        url: '/contact',
-        icon: 'Phone',
-        color: 'purple',
-        isVisible: true,
-        order: 4,
-      },
-    ];
+    content.quickActionsConfig = defaultQuickActionsConfig;
+    content.quickActions = defaultQuickActions as any;
 
     content.markModified('topBar');
     content.markModified('headerNav');
     content.markModified('serviceCards');
     content.markModified('hero');
     content.markModified('batteryBanner');
+    content.markModified('quickActionsConfig');
     content.markModified('quickActions');
     content.markModified('footer');
     content.markModified('contactInfo');
