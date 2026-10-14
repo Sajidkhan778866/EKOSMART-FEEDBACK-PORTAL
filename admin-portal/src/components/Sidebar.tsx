@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   Home,
   Users,
@@ -13,6 +13,7 @@ import {
   Package,
   Receipt,
   Coins,
+  Phone,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { EbsLogo } from './EbsLogo';
@@ -25,6 +26,7 @@ interface SidebarProps {
 const Sidebar = ({ onClose }: SidebarProps) => {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const menuItems = [
     { name: 'Dashboard', path: '/dashboard', icon: <Home size={18} /> },
@@ -37,6 +39,7 @@ const Sidebar = ({ onClose }: SidebarProps) => {
     { name: 'Customers', path: '/customers', icon: <UserCheck size={18} /> },
     { name: 'Form Builder', path: '/forms', icon: <FileText size={18} /> },
     { name: 'Content CMS', path: '/cms', icon: <LayoutTemplate size={18} /> },
+    { name: 'Contact Page CMS', path: '/cms?tab=contact', icon: <Phone size={18} /> },
     { name: 'Reports', path: '/reports', icon: <BarChart2 size={18} /> },
     { name: 'Settings', path: '/settings', icon: <Settings size={18} /> },
   ];
@@ -64,23 +67,28 @@ const Sidebar = ({ onClose }: SidebarProps) => {
 
       {/* Navigation List */}
       <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
-        {menuItems.map((item) => (
-          <NavLink
-            key={item.name}
-            to={item.path}
-            onClick={() => onClose?.()}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all font-medium text-xs ${
-                isActive
+        {menuItems.map((item) => {
+          const isContactTab = location.search.includes('tab=contact');
+          const isCurrent = item.path.includes('tab=contact')
+            ? isContactTab && location.pathname === '/cms'
+            : location.pathname === item.path && (!isContactTab || item.path !== '/cms');
+
+          return (
+            <NavLink
+              key={item.name}
+              to={item.path}
+              onClick={() => onClose?.()}
+              className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all font-medium text-xs ${
+                isCurrent
                   ? 'bg-green-900/60 text-green-400 border border-green-700/50 shadow-inner'
                   : 'text-slate-300 hover:bg-white/5 hover:text-white'
-              }`
-            }
-          >
-            {item.icon}
-            <span>{item.name}</span>
-          </NavLink>
-        ))}
+              }`}
+            >
+              {item.icon}
+              <span>{item.name}</span>
+            </NavLink>
+          );
+        })}
       </nav>
 
       {/* User Info & Logout */}

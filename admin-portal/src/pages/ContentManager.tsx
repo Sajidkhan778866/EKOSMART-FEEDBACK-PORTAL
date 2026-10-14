@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   LayoutTemplate,
   CreditCard,
@@ -1109,9 +1110,34 @@ const compressImageFile = (
 };
 
 const ContentManager = () => {
-  const [activeTab, setActiveTab] = useState<
-    'cards' | 'hero' | 'rewards' | 'banner' | 'policies' | 'footer' | 'contact' | 'loginTimer'
-  >('cards');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const validTabs = ['cards', 'hero', 'rewards', 'banner', 'policies', 'footer', 'contact', 'loginTimer'] as const;
+  type TabType = (typeof validTabs)[number];
+
+  const paramTab = searchParams.get('tab');
+  const initialTab: TabType = paramTab && (validTabs as readonly string[]).includes(paramTab) ? (paramTab as TabType) : 'cards';
+
+  const [activeTab, setActiveTab] = useState<TabType>(initialTab);
+  const [contactSubTab, setContactSubTab] = useState<'all' | 'cards' | 'dossier' | 'form' | 'divisions' | 'header' | 'coordinates'>('all');
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && (validTabs as readonly string[]).includes(tabParam)) {
+      setActiveTab(tabParam as TabType);
+    }
+  }, [searchParams]);
+
+  const handleTabChange = (newTab: TabType) => {
+    setActiveTab(newTab);
+    if (newTab === 'cards') {
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete('tab');
+      setSearchParams(nextParams);
+    } else {
+      setSearchParams({ tab: newTab });
+    }
+  };
+
   const [content, setContent] = useState<ICMSContent>(defaultFallbackContent);
   const [referralSettings, setReferralSettings] = useState<{
     enabled: boolean;
@@ -1902,7 +1928,7 @@ const ContentManager = () => {
       {/* Navigation Tabs */}
       <div className="flex border-b border-slate-200 space-x-2 overflow-x-auto">
         <button
-          onClick={() => setActiveTab('cards')}
+          onClick={() => handleTabChange('cards')}
           className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition cursor-pointer shrink-0 ${
             activeTab === 'cards'
               ? 'border-green-600 text-green-700'
@@ -1914,7 +1940,7 @@ const ContentManager = () => {
         </button>
 
         <button
-          onClick={() => setActiveTab('hero')}
+          onClick={() => handleTabChange('hero')}
           className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition cursor-pointer shrink-0 ${
             activeTab === 'hero'
               ? 'border-green-600 text-green-700'
@@ -1926,7 +1952,7 @@ const ContentManager = () => {
         </button>
 
         <button
-          onClick={() => setActiveTab('rewards')}
+          onClick={() => handleTabChange('rewards')}
           className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition cursor-pointer shrink-0 ${
             activeTab === 'rewards'
               ? 'border-green-600 text-green-700'
@@ -1938,7 +1964,7 @@ const ContentManager = () => {
         </button>
 
         <button
-          onClick={() => setActiveTab('banner')}
+          onClick={() => handleTabChange('banner')}
           className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition cursor-pointer shrink-0 ${
             activeTab === 'banner'
               ? 'border-green-600 text-green-700'
@@ -1950,7 +1976,7 @@ const ContentManager = () => {
         </button>
 
         <button
-          onClick={() => setActiveTab('policies')}
+          onClick={() => handleTabChange('policies')}
           className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition cursor-pointer shrink-0 ${
             activeTab === 'policies'
               ? 'border-green-600 text-green-700'
@@ -1962,7 +1988,7 @@ const ContentManager = () => {
         </button>
 
         <button
-          onClick={() => setActiveTab('footer')}
+          onClick={() => handleTabChange('footer')}
           className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition cursor-pointer shrink-0 ${
             activeTab === 'footer'
               ? 'border-green-600 text-green-700'
@@ -1974,19 +2000,22 @@ const ContentManager = () => {
         </button>
 
         <button
-          onClick={() => setActiveTab('contact')}
+          onClick={() => handleTabChange('contact')}
           className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition cursor-pointer shrink-0 ${
             activeTab === 'contact'
-              ? 'border-green-600 text-green-700'
+              ? 'border-emerald-600 text-emerald-800 bg-emerald-50/60'
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
-          <Phone size={18} />
-          <span>Contact & Dropdowns</span>
+          <Phone size={18} className="text-emerald-600" />
+          <span>Contact Us Page (Cards, Dossier, Form)</span>
+          <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+            Softcoded
+          </span>
         </button>
 
         <button
-          onClick={() => setActiveTab('loginTimer')}
+          onClick={() => handleTabChange('loginTimer')}
           className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition cursor-pointer shrink-0 ${
             activeTab === 'loginTimer'
               ? 'border-green-600 text-green-700'
@@ -9797,7 +9826,55 @@ const ContentManager = () => {
       {/* TAB 5: CONTACT US & DROPDOWN MENU */}
       {activeTab === 'contact' && (
         <div className="space-y-6">
+          {/* Quick-Jump Module Navigator */}
+          <div className="bg-gradient-to-r from-slate-900 to-slate-950 text-white rounded-2xl p-4 shadow-lg border border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sticky top-16 z-20">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center font-bold">
+                <Phone size={18} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-extrabold text-white tracking-wide">
+                    Contact Us Page Management
+                  </h3>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+                    Live Frontend Linked
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Click a module below to jump directly to its editor or view all softcoded cards, dossier & inquiry form.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-1.5 w-full md:w-auto">
+              {[
+                { id: 'all', label: 'All Modules' },
+                { id: 'cards', label: 'Top 4 Contact Cards' },
+                { id: 'dossier', label: 'Company Dossier' },
+                { id: 'form', label: 'Inquiry Form' },
+                { id: 'divisions', label: `Concern Divisions (${content.contactInfo?.dropdownOptions?.length || 0})` },
+                { id: 'header', label: 'Header Banner' },
+                { id: 'coordinates', label: 'Coordinates' },
+              ].map((sub) => (
+                <button
+                  key={sub.id}
+                  type="button"
+                  onClick={() => setContactSubTab(sub.id as any)}
+                  className={`text-xs px-3 py-1.5 rounded-xl font-bold transition cursor-pointer border ${
+                    contactSubTab === sub.id
+                      ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-sm'
+                      : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
+                  }`}
+                >
+                  {sub.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Section 1: Dynamic Concern Division Dropdown Options */}
+          {(contactSubTab === 'all' || contactSubTab === 'divisions') && (
           <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-5">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-slate-100 pb-4">
               <div>
@@ -9995,7 +10072,22 @@ const ContentManager = () => {
                       </div>
 
                       {/* Summary & Controls */}
-                      <div className="flex items-center justify-between sm:justify-end gap-1.5 shrink-0 pl-8 sm:pl-0">
+                      <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pl-8 sm:pl-0">
+                        {/* Quick Contact Summary (Visible when collapsed) */}
+                        {!isExpanded && (
+                          <div className="hidden md:flex items-center gap-2 text-[11px] bg-white px-2.5 py-1 rounded-lg border border-slate-200 text-slate-600 shadow-2xs">
+                            <span className="font-mono font-bold text-emerald-700">{divContact.phone || content.contactInfo?.helplinePhone}</span>
+                            <span className="text-slate-300">|</span>
+                            <span className="text-slate-700 font-medium truncate max-w-[130px]">{divContact.inCharge || 'Specialist'}</span>
+                            {divContact.email && (
+                              <>
+                                <span className="text-slate-300">|</span>
+                                <span className="text-blue-600 truncate max-w-[130px]">{divContact.email}</span>
+                              </>
+                            )}
+                          </div>
+                        )}
+
                         <button
                           type="button"
                           onClick={() => setExpandedDivision(isExpanded ? null : opt)}
@@ -10180,8 +10272,10 @@ const ContentManager = () => {
               })}
             </div>
           </div>
+          )}
 
           {/* Section 2: Contact Page Content & Headings */}
+          {(contactSubTab === 'all' || contactSubTab === 'header') && (
           <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
               <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
@@ -10251,8 +10345,10 @@ const ContentManager = () => {
               </div>
             </div>
           </div>
+          )}
 
           {/* Section 2B: Top 4 Contact Cards Content */}
+          {(contactSubTab === 'all' || contactSubTab === 'cards') && (
           <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
             <h3 className="text-base font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3">
               <Layers className="text-green-600" size={20} />
@@ -10494,8 +10590,10 @@ const ContentManager = () => {
               </div>
             </div>
           </div>
+          )}
 
           {/* Section 2C: Plant Dossier Card (Left Column) */}
+          {(contactSubTab === 'all' || contactSubTab === 'dossier') && (
           <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
             <h3 className="text-base font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3">
               <Building2 className="text-emerald-600" size={20} />
@@ -10584,8 +10682,10 @@ const ContentManager = () => {
               </div>
             </div>
           </div>
+          )}
 
           {/* Section 2D: Send an Official Inquiry Form Settings */}
+          {(contactSubTab === 'all' || contactSubTab === 'form') && (
           <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
             <h3 className="text-base font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3">
               <FileText className="text-blue-600" size={20} />
@@ -10674,8 +10774,10 @@ const ContentManager = () => {
               </div>
             </div>
           </div>
+          )}
 
           {/* Section 2E: Division Directory Section Settings */}
+          {(contactSubTab === 'all' || contactSubTab === 'divisions') && (
           <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
             <h3 className="text-base font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3">
               <Building2 className="text-purple-600" size={20} />
@@ -10732,8 +10834,10 @@ const ContentManager = () => {
               </div>
             </div>
           </div>
+          )}
 
           {/* Section 3: Official Communication Channels & Address */}
+          {(contactSubTab === 'all' || contactSubTab === 'coordinates') && (
           <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
             <h3 className="text-base font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3">
               <Phone className="text-green-600" size={20} />
@@ -10896,6 +11000,7 @@ const ContentManager = () => {
               </div>
             </div>
           </div>
+          )}
 
           {/* Section 4: Bottom Save & Preview Bar */}
           <div className="bg-slate-900 text-white rounded-2xl p-5 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-lg">
