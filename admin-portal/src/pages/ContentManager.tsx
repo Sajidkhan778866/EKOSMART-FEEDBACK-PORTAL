@@ -2032,6 +2032,28 @@ const ContentManager = () => {
     });
   };
 
+  const SectionSaveButton = ({
+    label = 'Save Changes',
+    compact = false,
+    className = '',
+  }: {
+    label?: string;
+    compact?: boolean;
+    className?: string;
+  }) => (
+    <button
+      type="button"
+      onClick={handleSave}
+      disabled={saving}
+      className={`px-3.5 py-1.5 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white rounded-xl ${
+        compact ? 'text-[11px] py-1 px-2.5' : 'text-xs'
+      } font-bold transition flex items-center gap-1.5 shadow-sm disabled:opacity-50 cursor-pointer shrink-0 ${className}`}
+    >
+      <Save size={compact ? 12 : 13} />
+      <span>{saving ? 'Saving...' : label}</span>
+    </button>
+  );
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-12">
@@ -2269,6 +2291,7 @@ const ContentManager = () => {
                     Add New Card {selectedSectionFilter !== 'all' ? `to ${selectedSectionFilter}` : ''}
                   </span>
                 </button>
+                <SectionSaveButton label="Save Cards" />
               </div>
             </div>
 
@@ -3155,20 +3178,23 @@ const ContentManager = () => {
                 </p>
               </div>
 
-              <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
-                <input
-                  type="checkbox"
-                  checked={content.topBar?.isVisible ?? true}
-                  onChange={(e) =>
-                    setContent({
-                      ...content,
-                      topBar: { ...(content.topBar || {}), isVisible: e.target.checked },
-                    })
-                  }
-                  className="rounded text-green-600 focus:ring-green-500 h-4 w-4"
-                />
-                <span>Enable Top Bar</span>
-              </label>
+              <div className="flex items-center gap-2">
+                <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
+                  <input
+                    type="checkbox"
+                    checked={content.topBar?.isVisible ?? true}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        topBar: { ...(content.topBar || {}), isVisible: e.target.checked },
+                      })
+                    }
+                    className="rounded text-green-600 focus:ring-green-500 h-4 w-4"
+                  />
+                  <span>Enable Top Bar</span>
+                </label>
+                <SectionSaveButton label="Save Top Bar" compact />
+              </div>
             </div>
 
             {(content.topBar?.isVisible ?? true) && (
@@ -3425,41 +3451,44 @@ const ContentManager = () => {
             <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-4">
               <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
                 <span className="font-bold text-slate-800 text-xs">Brand Emblem & Logo Configuration</span>
-                <div className="flex bg-slate-200 p-0.5 rounded-lg text-xs self-start sm:self-auto">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setContent({
-                        ...content,
-                        hero: { ...content.hero, logoType: 'preset' },
-                        headerNav: { ...(content.headerNav || {}), logoType: 'preset' },
-                      })
-                    }
-                    className={`px-3 py-1 rounded-md font-bold text-[11px] transition cursor-pointer ${
-                      ((content.headerNav?.logoType || content.hero.logoType) || 'preset') === 'preset'
-                        ? 'bg-white text-green-700 shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    Preset SVG Emblem
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setContent({
-                        ...content,
-                        hero: { ...content.hero, logoType: 'image' },
-                        headerNav: { ...(content.headerNav || {}), logoType: 'image' },
-                      })
-                    }
-                    className={`px-3 py-1 rounded-md font-bold text-[11px] transition cursor-pointer ${
-                      (content.headerNav?.logoType || content.hero.logoType) === 'image'
-                        ? 'bg-white text-green-700 shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    Custom Image Logo
-                  </button>
+                <div className="flex items-center gap-2">
+                  <div className="flex bg-slate-200 p-0.5 rounded-lg text-xs self-start sm:self-auto">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setContent({
+                          ...content,
+                          hero: { ...content.hero, logoType: 'preset' },
+                          headerNav: { ...(content.headerNav || {}), logoType: 'preset' },
+                        })
+                      }
+                      className={`px-3 py-1 rounded-md font-bold text-[11px] transition cursor-pointer ${
+                        ((content.headerNav?.logoType || content.hero.logoType) || 'preset') === 'preset'
+                          ? 'bg-white text-green-700 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Preset SVG Emblem
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setContent({
+                          ...content,
+                          hero: { ...content.hero, logoType: 'image' },
+                          headerNav: { ...(content.headerNav || {}), logoType: 'image' },
+                        })
+                      }
+                      className={`px-3 py-1 rounded-md font-bold text-[11px] transition cursor-pointer ${
+                        (content.headerNav?.logoType || content.hero.logoType) === 'image'
+                          ? 'bg-white text-green-700 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Custom Image Logo
+                    </button>
+                  </div>
+                  <SectionSaveButton label="Save Logo" compact />
                 </div>
               </div>
 
@@ -3634,7 +3663,10 @@ const ContentManager = () => {
 
             {/* Navbar Navigation Buttons & Styling */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-4 text-xs">
-              <span className="font-bold text-slate-800 text-xs block">Navbar Navigation Links & Account Button</span>
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                <span className="font-bold text-slate-800 text-xs block">Navbar Navigation Links & Account Button</span>
+                <SectionSaveButton label="Save Nav Links" compact />
+              </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {/* 1. Home Link */}
@@ -3890,39 +3922,42 @@ const ContentManager = () => {
                 </p>
               </div>
 
-              <div className="flex bg-slate-200 p-0.5 rounded-lg text-xs self-start sm:self-auto">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setContent({
-                      ...content,
-                      hero: { ...content.hero, complaintLogoType: 'preset' },
-                    })
-                  }
-                  className={`px-3 py-1 rounded-md font-bold text-[11px] transition cursor-pointer ${
-                    (content.hero.complaintLogoType || 'preset') === 'preset'
-                      ? 'bg-white text-emerald-800 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Preset Smart Drive Emblem
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setContent({
-                      ...content,
-                      hero: { ...content.hero, complaintLogoType: 'image' },
-                    })
-                  }
-                  className={`px-3 py-1 rounded-md font-bold text-[11px] transition cursor-pointer ${
-                    content.hero.complaintLogoType === 'image'
-                      ? 'bg-white text-emerald-800 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Custom Image Logo
-                </button>
+              <div className="flex items-center gap-2">
+                <div className="flex bg-slate-200 p-0.5 rounded-lg text-xs self-start sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setContent({
+                        ...content,
+                        hero: { ...content.hero, complaintLogoType: 'preset' },
+                      })
+                    }
+                    className={`px-3 py-1 rounded-md font-bold text-[11px] transition cursor-pointer ${
+                      (content.hero.complaintLogoType || 'preset') === 'preset'
+                        ? 'bg-white text-emerald-800 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Preset Smart Drive Emblem
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setContent({
+                        ...content,
+                        hero: { ...content.hero, complaintLogoType: 'image' },
+                      })
+                    }
+                    className={`px-3 py-1 rounded-md font-bold text-[11px] transition cursor-pointer ${
+                      content.hero.complaintLogoType === 'image'
+                        ? 'bg-white text-emerald-800 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Custom Image Logo
+                  </button>
+                </div>
+                <SectionSaveButton label="Save Logo" compact />
               </div>
             </div>
 
@@ -4040,7 +4075,8 @@ const ContentManager = () => {
                 </p>
               </div>
 
-              <div className="flex bg-slate-200 p-1 rounded-xl text-xs self-start sm:self-auto gap-1">
+              <div className="flex items-center gap-2">
+                <div className="flex bg-slate-200 p-1 rounded-xl text-xs self-start sm:self-auto gap-1">
                 <button
                   type="button"
                   onClick={() =>
@@ -4096,6 +4132,8 @@ const ContentManager = () => {
                   )}
                 </button>
               </div>
+              <SectionSaveButton label="Save Hero Style" compact />
+            </div>
             </div>
 
             {/* GRADIENT MODE CONTROLS */}
@@ -4679,10 +4717,13 @@ const ContentManager = () => {
 
           {/* 5. TOP PILL BADGE & MAIN SLOGANS (100% SOFT-CODED) */}
           <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4 text-xs">
-            <label className="font-bold text-slate-800 text-sm flex items-center gap-2">
-              <Sparkles size={16} className="text-amber-500" />
-              <span>Top Pill Badge, Heading & Welcome Subheading</span>
-            </label>
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+              <label className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                <Sparkles size={16} className="text-amber-500" />
+                <span>Top Pill Badge, Heading & Welcome Subheading</span>
+              </label>
+              <SectionSaveButton label="Save Headlines" compact />
+            </div>
 
             {/* Pill Badge */}
             <div className="p-4 bg-white rounded-xl border border-slate-200 space-y-3">
@@ -4814,14 +4855,17 @@ const ContentManager = () => {
 
           {/* 6. 3 CORE FEATURE HIGHLIGHTS (100% SOFT-CODED) */}
           <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4 text-xs">
-            <div>
-              <label className="font-bold text-slate-800 text-sm flex items-center gap-2">
-                <Zap size={16} className="text-yellow-500" />
-                <span>3 Feature Highlight Badges (Under Subheading)</span>
-              </label>
-              <p className="text-[11px] text-slate-500">
-                Customize the icon, label, accent color, and visibility for each of the 3 highlights.
-              </p>
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+              <div>
+                <label className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                  <Zap size={16} className="text-yellow-500" />
+                  <span>3 Feature Highlight Badges (Under Subheading)</span>
+                </label>
+                <p className="text-[11px] text-slate-500">
+                  Customize the icon, label, accent color, and visibility for each of the 3 highlights.
+                </p>
+              </div>
+              <SectionSaveButton label="Save Highlights" compact />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -5084,14 +5128,17 @@ const ContentManager = () => {
 
           {/* 7. HERO CTA ACTION BUTTONS (100% SOFT-CODED) */}
           <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4 text-xs">
-            <div>
-              <label className="font-bold text-slate-800 text-sm flex items-center gap-2">
-                <CheckCircle size={16} className="text-green-600" />
-                <span>Hero Call-to-Action (CTA) Action Buttons</span>
-              </label>
-              <p className="text-[11px] text-slate-500">
-                Configure labels, URLs, window target, background colors, text colors, and visibility switches.
-              </p>
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+              <div>
+                <label className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                  <CheckCircle size={16} className="text-green-600" />
+                  <span>Hero Call-to-Action (CTA) Action Buttons</span>
+                </label>
+                <p className="text-[11px] text-slate-500">
+                  Configure labels, URLs, window target, background colors, text colors, and visibility switches.
+                </p>
+              </div>
+              <SectionSaveButton label="Save CTA Buttons" compact />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -5371,10 +5418,13 @@ const ContentManager = () => {
 
           {/* 8. REAL-TIME LIVE COMPLETE HEADER & HERO PREVIEW */}
           <div className="space-y-3 pt-2">
-            <label className="block font-bold text-slate-800 text-sm flex items-center gap-2">
-              <Sparkles size={16} className="text-emerald-600" />
-              <span>Real-Time Live Header & Hero Banner Preview</span>
-            </label>
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+              <label className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                <Sparkles size={16} className="text-emerald-600" />
+                <span>Real-Time Live Header & Hero Banner Preview</span>
+              </label>
+              <SectionSaveButton label="Save Hero Settings" compact />
+            </div>
 
             <div className="rounded-2xl border border-slate-300 overflow-hidden shadow-lg">
               {/* Preview Top Bar */}
@@ -5629,6 +5679,11 @@ const ContentManager = () => {
               </div>
             </div>
           </div>
+
+          {/* Bottom Save Bar for Hero */}
+          <div className="flex justify-end pt-4 border-t border-slate-100">
+            <SectionSaveButton label="Save Hero & Header Suite" />
+          </div>
         </div>
       )}
 
@@ -5646,15 +5701,18 @@ const ContentManager = () => {
                   Configure coin reward rules for battery purchases, showroom billings, friend referrals, and digital wallet store credit conversion.
                 </p>
               </div>
-              <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer self-start sm:self-auto bg-amber-50 px-3.5 py-1.5 rounded-xl border border-amber-200">
-                <input
-                  type="checkbox"
-                  checked={referralSettings.enabled ?? true}
-                  onChange={(e) => setReferralSettings({ ...referralSettings, enabled: e.target.checked })}
-                  className="rounded text-amber-600 focus:ring-amber-500 h-4 w-4"
-                />
-                <span className="font-bold text-amber-900">Enable Rewards & Referral System</span>
-              </label>
+              <div className="flex items-center gap-2">
+                <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer self-start sm:self-auto bg-amber-50 px-3.5 py-1.5 rounded-xl border border-amber-200">
+                  <input
+                    type="checkbox"
+                    checked={referralSettings.enabled ?? true}
+                    onChange={(e) => setReferralSettings({ ...referralSettings, enabled: e.target.checked })}
+                    className="rounded text-amber-600 focus:ring-amber-500 h-4 w-4"
+                  />
+                  <span className="font-bold text-amber-900">Enable Rewards & Referral System</span>
+                </label>
+                <SectionSaveButton label="Save Rewards" compact />
+              </div>
             </div>
 
             {/* Coin Configuration Settings Cards Grid */}
@@ -5935,6 +5993,7 @@ const ContentManager = () => {
                     </>
                   )}
                 </button>
+                <SectionSaveButton label="Save Banner" compact />
               </div>
             </div>
 
@@ -5945,9 +6004,12 @@ const ContentManager = () => {
                   <Palette size={15} className="text-teal-600" />
                   <span>Banner Background Mode & Styling</span>
                 </label>
-                <span className="text-[11px] font-mono text-slate-500">
-                  Mode: <strong className="text-teal-700 uppercase">{content.batteryBanner?.bgType || 'gradient'}</strong>
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-mono text-slate-500">
+                    Mode: <strong className="text-teal-700 uppercase">{content.batteryBanner?.bgType || 'gradient'}</strong>
+                  </span>
+                  <SectionSaveButton label="Save Style" compact />
+                </div>
               </div>
 
               {/* Mode Selector Tabs */}
@@ -6488,21 +6550,24 @@ const ContentManager = () => {
                   <Tag size={15} className="text-teal-600" />
                   <span>Badge Tagline & Section Typography</span>
                 </label>
-                <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={content.batteryBanner?.showBadge ?? true}
-                    onChange={(e) => {
-                      const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
-                      setContent({
-                        ...content,
-                        batteryBanner: { ...cur, showBadge: e.target.checked },
-                      });
-                    }}
-                    className="rounded text-teal-600 h-3.5 w-3.5"
-                  />
-                  <span>Show Tagline Badge</span>
-                </label>
+                <div className="flex items-center gap-2">
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={content.batteryBanner?.showBadge ?? true}
+                      onChange={(e) => {
+                        const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                        setContent({
+                          ...content,
+                          batteryBanner: { ...cur, showBadge: e.target.checked },
+                        });
+                      }}
+                      className="rounded text-teal-600 h-3.5 w-3.5"
+                    />
+                    <span>Show Tagline Badge</span>
+                  </label>
+                  <SectionSaveButton label="Save Typography" compact />
+                </div>
               </div>
 
               {/* Badge controls */}
@@ -6717,7 +6782,10 @@ const ContentManager = () => {
                   <ShieldCheck size={15} className="text-teal-600" />
                   <span>Technical Highlights Suite (Up to 4 Bullet Points)</span>
                 </label>
-                <span className="text-[11px] text-slate-500 font-medium">Leave text blank to hide a highlight</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] text-slate-500 font-medium hidden sm:inline">Leave text blank to hide a highlight</span>
+                  <SectionSaveButton label="Save Highlights" compact />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
@@ -7021,7 +7089,7 @@ const ContentManager = () => {
 
             {/* 1.5 Contacts & Assistance Card Suite ("and contacts") */}
             <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-200/80 space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
                 <div>
                   <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                     <Phone size={15} className="text-teal-600" />
@@ -7031,21 +7099,24 @@ const ContentManager = () => {
                     Soft-code the direct technical assistance card displayed on the right side of the battery banner.
                   </p>
                 </div>
-                <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={content.batteryBanner?.showContactCard ?? true}
-                    onChange={(e) => {
-                      const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
-                      setContent({
-                        ...content,
-                        batteryBanner: { ...cur, showContactCard: e.target.checked },
-                      });
-                    }}
-                    className="rounded text-teal-600 h-3.5 w-3.5"
-                  />
-                  <span>Show Contact Card</span>
-                </label>
+                <div className="flex items-center gap-2">
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={content.batteryBanner?.showContactCard ?? true}
+                      onChange={(e) => {
+                        const cur = content.batteryBanner || defaultFallbackContent.batteryBanner!;
+                        setContent({
+                          ...content,
+                          batteryBanner: { ...cur, showContactCard: e.target.checked },
+                        });
+                      }}
+                      className="rounded text-teal-600 h-3.5 w-3.5"
+                    />
+                    <span>Show Contact Card</span>
+                  </label>
+                  <SectionSaveButton label="Save Contact Card" compact />
+                </div>
               </div>
 
               {(content.batteryBanner?.showContactCard ?? true) && (
@@ -7855,6 +7926,7 @@ const ContentManager = () => {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
+                  <SectionSaveButton label="Save Bar Style" compact />
                   <span className="text-xs font-semibold text-slate-600">Section Visibility:</span>
                   <button
                     type="button"
@@ -8536,6 +8608,7 @@ const ContentManager = () => {
                     <Plus size={15} />
                     <span>Add New Action</span>
                   </button>
+                  <SectionSaveButton label="Save Actions" />
                 </div>
               </div>
 
@@ -9271,20 +9344,23 @@ const ContentManager = () => {
                 <h3 className="text-base font-bold text-slate-800">Privacy Policy</h3>
                 <p className="text-xs text-slate-500">Rendered at /privacy-policy on the public portal.</p>
               </div>
-              <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={content.privacyPolicy.isPublished}
-                  onChange={(e) =>
-                    setContent({
-                      ...content,
-                      privacyPolicy: { ...content.privacyPolicy, isPublished: e.target.checked },
-                    })
-                  }
-                  className="rounded text-green-600 focus:ring-green-500 h-4 w-4"
-                />
-                <span>Published</span>
-              </label>
+              <div className="flex items-center gap-2">
+                <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={content.privacyPolicy.isPublished}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        privacyPolicy: { ...content.privacyPolicy, isPublished: e.target.checked },
+                      })
+                    }
+                    className="rounded text-green-600 focus:ring-green-500 h-4 w-4"
+                  />
+                  <span>Published</span>
+                </label>
+                <SectionSaveButton label="Save Policy" compact />
+              </div>
             </div>
 
             <div className="space-y-3 text-xs">
@@ -9320,26 +9396,29 @@ const ContentManager = () => {
           </div>
 
           {/* Terms and Conditions */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4 shadow-sm">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
               <div>
                 <h3 className="text-base font-bold text-slate-800">Terms & Conditions</h3>
                 <p className="text-xs text-slate-500">Rendered at /terms-conditions on the public portal.</p>
               </div>
-              <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={content.termsConditions.isPublished}
-                  onChange={(e) =>
-                    setContent({
-                      ...content,
-                      termsConditions: { ...content.termsConditions, isPublished: e.target.checked },
-                    })
-                  }
-                  className="rounded text-green-600 focus:ring-green-500 h-4 w-4"
-                />
-                <span>Published</span>
-              </label>
+              <div className="flex items-center gap-2">
+                <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={content.termsConditions.isPublished}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        termsConditions: { ...content.termsConditions, isPublished: e.target.checked },
+                      })
+                    }
+                    className="rounded text-green-600 focus:ring-green-500 h-4 w-4"
+                  />
+                  <span>Published</span>
+                </label>
+                <SectionSaveButton label="Save Terms" compact />
+              </div>
             </div>
 
             <div className="space-y-3 text-xs">
@@ -9381,20 +9460,23 @@ const ContentManager = () => {
                 <h3 className="text-base font-bold text-slate-800">Refund & Replacement Policy</h3>
                 <p className="text-xs text-slate-500">Rendered at /refund-policy on the public portal.</p>
               </div>
-              <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={content.refundPolicy.isPublished}
-                  onChange={(e) =>
-                    setContent({
-                      ...content,
-                      refundPolicy: { ...content.refundPolicy, isPublished: e.target.checked },
-                    })
-                  }
-                  className="rounded text-green-600 focus:ring-green-500 h-4 w-4"
-                />
-                <span>Published</span>
-              </label>
+              <div className="flex items-center gap-2">
+                <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={content.refundPolicy.isPublished}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        refundPolicy: { ...content.refundPolicy, isPublished: e.target.checked },
+                      })
+                    }
+                    className="rounded text-green-600 focus:ring-green-500 h-4 w-4"
+                  />
+                  <span>Published</span>
+                </label>
+                <SectionSaveButton label="Save Refund Policy" compact />
+              </div>
             </div>
 
             <div className="space-y-3 text-xs">
@@ -9428,17 +9510,25 @@ const ContentManager = () => {
               </div>
             </div>
           </div>
+
+          {/* Bottom Save Bar for Policies */}
+          <div className="flex justify-end pt-2">
+            <SectionSaveButton label="Save All Legal Policies" />
+          </div>
         </div>
       )}
 
       {/* TAB 4: FOOTER & BRANDING */}
       {activeTab === 'footer' && (
         <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-6 shadow-sm">
-          <div>
-            <h2 className="text-base font-bold text-slate-800">Global Footer & Branding</h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Control the company logo branding, name, copyright line, disclaimer, and policy link visibility in the public footer.
-            </p>
+          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+            <div>
+              <h2 className="text-base font-bold text-slate-800">Global Footer & Branding</h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Control the company logo branding, name, copyright line, disclaimer, and policy link visibility in the public footer.
+              </p>
+            </div>
+            <SectionSaveButton label="Save Footer" />
           </div>
 
           {/* Footer Brand Logo Configuration */}
@@ -9454,40 +9544,43 @@ const ContentManager = () => {
                 </p>
               </div>
 
-              {/* Mode Toggle Button Group */}
-              <div className="flex bg-slate-200 p-0.5 rounded-lg text-xs self-start sm:self-auto">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setContent({
-                      ...content,
-                      footer: { ...content.footer, logoType: 'preset' },
-                    })
-                  }
-                  className={`px-3 py-1 rounded-md font-bold text-[11px] transition cursor-pointer ${
-                    (content.footer.logoType || 'preset') === 'preset'
-                      ? 'bg-white text-green-700 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Preset SVG Emblem
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setContent({
-                      ...content,
-                      footer: { ...content.footer, logoType: 'image' },
-                    })
-                  }
-                  className={`px-3 py-1 rounded-md font-bold text-[11px] transition cursor-pointer ${
-                    content.footer.logoType === 'image'
-                      ? 'bg-white text-green-700 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Custom Image Logo
-                </button>
+              <div className="flex items-center gap-2">
+                {/* Mode Toggle Button Group */}
+                <div className="flex bg-slate-200 p-0.5 rounded-lg text-xs self-start sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setContent({
+                        ...content,
+                        footer: { ...content.footer, logoType: 'preset' },
+                      })
+                    }
+                    className={`px-3 py-1 rounded-md font-bold text-[11px] transition cursor-pointer ${
+                      (content.footer.logoType || 'preset') === 'preset'
+                        ? 'bg-white text-green-700 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Preset SVG Emblem
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setContent({
+                        ...content,
+                        footer: { ...content.footer, logoType: 'image' },
+                      })
+                    }
+                    className={`px-3 py-1 rounded-md font-bold text-[11px] transition cursor-pointer ${
+                      content.footer.logoType === 'image'
+                        ? 'bg-white text-green-700 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Custom Image Logo
+                  </button>
+                </div>
+                <SectionSaveButton label="Save Logo" compact />
               </div>
             </div>
 
@@ -9803,14 +9896,17 @@ const ContentManager = () => {
 
             {/* Social Media & WhatsApp Suite Section */}
             <div className="md:col-span-2 bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
-              <div>
-                <h3 className="font-bold text-slate-800 text-xs flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  <span>Social Media & WhatsApp Number Suite (100% Soft-Coded)</span>
-                </h3>
-                <p className="text-[11px] text-slate-500 mt-0.5">
-                  Manage Instagram, Facebook, and the official WhatsApp chat button with real phone dialing & messaging.
-                </p>
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                <div>
+                  <h3 className="font-bold text-slate-800 text-xs flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    <span>Social Media & WhatsApp Number Suite (100% Soft-Coded)</span>
+                  </h3>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Manage Instagram, Facebook, and the official WhatsApp chat button with real phone dialing & messaging.
+                  </p>
+                </div>
+                <SectionSaveButton label="Save Socials & WhatsApp" compact />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -10047,27 +10143,30 @@ const ContentManager = () => {
                     Create custom columns and navigation links to appear in the public website footer.
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const currentCols = [...(content.footer.columns || defaultFallbackContent.footer.columns || [])];
-                    const newCol: IFooterColumn = {
-                      id: `col-${Date.now()}`,
-                      title: `New Column ${currentCols.length + 1}`,
-                      links: [
-                        { label: 'Example Link', href: '/' }
-                      ]
-                    };
-                    setContent({
-                      ...content,
-                      footer: { ...content.footer, columns: [...currentCols, newCol] }
-                    });
-                  }}
-                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer self-start sm:self-auto shadow-xs"
-                >
-                  <Plus size={14} />
-                  <span>Add Column</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const currentCols = [...(content.footer.columns || defaultFallbackContent.footer.columns || [])];
+                      const newCol: IFooterColumn = {
+                        id: `col-${Date.now()}`,
+                        title: `New Column ${currentCols.length + 1}`,
+                        links: [
+                          { label: 'Example Link', href: '/' }
+                        ]
+                      };
+                      setContent({
+                        ...content,
+                        footer: { ...content.footer, columns: [...currentCols, newCol] }
+                      });
+                    }}
+                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer self-start sm:self-auto shadow-xs"
+                  >
+                    <Plus size={14} />
+                    <span>Add Column</span>
+                  </button>
+                  <SectionSaveButton label="Save Columns" compact />
+                </div>
               </div>
 
               {/* Columns Editor List */}
@@ -10679,20 +10778,23 @@ const ContentManager = () => {
                 <Building2 className="text-green-600" size={20} />
                 Contact Us Header & Banner Content
               </h3>
-              <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={content.contactInfo?.isPublished ?? true}
-                  onChange={(e) =>
-                    setContent({
-                      ...content,
-                      contactInfo: { ...content.contactInfo, isPublished: e.target.checked },
-                    })
-                  }
-                  className="rounded text-green-600 focus:ring-green-500 h-4 w-4"
-                />
-                <span>Published & Active</span>
-              </label>
+              <div className="flex items-center gap-2">
+                <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={content.contactInfo?.isPublished ?? true}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        contactInfo: { ...content.contactInfo, isPublished: e.target.checked },
+                      })
+                    }
+                    className="rounded text-green-600 focus:ring-green-500 h-4 w-4"
+                  />
+                  <span>Published & Active</span>
+                </label>
+                <SectionSaveButton label="Save Header" compact />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
@@ -10747,10 +10849,13 @@ const ContentManager = () => {
           {/* Section 2B: Top 4 Contact Cards Content */}
           {(contactSubTab === 'all' || contactSubTab === 'cards') && (
           <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
-            <h3 className="text-base font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3">
-              <Layers className="text-green-600" size={20} />
-              Top 4 Contact Cards Labels & Action Buttons
-            </h3>
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-slate-100 pb-3">
+              <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                <Layers className="text-green-600" size={20} />
+                Top 4 Contact Cards Labels & Action Buttons
+              </h3>
+              <SectionSaveButton label="Save Contact Cards" compact />
+            </div>
 
             {/* Card 1: Direct Helpline Card */}
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
@@ -10992,10 +11097,13 @@ const ContentManager = () => {
           {/* Section 2C: Plant Dossier Card (Left Column) */}
           {(contactSubTab === 'all' || contactSubTab === 'dossier') && (
           <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
-            <h3 className="text-base font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3">
-              <Building2 className="text-emerald-600" size={20} />
-              Company Dossier Card (Plant Credentials & Overview)
-            </h3>
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-slate-100 pb-3">
+              <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                <Building2 className="text-emerald-600" size={20} />
+                Company Dossier Card (Plant Credentials & Overview)
+              </h3>
+              <SectionSaveButton label="Save Dossier" compact />
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
               <div>
@@ -11084,10 +11192,13 @@ const ContentManager = () => {
           {/* Section 2D: Send an Official Inquiry Form Settings */}
           {(contactSubTab === 'all' || contactSubTab === 'form') && (
           <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
-            <h3 className="text-base font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3">
-              <FileText className="text-blue-600" size={20} />
-              Inquiry Form Content & Submission Labels
-            </h3>
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-slate-100 pb-3">
+              <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                <FileText className="text-blue-600" size={20} />
+                Inquiry Form Content & Submission Labels
+              </h3>
+              <SectionSaveButton label="Save Inquiry Form" compact />
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
               <div>
@@ -11176,10 +11287,13 @@ const ContentManager = () => {
           {/* Section 2E: Division Directory Section Settings */}
           {(contactSubTab === 'all' || contactSubTab === 'divisions') && (
           <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
-            <h3 className="text-base font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3">
-              <Building2 className="text-purple-600" size={20} />
-              Department Directory Section Headings
-            </h3>
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-slate-100 pb-3">
+              <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                <Building2 className="text-purple-600" size={20} />
+                Department Directory Section Headings
+              </h3>
+              <SectionSaveButton label="Save Directory Headings" compact />
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
               <div>
@@ -11236,10 +11350,13 @@ const ContentManager = () => {
           {/* Section 3: Official Communication Channels & Address */}
           {(contactSubTab === 'all' || contactSubTab === 'coordinates') && (
           <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
-            <h3 className="text-base font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3">
-              <Phone className="text-green-600" size={20} />
-              Official Support Details & Coordinates
-            </h3>
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-slate-100 pb-3">
+              <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                <Phone className="text-green-600" size={20} />
+                Official Support Details & Coordinates
+              </h3>
+              <SectionSaveButton label="Save Coordinates" compact />
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
               <div>
@@ -11471,6 +11588,7 @@ const ContentManager = () => {
                   />
                   <span className="text-xs font-bold text-slate-700">Enable Timed Login Popup</span>
                 </label>
+                <SectionSaveButton label="Save Timer" compact />
               </div>
             </div>
 
@@ -11667,6 +11785,7 @@ const ContentManager = () => {
                   Configure brand primary, secondary, surface, background, and state colors. These tokens apply via CSS variables across all public customer portals.
                 </p>
               </div>
+              <SectionSaveButton label="Save Theme Tokens" />
 
               {/* Preset Color Themes */}
               <div className="flex flex-wrap items-center gap-2">
@@ -11965,14 +12084,17 @@ const ContentManager = () => {
       {activeTab === 'layouts' && (
         <div className="space-y-6">
           <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-6">
-            <div>
-              <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                <Sliders size={20} className="text-blue-600" />
-                <span>Soft-Coded Section Layouts & Styles</span>
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Customize maximum container width, top/bottom padding, background color overrides, border radius, and visibility for every public section.
-              </p>
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+              <div>
+                <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                  <Sliders size={20} className="text-blue-600" />
+                  <span>Soft-Coded Section Layouts & Styles</span>
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Customize maximum container width, top/bottom padding, background color overrides, border radius, and visibility for every public section.
+                </p>
+              </div>
+              <SectionSaveButton label="Save Layouts" />
             </div>
 
             {/* Sections Layout List */}
@@ -12010,19 +12132,22 @@ const ContentManager = () => {
                         </div>
                       </div>
 
-                      {/* Visibility Toggle */}
-                      <button
-                        type="button"
-                        onClick={() => updateSectionLayout(key as keyof ISectionLayouts, { isVisible: !isVisible })}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer self-start sm:self-auto ${
-                          isVisible
-                            ? 'bg-green-100 text-green-800 border border-green-300'
-                            : 'bg-slate-200 text-slate-600 border border-slate-300'
-                        }`}
-                      >
-                        {isVisible ? <Eye size={14} /> : <EyeOff size={14} />}
-                        <span>{isVisible ? 'Section Visible' : 'Section Hidden'}</span>
-                      </button>
+                      {/* Visibility Toggle & Save */}
+                      <div className="flex items-center gap-2 self-start sm:self-auto">
+                        <button
+                          type="button"
+                          onClick={() => updateSectionLayout(key as keyof ISectionLayouts, { isVisible: !isVisible })}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                            isVisible
+                              ? 'bg-green-100 text-green-800 border border-green-300'
+                              : 'bg-slate-200 text-slate-600 border border-slate-300'
+                          }`}
+                        >
+                          {isVisible ? <Eye size={14} /> : <EyeOff size={14} />}
+                          <span>{isVisible ? 'Section Visible' : 'Section Hidden'}</span>
+                        </button>
+                        <SectionSaveButton label="Save" compact />
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -12132,14 +12257,17 @@ const ContentManager = () => {
       {activeTab === 'navbar' && (
         <div className="space-y-6">
           <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-6">
-            <div>
-              <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                <List size={20} className="text-purple-600" />
-                <span>Header Navigation Bar & Top Strip Settings</span>
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Configure brand header title, helpline bar, default core links, and add custom navigation items and dropdowns.
-              </p>
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+              <div>
+                <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                  <List size={20} className="text-purple-600" />
+                  <span>Header Navigation Bar & Top Strip Settings</span>
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Configure brand header title, helpline bar, default core links, and add custom navigation items and dropdowns.
+                </p>
+              </div>
+              <SectionSaveButton label="Save Navbar" />
             </div>
 
             {/* Top Bar Strip Settings */}
@@ -12152,20 +12280,23 @@ const ContentManager = () => {
                   </h3>
                   <p className="text-[11px] text-slate-500">Dark informational strip at the very top of all pages</p>
                 </div>
-                <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={content.topBar?.isVisible ?? true}
-                    onChange={(e) =>
-                      setContent({
-                        ...content,
-                        topBar: { ...(content.topBar || defaultFallbackContent.topBar!), isVisible: e.target.checked },
-                      })
-                    }
-                    className="rounded text-green-600 h-4 w-4"
-                  />
-                  <span>Show Top Bar</span>
-                </label>
+                <div className="flex items-center gap-2">
+                  <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={content.topBar?.isVisible ?? true}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          topBar: { ...(content.topBar || defaultFallbackContent.topBar!), isVisible: e.target.checked },
+                        })
+                      }
+                      className="rounded text-green-600 h-4 w-4"
+                    />
+                    <span>Show Top Bar</span>
+                  </label>
+                  <SectionSaveButton label="Save Strip" compact />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
@@ -12234,10 +12365,13 @@ const ContentManager = () => {
 
             {/* Brand Logo & Title */}
             <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
-              <h3 className="font-bold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                <Home size={14} className="text-purple-600" />
-                <span>Header Brand Title & Subtitle</span>
-              </h3>
+              <div className="flex justify-between items-center">
+                <h3 className="font-bold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                  <Home size={14} className="text-purple-600" />
+                  <span>Header Brand Title & Subtitle</span>
+                </h3>
+                <SectionSaveButton label="Save Titles" compact />
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-700 mb-1">Brand Main Title</label>
@@ -12274,10 +12408,13 @@ const ContentManager = () => {
 
             {/* Core Navigation Links Visibility */}
             <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
-              <h3 className="font-bold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                <CheckCircle size={14} className="text-emerald-600" />
-                <span>Core Navbar Links Toggles</span>
-              </h3>
+              <div className="flex justify-between items-center">
+                <h3 className="font-bold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                  <CheckCircle size={14} className="text-emerald-600" />
+                  <span>Core Navbar Links Toggles</span>
+                </h3>
+                <SectionSaveButton label="Save Core Links" compact />
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2">
                   <div className="flex items-center justify-between">
@@ -12409,31 +12546,34 @@ const ContentManager = () => {
                     Add custom top navbar items with routes, external links, and optional dropdown submenus.
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const currentNav = [...(content.headerNav?.customNavItems || defaultFallbackContent.headerNav?.customNavItems || [])];
-                    const newItem: ICustomNavItem = {
-                      id: `nav-${Date.now()}`,
-                      label: `Custom Link ${currentNav.length + 1}`,
-                      href: '/',
-                      isVisible: true,
-                      order: currentNav.length + 1,
-                      isExternal: false,
-                    };
-                    setContent({
-                      ...content,
-                      headerNav: {
-                        ...(content.headerNav || defaultFallbackContent.headerNav!),
-                        customNavItems: [...currentNav, newItem],
-                      },
-                    });
-                  }}
-                  className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer self-start sm:self-auto shadow-xs"
-                >
-                  <Plus size={14} />
-                  <span>Add Navigation Item</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const currentNav = [...(content.headerNav?.customNavItems || defaultFallbackContent.headerNav?.customNavItems || [])];
+                      const newItem: ICustomNavItem = {
+                        id: `nav-${Date.now()}`,
+                        label: `Custom Link ${currentNav.length + 1}`,
+                        href: '/',
+                        isVisible: true,
+                        order: currentNav.length + 1,
+                        isExternal: false,
+                      };
+                      setContent({
+                        ...content,
+                        headerNav: {
+                          ...(content.headerNav || defaultFallbackContent.headerNav!),
+                          customNavItems: [...currentNav, newItem],
+                        },
+                      });
+                    }}
+                    className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer self-start sm:self-auto shadow-xs"
+                  >
+                    <Plus size={14} />
+                    <span>Add Navigation Item</span>
+                  </button>
+                  <SectionSaveButton label="Save Menu" compact />
+                </div>
               </div>
 
               <div className="space-y-3">
@@ -12593,6 +12733,34 @@ const ContentManager = () => {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Floating Quick Save Button (Always Accessible while scrolling) */}
+      <div className="fixed bottom-6 right-6 z-40 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving}
+          className="flex items-center gap-2 px-5 py-3 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white rounded-2xl text-xs font-bold transition shadow-2xl border-2 border-white/90 hover:scale-105 active:scale-95 disabled:opacity-50 cursor-pointer"
+          title="Save all content changes"
+        >
+          <Save size={16} />
+          <span>{saving ? 'Saving Changes...' : 'Save All Changes'}</span>
+        </button>
+      </div>
+
+      {/* Fixed Floating Notification Toast (Visible from anywhere on the page) */}
+      {notification && (
+        <div
+          className={`fixed bottom-20 right-6 z-50 p-4 rounded-2xl shadow-2xl flex items-center gap-3 border text-sm max-w-md transition-all ${
+            notification.type === 'success'
+              ? 'bg-green-600 text-white border-green-500'
+              : 'bg-red-600 text-white border-red-500'
+          }`}
+        >
+          {notification.type === 'success' ? <CheckCircle size={20} className="shrink-0" /> : <AlertCircle size={20} className="shrink-0" />}
+          <span className="font-semibold text-xs leading-snug">{notification.message}</span>
         </div>
       )}
     </div>
