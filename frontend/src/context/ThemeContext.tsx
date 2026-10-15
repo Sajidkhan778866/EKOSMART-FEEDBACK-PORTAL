@@ -44,6 +44,13 @@ export interface HeaderConfig {
   };
 }
 
+export interface FooterLinkItem {
+  label: string;
+  href?: string;
+  url?: string;
+  isExternal?: boolean;
+}
+
 export interface FooterConfig {
   companyName: string;
   copyrightText: string;
@@ -60,7 +67,7 @@ export interface FooterConfig {
   logoType: 'preset' | 'image';
   logoImage?: string;
   socialLinks?: Array<{ platform: string; url: string }>;
-  columns?: Array<{ title: string; links: Array<{ label: string; href: string }> }>;
+  columns?: Array<{ title: string; links: FooterLinkItem[] }>;
 }
 
 export interface LoginTimerConfig {
@@ -251,6 +258,28 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             },
           };
         }
+      }
+
+      // Ensure all footer columns have safe href and url properties
+      if (themeData.footer?.columns && Array.isArray(themeData.footer.columns)) {
+        themeData.footer.columns = themeData.footer.columns.map((col: any) => ({
+          ...col,
+          title: col.title || '',
+          links: (col.links || []).map((lnk: any) => {
+            const h = lnk.href || lnk.url || '#';
+            return {
+              label: lnk.label || 'Link',
+              href: h,
+              url: h,
+              isExternal: Boolean(
+                lnk.isExternal ||
+                h.startsWith('http') ||
+                h.startsWith('tel:') ||
+                h.startsWith('mailto:')
+              ),
+            };
+          }),
+        }));
       }
 
       const merged: IThemeConfig = {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Outlet, NavLink, useLocation, Link } from 'react-router-dom';
 import { EbsLogo } from './EbsLogo';
 import {
@@ -196,7 +196,7 @@ interface FooterContent {
   showContactDropdown?: boolean;
   contactDropdownTitle?: string;
   socialLinks?: Array<{ platform: string; url: string }>;
-  columns?: Array<{ id?: string; title: string; links: Array<{ label: string; href: string; isExternal?: boolean }> }>;
+  columns?: Array<{ id?: string; title: string; links: Array<{ label: string; href?: string; url?: string; isExternal?: boolean }> }>;
 }
 
 const defaultFooter: FooterContent = {
@@ -363,10 +363,10 @@ const Layout = () => {
     return () => clearTimeout(timer);
   }, [isAuthenticated, loginTimerConfig.enabled, loginTimerConfig.durationSeconds]);
 
-  const handleCloseLoginModal = () => {
+  const handleCloseLoginModal = useCallback(() => {
     sessionStorage.setItem('ekosmart_login_prompt_dismissed', 'true');
     setLoginModalOpen(false);
-  };
+  }, []);
 
   const activeDivisions =
     contactInfo?.dropdownOptions && contactInfo.dropdownOptions.length > 0
@@ -550,34 +550,38 @@ const Layout = () => {
 
               {/* Softcoded Custom Navigation Items */}
               {(headerNav.customNavItems || [])
-                .filter((item) => item.isVisible !== false)
+                .filter((item) => item && item.isVisible !== false)
                 .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-                .map((item) => (
-                  <li key={item.id}>
-                    {item.isExternal || item.href.startsWith('http') ? (
-                      <a
-                        href={item.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="hover:text-emerald-700 flex items-center gap-1 transition font-bold"
-                      >
-                        <span>{item.label}</span>
-                        <ExternalLink size={10} className="text-slate-400" />
-                      </a>
-                    ) : (
-                      <NavLink
-                        to={item.href}
-                        className={({ isActive }) =>
-                          isActive
-                            ? 'text-emerald-700 flex items-center gap-1.5 border-b-2 border-emerald-600 pb-1 font-bold'
-                            : 'hover:text-emerald-700 flex items-center gap-1.5 transition font-bold'
-                        }
-                      >
-                        <span>{item.label}</span>
-                      </NavLink>
-                    )}
-                  </li>
-                ))}
+                .map((item: any) => {
+                  const linkHref = (item.href || item.url || '#').trim();
+                  const isExt = Boolean(item.isExternal || linkHref.startsWith('http'));
+                  return (
+                    <li key={item.id || item.label}>
+                      {isExt ? (
+                        <a
+                          href={linkHref}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:text-emerald-700 flex items-center gap-1 transition font-bold"
+                        >
+                          <span>{item.label}</span>
+                          <ExternalLink size={10} className="text-slate-400" />
+                        </a>
+                      ) : (
+                        <NavLink
+                          to={linkHref}
+                          className={({ isActive }) =>
+                            isActive
+                              ? 'text-emerald-700 flex items-center gap-1.5 border-b-2 border-emerald-600 pb-1 font-bold'
+                              : 'hover:text-emerald-700 flex items-center gap-1.5 transition font-bold'
+                          }
+                        >
+                          <span>{item.label}</span>
+                        </NavLink>
+                      )}
+                    </li>
+                  );
+                })}
 
               {/* Contact & Support Dropdown (All items clickable <a> links) */}
               <li className="relative">
@@ -1130,39 +1134,43 @@ const Layout = () => {
 
                   {/* Softcoded Custom Nav Links */}
                   {(headerNav.customNavItems || [])
-                    .filter((item) => item.isVisible !== false)
+                    .filter((item) => item && item.isVisible !== false)
                     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-                    .map((item) => (
-                      <div key={item.id}>
-                        {item.isExternal || item.href.startsWith('http') ? (
-                          <a
-                            href={item.href}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={() => setMobileMenuOpen(false)}
-                            className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition"
-                          >
-                            <span>{item.label}</span>
-                            <ExternalLink size={12} className="text-slate-500" />
-                          </a>
-                        ) : (
-                          <NavLink
-                            to={item.href}
-                            onClick={() => setMobileMenuOpen(false)}
-                            className={({ isActive }) =>
-                              `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
-                                isActive
-                                  ? 'bg-emerald-900/50 text-emerald-400 border border-emerald-700/50'
-                                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                              }`
-                            }
-                          >
-                            <span>{item.label}</span>
-                            <ChevronRight size={14} className="text-slate-600" />
-                          </NavLink>
-                        )}
-                      </div>
-                    ))}
+                    .map((item: any) => {
+                      const linkHref = (item.href || item.url || '#').trim();
+                      const isExt = Boolean(item.isExternal || linkHref.startsWith('http'));
+                      return (
+                        <div key={item.id || item.label}>
+                          {isExt ? (
+                            <a
+                              href={linkHref}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={() => setMobileMenuOpen(false)}
+                              className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition"
+                            >
+                              <span>{item.label}</span>
+                              <ExternalLink size={12} className="text-slate-500" />
+                            </a>
+                          ) : (
+                            <NavLink
+                              to={linkHref}
+                              onClick={() => setMobileMenuOpen(false)}
+                              className={({ isActive }) =>
+                                `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
+                                  isActive
+                                    ? 'bg-emerald-900/50 text-emerald-400 border border-emerald-700/50'
+                                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                                }`
+                              }
+                            >
+                              <span>{item.label}</span>
+                              <ChevronRight size={14} className="text-slate-600" />
+                            </NavLink>
+                          )}
+                        </div>
+                      );
+                    })}
                 </nav>
               </div>
 
@@ -1538,29 +1546,38 @@ const Layout = () => {
 
             {/* Column 3 & Custom Columns: Support, Divisions, or Softcoded Columns */}
             {footer.columns && footer.columns.length > 0 ? (
-              footer.columns.map((col, idx) => (
+              footer.columns.map((col: any, idx: number) => (
                 <div key={col.id || idx} className="space-y-2 text-xs">
                   <h4 className="text-slate-200 font-bold text-sm tracking-wide mb-3">{col.title}</h4>
                   <ul className="space-y-2.5 font-medium">
-                    {(col.links || []).map((lnk, lIdx) => (
-                      <li key={lIdx}>
-                        {lnk.isExternal || lnk.href.startsWith('http') || lnk.href.startsWith('tel:') || lnk.href.startsWith('mailto:') ? (
-                          <a
-                            href={lnk.href}
-                            target={lnk.isExternal ? '_blank' : '_self'}
-                            rel="noopener noreferrer"
-                            className="hover:text-emerald-400 transition flex items-center gap-1.5"
-                          >
-                            <span>{lnk.label}</span>
-                            {lnk.isExternal && <ExternalLink size={10} className="text-slate-500" />}
-                          </a>
-                        ) : (
-                          <NavLink to={lnk.href} className="hover:text-emerald-400 transition flex items-center gap-1.5">
-                            <span>{lnk.label}</span>
-                          </NavLink>
-                        )}
-                      </li>
-                    ))}
+                    {(col.links || []).map((lnk: any, lIdx: number) => {
+                      const linkHref = (lnk.href || lnk.url || '#').trim();
+                      const isExt = Boolean(
+                        lnk.isExternal ||
+                        linkHref.startsWith('http') ||
+                        linkHref.startsWith('tel:') ||
+                        linkHref.startsWith('mailto:')
+                      );
+                      return (
+                        <li key={lIdx}>
+                          {isExt ? (
+                            <a
+                              href={linkHref}
+                              target={lnk.isExternal ? '_blank' : '_self'}
+                              rel="noopener noreferrer"
+                              className="hover:text-emerald-400 transition flex items-center gap-1.5"
+                            >
+                              <span>{lnk.label}</span>
+                              {lnk.isExternal && <ExternalLink size={10} className="text-slate-500" />}
+                            </a>
+                          ) : (
+                            <NavLink to={linkHref} className="hover:text-emerald-400 transition flex items-center gap-1.5">
+                              <span>{lnk.label}</span>
+                            </NavLink>
+                          )}
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               ))

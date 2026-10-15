@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
+import ErrorBoundary from './components/ErrorBoundary';
 import Home from './pages/Home';
 import RegisterComplaint from './pages/RegisterComplaint';
 import TrackComplaint from './pages/TrackComplaint';
@@ -43,87 +44,89 @@ const ProtectedCustomerRoute = ({ children }: { children: React.ReactNode }) => 
 
 function App() {
   return (
-    <CustomerAuthProvider>
-      <ThemeProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Layout />}>
-              {/* Core Dynamic Pages */}
-              <Route index element={<Home />} />
-              
-              {/* Support & Warranty */}
-              <Route path="complaint/register" element={<RegisterComplaint />} />
-              <Route path="complaint/track" element={<TrackComplaint />} />
-              <Route path="warranty/check" element={<WarrantyCheck />} />
-              <Route path="warranty/register" element={<WarrantyRegister />} />
-              
-              {/* Showroom Public Info */}
-              <Route path="showroom-billing" element={<ShowroomBillingPublic />} />
-              
-              {/* Customer Authentication */}
-              <Route path="customer/register" element={<CustomerRegister />} />
-              <Route path="register" element={<CustomerRegister />} />
-              <Route path="customer/login" element={<CustomerLogin />} />
-              <Route path="login" element={<CustomerLogin />} />
+    <ErrorBoundary>
+      <CustomerAuthProvider>
+        <ThemeProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Layout />}>
+                {/* Core Dynamic Pages */}
+                <Route index element={<Home />} />
+                
+                {/* Support & Warranty */}
+                <Route path="complaint/register" element={<RegisterComplaint />} />
+                <Route path="complaint/track" element={<TrackComplaint />} />
+                <Route path="warranty/check" element={<WarrantyCheck />} />
+                <Route path="warranty/register" element={<WarrantyRegister />} />
+                
+                {/* Showroom Public Info */}
+                <Route path="showroom-billing" element={<ShowroomBillingPublic />} />
+                
+                {/* Customer Authentication */}
+                <Route path="customer/register" element={<CustomerRegister />} />
+                <Route path="register" element={<CustomerRegister />} />
+                <Route path="customer/login" element={<CustomerLogin />} />
+                <Route path="login" element={<CustomerLogin />} />
 
-              {/* Protected Customer Dashboard & Services */}
-              <Route
-                path="customer/dashboard"
-                element={
-                  <ProtectedCustomerRoute>
-                    <CustomerDashboard />
-                  </ProtectedCustomerRoute>
-                }
-              />
-              <Route
-                path="customer/wallet"
-                element={
-                  <ProtectedCustomerRoute>
-                    <CustomerWallet />
-                  </ProtectedCustomerRoute>
-                }
-              />
-              <Route
-                path="customer/referrals"
-                element={
-                  <ProtectedCustomerRoute>
-                    <CustomerReferrals />
-                  </ProtectedCustomerRoute>
-                }
-              />
-              <Route
-                path="customer/purchases"
-                element={
-                  <ProtectedCustomerRoute>
-                    <CustomerPurchases />
-                  </ProtectedCustomerRoute>
-                }
-              />
-              <Route
-                path="customer/profile"
-                element={
-                  <ProtectedCustomerRoute>
-                    <CustomerProfile />
-                  </ProtectedCustomerRoute>
-                }
-              />
+                {/* Protected Customer Dashboard & Services */}
+                <Route
+                  path="customer/dashboard"
+                  element={
+                    <ProtectedCustomerRoute>
+                      <CustomerDashboard />
+                    </ProtectedCustomerRoute>
+                  }
+                />
+                <Route
+                  path="customer/wallet"
+                  element={
+                    <ProtectedCustomerRoute>
+                      <CustomerWallet />
+                    </ProtectedCustomerRoute>
+                  }
+                />
+                <Route
+                  path="customer/referrals"
+                  element={
+                    <ProtectedCustomerRoute>
+                      <CustomerReferrals />
+                    </ProtectedCustomerRoute>
+                  }
+                />
+                <Route
+                  path="customer/purchases"
+                  element={
+                    <ProtectedCustomerRoute>
+                      <CustomerPurchases />
+                    </ProtectedCustomerRoute>
+                  }
+                />
+                <Route
+                  path="customer/profile"
+                  element={
+                    <ProtectedCustomerRoute>
+                      <CustomerProfile />
+                    </ProtectedCustomerRoute>
+                  }
+                />
 
-              {/* General Info & Policies */}
-              <Route path="contact" element={<Contact />} />
-              <Route path="privacy-policy" element={<PrivacyPolicy />} />
-              <Route path="terms-conditions" element={<TermsConditions />} />
-              <Route path="refund-policy" element={<RefundPolicy />} />
-              
-              {/* Arbitrary CMS Pages created by Admin (e.g. /p/dealership, /p/diwali-deal) */}
-              <Route path="p/:slug" element={<DynamicPageRenderer />} />
+                {/* General Info & Policies */}
+                <Route path="contact" element={<Contact />} />
+                <Route path="privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="terms-conditions" element={<TermsConditions />} />
+                <Route path="refund-policy" element={<RefundPolicy />} />
+                
+                {/* Arbitrary CMS Pages created by Admin (e.g. /p/dealership, /p/diwali-deal) */}
+                <Route path="p/:slug" element={<DynamicPageRenderer />} />
 
-              {/* Fallback */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Route>
-          </Routes>
-        </BrowserRouter>
-      </ThemeProvider>
-    </CustomerAuthProvider>
+                {/* Fallback */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Route>
+            </Routes>
+          </BrowserRouter>
+        </ThemeProvider>
+      </CustomerAuthProvider>
+    </ErrorBoundary>
   );
 }
 

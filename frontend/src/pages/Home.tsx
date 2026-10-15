@@ -962,15 +962,15 @@ const Home = () => {
 
   // Deduplicate and sort cards by order, showing only visible ones
   const visibleCards = cards
-    .filter((c) => c.isVisible !== false)
-    .filter((card, index, self) => index === self.findIndex((t) => (t.id && card.id ? t.id === card.id : t.title.toLowerCase() === card.title.toLowerCase())))
+    .filter((c) => c && c.isVisible !== false)
+    .filter((card, index, self) => index === self.findIndex((t) => (t.id && card.id ? t.id === card.id : (t.title || '').toLowerCase() === (card.title || '').toLowerCase())))
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
   const uniqueSections = Array.from(new Set(visibleCards.map((c) => c.section || 'General')));
   const filteredCards =
     selectedSection === 'all'
       ? visibleCards
-      : visibleCards.filter((c) => (c.section || 'General').toLowerCase() === selectedSection.toLowerCase());
+      : visibleCards.filter((c) => (c.section || 'General').toLowerCase() === (selectedSection || '').toLowerCase());
 
   const getHeroBackgroundStyle = (): React.CSSProperties => {
     if (hero.bgType === 'solid') {
@@ -1242,8 +1242,8 @@ const Home = () => {
               All Divisions ({cards.length})
             </button>
             {uniqueSections.map((sec) => {
-              const count = cards.filter((c) => (c.section || 'General').toLowerCase() === sec.toLowerCase()).length;
-              const isSelected = selectedSection.toLowerCase() === sec.toLowerCase();
+              const count = cards.filter((c) => (c.section || 'General').toLowerCase() === (sec || '').toLowerCase()).length;
+              const isSelected = (selectedSection || '').toLowerCase() === (sec || '').toLowerCase();
               return (
                 <button
                   key={sec}
@@ -1521,13 +1521,14 @@ const Home = () => {
                 }
               >
                 {quickActions
-                  .filter((act) => act.isVisible !== false)
+                  .filter((act) => act && act.isVisible !== false)
                   .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
                   .map((act, idx, arr) => {
+                    const actUrl = (act.url || (act as any).linkUrl || '/').trim();
                     const styles = getQuickActionColorStyles(act.color, act.customBg, act.customColor);
-                    const target = act.target || (act.url.startsWith('http') || act.url.startsWith('/warranty') ? '_blank' : '_self');
+                    const target = act.target || (actUrl.startsWith('http') || actUrl.startsWith('/warranty') ? '_blank' : '_self');
                     const showExtIcon = typeof act.showExternalIcon === 'boolean' ? act.showExternalIcon : (target === '_blank');
-                    const isRouterLink = !act.url.startsWith('http') && target !== '_blank';
+                    const isRouterLink = !actUrl.startsWith('http') && target !== '_blank';
 
                     const cardInner = (
                       <>
@@ -1574,14 +1575,14 @@ const Home = () => {
                       <div key={act.id || idx} className="flex items-center gap-6">
                         {isRouterLink ? (
                           <Link
-                            to={act.url}
+                            to={actUrl}
                             className="flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition group cursor-pointer"
                           >
                             {cardInner}
                           </Link>
                         ) : (
                           <a
-                            href={act.url}
+                            href={actUrl}
                             target={target}
                             rel="noopener noreferrer"
                             className="flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition group cursor-pointer"
@@ -1773,35 +1774,39 @@ const Home = () => {
                         )}
 
                         {/* Plant Details Button */}
-                        {batteryBanner.plantBtnLink?.startsWith('http') ? (
-                          <a
-                            href={batteryBanner.plantBtnLink}
-                            target={batteryBanner.plantBtnTarget || '_blank'}
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-center gap-2 w-full py-2 font-semibold rounded-xl text-xs transition border cursor-pointer hover:opacity-95"
-                            style={{
-                              backgroundColor: batteryBanner.plantBtnBg || 'rgba(255, 255, 255, 0.12)',
-                              color: batteryBanner.plantBtnTextColor || '#ffffff',
-                              borderColor: 'rgba(255, 255, 255, 0.2)',
-                            }}
-                          >
-                            <span>{batteryBanner.plantBtnText || 'View Plant Contact Details'}</span>
-                            <ExternalLink size={12} />
-                          </a>
-                        ) : (
-                          <Link
-                            to={batteryBanner.plantBtnLink || '/contact'}
-                            target={batteryBanner.plantBtnTarget || '_self'}
-                            className="flex items-center justify-center gap-2 w-full py-2 font-semibold rounded-xl text-xs transition border cursor-pointer hover:opacity-95"
-                            style={{
-                              backgroundColor: batteryBanner.plantBtnBg || 'rgba(255, 255, 255, 0.12)',
-                              color: batteryBanner.plantBtnTextColor || '#ffffff',
-                              borderColor: 'rgba(255, 255, 255, 0.2)',
-                            }}
-                          >
-                            <span>{batteryBanner.plantBtnText || 'View Plant Contact Details'}</span>
-                          </Link>
-                        )}
+                        {(() => {
+                          const plantLink = (batteryBanner.plantBtnLink || '/contact').trim();
+                          const isPlantHttp = plantLink.startsWith('http');
+                          return isPlantHttp ? (
+                            <a
+                              href={plantLink}
+                              target={batteryBanner.plantBtnTarget || '_blank'}
+                              rel="noopener noreferrer"
+                              className="flex items-center justify-center gap-2 w-full py-2 font-semibold rounded-xl text-xs transition border cursor-pointer hover:opacity-95"
+                              style={{
+                                backgroundColor: batteryBanner.plantBtnBg || 'rgba(255, 255, 255, 0.12)',
+                                color: batteryBanner.plantBtnTextColor || '#ffffff',
+                                borderColor: 'rgba(255, 255, 255, 0.2)',
+                              }}
+                            >
+                              <span>{batteryBanner.plantBtnText || 'View Plant Contact Details'}</span>
+                              <ExternalLink size={12} />
+                            </a>
+                          ) : (
+                            <Link
+                              to={plantLink}
+                              target={batteryBanner.plantBtnTarget || '_self'}
+                              className="flex items-center justify-center gap-2 w-full py-2 font-semibold rounded-xl text-xs transition border cursor-pointer hover:opacity-95"
+                              style={{
+                                backgroundColor: batteryBanner.plantBtnBg || 'rgba(255, 255, 255, 0.12)',
+                                color: batteryBanner.plantBtnTextColor || '#ffffff',
+                                borderColor: 'rgba(255, 255, 255, 0.2)',
+                              }}
+                            >
+                              <span>{batteryBanner.plantBtnText || 'View Plant Contact Details'}</span>
+                            </Link>
+                          );
+                        })()}
                       </div>
 
                       {/* Alternate contacts */}
