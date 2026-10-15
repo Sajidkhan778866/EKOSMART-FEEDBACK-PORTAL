@@ -57,6 +57,7 @@ import {
   User,
   Smartphone,
   Monitor,
+  Sliders,
 } from 'lucide-react';
 import { contentApi, customerApi, API_BASE_URL, resolveImageUrl } from '../api/client';
 
@@ -234,6 +235,66 @@ export interface ITopBarConfig {
   accentColor?: string;
 }
 
+export interface ICustomNavItem {
+  id: string;
+  label: string;
+  href: string;
+  icon?: string;
+  isVisible?: boolean;
+  order?: number;
+  isExternal?: boolean;
+  children?: Array<{ label: string; href: string; isExternal?: boolean }>;
+}
+
+export interface IFooterColumn {
+  id?: string;
+  title: string;
+  links: Array<{ label: string; href: string; isExternal?: boolean }>;
+}
+
+export interface IThemeColors {
+  primary: string;
+  primaryHover: string;
+  secondary: string;
+  secondaryHover?: string;
+  accent: string;
+  background: string;
+  surface: string;
+  text: string;
+  textMuted: string;
+  border: string;
+  success?: string;
+  warning?: string;
+  error?: string;
+}
+
+export interface ISectionLayoutStyle {
+  width?: string;
+  maxWidth?: string;
+  paddingTop?: string;
+  paddingBottom?: string;
+  marginTop?: string;
+  marginBottom?: string;
+  gap?: string;
+  alignment?: 'left' | 'center' | 'right';
+  gridColumns?: number;
+  borderRadius?: string;
+  shadow?: string;
+  backgroundColor?: string;
+  isVisible?: boolean;
+  order?: number;
+}
+
+export interface ISectionLayouts {
+  hero?: ISectionLayoutStyle;
+  quickActions?: ISectionLayoutStyle;
+  serviceCards?: ISectionLayoutStyle;
+  rewards?: ISectionLayoutStyle;
+  batteryBanner?: ISectionLayoutStyle;
+  contact?: ISectionLayoutStyle;
+  footer?: ISectionLayoutStyle;
+}
+
 export interface IHeaderNavConfig {
   brandTitle?: string;
   brandSubtitle?: string;
@@ -252,6 +313,7 @@ export interface IHeaderNavConfig {
   accountBtnText?: string;
   navBgColor?: string;
   navBorderColor?: string;
+  customNavItems?: ICustomNavItem[];
 }
 
 interface ICMSContent {
@@ -343,7 +405,10 @@ interface ICMSContent {
     mapUrl?: string;
     showContactDropdown?: boolean;
     contactDropdownTitle?: string;
+    columns?: IFooterColumn[];
   };
+  themeColors?: IThemeColors;
+  sectionLayouts?: ISectionLayouts;
   privacyPolicy: {
     title: string;
     content: string;
@@ -493,6 +558,12 @@ const defaultFallbackContent: ICMSContent = {
     accountBtnText: '#ffffff',
     navBgColor: '#ffffff',
     navBorderColor: '#e2e8f0',
+    customNavItems: [
+      { id: 'nav-showroom', label: 'Showroom Bills', href: '/showroom-billing', isVisible: true, order: 1, isExternal: false },
+      { id: 'nav-warranty', label: 'Check Warranty', href: '/warranty/check', isVisible: true, order: 2, isExternal: false },
+      { id: 'nav-track', label: 'Track Ticket', href: '/complaint/track', isVisible: true, order: 3, isExternal: false },
+      { id: 'nav-contact', label: 'Contact', href: '/contact', isVisible: true, order: 4, isExternal: false },
+    ],
   },
   hero: {
     heading: 'Ekosmart Battery Solution (EBS)\nHigh Power Lithium-Ion & LFP Battery Packs',
@@ -646,6 +717,38 @@ const defaultFallbackContent: ICMSContent = {
     mapUrl: 'https://maps.google.com/?q=Rang+Talab,+Near+by+Star+Kids+School,+Kota,+Rajasthan+324002',
     showContactDropdown: true,
     contactDropdownTitle: 'Quick Department Directory',
+    columns: [
+      {
+        id: 'col-divisions',
+        title: 'Our Divisions',
+        links: [
+          { label: 'Lithium Battery (EBS)', href: '/complaint/register?division=Battery' },
+          { label: 'EV Spare Parts', href: '/complaint/register?division=Spare%20Parts' },
+          { label: 'Drive Rental Support', href: '/complaint/register?division=Rental' },
+          { label: 'Showroom Sales & Dealership', href: '/complaint/register?division=Showroom' },
+        ],
+      },
+      {
+        id: 'col-quicklinks',
+        title: 'Quick Utilities',
+        links: [
+          { label: 'Track Support Ticket', href: '/complaint/track' },
+          { label: 'Verify Battery Warranty', href: '/warranty/check' },
+          { label: 'Showroom Invoice Lookup', href: '/showroom-billing' },
+          { label: 'Customer Wallet & Coins', href: '/customer/login' },
+        ],
+      },
+      {
+        id: 'col-support',
+        title: 'Support & Facility',
+        links: [
+          { label: 'Kota Plant Directory', href: '/contact' },
+          { label: 'Helpline: +91 8949049003', href: 'tel:+918949049003', isExternal: true },
+          { label: 'support@ekosmartdrive.in', href: 'mailto:support@ekosmartdrive.in', isExternal: true },
+          { label: 'Kota Plant Google Map', href: 'https://maps.google.com/?q=Kota,Rajasthan', isExternal: true },
+        ],
+      },
+    ],
   },
   privacyPolicy: {
     title: 'Privacy Policy',
@@ -950,6 +1053,30 @@ const defaultFallbackContent: ICMSContent = {
       badgeColor: '',
     },
   ],
+  themeColors: {
+    primary: '#059669',
+    primaryHover: '#047857',
+    secondary: '#0f172a',
+    secondaryHover: '#1e293b',
+    accent: '#10b981',
+    background: '#f8fafc',
+    surface: '#ffffff',
+    text: '#1e293b',
+    textMuted: '#64748b',
+    border: '#e2e8f0',
+    success: '#10b981',
+    warning: '#f59e0b',
+    error: '#ef4444',
+  },
+  sectionLayouts: {
+    hero: { isVisible: true, maxWidth: '1280px', paddingTop: '4rem', paddingBottom: '5rem' },
+    quickActions: { isVisible: true, maxWidth: '1280px', paddingTop: '2rem', paddingBottom: '2rem' },
+    serviceCards: { isVisible: true, maxWidth: '1280px', paddingTop: '2rem', paddingBottom: '2rem' },
+    rewards: { isVisible: true, maxWidth: '1280px', paddingTop: '2rem', paddingBottom: '2rem' },
+    batteryBanner: { isVisible: true, maxWidth: '1280px', paddingTop: '2rem', paddingBottom: '3rem' },
+    contact: { isVisible: true, maxWidth: '1280px', paddingTop: '2rem', paddingBottom: '3rem' },
+    footer: { isVisible: true, maxWidth: '1280px', paddingTop: '3rem', paddingBottom: '3rem' },
+  },
 };
 
 const renderLivePreviewIcon = (card: IServiceCard) => {
@@ -1111,7 +1238,7 @@ const compressImageFile = (
 
 const ContentManager = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const validTabs = ['cards', 'hero', 'rewards', 'banner', 'policies', 'footer', 'contact', 'loginTimer'] as const;
+  const validTabs = ['cards', 'hero', 'rewards', 'banner', 'policies', 'footer', 'contact', 'loginTimer', 'theme', 'layouts', 'navbar'] as const;
   type TabType = (typeof validTabs)[number];
 
   const paramTab = searchParams.get('tab');
@@ -1859,6 +1986,52 @@ const ContentManager = () => {
       return (card.section || 'General').toLowerCase() === selectedSectionFilter.toLowerCase();
     });
 
+  const updateThemeColor = (key: keyof IThemeColors, value: string) => {
+    const current = content.themeColors || defaultFallbackContent.themeColors || ({} as IThemeColors);
+    setContent({
+      ...content,
+      themeColors: {
+        ...current,
+        [key]: value,
+      },
+    });
+  };
+
+  const applyThemePreset = (preset: {
+    primary: string;
+    primaryHover: string;
+    secondary: string;
+    accent: string;
+    background: string;
+    surface: string;
+    text: string;
+    textMuted: string;
+    border: string;
+  }) => {
+    setContent({
+      ...content,
+      themeColors: {
+        ...(content.themeColors || defaultFallbackContent.themeColors || {}),
+        ...preset,
+      },
+    });
+  };
+
+  const updateSectionLayout = (sectionKey: keyof ISectionLayouts, patch: Partial<ISectionLayoutStyle>) => {
+    const currentLayouts = content.sectionLayouts || defaultFallbackContent.sectionLayouts || {};
+    const currentSection = currentLayouts[sectionKey] || {};
+    setContent({
+      ...content,
+      sectionLayouts: {
+        ...currentLayouts,
+        [sectionKey]: {
+          ...currentSection,
+          ...patch,
+        },
+      },
+    });
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-12">
@@ -2024,6 +2197,48 @@ const ContentManager = () => {
         >
           <Clock size={18} />
           <span>Customer Login Timer ({content.customerLoginTimer?.durationSeconds || 20}s)</span>
+        </button>
+
+        <button
+          onClick={() => handleTabChange('theme')}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition cursor-pointer shrink-0 ${
+            activeTab === 'theme'
+              ? 'border-emerald-600 text-emerald-800 bg-emerald-50/60'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <Palette size={18} className="text-emerald-600" />
+          <span>Theme & Custom Colors</span>
+          <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+            Design Tokens
+          </span>
+        </button>
+
+        <button
+          onClick={() => handleTabChange('layouts')}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition cursor-pointer shrink-0 ${
+            activeTab === 'layouts'
+              ? 'border-blue-600 text-blue-800 bg-blue-50/60'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <Sliders size={18} className="text-blue-600" />
+          <span>Section Layouts</span>
+          <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-300">
+            Soft-Coded
+          </span>
+        </button>
+
+        <button
+          onClick={() => handleTabChange('navbar')}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition cursor-pointer shrink-0 ${
+            activeTab === 'navbar'
+              ? 'border-purple-600 text-purple-800 bg-purple-50/60'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <List size={18} className="text-purple-600" />
+          <span>Navigation Bar</span>
         </button>
       </div>
 
@@ -9819,6 +10034,188 @@ const ContentManager = () => {
                 </ul>
               </div>
             </div>
+
+            {/* Softcoded Custom Footer Columns Manager */}
+            <div className="md:col-span-2 bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-4">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                <div>
+                  <h3 className="font-bold text-slate-800 text-xs flex items-center gap-2">
+                    <List size={16} className="text-emerald-600" />
+                    <span>Soft-Coded Footer Custom Columns & Links</span>
+                  </h3>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Create custom columns and navigation links to appear in the public website footer.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const currentCols = [...(content.footer.columns || defaultFallbackContent.footer.columns || [])];
+                    const newCol: IFooterColumn = {
+                      id: `col-${Date.now()}`,
+                      title: `New Column ${currentCols.length + 1}`,
+                      links: [
+                        { label: 'Example Link', href: '/' }
+                      ]
+                    };
+                    setContent({
+                      ...content,
+                      footer: { ...content.footer, columns: [...currentCols, newCol] }
+                    });
+                  }}
+                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer self-start sm:self-auto shadow-xs"
+                >
+                  <Plus size={14} />
+                  <span>Add Column</span>
+                </button>
+              </div>
+
+              {/* Columns Editor List */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {(content.footer.columns || defaultFallbackContent.footer.columns || []).map((col, colIdx) => (
+                  <div key={col.id || colIdx} className="bg-white p-4 rounded-xl border border-slate-200 space-y-3 shadow-xs flex flex-col justify-between">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2">
+                        <span className="text-[11px] font-bold text-slate-400">Column #{colIdx + 1}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const currentCols = [...(content.footer.columns || defaultFallbackContent.footer.columns || [])];
+                            currentCols.splice(colIdx, 1);
+                            setContent({
+                              ...content,
+                              footer: { ...content.footer, columns: currentCols }
+                            });
+                          }}
+                          className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 transition cursor-pointer"
+                          title="Delete Column"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Column Title</label>
+                        <input
+                          type="text"
+                          value={col.title}
+                          onChange={(e) => {
+                            const currentCols = [...(content.footer.columns || defaultFallbackContent.footer.columns || [])];
+                            currentCols[colIdx] = { ...currentCols[colIdx], title: e.target.value };
+                            setContent({
+                              ...content,
+                              footer: { ...content.footer, columns: currentCols }
+                            });
+                          }}
+                          placeholder="e.g. Services / Quick Links"
+                          className="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold"
+                        />
+                      </div>
+
+                      {/* Links list inside this column */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-bold text-slate-600">Links ({col.links?.length || 0})</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const currentCols = [...(content.footer.columns || defaultFallbackContent.footer.columns || [])];
+                              const links = [...(currentCols[colIdx].links || [])];
+                              links.push({ label: 'New Link', href: '/' });
+                              currentCols[colIdx] = { ...currentCols[colIdx], links };
+                              setContent({
+                                ...content,
+                                footer: { ...content.footer, columns: currentCols }
+                              });
+                            }}
+                            className="text-[10px] text-emerald-700 hover:text-emerald-800 font-bold flex items-center gap-1 cursor-pointer"
+                          >
+                            <Plus size={11} />
+                            <span>Add Link</span>
+                          </button>
+                        </div>
+
+                        <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                          {(col.links || []).map((lnk, lnkIdx) => (
+                            <div key={lnkIdx} className="bg-slate-50 p-2 rounded-lg border border-slate-200 text-xs space-y-1.5">
+                              <div className="flex items-center justify-between gap-1">
+                                <input
+                                  type="text"
+                                  value={lnk.label}
+                                  onChange={(e) => {
+                                    const currentCols = [...(content.footer.columns || defaultFallbackContent.footer.columns || [])];
+                                    const links = [...(currentCols[colIdx].links || [])];
+                                    links[lnkIdx] = { ...links[lnkIdx], label: e.target.value };
+                                    currentCols[colIdx] = { ...currentCols[colIdx], links };
+                                    setContent({
+                                      ...content,
+                                      footer: { ...content.footer, columns: currentCols }
+                                    });
+                                  }}
+                                  placeholder="Link Label"
+                                  className="w-1/2 border border-slate-300 rounded px-1.5 py-1 text-[11px]"
+                                />
+                                <input
+                                  type="text"
+                                  value={lnk.href}
+                                  onChange={(e) => {
+                                    const currentCols = [...(content.footer.columns || defaultFallbackContent.footer.columns || [])];
+                                    const links = [...(currentCols[colIdx].links || [])];
+                                    links[lnkIdx] = { ...links[lnkIdx], href: e.target.value };
+                                    currentCols[colIdx] = { ...currentCols[colIdx], links };
+                                    setContent({
+                                      ...content,
+                                      footer: { ...content.footer, columns: currentCols }
+                                    });
+                                  }}
+                                  placeholder="/path or url"
+                                  className="w-1/2 border border-slate-300 rounded px-1.5 py-1 text-[11px] font-mono"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const currentCols = [...(content.footer.columns || defaultFallbackContent.footer.columns || [])];
+                                    const links = [...(currentCols[colIdx].links || [])];
+                                    links.splice(lnkIdx, 1);
+                                    currentCols[colIdx] = { ...currentCols[colIdx], links };
+                                    setContent({
+                                      ...content,
+                                      footer: { ...content.footer, columns: currentCols }
+                                    });
+                                  }}
+                                  className="text-red-500 hover:text-red-700 p-0.5"
+                                  title="Delete Link"
+                                >
+                                  <Trash2 size={11} />
+                                </button>
+                              </div>
+                              <label className="flex items-center gap-1.5 text-[10px] text-slate-500 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={lnk.isExternal || false}
+                                  onChange={(e) => {
+                                    const currentCols = [...(content.footer.columns || defaultFallbackContent.footer.columns || [])];
+                                    const links = [...(currentCols[colIdx].links || [])];
+                                    links[lnkIdx] = { ...links[lnkIdx], isExternal: e.target.checked };
+                                    currentCols[colIdx] = { ...currentCols[colIdx], links };
+                                    setContent({
+                                      ...content,
+                                      footer: { ...content.footer, columns: currentCols }
+                                    });
+                                  }}
+                                  className="rounded text-emerald-600 h-3 w-3"
+                                />
+                                <span>Open in new tab (External)</span>
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -11251,6 +11648,949 @@ const ContentManager = () => {
                 <Save size={16} />
                 <span>{saving ? 'Saving Changes...' : 'Save Timer Configuration'}</span>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: THEME & CUSTOM DESIGN TOKENS */}
+      {activeTab === 'theme' && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div>
+                <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                  <Palette size={20} className="text-emerald-600" />
+                  <span>Design Tokens & Theme Colors (100% Soft-Coded)</span>
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Configure brand primary, secondary, surface, background, and state colors. These tokens apply via CSS variables across all public customer portals.
+                </p>
+              </div>
+
+              {/* Preset Color Themes */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[11px] font-bold text-slate-400">Quick Presets:</span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    applyThemePreset({
+                      primary: '#059669',
+                      primaryHover: '#047857',
+                      secondary: '#0f172a',
+                      accent: '#10b981',
+                      background: '#f8fafc',
+                      surface: '#ffffff',
+                      text: '#1e293b',
+                      textMuted: '#64748b',
+                      border: '#e2e8f0',
+                    })
+                  }
+                  className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 transition cursor-pointer"
+                >
+                  Ekosmart Emerald
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    applyThemePreset({
+                      primary: '#2563eb',
+                      primaryHover: '#1d4ed8',
+                      secondary: '#0f172a',
+                      accent: '#38bdf8',
+                      background: '#f8fafc',
+                      surface: '#ffffff',
+                      text: '#1e293b',
+                      textMuted: '#64748b',
+                      border: '#e2e8f0',
+                    })
+                  }
+                  className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-blue-50 text-blue-800 border border-blue-300 hover:bg-blue-100 transition cursor-pointer"
+                >
+                  Ocean Sapphire
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    applyThemePreset({
+                      primary: '#d97706',
+                      primaryHover: '#b45309',
+                      secondary: '#1c1917',
+                      accent: '#f59e0b',
+                      background: '#fafaf9',
+                      surface: '#ffffff',
+                      text: '#1c1917',
+                      textMuted: '#78716c',
+                      border: '#e7e5e4',
+                    })
+                  }
+                  className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 transition cursor-pointer"
+                >
+                  Sunset Amber
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    applyThemePreset({
+                      primary: '#7c3aed',
+                      primaryHover: '#6d28d9',
+                      secondary: '#0f172a',
+                      accent: '#a855f7',
+                      background: '#f8fafc',
+                      surface: '#ffffff',
+                      text: '#1e293b',
+                      textMuted: '#64748b',
+                      border: '#e2e8f0',
+                    })
+                  }
+                  className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-purple-50 text-purple-800 border border-purple-300 hover:bg-purple-100 transition cursor-pointer"
+                >
+                  Cyber Violet
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    applyThemePreset({
+                      primary: '#0d9488',
+                      primaryHover: '#0f766e',
+                      secondary: '#042f2e',
+                      accent: '#14b8a6',
+                      background: '#f0fdfa',
+                      surface: '#ffffff',
+                      text: '#134e4a',
+                      textMuted: '#5eead4',
+                      border: '#ccfbf1',
+                    })
+                  }
+                  className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-teal-50 text-teal-800 border border-teal-300 hover:bg-teal-100 transition cursor-pointer"
+                >
+                  Kota Teal
+                </button>
+              </div>
+            </div>
+
+            {/* Color Pickers Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {[
+                { key: 'primary', label: 'Primary Brand Color', desc: 'Main buttons, CTAs, links' },
+                { key: 'primaryHover', label: 'Primary Hover State', desc: 'Hover state for primary action buttons' },
+                { key: 'secondary', label: 'Secondary Tone', desc: 'Top bar, dark accents, banners' },
+                { key: 'accent', label: 'Brand Accent', desc: 'Highlights, badges, live indicators' },
+                { key: 'background', label: 'Page Background', desc: 'Global body background color' },
+                { key: 'surface', label: 'Surface / Card Background', desc: 'Cards, modals, dropdown surfaces' },
+                { key: 'text', label: 'Primary Text', desc: 'Headings, labels, main body text' },
+                { key: 'textMuted', label: 'Muted Text', desc: 'Subtitles, secondary labels, hints' },
+                { key: 'border', label: 'Border Color', desc: 'Dividers, card outlines, inputs' },
+                { key: 'success', label: 'Success / Active', desc: 'Verified badges, active states' },
+                { key: 'warning', label: 'Warning / Caution', desc: 'Pending alerts, notices' },
+                { key: 'error', label: 'Error / Alert', desc: 'Rejected badges, destructive actions' },
+              ].map(({ key, label, desc }) => {
+                const colorVal =
+                  (content.themeColors as any)?.[key] ||
+                  (defaultFallbackContent.themeColors as any)?.[key] ||
+                  '#059669';
+                return (
+                  <div key={key} className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-xs text-slate-800">{label}</span>
+                      <div
+                        className="w-5 h-5 rounded-full border border-slate-300 shadow-xs"
+                        style={{ backgroundColor: colorVal }}
+                      />
+                    </div>
+                    <p className="text-[11px] text-slate-500">{desc}</p>
+                    <div className="flex items-center gap-2 pt-1">
+                      <input
+                        type="color"
+                        value={colorVal.startsWith('#') ? colorVal : '#059669'}
+                        onChange={(e) => updateThemeColor(key as keyof IThemeColors, e.target.value)}
+                        className="w-9 h-9 rounded-lg border border-slate-300 cursor-pointer p-0.5 bg-white shrink-0"
+                      />
+                      <input
+                        type="text"
+                        value={colorVal}
+                        onChange={(e) => updateThemeColor(key as keyof IThemeColors, e.target.value)}
+                        placeholder="#059669"
+                        className="flex-1 border border-slate-300 rounded-lg p-2 text-xs font-mono font-bold"
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Live Interactive Preview Card */}
+            <div className="bg-slate-900 text-white p-6 rounded-2xl border border-slate-800 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <span className="text-xs font-bold text-slate-300 flex items-center gap-2">
+                  <Eye size={15} className="text-emerald-400" />
+                  <span>Real-Time Theme Token Preview</span>
+                </span>
+                <span className="text-[10px] text-slate-400 font-mono">Live CSS Variables Simulation</span>
+              </div>
+
+              <div
+                style={{
+                  backgroundColor: content.themeColors?.background || '#f8fafc',
+                  color: content.themeColors?.text || '#1e293b',
+                  borderColor: content.themeColors?.border || '#e2e8f0',
+                }}
+                className="p-6 rounded-xl border transition-all space-y-4"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <span
+                      style={{
+                        backgroundColor: `${content.themeColors?.accent || '#10b981'}20`,
+                        color: content.themeColors?.primary || '#059669',
+                        borderColor: content.themeColors?.accent || '#10b981',
+                      }}
+                      className="px-2.5 py-1 rounded-full text-xs font-bold border uppercase tracking-wider inline-block"
+                    >
+                      ★ Ekosmart Verified Li-Ion
+                    </span>
+                    <h3 className="text-lg font-extrabold mt-1">High Power Battery Solution Preview</h3>
+                    <p style={{ color: content.themeColors?.textMuted || '#64748b' }} className="text-xs">
+                      This simulated card demonstrates how typography, buttons, and surfaces adapt to your custom theme colors.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      style={{
+                        backgroundColor: content.themeColors?.primary || '#059669',
+                        color: '#ffffff',
+                      }}
+                      className="px-4 py-2 rounded-xl text-xs font-bold shadow-sm transition"
+                    >
+                      Primary Action Button
+                    </button>
+                    <button
+                      type="button"
+                      style={{
+                        backgroundColor: content.themeColors?.surface || '#ffffff',
+                        color: content.themeColors?.text || '#1e293b',
+                        borderColor: content.themeColors?.border || '#e2e8f0',
+                      }}
+                      className="px-4 py-2 rounded-xl text-xs font-bold border shadow-xs transition"
+                    >
+                      Secondary Button
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                  <div
+                    style={{
+                      backgroundColor: content.themeColors?.surface || '#ffffff',
+                      borderColor: content.themeColors?.border || '#e2e8f0',
+                    }}
+                    className="p-3 rounded-lg border text-xs"
+                  >
+                    <div style={{ color: content.themeColors?.textMuted || '#64748b' }} className="text-[10px] font-bold uppercase">
+                      48V Series Warranty
+                    </div>
+                    <div className="text-base font-extrabold mt-0.5">3 Years Coverage</div>
+                  </div>
+                  <div
+                    style={{
+                      backgroundColor: content.themeColors?.surface || '#ffffff',
+                      borderColor: content.themeColors?.border || '#e2e8f0',
+                    }}
+                    className="p-3 rounded-lg border text-xs"
+                  >
+                    <div style={{ color: content.themeColors?.textMuted || '#64748b' }} className="text-[10px] font-bold uppercase">
+                      Kota Facility SLA
+                    </div>
+                    <div className="text-base font-extrabold mt-0.5">Fast Turnaround</div>
+                  </div>
+                  <div
+                    style={{
+                      backgroundColor: content.themeColors?.surface || '#ffffff',
+                      borderColor: content.themeColors?.border || '#e2e8f0',
+                    }}
+                    className="p-3 rounded-lg border text-xs"
+                  >
+                    <div style={{ color: content.themeColors?.textMuted || '#64748b' }} className="text-[10px] font-bold uppercase">
+                      Quality Standard
+                    </div>
+                    <div className="text-base font-extrabold mt-0.5">100% Genuine Cells</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Save Bar */}
+            <div className="bg-slate-900 text-white rounded-2xl p-5 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-lg">
+              <div>
+                <h4 className="font-bold text-sm text-slate-100 flex items-center gap-2">
+                  <CheckCircle size={16} className="text-green-400" />
+                  <span>Publish Custom Theme Tokens</span>
+                </h4>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Saving will update the CSS color variables across customer frontend and connected portals instantly.
+                </p>
+              </div>
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setContent({
+                      ...content,
+                      themeColors: defaultFallbackContent.themeColors,
+                    })
+                  }
+                  className="flex items-center gap-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold transition"
+                >
+                  <RotateCcw size={14} />
+                  <span>Reset Palette</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold transition shadow-md disabled:opacity-50"
+                >
+                  <Save size={16} />
+                  <span>{saving ? 'Saving...' : 'Save Theme Tokens'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: SECTION LAYOUTS */}
+      {activeTab === 'layouts' && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-6">
+            <div>
+              <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                <Sliders size={20} className="text-blue-600" />
+                <span>Soft-Coded Section Layouts & Styles</span>
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Customize maximum container width, top/bottom padding, background color overrides, border radius, and visibility for every public section.
+              </p>
+            </div>
+
+            {/* Sections Layout List */}
+            <div className="space-y-5">
+              {[
+                { key: 'hero', name: 'Hero & Header Showcase', defaultWidth: '1280px', defaultPadTop: '4rem', defaultPadBottom: '5rem' },
+                { key: 'quickActions', name: 'Quick Access Utilities Bar', defaultWidth: '1280px', defaultPadTop: '2rem', defaultPadBottom: '2rem' },
+                { key: 'serviceCards', name: 'Homepage Flash / Service Cards Grid', defaultWidth: '1280px', defaultPadTop: '2rem', defaultPadBottom: '2rem' },
+                { key: 'rewards', name: 'Customer Rewards & Wallet Banner', defaultWidth: '1280px', defaultPadTop: '2rem', defaultPadBottom: '2rem' },
+                { key: 'batteryBanner', name: 'Battery Assistance & Support Banner', defaultWidth: '1280px', defaultPadTop: '2rem', defaultPadBottom: '3rem' },
+                { key: 'contact', name: 'Contact Us Directory & Form', defaultWidth: '1280px', defaultPadTop: '2rem', defaultPadBottom: '3rem' },
+                { key: 'footer', name: 'Global Website Footer', defaultWidth: '1280px', defaultPadTop: '3rem', defaultPadBottom: '3rem' },
+              ].map(({ key, name, defaultWidth, defaultPadTop, defaultPadBottom }) => {
+                const layout =
+                  (content.sectionLayouts as any)?.[key] ||
+                  (defaultFallbackContent.sectionLayouts as any)?.[key] ||
+                  {};
+                const isVisible = layout.isVisible !== false;
+
+                return (
+                  <div
+                    key={key}
+                    className={`p-5 rounded-2xl border transition-all ${
+                      isVisible ? 'bg-slate-50/70 border-slate-200' : 'bg-slate-100/60 border-dashed border-slate-300 opacity-70'
+                    }`}
+                  >
+                    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-slate-200/80 pb-3 mb-4">
+                      <div className="flex items-center gap-3">
+                        <span className="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs shrink-0">
+                          <Sliders size={15} />
+                        </span>
+                        <div>
+                          <h3 className="font-bold text-slate-800 text-sm">{name}</h3>
+                          <span className="text-[11px] text-slate-400 font-mono">section: {key}</span>
+                        </div>
+                      </div>
+
+                      {/* Visibility Toggle */}
+                      <button
+                        type="button"
+                        onClick={() => updateSectionLayout(key as keyof ISectionLayouts, { isVisible: !isVisible })}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer self-start sm:self-auto ${
+                          isVisible
+                            ? 'bg-green-100 text-green-800 border border-green-300'
+                            : 'bg-slate-200 text-slate-600 border border-slate-300'
+                        }`}
+                      >
+                        {isVisible ? <Eye size={14} /> : <EyeOff size={14} />}
+                        <span>{isVisible ? 'Section Visible' : 'Section Hidden'}</span>
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {/* Max Width */}
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Max Container Width</label>
+                        <select
+                          value={layout.maxWidth || defaultWidth}
+                          onChange={(e) => updateSectionLayout(key as keyof ISectionLayouts, { maxWidth: e.target.value })}
+                          className="w-full border border-slate-300 rounded-lg p-2 text-xs bg-white"
+                        >
+                          <option value="100%">100% (Full Edge-to-Edge)</option>
+                          <option value="1440px">1440px (Wide / max-w-7xl)</option>
+                          <option value="1280px">1280px (Standard / max-w-6xl)</option>
+                          <option value="1024px">1024px (Compact / max-w-5xl)</option>
+                          <option value="800px">800px (Narrow / max-w-3xl)</option>
+                        </select>
+                      </div>
+
+                      {/* Padding Top */}
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Padding Top</label>
+                        <select
+                          value={layout.paddingTop || defaultPadTop}
+                          onChange={(e) => updateSectionLayout(key as keyof ISectionLayouts, { paddingTop: e.target.value })}
+                          className="w-full border border-slate-300 rounded-lg p-2 text-xs bg-white"
+                        >
+                          <option value="0.5rem">0.5rem (Minimal)</option>
+                          <option value="1rem">1rem (Compact)</option>
+                          <option value="2rem">2rem (Standard)</option>
+                          <option value="3rem">3rem (Comfortable)</option>
+                          <option value="4rem">4rem (Spacious)</option>
+                          <option value="5rem">5rem (Generous)</option>
+                        </select>
+                      </div>
+
+                      {/* Padding Bottom */}
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Padding Bottom</label>
+                        <select
+                          value={layout.paddingBottom || defaultPadBottom}
+                          onChange={(e) => updateSectionLayout(key as keyof ISectionLayouts, { paddingBottom: e.target.value })}
+                          className="w-full border border-slate-300 rounded-lg p-2 text-xs bg-white"
+                        >
+                          <option value="0.5rem">0.5rem (Minimal)</option>
+                          <option value="1rem">1rem (Compact)</option>
+                          <option value="2rem">2rem (Standard)</option>
+                          <option value="3rem">3rem (Comfortable)</option>
+                          <option value="4rem">4rem (Spacious)</option>
+                          <option value="5rem">5rem (Generous)</option>
+                        </select>
+                      </div>
+
+                      {/* Background Override */}
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Background Override</label>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="color"
+                            value={layout.backgroundColor && layout.backgroundColor.startsWith('#') ? layout.backgroundColor : '#ffffff'}
+                            onChange={(e) => updateSectionLayout(key as keyof ISectionLayouts, { backgroundColor: e.target.value })}
+                            className="w-8 h-8 rounded border border-slate-300 cursor-pointer p-0.5 bg-white shrink-0"
+                          />
+                          <input
+                            type="text"
+                            value={layout.backgroundColor || ''}
+                            onChange={(e) => updateSectionLayout(key as keyof ISectionLayouts, { backgroundColor: e.target.value })}
+                            placeholder="Default / Transparent"
+                            className="flex-1 border border-slate-300 rounded-lg p-2 text-xs font-mono"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Save Bar */}
+            <div className="bg-slate-900 text-white rounded-2xl p-5 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-lg">
+              <div>
+                <h4 className="font-bold text-sm text-slate-100 flex items-center gap-2">
+                  <CheckCircle size={16} className="text-green-400" />
+                  <span>Publish Section Layout Settings</span>
+                </h4>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Saving updates layout width and padding constraints across the customer website instantly.
+                </p>
+              </div>
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold transition shadow-md disabled:opacity-50"
+                >
+                  <Save size={16} />
+                  <span>{saving ? 'Saving...' : 'Save Section Layouts'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: NAVIGATION BAR */}
+      {activeTab === 'navbar' && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-6">
+            <div>
+              <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                <List size={20} className="text-purple-600" />
+                <span>Header Navigation Bar & Top Strip Settings</span>
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Configure brand header title, helpline bar, default core links, and add custom navigation items and dropdowns.
+              </p>
+            </div>
+
+            {/* Top Bar Strip Settings */}
+            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                    <Phone size={14} className="text-emerald-600" />
+                    <span>Top Helpline Header Strip</span>
+                  </h3>
+                  <p className="text-[11px] text-slate-500">Dark informational strip at the very top of all pages</p>
+                </div>
+                <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={content.topBar?.isVisible ?? true}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        topBar: { ...(content.topBar || defaultFallbackContent.topBar!), isVisible: e.target.checked },
+                      })
+                    }
+                    className="rounded text-green-600 h-4 w-4"
+                  />
+                  <span>Show Top Bar</span>
+                </label>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">Helpline Phone</label>
+                  <input
+                    type="text"
+                    value={content.topBar?.phone || ''}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        topBar: { ...(content.topBar || defaultFallbackContent.topBar!), phone: e.target.value },
+                      })
+                    }
+                    placeholder="+91 8949049003"
+                    className="w-full border border-slate-300 rounded-lg p-2 text-xs font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">Office Hours</label>
+                  <input
+                    type="text"
+                    value={content.topBar?.officeHours || ''}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        topBar: { ...(content.topBar || defaultFallbackContent.topBar!), officeHours: e.target.value },
+                      })
+                    }
+                    placeholder="10:00 AM to 6:30 PM (Mon - Sat)"
+                    className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">GSTIN Number</label>
+                  <input
+                    type="text"
+                    value={content.topBar?.gstin || ''}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        topBar: { ...(content.topBar || defaultFallbackContent.topBar!), gstin: e.target.value },
+                      })
+                    }
+                    placeholder="08DTUPM4205B1Z0"
+                    className="w-full border border-slate-300 rounded-lg p-2 text-xs font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">Location Label</label>
+                  <input
+                    type="text"
+                    value={content.topBar?.location || ''}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        topBar: { ...(content.topBar || defaultFallbackContent.topBar!), location: e.target.value },
+                      })
+                    }
+                    placeholder="Kota, Rajasthan"
+                    className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Brand Logo & Title */}
+            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
+              <h3 className="font-bold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                <Home size={14} className="text-purple-600" />
+                <span>Header Brand Title & Subtitle</span>
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">Brand Main Title</label>
+                  <input
+                    type="text"
+                    value={content.headerNav?.brandTitle || ''}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        headerNav: { ...(content.headerNav || defaultFallbackContent.headerNav!), brandTitle: e.target.value },
+                      })
+                    }
+                    placeholder="EBS EKOSMART"
+                    className="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">Brand Subtitle</label>
+                  <input
+                    type="text"
+                    value={content.headerNav?.brandSubtitle || ''}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        headerNav: { ...(content.headerNav || defaultFallbackContent.headerNav!), brandSubtitle: e.target.value },
+                      })
+                    }
+                    placeholder="Battery Solution • Li-ion & LFP"
+                    className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Core Navigation Links Visibility */}
+            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
+              <h3 className="font-bold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                <CheckCircle size={14} className="text-emerald-600" />
+                <span>Core Navbar Links Toggles</span>
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-xs text-slate-800">Home Link</span>
+                    <input
+                      type="checkbox"
+                      checked={content.headerNav?.showHome ?? true}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          headerNav: { ...(content.headerNav || defaultFallbackContent.headerNav!), showHome: e.target.checked },
+                        })
+                      }
+                      className="rounded text-green-600 h-4 w-4"
+                    />
+                  </div>
+                  <input
+                    type="text"
+                    value={content.headerNav?.homeLabel || 'Home'}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        headerNav: { ...(content.headerNav || defaultFallbackContent.headerNav!), homeLabel: e.target.value },
+                      })
+                    }
+                    className="w-full border border-slate-300 rounded px-2 py-1 text-xs"
+                    placeholder="Home"
+                  />
+                </div>
+
+                <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-xs text-slate-800">Wallet & Coins</span>
+                    <input
+                      type="checkbox"
+                      checked={content.headerNav?.showWallet ?? true}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          headerNav: { ...(content.headerNav || defaultFallbackContent.headerNav!), showWallet: e.target.checked },
+                        })
+                      }
+                      className="rounded text-green-600 h-4 w-4"
+                    />
+                  </div>
+                  <input
+                    type="text"
+                    value={content.headerNav?.walletLabel || 'Wallet & Coins'}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        headerNav: { ...(content.headerNav || defaultFallbackContent.headerNav!), walletLabel: e.target.value },
+                      })
+                    }
+                    className="w-full border border-slate-300 rounded px-2 py-1 text-xs"
+                    placeholder="Wallet & Coins"
+                  />
+                </div>
+
+                <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-xs text-slate-800">Refer & Earn</span>
+                    <input
+                      type="checkbox"
+                      checked={content.headerNav?.showRefer ?? true}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          headerNav: { ...(content.headerNav || defaultFallbackContent.headerNav!), showRefer: e.target.checked },
+                        })
+                      }
+                      className="rounded text-green-600 h-4 w-4"
+                    />
+                  </div>
+                  <input
+                    type="text"
+                    value={content.headerNav?.referLabel || 'Refer & Earn'}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        headerNav: { ...(content.headerNav || defaultFallbackContent.headerNav!), referLabel: e.target.value },
+                      })
+                    }
+                    className="w-full border border-slate-300 rounded px-2 py-1 text-xs"
+                    placeholder="Refer & Earn"
+                  />
+                </div>
+
+                <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-xs text-slate-800">Account / Login CTA</span>
+                    <input
+                      type="checkbox"
+                      checked={content.headerNav?.showAccount ?? true}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          headerNav: { ...(content.headerNav || defaultFallbackContent.headerNav!), showAccount: e.target.checked },
+                        })
+                      }
+                      className="rounded text-green-600 h-4 w-4"
+                    />
+                  </div>
+                  <input
+                    type="text"
+                    value={content.headerNav?.accountLabel || 'Account / Login'}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        headerNav: { ...(content.headerNav || defaultFallbackContent.headerNav!), accountLabel: e.target.value },
+                      })
+                    }
+                    className="w-full border border-slate-300 rounded px-2 py-1 text-xs"
+                    placeholder="Account / Login"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Custom Navigation Links Manager */}
+            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                <div>
+                  <h3 className="font-bold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                    <List size={14} className="text-purple-600" />
+                    <span>Custom Navigation Menu Links</span>
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Add custom top navbar items with routes, external links, and optional dropdown submenus.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const currentNav = [...(content.headerNav?.customNavItems || defaultFallbackContent.headerNav?.customNavItems || [])];
+                    const newItem: ICustomNavItem = {
+                      id: `nav-${Date.now()}`,
+                      label: `Custom Link ${currentNav.length + 1}`,
+                      href: '/',
+                      isVisible: true,
+                      order: currentNav.length + 1,
+                      isExternal: false,
+                    };
+                    setContent({
+                      ...content,
+                      headerNav: {
+                        ...(content.headerNav || defaultFallbackContent.headerNav!),
+                        customNavItems: [...currentNav, newItem],
+                      },
+                    });
+                  }}
+                  className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer self-start sm:self-auto shadow-xs"
+                >
+                  <Plus size={14} />
+                  <span>Add Navigation Item</span>
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {(content.headerNav?.customNavItems || defaultFallbackContent.headerNav?.customNavItems || []).map((navItem, idx) => (
+                  <div key={navItem.id || idx} className="bg-white p-4 rounded-xl border border-slate-200 space-y-3 shadow-xs">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <span className="w-6 h-6 rounded-full bg-purple-100 text-purple-800 font-bold text-xs flex items-center justify-center shrink-0">
+                          {idx + 1}
+                        </span>
+                        <input
+                          type="text"
+                          value={navItem.label}
+                          onChange={(e) => {
+                            const currentNav = [...(content.headerNav?.customNavItems || defaultFallbackContent.headerNav?.customNavItems || [])];
+                            currentNav[idx] = { ...currentNav[idx], label: e.target.value };
+                            setContent({
+                              ...content,
+                              headerNav: { ...(content.headerNav || defaultFallbackContent.headerNav!), customNavItems: currentNav },
+                            });
+                          }}
+                          placeholder="Nav Label"
+                          className="font-bold text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 w-48"
+                        />
+                        <input
+                          type="text"
+                          value={navItem.href}
+                          onChange={(e) => {
+                            const currentNav = [...(content.headerNav?.customNavItems || defaultFallbackContent.headerNav?.customNavItems || [])];
+                            currentNav[idx] = { ...currentNav[idx], href: e.target.value };
+                            setContent({
+                              ...content,
+                              headerNav: { ...(content.headerNav || defaultFallbackContent.headerNav!), customNavItems: currentNav },
+                            });
+                          }}
+                          placeholder="/path or url"
+                          className="text-xs font-mono border border-slate-300 rounded-lg px-2.5 py-1.5 flex-1 sm:w-64"
+                        />
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <label className="flex items-center gap-1.5 text-[11px] text-slate-600 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={navItem.isVisible !== false}
+                            onChange={(e) => {
+                              const currentNav = [...(content.headerNav?.customNavItems || defaultFallbackContent.headerNav?.customNavItems || [])];
+                              currentNav[idx] = { ...currentNav[idx], isVisible: e.target.checked };
+                              setContent({
+                                ...content,
+                                headerNav: { ...(content.headerNav || defaultFallbackContent.headerNav!), customNavItems: currentNav },
+                              });
+                            }}
+                            className="rounded text-purple-600 h-3.5 w-3.5"
+                          />
+                          <span>Visible</span>
+                        </label>
+
+                        <label className="flex items-center gap-1.5 text-[11px] text-slate-600 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={navItem.isExternal || false}
+                            onChange={(e) => {
+                              const currentNav = [...(content.headerNav?.customNavItems || defaultFallbackContent.headerNav?.customNavItems || [])];
+                              currentNav[idx] = { ...currentNav[idx], isExternal: e.target.checked };
+                              setContent({
+                                ...content,
+                                headerNav: { ...(content.headerNav || defaultFallbackContent.headerNav!), customNavItems: currentNav },
+                              });
+                            }}
+                            className="rounded text-purple-600 h-3.5 w-3.5"
+                          />
+                          <span>External Tab</span>
+                        </label>
+
+                        {/* Move Up/Down */}
+                        <button
+                          type="button"
+                          disabled={idx === 0}
+                          onClick={() => {
+                            const currentNav = [...(content.headerNav?.customNavItems || defaultFallbackContent.headerNav?.customNavItems || [])];
+                            const temp = currentNav[idx];
+                            currentNav[idx] = currentNav[idx - 1];
+                            currentNav[idx - 1] = temp;
+                            setContent({
+                              ...content,
+                              headerNav: { ...(content.headerNav || defaultFallbackContent.headerNav!), customNavItems: currentNav },
+                            });
+                          }}
+                          className="p-1 text-slate-400 hover:text-slate-800 disabled:opacity-20 cursor-pointer"
+                          title="Move Up"
+                        >
+                          <ArrowUp size={13} />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={idx === (content.headerNav?.customNavItems || []).length - 1}
+                          onClick={() => {
+                            const currentNav = [...(content.headerNav?.customNavItems || defaultFallbackContent.headerNav?.customNavItems || [])];
+                            const temp = currentNav[idx];
+                            currentNav[idx] = currentNav[idx + 1];
+                            currentNav[idx + 1] = temp;
+                            setContent({
+                              ...content,
+                              headerNav: { ...(content.headerNav || defaultFallbackContent.headerNav!), customNavItems: currentNav },
+                            });
+                          }}
+                          className="p-1 text-slate-400 hover:text-slate-800 disabled:opacity-20 cursor-pointer"
+                          title="Move Down"
+                        >
+                          <ArrowDown size={13} />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const currentNav = [...(content.headerNav?.customNavItems || defaultFallbackContent.headerNav?.customNavItems || [])];
+                            currentNav.splice(idx, 1);
+                            setContent({
+                              ...content,
+                              headerNav: { ...(content.headerNav || defaultFallbackContent.headerNav!), customNavItems: currentNav },
+                            });
+                          }}
+                          className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 transition cursor-pointer"
+                          title="Delete Item"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Save Bar */}
+            <div className="bg-slate-900 text-white rounded-2xl p-5 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-lg">
+              <div>
+                <h4 className="font-bold text-sm text-slate-100 flex items-center gap-2">
+                  <CheckCircle size={16} className="text-green-400" />
+                  <span>Publish Navigation Bar Configuration</span>
+                </h4>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Saving updates top bar strip, brand headers, and all custom navigation links across desktop & mobile.
+                </p>
+              </div>
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold transition shadow-md disabled:opacity-50"
+                >
+                  <Save size={16} />
+                  <span>{saving ? 'Saving...' : 'Save Navigation Settings'}</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

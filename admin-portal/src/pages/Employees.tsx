@@ -28,8 +28,10 @@ import {
   Package,
   Box,
   Copy,
+  Calendar,
+  RotateCcw,
 } from 'lucide-react';
-import { employeeApi, formApi, contentApi, resolveImageUrl } from '../api/client';
+import { employeeApi, formApi, contentApi, leaveApi, resolveImageUrl } from '../api/client';
 
 import { IdCardModal } from '../components/IdCardModal';
 import { SalarySlipModal } from '../components/SalarySlipModal';
@@ -190,7 +192,7 @@ const defaultWarrantyAccess: IWarrantyAccess = {
 };
 
 const Employees = () => {
-  const [activeTab, setActiveTab] = useState<'directory' | 'salary_template'>('directory');
+  const [activeTab, setActiveTab] = useState<'directory' | 'salary_template' | 'leave_requests'>('directory');
   const [employees, setEmployees] = useState<EmployeeItem[]>([]);
   const [availableDivisions, setAvailableDivisions] = useState<string[]>(DEFAULT_DIVISIONS);
   const [availableDepartments, setAvailableDepartments] = useState<string[]>(DEFAULT_DEPARTMENTS);
@@ -198,6 +200,57 @@ const Employees = () => {
   const [search, setSearch] = useState('');
   const [divisionFilter, setDivisionFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+
+  // Leave Requests Management States
+  const [leaves, setLeaves] = useState<any[]>([]);
+  const [leavesLoading, setLeavesLoading] = useState(false);
+  const [leaveStatusFilter, setLeaveStatusFilter] = useState<'All' | 'Pending' | 'Approved' | 'Rejected'>('All');
+  const [leaveSearch, setLeaveSearch] = useState('');
+  const [updatingLeaveId, setUpdatingLeaveId] = useState<string | null>(null);
+
+  const fetchLeaves = async () => {
+    try {
+      setLeavesLoading(true);
+      const res = await leaveApi.getAll({
+        status: leaveStatusFilter === 'All' ? undefined : leaveStatusFilter,
+        search: leaveSearch || undefined,
+      });
+      if (res.data?.success) {
+        setLeaves(res.data.data || []);
+      }
+    } catch (err) {
+      console.error('Failed to load leaves:', err);
+    } finally {
+      setLeavesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'leave_requests') {
+      fetchLeaves();
+    }
+  }, [activeTab, leaveStatusFilter, leaveSearch]);
+
+  const handleUpdateLeaveStatus = async (id: string, status: 'Approved' | 'Rejected') => {
+    const remark = window.prompt(`Enter optional remarks for marking this leave as ${status}:`, '');
+    if (remark === null) return;
+    try {
+      setUpdatingLeaveId(id);
+      const res = await leaveApi.updateStatus(id, {
+        status,
+        adminRemarks: remark,
+      });
+      if (res.data?.success) {
+        setSuccessBanner(`Leave request status updated to ${status}!`);
+        setTimeout(() => setSuccessBanner(''), 3000);
+        fetchLeaves();
+      }
+    } catch (err: any) {
+      alert('Failed to update leave status: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setUpdatingLeaveId(null);
+    }
+  };
 
   // Modal States
   const [showModal, setShowModal] = useState(false);
@@ -1079,7 +1132,20 @@ const Employees = () => {
           }`}
         >
           <FileSpreadsheet size={16} />
-          <span>Soft-Coded Payslip / Salary Template Designer</span>
+          <span>Soft-Coded Payslip Designer</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('leave_requests')}
+          className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 cursor-pointer ${
+            activeTab === 'leave_requests'
+              ? 'bg-emerald-700 text-white shadow-md shadow-emerald-950/20'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          }`}
+        >
+          <Calendar size={16} />
+          <span>Leave & Attendance Approvals ({leaves.filter((l) => l.status === 'Pending').length} Pending)</span>
         </button>
       </div>
 
@@ -1452,6 +1518,203 @@ const Employees = () => {
       {activeTab === 'salary_template' && (
         <div className="space-y-4">
           <BillTemplateDesigner restrictType="Salary" initialType="Salary" />
+        </div>
+      )}
+
+      {/* TAB 3: LEAVE & ATTENDANCE APPROVALS */}
+      {activeTab === 'leave_requests' && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Header Card */}
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                <Calendar className="text-emerald-600" />
+                Staff Leave Applications & Attendance Approvals
+              </h1>
+              <p className="text-slate-500 text-sm mt-1">
+                Automated duration engine tracks working days (Sundays excluded) vs calendar days with instant one-click approval workflows.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={fetchLeaves}
+                className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition cursor-pointer"
+              >
+                <RotateCcw size={14} className={leavesLoading ? 'animate-spin' : ''} />
+                <span>Refresh Leaves</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Filter Bar */}
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4">
+            {/* Search Input */}
+            <div className="relative w-full sm:w-80">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <input
+                type="text"
+                value={leaveSearch}
+                onChange={(e) => setLeaveSearch(e.target.value)}
+                placeholder="Search by employee name, ID, leave type..."
+                className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-xl text-xs bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition"
+              />
+            </div>
+
+            {/* Status Tabs */}
+            <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl text-xs font-bold w-full sm:w-auto">
+              {(['All', 'Pending', 'Approved', 'Rejected'] as const).map((st) => (
+                <button
+                  key={st}
+                  type="button"
+                  onClick={() => setLeaveStatusFilter(st)}
+                  className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg transition cursor-pointer ${
+                    leaveStatusFilter === st
+                      ? 'bg-emerald-700 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                  }`}
+                >
+                  {st}
+                  {st === 'Pending' && (
+                    <span className="ml-1.5 px-1.5 py-0.2 rounded-full text-[10px] bg-amber-400 text-slate-950 font-black">
+                      {leaves.filter((l) => l.status === 'Pending').length}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Leave Requests Table */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            {leavesLoading ? (
+              <div className="p-16 flex flex-col items-center justify-center text-slate-400">
+                <Loader2 size={32} className="animate-spin text-emerald-600 mb-2" />
+                <p className="text-xs font-semibold">Loading leave applications...</p>
+              </div>
+            ) : leaves.length === 0 ? (
+              <div className="p-16 text-center text-slate-400">
+                <Calendar size={48} className="mx-auto text-slate-300 mb-3 opacity-60" />
+                <p className="text-sm font-bold text-slate-600">No leave requests found</p>
+                <p className="text-xs text-slate-400 mt-1">
+                  {leaveStatusFilter !== 'All'
+                    ? `No requests currently match the "${leaveStatusFilter}" filter.`
+                    : 'Employees can submit leave requests directly from their employee workspace.'}
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                      <th className="py-3.5 px-4">Employee</th>
+                      <th className="py-3.5 px-4">Leave Type & Reason</th>
+                      <th className="py-3.5 px-4">Dates</th>
+                      <th className="py-3.5 px-4">Duration Engine</th>
+                      <th className="py-3.5 px-4">Applied On</th>
+                      <th className="py-3.5 px-4">Status</th>
+                      <th className="py-3.5 px-4">Admin Remarks</th>
+                      <th className="py-3.5 px-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-xs">
+                    {leaves.map((req) => (
+                      <tr key={req._id} className="hover:bg-slate-50/60 transition">
+                        <td className="py-3 px-4">
+                          <div className="font-bold text-slate-900">{req.employeeName || req.employee?.name || 'Staff Member'}</div>
+                          <div className="font-mono text-[10.5px] text-emerald-700 font-bold">{req.employeeCode || req.employee?.employeeId}</div>
+                          <div className="text-[10px] text-slate-400">
+                            {req.department || req.employee?.department || 'Operations'}
+                          </div>
+                        </td>
+
+                        <td className="py-3 px-4 max-w-xs">
+                          <span className="inline-block px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 mb-1">
+                            {req.leaveType}
+                          </span>
+                          <p className="text-[11px] text-slate-600 line-clamp-2" title={req.reason}>
+                            {req.reason}
+                          </p>
+                        </td>
+
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <div className="font-semibold text-slate-800">
+                            {new Date(req.startDate).toLocaleDateString()}
+                          </div>
+                          <div className="text-[10px] text-slate-400">to</div>
+                          <div className="font-semibold text-slate-800">
+                            {new Date(req.endDate).toLocaleDateString()}
+                          </div>
+                        </td>
+
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <div className="flex items-center gap-1.5 font-bold text-emerald-700 text-xs">
+                            <span className="bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                              {req.workingDays} Working Day{req.workingDays !== 1 ? 's' : ''}
+                            </span>
+                          </div>
+                          <div className="text-[10px] text-slate-400 mt-0.5">
+                            {req.calendarDays} Calendar Day{req.calendarDays !== 1 ? 's' : ''}
+                            {req.isHalfDay && ` (${req.halfDaySession || 'Half-Day'})`}
+                          </div>
+                        </td>
+
+                        <td className="py-3 px-4 text-slate-500 whitespace-nowrap text-[11px]">
+                          {req.createdAt ? new Date(req.createdAt).toLocaleDateString() : 'N/A'}
+                        </td>
+
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold ${
+                              req.status === 'Approved'
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                : req.status === 'Rejected'
+                                ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                                : 'bg-amber-100 text-amber-800 border border-amber-300'
+                            }`}
+                          >
+                            {req.status}
+                          </span>
+                        </td>
+
+                        <td className="py-3 px-4 text-[11px] text-slate-500 max-w-xs truncate" title={req.adminRemarks || 'None'}>
+                          {req.adminRemarks || '—'}
+                        </td>
+
+                        <td className="py-3 px-4 text-right whitespace-nowrap">
+                          {req.status === 'Pending' ? (
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateLeaveStatus(req._id, 'Approved')}
+                                disabled={updatingLeaveId === req._id}
+                                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg text-xs font-bold transition shadow-xs cursor-pointer flex items-center gap-1"
+                              >
+                                {updatingLeaveId === req._id ? <Loader2 size={12} className="animate-spin" /> : null}
+                                <span>Approve</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateLeaveStatus(req._id, 'Rejected')}
+                                disabled={updatingLeaveId === req._id}
+                                className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white rounded-lg text-xs font-bold transition shadow-xs cursor-pointer flex items-center gap-1"
+                              >
+                                {updatingLeaveId === req._id ? <Loader2 size={12} className="animate-spin" /> : null}
+                                <span>Reject</span>
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-[10px] text-slate-400 font-semibold italic">Reviewed</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

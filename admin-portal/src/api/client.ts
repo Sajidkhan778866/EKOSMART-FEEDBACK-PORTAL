@@ -221,6 +221,25 @@ export const complaintApi = {
   export: (params?: any) => apiClient.get('/complaints/export', { params, responseType: 'blob' }),
 };
 
+export const leaveApi = {
+  calculate: (data: { startDate: string; endDate: string; isHalfDay?: boolean; halfDaySession?: string; weeklyOffDay?: number }) =>
+    apiClient.post('/leaves/calculate', data),
+  apply: (data: any) => apiClient.post('/leaves/apply', data),
+  getMyLeaves: (employeeId?: string) => apiClient.get('/leaves/my', { params: { employeeId } }),
+  getAll: (params?: any) => apiClient.get('/leaves', { params }),
+  updateStatus: (
+    id: string,
+    statusOrData: string | { status: 'Approved' | 'Rejected' | 'Pending'; adminRemarks?: string; remarks?: string; approvedBy?: string },
+    remarks?: string,
+    approvedBy?: string
+  ) => {
+    if (typeof statusOrData === 'object') {
+      return apiClient.patch(`/leaves/${id}/status`, statusOrData);
+    }
+    return apiClient.patch(`/leaves/${id}/status`, { status: statusOrData, remarks, approvedBy });
+  },
+};
+
 export const warrantyApi = {
   getAll: (params?: any) => apiClient.get('/warranty/admin', { params }),
   export: (params?: any) => apiClient.get('/warranty/export/csv', { params, responseType: 'blob' }),

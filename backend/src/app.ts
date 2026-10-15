@@ -18,6 +18,7 @@ import frontendBuilderRoutes from './routes/frontendBuilder.routes';
 import pageRoutes from './routes/page.routes';
 import themeRoutes from './routes/theme.routes';
 import mediaRoutes from './routes/media.routes';
+import leaveRoutes from './routes/leave.routes';
 
 const app: Express = express();
 
@@ -169,6 +170,7 @@ const mountRoutes = (prefix: string) => {
   app.use(`${prefix}/pages`, pageRoutes);
   app.use(`${prefix}/theme`, themeRoutes);
   app.use(`${prefix}/media`, mediaRoutes);
+  app.use(`${prefix}/leaves`, leaveRoutes);
 };
 
 mountRoutes('/api/v1');

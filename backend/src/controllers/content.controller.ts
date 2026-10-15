@@ -786,6 +786,9 @@ export const getPublicContent = async (_req: Request, res: Response) => {
         privacyPolicy: content.privacyPolicy,
         termsConditions: content.termsConditions,
         refundPolicy: content.refundPolicy,
+        themeColors: content.themeColors || {},
+        sectionLayouts: content.sectionLayouts || {},
+        idCardConfig: content.idCardConfig || defaultIdCardConfig,
       },
     });
   } catch (error: any) {
@@ -848,8 +851,19 @@ export const updateAdminContent = async (req: Request, res: Response) => {
       contactInfo,
       topBar,
       headerNav,
+      themeColors,
+      sectionLayouts,
     } = req.body;
     let content = await getOrCreateDefaultContent();
+
+    if (themeColors) {
+      content.themeColors = { ...(content.themeColors || {}), ...themeColors };
+      content.markModified('themeColors');
+    }
+    if (sectionLayouts) {
+      content.sectionLayouts = { ...(content.sectionLayouts || {}), ...sectionLayouts };
+      content.markModified('sectionLayouts');
+    }
 
     if (topBar) {
       content.topBar = { ...(content.topBar || {}), ...topBar };

@@ -51,19 +51,36 @@ export interface IIdCardFieldConfig {
 }
 
 export interface IIdCardConfig {
-  templateName: string;
+  template?: 'emerald' | 'cyber' | 'amber' | 'slate' | 'custom' | string;
+  templateName?: string;
   companyName: string;
   companySubtitle: string;
   companyAddress: string;
-  logoType: 'preset' | 'image';
+  logoType?: 'preset' | 'image';
   logoImage?: string;
-  primaryColor: string;
-  secondaryColor: string;
-  fields: IIdCardFieldConfig[];
-  showBarcode: boolean;
-  showQrCode: boolean;
-  authorizedSignatoryText: string;
-  termsText: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+  fields?: IIdCardFieldConfig[];
+  showBarcode?: boolean;
+  showQrCode?: boolean;
+  authorizedSignatoryText?: string;
+  termsText?: string;
+  customColors?: {
+    headerBgStart?: string;
+    headerBgEnd?: string;
+    cardBg?: string;
+    accentBorder?: string;
+    accentText?: string;
+    accentPillBg?: string;
+    accentPillText?: string;
+    qrBorder?: string;
+    badgeBg?: string;
+    badgeText?: string;
+    footerBg?: string;
+    footerText?: string;
+    printPrimary?: string;
+    printSecondary?: string;
+  };
 }
 
 export interface IBillingConfig {
@@ -115,6 +132,16 @@ export interface IHeaderNavContent {
   accountBtnText: string;
   navBgColor?: string;
   navBorderColor?: string;
+  customNavItems?: Array<{
+    id: string;
+    label: string;
+    href: string;
+    icon?: string;
+    isVisible?: boolean;
+    order?: number;
+    isExternal?: boolean;
+    children?: Array<{ label: string; href: string; isExternal?: boolean }>;
+  }>;
 }
 
 export interface IHeroContent {
@@ -318,6 +345,54 @@ export interface IFooterContent {
   mapUrl?: string;
   showContactDropdown?: boolean;
   contactDropdownTitle?: string;
+  columns?: Array<{
+    id?: string;
+    title: string;
+    links: Array<{ label: string; href: string; isExternal?: boolean }>;
+  }>;
+}
+
+export interface IThemeColors {
+  primary: string;
+  primaryHover: string;
+  secondary: string;
+  secondaryHover?: string;
+  accent: string;
+  background: string;
+  surface: string;
+  text: string;
+  textMuted: string;
+  border: string;
+  success?: string;
+  warning?: string;
+  error?: string;
+}
+
+export interface ISectionLayoutStyle {
+  width?: string;
+  maxWidth?: string;
+  paddingTop?: string;
+  paddingBottom?: string;
+  marginTop?: string;
+  marginBottom?: string;
+  gap?: string;
+  alignment?: 'left' | 'center' | 'right';
+  gridColumns?: number;
+  borderRadius?: string;
+  shadow?: string;
+  backgroundColor?: string;
+  isVisible?: boolean;
+  order?: number;
+}
+
+export interface ISectionLayouts {
+  hero?: ISectionLayoutStyle;
+  quickActions?: ISectionLayoutStyle;
+  serviceCards?: ISectionLayoutStyle;
+  rewards?: ISectionLayoutStyle;
+  batteryBanner?: ISectionLayoutStyle;
+  contact?: ISectionLayoutStyle;
+  footer?: ISectionLayoutStyle;
 }
 
 export interface IContent extends Document {
@@ -328,6 +403,8 @@ export interface IContent extends Document {
   serviceCards: IServiceCard[];
   navigation?: INavItem[];
   idCardConfig?: IIdCardConfig;
+  themeColors?: IThemeColors;
+  sectionLayouts?: ISectionLayouts;
   billingConfig?: IBillingConfig;
   portalLinks?: IPortalLinks;
   customerLoginTimer?: {
@@ -645,6 +722,7 @@ const contentSchema = new Schema<IContent>(
       mapUrl: { type: String, default: 'https://maps.google.com/?q=Kota,Rajasthan' },
       showContactDropdown: { type: Boolean, default: true },
       contactDropdownTitle: { type: String, default: 'Quick Department Contacts' },
+      columns: { type: Array, default: [] },
     },
     privacyPolicy: {
       title: { type: String, default: 'Privacy Policy & Battery Data Protection' },
@@ -724,6 +802,7 @@ Bulk battery orders applicable as per Minimum Order Quantity (MOQ 5 / MOQ 10) te
       },
     ],
     idCardConfig: {
+      template: { type: String, default: 'emerald' },
       templateName: { type: String, default: 'emerald' },
       companyName: { type: String, default: 'Ekosmart Battery Solution (EBS)' },
       companySubtitle: { type: String, default: 'High Power Lithium-Ion & LFP Technologies' },
@@ -732,6 +811,7 @@ Bulk battery orders applicable as per Minimum Order Quantity (MOQ 5 / MOQ 10) te
       logoImage: { type: String, default: '' },
       primaryColor: { type: String, default: '#064e3b' },
       secondaryColor: { type: String, default: '#059669' },
+      customColors: { type: Object, default: () => ({}) },
       fields: [
         {
           fieldKey: { type: String, required: true },
@@ -745,6 +825,8 @@ Bulk battery orders applicable as per Minimum Order Quantity (MOQ 5 / MOQ 10) te
       authorizedSignatoryText: { type: String, default: 'Authorized Signatory (Kota Plant)' },
       termsText: { type: String, default: 'This card is non-transferable property of Ekosmart Battery Solution.' },
     },
+    themeColors: { type: Object, default: () => ({}) },
+    sectionLayouts: { type: Object, default: () => ({}) },
     billingConfig: {
       invoicePrefix: { type: String, default: 'EBS-INV' },
       defaultTaxRate: { type: Number, default: 18 },

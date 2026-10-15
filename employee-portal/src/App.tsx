@@ -8,6 +8,7 @@ import Billing from './pages/Billing';
 import Stock from './pages/Stock';
 import MyIdCard from './pages/MyIdCard';
 import MySalarySlip from './pages/MySalarySlip';
+import Complaints from './pages/Complaints';
 import ErrorBoundary from './components/ErrorBoundary';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -55,7 +56,7 @@ function App() {
             <Route path="stock" element={<Stock />} />
             <Route path="idcard" element={<MyIdCard />} />
             <Route path="salary" element={<MySalarySlip />} />
-            <Route path="complaints" element={<Dashboard />} />
+            <Route path="complaints" element={<Complaints />} />
             <Route path="warranty" element={<Dashboard />} />
             <Route path="reports" element={<Reports />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />

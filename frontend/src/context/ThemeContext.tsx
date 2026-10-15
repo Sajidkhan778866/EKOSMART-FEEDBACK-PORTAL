@@ -201,33 +201,75 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const fetchTheme = async () => {
     try {
       setIsLoading(true);
-      const res = await fetch(`${API_BASE}/frontend-builder/public/theme`);
-      if (res.ok) {
-        const json = await res.json();
+      const [contentRes, builderRes] = await Promise.allSettled([
+        fetch(`${API_BASE}/content/public`),
+        fetch(`${API_BASE}/frontend-builder/public/theme`),
+      ]);
+
+      let themeData: Partial<IThemeConfig> = {};
+
+      if (contentRes.status === 'fulfilled' && contentRes.value.ok) {
+        const json = await contentRes.value.json();
         if (json.success && json.data) {
-          const merged: IThemeConfig = {
-            ...defaultTheme,
-            ...json.data,
-            tokens: {
-              colors: { ...defaultTheme.tokens.colors, ...(json.data.tokens?.colors || {}) },
-              typography: { ...defaultTheme.tokens.typography, ...(json.data.tokens?.typography || {}) },
-              radii: { ...defaultTheme.tokens.radii, ...(json.data.tokens?.radii || {}) },
-            },
-            header: { ...defaultTheme.header, ...(json.data.header || {}) },
-            footer: { ...defaultTheme.footer, ...(json.data.footer || {}) },
-            customerLoginTimer: { ...defaultTheme.customerLoginTimer, ...(json.data.customerLoginTimer || {}) },
-          };
-          setTheme(merged);
-          applyThemeTokensToDOM(merged);
-          return;
+          const tc = json.data.themeColors;
+          if (tc && tc.primary) {
+            themeData.tokens = {
+              colors: {
+                primary: tc.primary || defaultTheme.tokens.colors.primary,
+                primaryHover: tc.primaryHover || defaultTheme.tokens.colors.primaryHover,
+                secondary: tc.secondary || defaultTheme.tokens.colors.secondary,
+                accent: tc.accent || defaultTheme.tokens.colors.accent,
+                background: tc.background || defaultTheme.tokens.colors.background,
+                surface: tc.surface || defaultTheme.tokens.colors.surface,
+                text: tc.text || defaultTheme.tokens.colors.text,
+                textMuted: tc.textMuted || defaultTheme.tokens.colors.textMuted,
+                border: tc.border || defaultTheme.tokens.colors.border,
+              },
+              typography: defaultTheme.tokens.typography,
+              radii: defaultTheme.tokens.radii,
+            };
+          }
+          if (json.data.footer) {
+            themeData.footer = {
+              ...defaultTheme.footer,
+              ...json.data.footer,
+            };
+          }
         }
       }
+
+      if (builderRes.status === 'fulfilled' && builderRes.value.ok) {
+        const json = await builderRes.value.json();
+        if (json.success && json.data) {
+          themeData = {
+            ...themeData,
+            ...json.data,
+            tokens: {
+              colors: { ...(themeData.tokens?.colors || defaultTheme.tokens.colors), ...(json.data.tokens?.colors || {}) },
+              typography: { ...(themeData.tokens?.typography || defaultTheme.tokens.typography), ...(json.data.tokens?.typography || {}) },
+              radii: { ...(themeData.tokens?.radii || defaultTheme.tokens.radii), ...(json.data.tokens?.radii || {}) },
+            },
+          };
+        }
+      }
+
+      const merged: IThemeConfig = {
+        ...defaultTheme,
+        ...themeData,
+        tokens: {
+          colors: { ...defaultTheme.tokens.colors, ...(themeData.tokens?.colors || {}) },
+          typography: { ...defaultTheme.tokens.typography, ...(themeData.tokens?.typography || {}) },
+          radii: { ...defaultTheme.tokens.radii, ...(themeData.tokens?.radii || {}) },
+        },
+      };
+      setTheme(merged);
+      applyThemeTokensToDOM(merged);
     } catch (err) {
-      console.warn('Frontend Builder theme API unavailable, applying default theme:', err);
+      console.warn('Theme fetch error, using default theme:', err);
+      applyThemeTokensToDOM(defaultTheme);
     } finally {
       setIsLoading(false);
     }
-    applyThemeTokensToDOM(defaultTheme);
   };
 
   useEffect(() => {

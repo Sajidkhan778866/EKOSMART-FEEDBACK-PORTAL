@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
+import jwt from 'jsonwebtoken';
 import { Complaint } from '../models/Complaint';
 import { Customer } from '../models/Customer';
 import { Employee } from '../models/Employee';
@@ -203,13 +204,76 @@ export const trackPublicComplaint = async (req: Request, res: Response) => {
   }
 };
 
+const resolveEmployeeScope = async (req: Request) => {
+  let empId = (req.query.employeeId as string) || (req as any).user?.employeeId;
+  if (!empId && req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+    try {
+      const token = req.headers.authorization.split(' ')[1];
+      const decoded: any = jwt.decode(token);
+      if (decoded && decoded.employeeId) {
+        empId = decoded.employeeId;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  if (!empId) {
+    return { isScoped: false };
+  }
+
+  const emp = await Employee.findOne({ employeeId: String(empId).trim() });
+  if (!emp) {
+    return { isScoped: false };
+  }
+
+  if (
+    emp.role === 'admin' ||
+    emp.role === 'SuperAdmin' ||
+    (emp.permissions && emp.permissions.includes('complaints:view_all'))
+  ) {
+    return { isScoped: false, employee: emp };
+  }
+
+  const authorizedDivisions = (Array.isArray(emp.division) && emp.division.length > 0)
+    ? emp.division
+    : emp.department ? [emp.department] : [];
+
+  return {
+    isScoped: true,
+    employee: emp,
+    authorizedDivisions,
+  };
+};
+
 // GET /api/v1/complaints/admin OR /api/v1/tickets
 export const getAdminComplaints = async (req: Request, res: Response) => {
   try {
     const { tab, scope, division, status, priority, complaintType, assignedTo, search, dateFilter, startDate, endDate } = req.query;
     const query: any = {};
 
-    if (division && division !== 'All') query.division = division;
+    // Check employee department & permission authorization
+    const empScope = await resolveEmployeeScope(req);
+    if (empScope.isScoped && empScope.employee) {
+      const { employee, authorizedDivisions = [] } = empScope;
+      if (division && division !== 'All') {
+        if (!authorizedDivisions.includes(division as string)) {
+          query.division = '__UNAUTHORIZED_SCOPE__';
+        } else {
+          query.division = division;
+        }
+      } else {
+        query.$or = [
+          { assignedTo: employee._id },
+          { division: { $in: authorizedDivisions } },
+          { department: employee.department },
+          { 'formData.assignedEmployeeId': employee.employeeId },
+          { 'formData.assignedTo': employee.name },
+        ];
+      }
+    } else if (division && division !== 'All') {
+      query.division = division;
+    }
 
     // Handle Tab/Scope Filtering: 'active' vs 'resolved' vs 'all'
     const activeTab = (tab || scope || '').toString().toLowerCase();
@@ -292,7 +356,28 @@ export const exportComplaints = async (req: Request, res: Response) => {
     const { tab, scope, division, status, priority, complaintType, assignedTo, search, dateFilter, startDate, endDate } = req.query;
     const query: any = {};
 
-    if (division && division !== 'All') query.division = division;
+    // Check employee department & permission authorization
+    const empScope = await resolveEmployeeScope(req);
+    if (empScope.isScoped && empScope.employee) {
+      const { employee, authorizedDivisions = [] } = empScope;
+      if (division && division !== 'All') {
+        if (!authorizedDivisions.includes(division as string)) {
+          query.division = '__UNAUTHORIZED_SCOPE__';
+        } else {
+          query.division = division;
+        }
+      } else {
+        query.$or = [
+          { assignedTo: employee._id },
+          { division: { $in: authorizedDivisions } },
+          { department: employee.department },
+          { 'formData.assignedEmployeeId': employee.employeeId },
+          { 'formData.assignedTo': employee.name },
+        ];
+      }
+    } else if (division && division !== 'All') {
+      query.division = division;
+    }
 
     const activeTab = (tab || scope || '').toString().toLowerCase();
     if (status && status !== 'All') {

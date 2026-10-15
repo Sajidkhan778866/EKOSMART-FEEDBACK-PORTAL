@@ -138,6 +138,16 @@ interface HeaderNavContent {
   accountBtnText?: string;
   navBgColor?: string;
   navBorderColor?: string;
+  customNavItems?: Array<{
+    id: string;
+    label: string;
+    href: string;
+    icon?: string;
+    isVisible?: boolean;
+    order?: number;
+    isExternal?: boolean;
+    children?: Array<{ label: string; href: string; isExternal?: boolean }>;
+  }>;
 }
 
 const defaultHeaderNav: HeaderNavContent = {
@@ -186,7 +196,7 @@ interface FooterContent {
   showContactDropdown?: boolean;
   contactDropdownTitle?: string;
   socialLinks?: Array<{ platform: string; url: string }>;
-  columns?: Array<{ title: string; links: Array<{ label: string; href: string }> }>;
+  columns?: Array<{ id?: string; title: string; links: Array<{ label: string; href: string; isExternal?: boolean }> }>;
 }
 
 const defaultFooter: FooterContent = {
@@ -309,8 +319,8 @@ const Layout = () => {
           if (data.data.headerNav) {
             setHeaderNav((prev) => ({ ...prev, ...data.data.headerNav }));
           }
-          if (data.data.footer && !theme.footer) {
-            setFooter({ ...defaultFooter, ...data.data.footer });
+          if (data.data.footer) {
+            setFooter((prev) => ({ ...prev, ...data.data.footer }));
           }
           if (data.data.contactInfo) {
             setContactInfo(data.data.contactInfo);
@@ -537,6 +547,37 @@ const Layout = () => {
                   </NavLink>
                 </li>
               )}
+
+              {/* Softcoded Custom Navigation Items */}
+              {(headerNav.customNavItems || [])
+                .filter((item) => item.isVisible !== false)
+                .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+                .map((item) => (
+                  <li key={item.id}>
+                    {item.isExternal || item.href.startsWith('http') ? (
+                      <a
+                        href={item.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-emerald-700 flex items-center gap-1 transition font-bold"
+                      >
+                        <span>{item.label}</span>
+                        <ExternalLink size={10} className="text-slate-400" />
+                      </a>
+                    ) : (
+                      <NavLink
+                        to={item.href}
+                        className={({ isActive }) =>
+                          isActive
+                            ? 'text-emerald-700 flex items-center gap-1.5 border-b-2 border-emerald-600 pb-1 font-bold'
+                            : 'hover:text-emerald-700 flex items-center gap-1.5 transition font-bold'
+                        }
+                      >
+                        <span>{item.label}</span>
+                      </NavLink>
+                    )}
+                  </li>
+                ))}
 
               {/* Contact & Support Dropdown (All items clickable <a> links) */}
               <li className="relative">
@@ -1086,6 +1127,42 @@ const Layout = () => {
                     </span>
                     <ChevronRight size={14} className="text-slate-600" />
                   </NavLink>
+
+                  {/* Softcoded Custom Nav Links */}
+                  {(headerNav.customNavItems || [])
+                    .filter((item) => item.isVisible !== false)
+                    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+                    .map((item) => (
+                      <div key={item.id}>
+                        {item.isExternal || item.href.startsWith('http') ? (
+                          <a
+                            href={item.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition"
+                          >
+                            <span>{item.label}</span>
+                            <ExternalLink size={12} className="text-slate-500" />
+                          </a>
+                        ) : (
+                          <NavLink
+                            to={item.href}
+                            onClick={() => setMobileMenuOpen(false)}
+                            className={({ isActive }) =>
+                              `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
+                                isActive
+                                  ? 'bg-emerald-900/50 text-emerald-400 border border-emerald-700/50'
+                                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                              }`
+                            }
+                          >
+                            <span>{item.label}</span>
+                            <ChevronRight size={14} className="text-slate-600" />
+                          </NavLink>
+                        )}
+                      </div>
+                    ))}
                 </nav>
               </div>
 
@@ -1459,48 +1536,77 @@ const Layout = () => {
               )}
             </div>
 
-            {/* Column 3: Customer Support & Services */}
-            <div className="space-y-2 text-xs">
-              <h4 className="text-slate-200 font-bold text-sm tracking-wide mb-3">Support & Services</h4>
-              <ul className="space-y-2.5 font-medium">
-                <li>
-                  <NavLink to="/customer/wallet" className="hover:text-amber-400 transition flex items-center gap-2">
-                    <Coins size={13} className="text-amber-400" />
-                    <span>Customer Wallet & Coins</span>
-                  </NavLink>
-                </li>
-                <li>
-                  <NavLink to="/customer/referrals" className="hover:text-purple-400 transition flex items-center gap-2">
-                    <Gift size={13} className="text-purple-400" />
-                    <span>Referral Program (+500 Coins)</span>
-                  </NavLink>
-                </li>
-                <li>
-                  <NavLink to="/showroom-billing" className="hover:text-blue-400 transition flex items-center gap-2">
-                    <Receipt size={13} className="text-blue-400" />
-                    <span>Showroom Counter Invoicing</span>
-                  </NavLink>
-                </li>
-                <li>
-                  <NavLink to="/complaint/register" className="hover:text-emerald-400 transition flex items-center gap-2">
-                    <FileText size={13} className="text-emerald-400" />
-                    <span>Support (Register Ticket)</span>
-                  </NavLink>
-                </li>
-                <li>
-                  <NavLink to="/complaint/track" className="hover:text-emerald-400 transition flex items-center gap-2">
-                    <Search size={13} className="text-blue-400" />
-                    <span>Track Ticket Status</span>
-                  </NavLink>
-                </li>
-                <li>
-                  <NavLink to="/warranty/check" className="hover:text-emerald-400 transition flex items-center gap-2">
-                    <ShieldCheck size={13} className="text-purple-400" />
-                    <span>Check Battery Warranty</span>
-                  </NavLink>
-                </li>
-              </ul>
-            </div>
+            {/* Column 3 & Custom Columns: Support, Divisions, or Softcoded Columns */}
+            {footer.columns && footer.columns.length > 0 ? (
+              footer.columns.map((col, idx) => (
+                <div key={col.id || idx} className="space-y-2 text-xs">
+                  <h4 className="text-slate-200 font-bold text-sm tracking-wide mb-3">{col.title}</h4>
+                  <ul className="space-y-2.5 font-medium">
+                    {(col.links || []).map((lnk, lIdx) => (
+                      <li key={lIdx}>
+                        {lnk.isExternal || lnk.href.startsWith('http') || lnk.href.startsWith('tel:') || lnk.href.startsWith('mailto:') ? (
+                          <a
+                            href={lnk.href}
+                            target={lnk.isExternal ? '_blank' : '_self'}
+                            rel="noopener noreferrer"
+                            className="hover:text-emerald-400 transition flex items-center gap-1.5"
+                          >
+                            <span>{lnk.label}</span>
+                            {lnk.isExternal && <ExternalLink size={10} className="text-slate-500" />}
+                          </a>
+                        ) : (
+                          <NavLink to={lnk.href} className="hover:text-emerald-400 transition flex items-center gap-1.5">
+                            <span>{lnk.label}</span>
+                          </NavLink>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))
+            ) : (
+              <div className="space-y-2 text-xs">
+                <h4 className="text-slate-200 font-bold text-sm tracking-wide mb-3">Support & Services</h4>
+                <ul className="space-y-2.5 font-medium">
+                  <li>
+                    <NavLink to="/customer/wallet" className="hover:text-amber-400 transition flex items-center gap-2">
+                      <Coins size={13} className="text-amber-400" />
+                      <span>Customer Wallet & Coins</span>
+                    </NavLink>
+                  </li>
+                  <li>
+                    <NavLink to="/customer/referrals" className="hover:text-purple-400 transition flex items-center gap-2">
+                      <Gift size={13} className="text-purple-400" />
+                      <span>Referral Program (+500 Coins)</span>
+                    </NavLink>
+                  </li>
+                  <li>
+                    <NavLink to="/showroom-billing" className="hover:text-blue-400 transition flex items-center gap-2">
+                      <Receipt size={13} className="text-blue-400" />
+                      <span>Showroom Counter Invoicing</span>
+                    </NavLink>
+                  </li>
+                  <li>
+                    <NavLink to="/complaint/register" className="hover:text-emerald-400 transition flex items-center gap-2">
+                      <FileText size={13} className="text-emerald-400" />
+                      <span>Support (Register Ticket)</span>
+                    </NavLink>
+                  </li>
+                  <li>
+                    <NavLink to="/complaint/track" className="hover:text-emerald-400 transition flex items-center gap-2">
+                      <Search size={13} className="text-blue-400" />
+                      <span>Track Ticket Status</span>
+                    </NavLink>
+                  </li>
+                  <li>
+                    <NavLink to="/warranty/check" className="hover:text-emerald-400 transition flex items-center gap-2">
+                      <ShieldCheck size={13} className="text-purple-400" />
+                      <span>Check Battery Warranty</span>
+                    </NavLink>
+                  </li>
+                </ul>
+              </div>
+            )}
 
             {/* Column 4: Official Policies & Legal + Staff Access */}
             <div className="space-y-4 text-xs">

@@ -12,6 +12,8 @@ import {
   Palette,
   Sliders,
   RotateCcw,
+  Loader2,
+  Save,
 } from 'lucide-react';
 import { contentApi, resolveImageUrl } from '../api/client';
 
@@ -164,35 +166,139 @@ export const IdCardModal: FC<IdCardModalProps> = ({ employee, onClose }) => {
   const [validityYears, setValidityYears] = useState(3);
   const [verificationHeader, setVerificationHeader] = useState('TERMS & VERIFICATION');
 
+  const [rawCms, setRawCms] = useState<any>(null);
+  const [isSavingColors, setIsSavingColors] = useState(false);
+  const [saveSuccessMsg, setSaveSuccessMsg] = useState('');
+
+  const [customColors, setCustomColors] = useState({
+    enabled: false,
+    headerBg: '#0f172a',
+    cardBg: '#ffffff',
+    backBg: '#0f172a',
+    primaryText: '#0f172a',
+    secondaryText: '#64748b',
+    accentColor: '#10b981',
+    borderColor: '#cbd5e1',
+    badgeBg: '#dcfce7',
+    badgeText: '#15803d',
+    printPrimary: '#064e3b',
+    printSecondary: '#059669',
+  });
+
   useEffect(() => {
     contentApi
       .getAdmin()
       .then((res: any) => {
         if (res.data.success && res.data.data) {
           const cms = res.data.data;
-          if (cms.footer?.companyName) setCompanyName(cms.footer.companyName);
-          else if (cms.hero?.heading) setCompanyName(cms.hero.heading);
+          setRawCms(cms);
 
-          if (cms.contactInfo?.subheading) setCompanySubtitle(cms.contactInfo.subheading);
-          else if (cms.hero?.subheading) setCompanySubtitle(cms.hero.subheading);
+          if (cms.idCardConfig) {
+            const cfg = cms.idCardConfig;
+            if (cfg.template && (TEMPLATES as any)[cfg.template]) {
+              setSelectedTemplate(cfg.template as SoftIdTemplate);
+            }
+            if (cfg.customColors) {
+              setCustomColors((prev) => ({ ...prev, ...cfg.customColors }));
+            }
+            if (cfg.companyName) setCompanyName(cfg.companyName);
+            if (cfg.companySubtitle) setCompanySubtitle(cfg.companySubtitle);
+            if (cfg.plantAddress) setPlantAddress(cfg.plantAddress);
+            if (cfg.plantPhone) setPlantPhone(cfg.plantPhone);
+            if (cfg.plantEmail) setPlantEmail(cfg.plantEmail);
+            if (cfg.gstin) setGstin(cfg.gstin);
+            if (cfg.disclaimer) setDisclaimer(cfg.disclaimer);
+            if (cfg.signatoryTitle) setSignatoryTitle(cfg.signatoryTitle);
+            if (cfg.validityYears) setValidityYears(cfg.validityYears);
+            if (cfg.verificationHeader) setVerificationHeader(cfg.verificationHeader);
+          } else {
+            if (cms.footer?.companyName) setCompanyName(cms.footer.companyName);
+            else if (cms.hero?.heading) setCompanyName(cms.hero.heading);
 
-          if (cms.contactInfo?.plantAddress) setPlantAddress(cms.contactInfo.plantAddress);
-          else if (cms.footer?.address) setPlantAddress(cms.footer.address);
+            if (cms.contactInfo?.subheading) setCompanySubtitle(cms.contactInfo.subheading);
+            else if (cms.hero?.subheading) setCompanySubtitle(cms.hero.subheading);
 
-          if (cms.contactInfo?.helplinePhone) setPlantPhone(cms.contactInfo.helplinePhone);
-          else if (cms.footer?.phone) setPlantPhone(cms.footer.phone);
+            if (cms.contactInfo?.plantAddress) setPlantAddress(cms.contactInfo.plantAddress);
+            else if (cms.footer?.address) setPlantAddress(cms.footer.address);
 
-          if (cms.contactInfo?.supportEmail) setPlantEmail(cms.contactInfo.supportEmail);
-          else if (cms.footer?.email) setPlantEmail(cms.footer.email);
+            if (cms.contactInfo?.helplinePhone) setPlantPhone(cms.contactInfo.helplinePhone);
+            else if (cms.footer?.phone) setPlantPhone(cms.footer.phone);
 
-          if (cms.contactInfo?.gstin) setGstin(cms.contactInfo.gstin);
-          else if (cms.footer?.gstin) setGstin(cms.footer.gstin);
+            if (cms.contactInfo?.supportEmail) setPlantEmail(cms.contactInfo.supportEmail);
+            else if (cms.footer?.email) setPlantEmail(cms.footer.email);
 
-          if (cms.footer?.disclaimer) setDisclaimer(cms.footer.disclaimer);
+            if (cms.contactInfo?.gstin) setGstin(cms.contactInfo.gstin);
+            else if (cms.footer?.gstin) setGstin(cms.footer.gstin);
+
+            if (cms.footer?.disclaimer) setDisclaimer(cms.footer.disclaimer);
+          }
         }
       })
       .catch((e: any) => console.warn('Could not load CMS info for Soft ID Card:', e));
   }, []);
+
+  const handleSaveCardSettingsToDb = async () => {
+    try {
+      setIsSavingColors(true);
+      setSaveSuccessMsg('');
+      const idCardConfig = {
+        companyName,
+        companySubtitle,
+        plantAddress,
+        plantPhone,
+        plantEmail,
+        gstin,
+        disclaimer,
+        signatoryTitle,
+        validityYears,
+        verificationHeader,
+        template: selectedTemplate,
+        customColors,
+      };
+      const payload = {
+        ...(rawCms || {}),
+        idCardConfig,
+      };
+      const res = await contentApi.updateAdmin(payload);
+      if (res.data.success) {
+        setRawCms(res.data.data);
+        setSaveSuccessMsg('ID Card styling & custom colors saved to database!');
+        setTimeout(() => setSaveSuccessMsg(''), 4000);
+      }
+    } catch (err: any) {
+      console.error('Failed to save ID card settings:', err);
+      alert('Failed to save ID card settings: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setIsSavingColors(false);
+    }
+  };
+
+  const handleResetSoftCodes = () => {
+    setCompanyName('EKOSMART');
+    setCompanySubtitle('Battery Solution & EV Spare Parts');
+    setPlantAddress('Rang Talab, Near by Star Kids School, Kota (Raj) - 324002');
+    setPlantPhone('+91 8949049003');
+    setPlantEmail('support@ekosmart.in');
+    setGstin('08DTUPM4205B1Z0');
+    setDisclaimer('Property of Ekosmart Battery Solution. If found, please return to Rang Talab, Kota or call helpline.');
+    setSignatoryTitle('Authorized Officer');
+    setValidityYears(3);
+    setVerificationHeader('TERMS & VERIFICATION');
+    setCustomColors({
+      enabled: false,
+      headerBg: '#0f172a',
+      cardBg: '#ffffff',
+      backBg: '#0f172a',
+      primaryText: '#0f172a',
+      secondaryText: '#64748b',
+      accentColor: '#10b981',
+      borderColor: '#cbd5e1',
+      badgeBg: '#dcfce7',
+      badgeText: '#15803d',
+      printPrimary: '#064e3b',
+      printSecondary: '#059669',
+    });
+  };
 
   if (!employee) return null;
 
@@ -209,19 +315,6 @@ export const IdCardModal: FC<IdCardModalProps> = ({ employee, onClose }) => {
 
   const handlePrint = () => {
     window.print();
-  };
-
-  const handleResetSoftCodes = () => {
-    setCompanyName('EKOSMART');
-    setCompanySubtitle('Battery Solution & EV Spare Parts');
-    setPlantAddress('Rang Talab, Near by Star Kids School, Kota (Raj) - 324002');
-    setPlantPhone('+91 8949049003');
-    setPlantEmail('support@ekosmart.in');
-    setGstin('08DTUPM4205B1Z0');
-    setDisclaimer('Property of Ekosmart Battery Solution. If found, please return to Rang Talab, Kota or call helpline.');
-    setSignatoryTitle('Authorized Officer');
-    setValidityYears(3);
-    setVerificationHeader('TERMS & VERIFICATION');
   };
 
   const handleDownloadBadge = () => {
@@ -527,6 +620,240 @@ export const IdCardModal: FC<IdCardModalProps> = ({ employee, onClose }) => {
                 />
               </div>
             </div>
+
+            {/* Custom Colors Suite */}
+            <div className="pt-3 border-t border-slate-800 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-200">
+                  <input
+                    type="checkbox"
+                    checked={customColors.enabled}
+                    onChange={(e) => setCustomColors({ ...customColors, enabled: e.target.checked })}
+                    className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 bg-slate-950 border-slate-700"
+                  />
+                  <span>Enable Custom Colors & Styling (Overrides Template Colors)</span>
+                </label>
+
+                <div className="flex items-center gap-2">
+                  {saveSuccessMsg && (
+                    <span className="text-xs text-emerald-400 font-bold animate-in fade-in">
+                      ✓ {saveSuccessMsg}
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleSaveCardSettingsToDb}
+                    disabled={isSavingColors}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer transition"
+                  >
+                    {isSavingColors ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+                    <span>Save ID Card Styling to Database</span>
+                  </button>
+                </div>
+              </div>
+
+              {customColors.enabled && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 bg-slate-950/70 p-3 rounded-2xl border border-slate-800 animate-in fade-in">
+                  <div>
+                    <label className="block text-[10px] text-slate-400 font-semibold mb-1">Card Background</label>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="color"
+                        value={customColors.cardBg}
+                        onChange={(e) => setCustomColors({ ...customColors, cardBg: e.target.value })}
+                        className="w-7 h-7 rounded border border-slate-700 cursor-pointer bg-transparent"
+                      />
+                      <input
+                        type="text"
+                        value={customColors.cardBg}
+                        onChange={(e) => setCustomColors({ ...customColors, cardBg: e.target.value })}
+                        className="w-full bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-[10px] font-mono text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] text-slate-400 font-semibold mb-1">Header Background</label>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="color"
+                        value={customColors.headerBg}
+                        onChange={(e) => setCustomColors({ ...customColors, headerBg: e.target.value })}
+                        className="w-7 h-7 rounded border border-slate-700 cursor-pointer bg-transparent"
+                      />
+                      <input
+                        type="text"
+                        value={customColors.headerBg}
+                        onChange={(e) => setCustomColors({ ...customColors, headerBg: e.target.value })}
+                        className="w-full bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-[10px] font-mono text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] text-slate-400 font-semibold mb-1">Back Card Bg</label>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="color"
+                        value={customColors.backBg}
+                        onChange={(e) => setCustomColors({ ...customColors, backBg: e.target.value })}
+                        className="w-7 h-7 rounded border border-slate-700 cursor-pointer bg-transparent"
+                      />
+                      <input
+                        type="text"
+                        value={customColors.backBg}
+                        onChange={(e) => setCustomColors({ ...customColors, backBg: e.target.value })}
+                        className="w-full bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-[10px] font-mono text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] text-slate-400 font-semibold mb-1">Primary Text</label>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="color"
+                        value={customColors.primaryText}
+                        onChange={(e) => setCustomColors({ ...customColors, primaryText: e.target.value })}
+                        className="w-7 h-7 rounded border border-slate-700 cursor-pointer bg-transparent"
+                      />
+                      <input
+                        type="text"
+                        value={customColors.primaryText}
+                        onChange={(e) => setCustomColors({ ...customColors, primaryText: e.target.value })}
+                        className="w-full bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-[10px] font-mono text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] text-slate-400 font-semibold mb-1">Secondary Text</label>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="color"
+                        value={customColors.secondaryText}
+                        onChange={(e) => setCustomColors({ ...customColors, secondaryText: e.target.value })}
+                        className="w-7 h-7 rounded border border-slate-700 cursor-pointer bg-transparent"
+                      />
+                      <input
+                        type="text"
+                        value={customColors.secondaryText}
+                        onChange={(e) => setCustomColors({ ...customColors, secondaryText: e.target.value })}
+                        className="w-full bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-[10px] font-mono text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] text-slate-400 font-semibold mb-1">Accent & Icons</label>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="color"
+                        value={customColors.accentColor}
+                        onChange={(e) => setCustomColors({ ...customColors, accentColor: e.target.value })}
+                        className="w-7 h-7 rounded border border-slate-700 cursor-pointer bg-transparent"
+                      />
+                      <input
+                        type="text"
+                        value={customColors.accentColor}
+                        onChange={(e) => setCustomColors({ ...customColors, accentColor: e.target.value })}
+                        className="w-full bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-[10px] font-mono text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] text-slate-400 font-semibold mb-1">Border Color</label>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="color"
+                        value={customColors.borderColor}
+                        onChange={(e) => setCustomColors({ ...customColors, borderColor: e.target.value })}
+                        className="w-7 h-7 rounded border border-slate-700 cursor-pointer bg-transparent"
+                      />
+                      <input
+                        type="text"
+                        value={customColors.borderColor}
+                        onChange={(e) => setCustomColors({ ...customColors, borderColor: e.target.value })}
+                        className="w-full bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-[10px] font-mono text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] text-slate-400 font-semibold mb-1">Badge Background</label>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="color"
+                        value={customColors.badgeBg}
+                        onChange={(e) => setCustomColors({ ...customColors, badgeBg: e.target.value })}
+                        className="w-7 h-7 rounded border border-slate-700 cursor-pointer bg-transparent"
+                      />
+                      <input
+                        type="text"
+                        value={customColors.badgeBg}
+                        onChange={(e) => setCustomColors({ ...customColors, badgeBg: e.target.value })}
+                        className="w-full bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-[10px] font-mono text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] text-slate-400 font-semibold mb-1">Badge Text</label>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="color"
+                        value={customColors.badgeText}
+                        onChange={(e) => setCustomColors({ ...customColors, badgeText: e.target.value })}
+                        className="w-7 h-7 rounded border border-slate-700 cursor-pointer bg-transparent"
+                      />
+                      <input
+                        type="text"
+                        value={customColors.badgeText}
+                        onChange={(e) => setCustomColors({ ...customColors, badgeText: e.target.value })}
+                        className="w-full bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-[10px] font-mono text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] text-slate-400 font-semibold mb-1">Print Primary</label>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="color"
+                        value={customColors.printPrimary}
+                        onChange={(e) => setCustomColors({ ...customColors, printPrimary: e.target.value })}
+                        className="w-7 h-7 rounded border border-slate-700 cursor-pointer bg-transparent"
+                      />
+                      <input
+                        type="text"
+                        value={customColors.printPrimary}
+                        onChange={(e) => setCustomColors({ ...customColors, printPrimary: e.target.value })}
+                        className="w-full bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-[10px] font-mono text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] text-slate-400 font-semibold mb-1">Print Secondary</label>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="color"
+                        value={customColors.printSecondary}
+                        onChange={(e) => setCustomColors({ ...customColors, printSecondary: e.target.value })}
+                        className="w-7 h-7 rounded border border-slate-700 cursor-pointer bg-transparent"
+                      />
+                      <input
+                        type="text"
+                        value={customColors.printSecondary}
+                        onChange={(e) => setCustomColors({ ...customColors, printSecondary: e.target.value })}
+                        className="w-full bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-[10px] font-mono text-white"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -539,17 +866,26 @@ export const IdCardModal: FC<IdCardModalProps> = ({ employee, onClose }) => {
           >
             {/* ================= FRONT CARD ================= */}
             {(viewMode === 'front' || viewMode === 'dual') && (
-              <div className="w-[300px] h-[500px] bg-white rounded-2xl shadow-xl border border-slate-300 overflow-hidden relative flex flex-col justify-between print:shadow-none print:border-slate-800">
+              <div
+                className="w-[300px] h-[500px] bg-white rounded-2xl shadow-xl border border-slate-300 overflow-hidden relative flex flex-col justify-between print:shadow-none print:border-slate-800"
+                style={customColors.enabled ? { backgroundColor: customColors.cardBg, borderColor: customColors.borderColor } : undefined}
+              >
                 {/* Lanyard Hole Cutout Graphic */}
                 <div className="absolute top-2 left-1/2 -translate-x-1/2 w-12 h-2.5 bg-slate-300/80 rounded-full border border-slate-400/50 z-20 print:border-slate-400"></div>
 
                 {/* Card Top Header with dynamic template gradient & soft-coded company */}
-                <div className={`bg-gradient-to-br ${currentTheme.headerBg} text-white pt-7 pb-6 px-4 text-center relative border-b-4`}>
+                <div
+                  className={`bg-gradient-to-br ${currentTheme.headerBg} text-white pt-7 pb-6 px-4 text-center relative border-b-4`}
+                  style={customColors.enabled ? { background: customColors.headerBg, borderColor: customColors.accentColor } : undefined}
+                >
                   <div className="flex items-center justify-center gap-2 mb-1">
                     <div className="w-5 h-5 bg-gradient-to-tr from-emerald-600 to-green-400 text-slate-950 rounded flex items-center justify-center font-black text-[10px]">
                       EBS
                     </div>
-                    <span className={`font-extrabold tracking-widest text-xs uppercase ${currentTheme.accentText}`}>
+                    <span
+                      className={`font-extrabold tracking-widest text-xs uppercase ${currentTheme.accentText}`}
+                      style={customColors.enabled ? { color: customColors.accentColor } : undefined}
+                    >
                       {companyName}
                     </span>
                   </div>
@@ -579,25 +915,51 @@ export const IdCardModal: FC<IdCardModalProps> = ({ employee, onClose }) => {
                   </div>
 
                   <div>
-                    <h3 className="font-bold text-slate-900 text-base leading-tight">{employee.name}</h3>
-                    <p className="text-slate-600 text-xs font-semibold">{employee.designation}</p>
+                    <h3
+                      className="font-bold text-slate-900 text-base leading-tight"
+                      style={customColors.enabled ? { color: customColors.primaryText } : undefined}
+                    >
+                      {employee.name}
+                    </h3>
+                    <p
+                      className="text-slate-600 text-xs font-semibold"
+                      style={customColors.enabled ? { color: customColors.accentColor } : undefined}
+                    >
+                      {employee.designation}
+                    </p>
                   </div>
 
-                  <div className="inline-block bg-slate-900 text-emerald-400 font-mono text-xs font-bold px-3 py-0.5 rounded-lg border border-slate-700">
+                  <div
+                    className="inline-block bg-slate-900 text-emerald-400 font-mono text-xs font-bold px-3 py-0.5 rounded-lg border border-slate-700"
+                    style={customColors.enabled ? { backgroundColor: customColors.badgeBg, color: customColors.badgeText, borderColor: customColors.accentColor } : undefined}
+                  >
                     ID: {employee.employeeId}
                   </div>
                 </div>
 
                 {/* Badges & Division Information */}
                 <div className="px-5 py-1.5 space-y-1.5 text-xs">
-                  <div className="bg-slate-50 p-2 rounded-xl border border-slate-200/80 space-y-1">
+                  <div
+                    className="bg-slate-50 p-2 rounded-xl border border-slate-200/80 space-y-1"
+                    style={customColors.enabled ? { borderColor: customColors.borderColor } : undefined}
+                  >
                     <div className="flex justify-between items-center text-[10.5px]">
                       <span className="text-slate-400 uppercase font-bold text-[9px]">Department</span>
-                      <span className="font-semibold text-slate-800">{employee.department}</span>
+                      <span
+                        className="font-semibold text-slate-800"
+                        style={customColors.enabled ? { color: customColors.primaryText } : undefined}
+                      >
+                        {employee.department}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center text-[10.5px]">
                       <span className="text-slate-400 uppercase font-bold text-[9px]">Scope / Tier</span>
-                      <span className="font-bold text-slate-700">{warrantyTier}</span>
+                      <span
+                        className="font-bold text-slate-700"
+                        style={customColors.enabled ? { color: customColors.accentColor } : undefined}
+                      >
+                        {warrantyTier}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center text-[10.5px]">
                       <span className="text-slate-400 uppercase font-bold text-[9px]">Authorized Divisions</span>
@@ -606,6 +968,7 @@ export const IdCardModal: FC<IdCardModalProps> = ({ employee, onClose }) => {
                           <span
                             key={div}
                             className="bg-emerald-100 text-emerald-800 font-bold text-[8.5px] px-1.5 py-0.2 rounded"
+                            style={customColors.enabled ? { backgroundColor: customColors.badgeBg, color: customColors.badgeText } : undefined}
                           >
                             {div}
                           </span>
@@ -624,7 +987,10 @@ export const IdCardModal: FC<IdCardModalProps> = ({ employee, onClose }) => {
                 </div>
 
                 {/* Bottom Barcode Section */}
-                <div className="bg-white px-4 py-2 text-center border-t border-slate-100 flex flex-col items-center justify-center">
+                <div
+                  className="bg-white px-4 py-2 text-center border-t border-slate-100 flex flex-col items-center justify-center"
+                  style={customColors.enabled ? { backgroundColor: customColors.cardBg, borderColor: customColors.borderColor } : undefined}
+                >
                   {employee.barcode ? (
                     <img
                       src={employee.barcode}
@@ -644,13 +1010,22 @@ export const IdCardModal: FC<IdCardModalProps> = ({ employee, onClose }) => {
 
             {/* ================= BACK CARD ================= */}
             {(viewMode === 'back' || viewMode === 'dual') && (
-              <div className="w-[300px] h-[500px] bg-slate-900 text-white rounded-2xl shadow-xl border border-slate-800 overflow-hidden relative flex flex-col justify-between print:shadow-none print:border-slate-800">
+              <div
+                className="w-[300px] h-[500px] bg-slate-900 text-white rounded-2xl shadow-xl border border-slate-800 overflow-hidden relative flex flex-col justify-between print:shadow-none print:border-slate-800"
+                style={customColors.enabled ? { backgroundColor: customColors.backBg, borderColor: customColors.borderColor } : undefined}
+              >
                 {/* Lanyard Hole Cutout Graphic */}
                 <div className="absolute top-2 left-1/2 -translate-x-1/2 w-12 h-2.5 bg-slate-800 rounded-full border border-slate-700 z-20"></div>
 
                 {/* Back Header */}
-                <div className="pt-7 pb-3 px-5 border-b border-slate-800 text-center">
-                  <span className={`text-[10px] font-mono tracking-widest ${currentTheme.accentText} uppercase font-bold block`}>
+                <div
+                  className="pt-7 pb-3 px-5 border-b border-slate-800 text-center"
+                  style={customColors.enabled ? { borderColor: customColors.borderColor } : undefined}
+                >
+                  <span
+                    className={`text-[10px] font-mono tracking-widest ${currentTheme.accentText} uppercase font-bold block`}
+                    style={customColors.enabled ? { color: customColors.accentColor } : undefined}
+                  >
                     {verificationHeader}
                   </span>
                   <p className="text-[10px] text-slate-400 mt-1 leading-tight">
@@ -660,37 +1035,69 @@ export const IdCardModal: FC<IdCardModalProps> = ({ employee, onClose }) => {
 
                 {/* QR Code & Contact Data */}
                 <div className="p-4 space-y-2.5 text-center">
-                  <div className={`bg-white p-2 rounded-2xl inline-block border-2 ${currentTheme.qrBorder} shadow-md`}>
+                  <div
+                    className={`bg-white p-2 rounded-2xl inline-block border-2 ${currentTheme.qrBorder} shadow-md`}
+                    style={customColors.enabled ? { borderColor: customColors.accentColor } : undefined}
+                  >
                     <img src={qrCodeUrl} alt="QR Verification" className="w-20 h-20 object-contain" />
                   </div>
-                  <span className={`block text-[9px] font-mono ${currentTheme.accentText} tracking-wider`}>
+                  <span
+                    className={`block text-[9px] font-mono ${currentTheme.accentText} tracking-wider`}
+                    style={customColors.enabled ? { color: customColors.accentColor } : undefined}
+                  >
                     SCAN TO VERIFY AUTHENTICITY
                   </span>
 
-                  <div className="bg-slate-800/80 rounded-xl p-2.5 text-left space-y-1.5 text-[10px] border border-slate-700/60">
+                  <div
+                    className="bg-slate-800/80 rounded-xl p-2.5 text-left space-y-1.5 text-[10px] border border-slate-700/60"
+                    style={customColors.enabled ? { borderColor: customColors.borderColor } : undefined}
+                  >
                     <div className="flex items-center gap-2 text-slate-300">
-                      <Phone size={12} className={currentTheme.accentText} />
+                      <Phone
+                        size={12}
+                        className={currentTheme.accentText}
+                        style={customColors.enabled ? { color: customColors.accentColor } : undefined}
+                      />
                       <span className="truncate">{employee.mobile} (Plant: {plantPhone})</span>
                     </div>
                     <div className="flex items-center gap-2 text-slate-300">
-                      <Mail size={12} className={currentTheme.accentText} />
+                      <Mail
+                        size={12}
+                        className={currentTheme.accentText}
+                        style={customColors.enabled ? { color: customColors.accentColor } : undefined}
+                      />
                       <span className="truncate">{employee.email}</span>
                     </div>
                     <div className="flex items-start gap-2 text-slate-300">
-                      <Building2 size={12} className={`${currentTheme.accentText} shrink-0 mt-0.5`} />
+                      <Building2
+                        size={12}
+                        className={`${currentTheme.accentText} shrink-0 mt-0.5`}
+                        style={customColors.enabled ? { color: customColors.accentColor } : undefined}
+                      />
                       <span className="leading-tight text-[9.5px]">{plantAddress}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Card Disclaimer & Signature */}
-                <div className="px-4 py-2.5 bg-slate-950 border-t border-slate-800 text-center space-y-1">
+                <div
+                  className="px-4 py-2.5 bg-slate-950 border-t border-slate-800 text-center space-y-1"
+                  style={customColors.enabled ? { borderColor: customColors.borderColor } : undefined}
+                >
                   <p className="text-[8px] text-slate-500 leading-tight">
                     {disclaimer}
                   </p>
-                  <div className="flex justify-between items-center pt-1 border-t border-slate-800/80 text-[8px] text-slate-400">
+                  <div
+                    className="flex justify-between items-center pt-1 border-t border-slate-800/80 text-[8px] text-slate-400"
+                    style={customColors.enabled ? { borderColor: customColors.borderColor } : undefined}
+                  >
                     <span>GSTIN: {gstin}</span>
-                    <span className={`font-serif italic ${currentTheme.accentText}`}>{signatoryTitle}</span>
+                    <span
+                      className={`font-serif italic ${currentTheme.accentText}`}
+                      style={customColors.enabled ? { color: customColors.accentColor } : undefined}
+                    >
+                      {signatoryTitle}
+                    </span>
                   </div>
                 </div>
               </div>

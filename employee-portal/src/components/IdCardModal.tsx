@@ -164,31 +164,66 @@ export const IdCardModal: FC<IdCardModalProps> = ({ employee, onClose }) => {
   const [validityYears, setValidityYears] = useState(3);
   const [verificationHeader, setVerificationHeader] = useState('TERMS & VERIFICATION');
 
+  const [customColors, setCustomColors] = useState({
+    enabled: false,
+    headerBg: '#0f172a',
+    cardBg: '#ffffff',
+    backBg: '#0f172a',
+    primaryText: '#0f172a',
+    secondaryText: '#64748b',
+    accentColor: '#10b981',
+    borderColor: '#cbd5e1',
+    badgeBg: '#dcfce7',
+    badgeText: '#15803d',
+    printPrimary: '#064e3b',
+    printSecondary: '#059669',
+  });
+
   useEffect(() => {
     contentApi
       .getPublic()
       .then((res: any) => {
         if (res.data.success && res.data.data) {
           const cms = res.data.data;
-          if (cms.footer?.companyName) setCompanyName(cms.footer.companyName);
-          else if (cms.hero?.heading) setCompanyName(cms.hero.heading);
+          if (cms.idCardConfig) {
+            const cfg = cms.idCardConfig;
+            if (cfg.template && (TEMPLATES as any)[cfg.template]) {
+              setSelectedTemplate(cfg.template as SoftIdTemplate);
+            }
+            if (cfg.customColors) {
+              setCustomColors((prev) => ({ ...prev, ...cfg.customColors }));
+            }
+            if (cfg.companyName) setCompanyName(cfg.companyName);
+            if (cfg.companySubtitle) setCompanySubtitle(cfg.companySubtitle);
+            if (cfg.plantAddress) setPlantAddress(cfg.plantAddress);
+            if (cfg.plantPhone) setPlantPhone(cfg.plantPhone);
+            if (cfg.plantEmail) setPlantEmail(cfg.plantEmail);
+            if (cfg.gstin) setGstin(cfg.gstin);
+            if (cfg.disclaimer) setDisclaimer(cfg.disclaimer);
+            if (cfg.signatoryTitle) setSignatoryTitle(cfg.signatoryTitle);
+            if (cfg.validityYears) setValidityYears(cfg.validityYears);
+            if (cfg.verificationHeader) setVerificationHeader(cfg.verificationHeader);
+          } else {
+            if (cms.footer?.companyName) setCompanyName(cms.footer.companyName);
+            else if (cms.hero?.heading) setCompanyName(cms.hero.heading);
 
-          if (cms.contactInfo?.subheading) setCompanySubtitle(cms.contactInfo.subheading);
-          else if (cms.hero?.subheading) setCompanySubtitle(cms.hero.subheading);
+            if (cms.contactInfo?.subheading) setCompanySubtitle(cms.contactInfo.subheading);
+            else if (cms.hero?.subheading) setCompanySubtitle(cms.hero.subheading);
 
-          if (cms.contactInfo?.plantAddress) setPlantAddress(cms.contactInfo.plantAddress);
-          else if (cms.footer?.address) setPlantAddress(cms.footer.address);
+            if (cms.contactInfo?.plantAddress) setPlantAddress(cms.contactInfo.plantAddress);
+            else if (cms.footer?.address) setPlantAddress(cms.footer.address);
 
-          if (cms.contactInfo?.helplinePhone) setPlantPhone(cms.contactInfo.helplinePhone);
-          else if (cms.footer?.phone) setPlantPhone(cms.footer.phone);
+            if (cms.contactInfo?.helplinePhone) setPlantPhone(cms.contactInfo.helplinePhone);
+            else if (cms.footer?.phone) setPlantPhone(cms.footer.phone);
 
-          if (cms.contactInfo?.supportEmail) setPlantEmail(cms.contactInfo.supportEmail);
-          else if (cms.footer?.email) setPlantEmail(cms.footer.email);
+            if (cms.contactInfo?.supportEmail) setPlantEmail(cms.contactInfo.supportEmail);
+            else if (cms.footer?.email) setPlantEmail(cms.footer.email);
 
-          if (cms.contactInfo?.gstin) setGstin(cms.contactInfo.gstin);
-          else if (cms.footer?.gstin) setGstin(cms.footer.gstin);
+            if (cms.contactInfo?.gstin) setGstin(cms.contactInfo.gstin);
+            else if (cms.footer?.gstin) setGstin(cms.footer.gstin);
 
-          if (cms.footer?.disclaimer) setDisclaimer(cms.footer.disclaimer);
+            if (cms.footer?.disclaimer) setDisclaimer(cms.footer.disclaimer);
+          }
         }
       })
       .catch((e: any) => console.warn('Could not load CMS info for Soft ID Card in Employee Portal:', e));
@@ -539,17 +574,26 @@ export const IdCardModal: FC<IdCardModalProps> = ({ employee, onClose }) => {
           >
             {/* ================= FRONT CARD ================= */}
             {(viewMode === 'front' || viewMode === 'dual') && (
-              <div className="w-[300px] h-[500px] bg-white rounded-2xl shadow-xl border border-slate-300 overflow-hidden relative flex flex-col justify-between print:shadow-none print:border-slate-800">
+              <div
+                className="w-[300px] h-[500px] bg-white rounded-2xl shadow-xl border border-slate-300 overflow-hidden relative flex flex-col justify-between print:shadow-none print:border-slate-800"
+                style={customColors.enabled ? { backgroundColor: customColors.cardBg, borderColor: customColors.borderColor } : undefined}
+              >
                 {/* Lanyard Hole Cutout Graphic */}
                 <div className="absolute top-2 left-1/2 -translate-x-1/2 w-12 h-2.5 bg-slate-300/80 rounded-full border border-slate-400/50 z-20 print:border-slate-400"></div>
 
                 {/* Card Top Header with dynamic template gradient & soft-coded company */}
-                <div className={`bg-gradient-to-br ${currentTheme.headerBg} text-white pt-7 pb-6 px-4 text-center relative border-b-4`}>
+                <div
+                  className={`bg-gradient-to-br ${currentTheme.headerBg} text-white pt-7 pb-6 px-4 text-center relative border-b-4`}
+                  style={customColors.enabled ? { background: customColors.headerBg, borderColor: customColors.accentColor } : undefined}
+                >
                   <div className="flex items-center justify-center gap-2 mb-1">
                     <div className="w-5 h-5 bg-gradient-to-tr from-emerald-600 to-green-400 text-slate-950 rounded flex items-center justify-center font-black text-[10px]">
                       EBS
                     </div>
-                    <span className={`font-extrabold tracking-widest text-xs uppercase ${currentTheme.accentText}`}>
+                    <span
+                      className={`font-extrabold tracking-widest text-xs uppercase ${currentTheme.accentText}`}
+                      style={customColors.enabled ? { color: customColors.accentColor } : undefined}
+                    >
                       {companyName}
                     </span>
                   </div>
@@ -579,25 +623,51 @@ export const IdCardModal: FC<IdCardModalProps> = ({ employee, onClose }) => {
                   </div>
 
                   <div>
-                    <h3 className="font-bold text-slate-900 text-base leading-tight">{employee.name}</h3>
-                    <p className="text-slate-600 text-xs font-semibold">{employee.designation}</p>
+                    <h3
+                      className="font-bold text-slate-900 text-base leading-tight"
+                      style={customColors.enabled ? { color: customColors.primaryText } : undefined}
+                    >
+                      {employee.name}
+                    </h3>
+                    <p
+                      className="text-slate-600 text-xs font-semibold"
+                      style={customColors.enabled ? { color: customColors.accentColor } : undefined}
+                    >
+                      {employee.designation}
+                    </p>
                   </div>
 
-                  <div className="inline-block bg-slate-900 text-emerald-400 font-mono text-xs font-bold px-3 py-0.5 rounded-lg border border-slate-700">
+                  <div
+                    className="inline-block bg-slate-900 text-emerald-400 font-mono text-xs font-bold px-3 py-0.5 rounded-lg border border-slate-700"
+                    style={customColors.enabled ? { backgroundColor: customColors.badgeBg, color: customColors.badgeText, borderColor: customColors.accentColor } : undefined}
+                  >
                     ID: {employee.employeeId}
                   </div>
                 </div>
 
                 {/* Badges & Division Information */}
                 <div className="px-5 py-1.5 space-y-1.5 text-xs">
-                  <div className="bg-slate-50 p-2 rounded-xl border border-slate-200/80 space-y-1">
+                  <div
+                    className="bg-slate-50 p-2 rounded-xl border border-slate-200/80 space-y-1"
+                    style={customColors.enabled ? { borderColor: customColors.borderColor } : undefined}
+                  >
                     <div className="flex justify-between items-center text-[10.5px]">
                       <span className="text-slate-400 uppercase font-bold text-[9px]">Department</span>
-                      <span className="font-semibold text-slate-800">{employee.department}</span>
+                      <span
+                        className="font-semibold text-slate-800"
+                        style={customColors.enabled ? { color: customColors.primaryText } : undefined}
+                      >
+                        {employee.department}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center text-[10.5px]">
                       <span className="text-slate-400 uppercase font-bold text-[9px]">Scope / Tier</span>
-                      <span className="font-bold text-slate-700">{warrantyTier}</span>
+                      <span
+                        className="font-bold text-slate-700"
+                        style={customColors.enabled ? { color: customColors.accentColor } : undefined}
+                      >
+                        {warrantyTier}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center text-[10.5px]">
                       <span className="text-slate-400 uppercase font-bold text-[9px]">Authorized Divisions</span>
@@ -606,6 +676,7 @@ export const IdCardModal: FC<IdCardModalProps> = ({ employee, onClose }) => {
                           <span
                             key={div}
                             className="bg-emerald-100 text-emerald-800 font-bold text-[8.5px] px-1.5 py-0.2 rounded"
+                            style={customColors.enabled ? { backgroundColor: customColors.badgeBg, color: customColors.badgeText } : undefined}
                           >
                             {div}
                           </span>
@@ -624,7 +695,10 @@ export const IdCardModal: FC<IdCardModalProps> = ({ employee, onClose }) => {
                 </div>
 
                 {/* Bottom Barcode Section */}
-                <div className="bg-white px-4 py-2 text-center border-t border-slate-100 flex flex-col items-center justify-center">
+                <div
+                  className="bg-white px-4 py-2 text-center border-t border-slate-100 flex flex-col items-center justify-center"
+                  style={customColors.enabled ? { backgroundColor: customColors.cardBg, borderColor: customColors.borderColor } : undefined}
+                >
                   {employee.barcode ? (
                     <img
                       src={employee.barcode}
@@ -644,13 +718,22 @@ export const IdCardModal: FC<IdCardModalProps> = ({ employee, onClose }) => {
 
             {/* ================= BACK CARD ================= */}
             {(viewMode === 'back' || viewMode === 'dual') && (
-              <div className="w-[300px] h-[500px] bg-slate-900 text-white rounded-2xl shadow-xl border border-slate-800 overflow-hidden relative flex flex-col justify-between print:shadow-none print:border-slate-800">
+              <div
+                className="w-[300px] h-[500px] bg-slate-900 text-white rounded-2xl shadow-xl border border-slate-800 overflow-hidden relative flex flex-col justify-between print:shadow-none print:border-slate-800"
+                style={customColors.enabled ? { backgroundColor: customColors.backBg, borderColor: customColors.borderColor } : undefined}
+              >
                 {/* Lanyard Hole Cutout Graphic */}
                 <div className="absolute top-2 left-1/2 -translate-x-1/2 w-12 h-2.5 bg-slate-800 rounded-full border border-slate-700 z-20"></div>
 
                 {/* Back Header */}
-                <div className="pt-7 pb-3 px-5 border-b border-slate-800 text-center">
-                  <span className={`text-[10px] font-mono tracking-widest ${currentTheme.accentText} uppercase font-bold block`}>
+                <div
+                  className="pt-7 pb-3 px-5 border-b border-slate-800 text-center"
+                  style={customColors.enabled ? { borderColor: customColors.borderColor } : undefined}
+                >
+                  <span
+                    className={`text-[10px] font-mono tracking-widest ${currentTheme.accentText} uppercase font-bold block`}
+                    style={customColors.enabled ? { color: customColors.accentColor } : undefined}
+                  >
                     {verificationHeader}
                   </span>
                   <p className="text-[10px] text-slate-400 mt-1 leading-tight">
@@ -660,37 +743,69 @@ export const IdCardModal: FC<IdCardModalProps> = ({ employee, onClose }) => {
 
                 {/* QR Code & Contact Data */}
                 <div className="p-4 space-y-2.5 text-center">
-                  <div className={`bg-white p-2 rounded-2xl inline-block border-2 ${currentTheme.qrBorder} shadow-md`}>
+                  <div
+                    className={`bg-white p-2 rounded-2xl inline-block border-2 ${currentTheme.qrBorder} shadow-md`}
+                    style={customColors.enabled ? { borderColor: customColors.accentColor } : undefined}
+                  >
                     <img src={qrCodeUrl} alt="QR Verification" className="w-20 h-20 object-contain" />
                   </div>
-                  <span className={`block text-[9px] font-mono ${currentTheme.accentText} tracking-wider`}>
+                  <span
+                    className={`block text-[9px] font-mono ${currentTheme.accentText} tracking-wider`}
+                    style={customColors.enabled ? { color: customColors.accentColor } : undefined}
+                  >
                     SCAN TO VERIFY AUTHENTICITY
                   </span>
 
-                  <div className="bg-slate-800/80 rounded-xl p-2.5 text-left space-y-1.5 text-[10px] border border-slate-700/60">
+                  <div
+                    className="bg-slate-800/80 rounded-xl p-2.5 text-left space-y-1.5 text-[10px] border border-slate-700/60"
+                    style={customColors.enabled ? { borderColor: customColors.borderColor } : undefined}
+                  >
                     <div className="flex items-center gap-2 text-slate-300">
-                      <Phone size={12} className={currentTheme.accentText} />
+                      <Phone
+                        size={12}
+                        className={currentTheme.accentText}
+                        style={customColors.enabled ? { color: customColors.accentColor } : undefined}
+                      />
                       <span className="truncate">{employee.mobile} (Plant: {plantPhone})</span>
                     </div>
                     <div className="flex items-center gap-2 text-slate-300">
-                      <Mail size={12} className={currentTheme.accentText} />
+                      <Mail
+                        size={12}
+                        className={currentTheme.accentText}
+                        style={customColors.enabled ? { color: customColors.accentColor } : undefined}
+                      />
                       <span className="truncate">{employee.email}</span>
                     </div>
                     <div className="flex items-start gap-2 text-slate-300">
-                      <Building2 size={12} className={`${currentTheme.accentText} shrink-0 mt-0.5`} />
+                      <Building2
+                        size={12}
+                        className={`${currentTheme.accentText} shrink-0 mt-0.5`}
+                        style={customColors.enabled ? { color: customColors.accentColor } : undefined}
+                      />
                       <span className="leading-tight text-[9.5px]">{plantAddress}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Card Disclaimer & Signature */}
-                <div className="px-4 py-2.5 bg-slate-950 border-t border-slate-800 text-center space-y-1">
+                <div
+                  className="px-4 py-2.5 bg-slate-950 border-t border-slate-800 text-center space-y-1"
+                  style={customColors.enabled ? { borderColor: customColors.borderColor } : undefined}
+                >
                   <p className="text-[8px] text-slate-500 leading-tight">
                     {disclaimer}
                   </p>
-                  <div className="flex justify-between items-center pt-1 border-t border-slate-800/80 text-[8px] text-slate-400">
-                    <span>GSTIN: ${gstin}</span>
-                    <span className={`font-serif italic ${currentTheme.accentText}`}>{signatoryTitle}</span>
+                  <div
+                    className="flex justify-between items-center pt-1 border-t border-slate-800/80 text-[8px] text-slate-400"
+                    style={customColors.enabled ? { borderColor: customColors.borderColor } : undefined}
+                  >
+                    <span>GSTIN: {gstin}</span>
+                    <span
+                      className={`font-serif italic ${currentTheme.accentText}`}
+                      style={customColors.enabled ? { color: customColors.accentColor } : undefined}
+                    >
+                      {signatoryTitle}
+                    </span>
                   </div>
                 </div>
               </div>

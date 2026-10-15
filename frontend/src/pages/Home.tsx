@@ -916,6 +916,7 @@ const Home = () => {
     serviceRedemptionValue: 200,
     coinConversionRate: 1,
   });
+  const [sectionLayouts, setSectionLayouts] = useState<Record<string, any>>({});
 
   useEffect(() => {
     fetch(`${API_BASE}/content/public`)
@@ -948,6 +949,9 @@ const Home = () => {
               ...prev,
               ...data.data.referralSettings,
             }));
+          }
+          if (data.data.sectionLayouts) {
+            setSectionLayouts(data.data.sectionLayouts);
           }
         }
       })
@@ -1020,13 +1024,17 @@ const Home = () => {
   return (
     <div className="space-y-12 -mt-8">
       {/* 100% Soft-Coded Hero Section */}
-      <section
-        style={{
-          ...getHeroBackgroundStyle(),
-          color: hero.textColor || '#ffffff',
-        }}
-        className="text-white py-16 md:py-20 px-4 relative overflow-hidden transition-all duration-300 shadow-inner"
-      >
+      {sectionLayouts.hero?.isVisible !== false && (
+        <section
+          style={{
+            ...getHeroBackgroundStyle(),
+            color: hero.textColor || '#ffffff',
+            paddingTop: sectionLayouts.hero?.paddingTop,
+            paddingBottom: sectionLayouts.hero?.paddingBottom,
+            backgroundColor: sectionLayouts.hero?.backgroundColor,
+          }}
+          className="text-white py-16 md:py-20 px-4 relative overflow-hidden transition-all duration-300 shadow-inner"
+        >
         {/* Full Hero Background Image Layer (Active if bgType === 'image' OR if hero.bgImage exists) */}
         {(hero.bgType === 'image' || Boolean(hero.bgImage)) && hero.bgImage && (
           <div
@@ -1059,7 +1067,7 @@ const Home = () => {
           <div className="absolute inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:24px_24px] opacity-10 pointer-events-none" />
         )}
 
-        <div className="max-w-6xl mx-auto text-center space-y-8 relative z-10">
+        <div style={{ maxWidth: sectionLayouts.hero?.maxWidth }} className="max-w-6xl mx-auto text-center space-y-8 relative z-10">
           {/* Optional Hero Brand Emblem/Logo inside Hero (Only shown if showHeroLogo is true) */}
           {(hero.showHeroLogo ?? false) && hero.logoImage && (
             <div className="flex flex-col items-center gap-3">
@@ -1192,11 +1200,21 @@ const Home = () => {
           </div>
         </div>
       </section>
+      )}
 
       {/* ============================================================ */}
       {/* OFFICIAL COMPLAINT DIVISION SELECTOR SECTION (MATCHING UI)   */}
       {/* ============================================================ */}
-      <section className="max-w-6xl mx-auto px-4">
+      {sectionLayouts.serviceCards?.isVisible !== false && (
+        <section
+          style={{
+            maxWidth: sectionLayouts.serviceCards?.maxWidth,
+            paddingTop: sectionLayouts.serviceCards?.paddingTop,
+            paddingBottom: sectionLayouts.serviceCards?.paddingBottom,
+            backgroundColor: sectionLayouts.serviceCards?.backgroundColor,
+          }}
+          className="max-w-6xl mx-auto px-4"
+        >
         {/* Section Header & Subtitle */}
         <div className="text-center space-y-4 mb-8">
           <p className="text-slate-600 font-medium text-xs md:text-sm max-w-2xl mx-auto leading-relaxed">
@@ -1364,9 +1382,19 @@ const Home = () => {
           })}
         </div>
       </section>
+      )}
 
       {/* Ekosmart Customer Wallet & Referral Rewards Banner */}
-      <section className="max-w-6xl mx-auto px-4">
+      {sectionLayouts.rewards?.isVisible !== false && (
+        <section
+          style={{
+            maxWidth: sectionLayouts.rewards?.maxWidth,
+            paddingTop: sectionLayouts.rewards?.paddingTop,
+            paddingBottom: sectionLayouts.rewards?.paddingBottom,
+            backgroundColor: sectionLayouts.rewards?.backgroundColor,
+          }}
+          className="max-w-6xl mx-auto px-4"
+        >
         <div className="bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/5 rounded-3xl p-6 md:p-8 border-2 border-amber-300 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-600 to-amber-400 text-white flex items-center justify-center shadow-lg flex-shrink-0">
@@ -1408,10 +1436,19 @@ const Home = () => {
           </div>
         </div>
       </section>
+      )}
 
       {/* Quick Access Utility Actions Bar */}
-      {quickActionsConfig.isVisible !== false && (
-        <section className="max-w-6xl mx-auto px-4">
+      {quickActionsConfig.isVisible !== false && sectionLayouts.quickActions?.isVisible !== false && (
+        <section
+          style={{
+            maxWidth: sectionLayouts.quickActions?.maxWidth,
+            paddingTop: sectionLayouts.quickActions?.paddingTop,
+            paddingBottom: sectionLayouts.quickActions?.paddingBottom,
+            backgroundColor: sectionLayouts.quickActions?.backgroundColor,
+          }}
+          className="max-w-6xl mx-auto px-4"
+        >
           <div
             className={`relative overflow-hidden transition-all duration-300 ${quickActionsConfig.cardBorderRadius || 'rounded-3xl'} ${quickActionsConfig.cardShadow || 'shadow-sm'}`}
             style={{
@@ -1568,8 +1605,16 @@ const Home = () => {
       )}
 
       {/* EBS Battery Technical Highlights Banner */}
-      {batteryBanner.isVisible !== false && (
-        <section className="max-w-6xl mx-auto px-4 pb-12">
+      {batteryBanner.isVisible !== false && sectionLayouts.batteryBanner?.isVisible !== false && (
+        <section
+          style={{
+            maxWidth: sectionLayouts.batteryBanner?.maxWidth,
+            paddingTop: sectionLayouts.batteryBanner?.paddingTop,
+            paddingBottom: sectionLayouts.batteryBanner?.paddingBottom,
+            backgroundColor: sectionLayouts.batteryBanner?.backgroundColor,
+          }}
+          className="max-w-6xl mx-auto px-4 pb-12"
+        >
           {(() => {
             const hasBgImage = batteryBanner.bgType === 'image' && !!batteryBanner.bgImage;
             const containerStyle: React.CSSProperties = {

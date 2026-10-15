@@ -299,13 +299,25 @@ export const getEmployeeDashboardStats = async (req: Request, res: Response) => 
       endDate as string
     );
 
-    const baseQuery: any = {
-      $or: [
-        { assignedTo: employee._id },
-        { 'formData.assignedEmployeeId': employee.employeeId },
-        { 'formData.assignedTo': employee.name },
-      ],
-    };
+    const isSuperOrAll =
+      employee.role === 'admin' ||
+      employee.role === 'Manager' ||
+      (employee.permissions && employee.permissions.includes('complaints:view_all'));
+
+    const empDivisions = Array.isArray(employee.division) && employee.division.length > 0
+      ? employee.division
+      : employee.department ? [employee.department] : [];
+
+    const baseQuery: any = isSuperOrAll
+      ? {}
+      : {
+          $or: [
+            { assignedTo: employee._id },
+            { division: { $in: empDivisions } },
+            { 'formData.assignedEmployeeId': employee.employeeId },
+            { 'formData.assignedTo': employee.name },
+          ],
+        };
 
     let dateQuery: any = baseQuery;
     if (start || end) {

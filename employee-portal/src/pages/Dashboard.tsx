@@ -12,11 +12,13 @@ import {
   Package,
   Receipt,
   RotateCcw,
+  Calendar,
 } from 'lucide-react';
 import { empAuthApi, resolveImageUrl } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { IdCardModal } from '../components/IdCardModal';
 import { TicketDetailModal } from '../components/TicketDetailModal';
+import { LeaveManagementModal } from '../components/LeaveManagementModal';
 import { DateRangeFilter, PRESET_LABELS, type DateRangeState } from '../components/DateRangeFilter';
 
 const Dashboard = () => {
@@ -24,6 +26,7 @@ const Dashboard = () => {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showIdCard, setShowIdCard] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [selectedTicketIdOrNumber, setSelectedTicketIdOrNumber] = useState<string | null>(null);
 
   // Date Filter (Default: TODAY as requested)
@@ -216,6 +219,15 @@ const Dashboard = () => {
             <FileSpreadsheet size={16} />
             <span>My Salary Slip</span>
           </Link>
+
+          <button
+            onClick={() => setShowLeaveModal(true)}
+            className="flex items-center gap-2 px-4 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-2xl text-xs font-bold transition shadow-md shadow-teal-950/20 cursor-pointer"
+            title="Apply for Leave & View Attendance"
+          >
+            <Calendar size={16} />
+            <span>Leave & Attendance</span>
+          </button>
         </div>
       </div>
 
@@ -581,6 +593,15 @@ const Dashboard = () => {
 
       {/* ID Card Modal */}
       {showIdCard && <IdCardModal employee={employee} onClose={() => setShowIdCard(false)} />}
+
+      {/* Leave Management Modal */}
+      {showLeaveModal && (
+        <LeaveManagementModal
+          employeeId={employee?.employeeId || user?.employeeId}
+          employeeName={employee?.name || user?.name}
+          onClose={() => setShowLeaveModal(false)}
+        />
+      )}
 
       {/* Ticket Dossier & Update Modal */}
       {selectedTicketIdOrNumber && (
