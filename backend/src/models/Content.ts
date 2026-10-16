@@ -114,34 +114,63 @@ export interface ITopBarContent {
   accentColor: string;
 }
 
+export interface ICustomNavItem {
+  id: string;
+  label: string;
+  href: string;
+  icon?: string;
+  itemType?: 'link' | 'pill' | 'button';
+  bgColor?: string;
+  textColor?: string;
+  borderColor?: string;
+  badge?: string;
+  badgeColor?: string;
+  isVisible?: boolean;
+  order?: number;
+  isExternal?: boolean;
+  children?: Array<{ label: string; href: string; isExternal?: boolean }>;
+}
+
 export interface IHeaderNavContent {
   brandTitle: string;
   brandSubtitle: string;
   logoType: 'preset' | 'image';
   logoImage?: string;
+  logoLink?: string;
   homeLabel: string;
   showHome: boolean;
+  homeHref?: string;
+  homeIcon?: string;
   walletLabel: string;
   showWallet: boolean;
+  walletHref?: string;
   showWalletBadge: boolean;
+  walletBgColor?: string;
+  walletTextColor?: string;
+  walletBorderColor?: string;
+  walletIcon?: string;
   referLabel: string;
   showRefer: boolean;
+  referHref?: string;
+  showReferBonus?: boolean;
+  referBonusAmount?: number;
+  referBgColor?: string;
+  referTextColor?: string;
+  referBorderColor?: string;
+  referIcon?: string;
+  contactLabel?: string;
+  showContactDropdown?: boolean;
+  contactIcon?: string;
   accountLabel: string;
   showAccount: boolean;
+  accountHref?: string;
   accountBtnBg: string;
   accountBtnText: string;
+  accountIcon?: string;
   navBgColor?: string;
   navBorderColor?: string;
-  customNavItems?: Array<{
-    id: string;
-    label: string;
-    href: string;
-    icon?: string;
-    isVisible?: boolean;
-    order?: number;
-    isExternal?: boolean;
-    children?: Array<{ label: string; href: string; isExternal?: boolean }>;
-  }>;
+  isSticky?: boolean;
+  customNavItems?: ICustomNavItem[];
 }
 
 export interface IHeroContent {
@@ -542,19 +571,41 @@ const contentSchema = new Schema<IContent>(
       brandSubtitle: { type: String, default: 'Battery Solution • Li-ion & LFP' },
       logoType: { type: String, enum: ['preset', 'image'], default: 'preset' },
       logoImage: { type: String, default: '' },
+      logoLink: { type: String, default: '/' },
       homeLabel: { type: String, default: 'Home' },
       showHome: { type: Boolean, default: true },
+      homeHref: { type: String, default: '/' },
+      homeIcon: { type: String, default: 'Home' },
       walletLabel: { type: String, default: 'Wallet & Coins' },
       showWallet: { type: Boolean, default: true },
+      walletHref: { type: String, default: '/customer/wallet' },
       showWalletBadge: { type: Boolean, default: true },
+      walletBgColor: { type: String, default: '' },
+      walletTextColor: { type: String, default: '' },
+      walletBorderColor: { type: String, default: '' },
+      walletIcon: { type: String, default: 'Coins' },
       referLabel: { type: String, default: 'Refer & Earn' },
       showRefer: { type: Boolean, default: true },
+      referHref: { type: String, default: '/customer/referrals' },
+      showReferBonus: { type: Boolean, default: true },
+      referBonusAmount: { type: Number, default: 500 },
+      referBgColor: { type: String, default: '' },
+      referTextColor: { type: String, default: '' },
+      referBorderColor: { type: String, default: '' },
+      referIcon: { type: String, default: 'Gift' },
+      contactLabel: { type: String, default: 'Contact & Helpline' },
+      showContactDropdown: { type: Boolean, default: true },
+      contactIcon: { type: String, default: 'Phone' },
       accountLabel: { type: String, default: 'Account / Login' },
       showAccount: { type: Boolean, default: true },
+      accountHref: { type: String, default: '/customer/login' },
       accountBtnBg: { type: String, default: '#059669' },
       accountBtnText: { type: String, default: '#ffffff' },
+      accountIcon: { type: String, default: 'User' },
       navBgColor: { type: String, default: '#ffffff' },
       navBorderColor: { type: String, default: '#e2e8f0' },
+      isSticky: { type: Boolean, default: true },
+      customNavItems: { type: Array, default: [] },
     },
     hero: {
       heading: { type: String, default: 'Ekosmart Battery Solution (EBS)\nHigh Power Lithium-Ion & LFP Battery Packs' },

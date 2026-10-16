@@ -240,6 +240,12 @@ export interface ICustomNavItem {
   label: string;
   href: string;
   icon?: string;
+  itemType?: 'link' | 'pill' | 'button';
+  bgColor?: string;
+  textColor?: string;
+  borderColor?: string;
+  badge?: string;
+  badgeColor?: string;
   isVisible?: boolean;
   order?: number;
   isExternal?: boolean;
@@ -300,19 +306,40 @@ export interface IHeaderNavConfig {
   brandSubtitle?: string;
   logoType?: 'preset' | 'image';
   logoImage?: string;
+  logoLink?: string;
   homeLabel?: string;
   showHome?: boolean;
+  homeHref?: string;
+  homeIcon?: string;
   walletLabel?: string;
   showWallet?: boolean;
+  walletHref?: string;
   showWalletBadge?: boolean;
+  walletBgColor?: string;
+  walletTextColor?: string;
+  walletBorderColor?: string;
+  walletIcon?: string;
   referLabel?: string;
   showRefer?: boolean;
+  referHref?: string;
+  showReferBonus?: boolean;
+  referBonusAmount?: number;
+  referBgColor?: string;
+  referTextColor?: string;
+  referBorderColor?: string;
+  referIcon?: string;
+  contactLabel?: string;
+  showContactDropdown?: boolean;
+  contactIcon?: string;
   accountLabel?: string;
   showAccount?: boolean;
+  accountHref?: string;
   accountBtnBg?: string;
   accountBtnText?: string;
+  accountIcon?: string;
   navBgColor?: string;
   navBorderColor?: string;
+  isSticky?: boolean;
   customNavItems?: ICustomNavItem[];
 }
 
@@ -545,24 +572,45 @@ const defaultFallbackContent: ICMSContent = {
     brandSubtitle: 'Battery Solution • Li-ion & LFP',
     logoType: 'preset',
     logoImage: '',
+    logoLink: '/',
     homeLabel: 'Home',
     showHome: true,
+    homeHref: '/',
+    homeIcon: 'home',
     walletLabel: 'Wallet & Coins',
     showWallet: true,
+    walletHref: '/customer/wallet',
     showWalletBadge: true,
+    walletBgColor: '#fef3c7',
+    walletTextColor: '#78350f',
+    walletBorderColor: '#fde68a',
+    walletIcon: 'coins',
     referLabel: 'Refer & Earn',
     showRefer: true,
+    referHref: '/customer/referrals',
+    showReferBonus: true,
+    referBonusAmount: 500,
+    referBgColor: '#faf5ff',
+    referTextColor: '#581c87',
+    referBorderColor: '#e9d5ff',
+    referIcon: 'gift',
+    contactLabel: 'Contact & Helpline',
+    showContactDropdown: true,
+    contactIcon: 'phone',
     accountLabel: 'Account / Login',
     showAccount: true,
+    accountHref: '/customer/login',
     accountBtnBg: '#059669',
     accountBtnText: '#ffffff',
+    accountIcon: 'user',
     navBgColor: '#ffffff',
     navBorderColor: '#e2e8f0',
+    isSticky: true,
     customNavItems: [
-      { id: 'nav-showroom', label: 'Showroom Bills', href: '/showroom-billing', isVisible: true, order: 1, isExternal: false },
-      { id: 'nav-warranty', label: 'Check Warranty', href: '/warranty/check', isVisible: true, order: 2, isExternal: false },
-      { id: 'nav-track', label: 'Track Ticket', href: '/complaint/track', isVisible: true, order: 3, isExternal: false },
-      { id: 'nav-contact', label: 'Contact', href: '/contact', isVisible: true, order: 4, isExternal: false },
+      { id: 'nav-showroom', label: 'Showroom Bills', href: '/showroom-billing', itemType: 'link', isVisible: true, order: 1, isExternal: false },
+      { id: 'nav-warranty', label: 'Check Warranty', href: '/warranty/check', itemType: 'link', isVisible: true, order: 2, isExternal: false },
+      { id: 'nav-track', label: 'Track Ticket', href: '/complaint/track', itemType: 'link', isVisible: true, order: 3, isExternal: false },
+      { id: 'nav-contact', label: 'Contact', href: '/contact', itemType: 'link', isVisible: true, order: 4, isExternal: false },
     ],
   },
   hero: {
@@ -1246,6 +1294,7 @@ const ContentManager = () => {
 
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
   const [contactSubTab, setContactSubTab] = useState<'all' | 'cards' | 'dossier' | 'form' | 'divisions' | 'header' | 'coordinates'>('all');
+  const [navPreviewMode, setNavPreviewMode] = useState<'desktop' | 'mobile'>('desktop');
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
@@ -12254,487 +12303,1318 @@ const ContentManager = () => {
       )}
 
       {/* TAB: NAVIGATION BAR */}
-      {activeTab === 'navbar' && (
-        <div className="space-y-6">
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
-              <div>
-                <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                  <List size={20} className="text-purple-600" />
-                  <span>Header Navigation Bar & Top Strip Settings</span>
-                </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Configure brand header title, helpline bar, default core links, and add custom navigation items and dropdowns.
-                </p>
-              </div>
-              <SectionSaveButton label="Save Navbar" />
-            </div>
+      {activeTab === 'navbar' && (() => {
+        const navConf: IHeaderNavConfig = content.headerNav || defaultFallbackContent.headerNav!;
+        const topBarConf: ITopBarConfig = content.topBar || defaultFallbackContent.topBar!;
+        const customItems: ICustomNavItem[] = navConf.customNavItems || defaultFallbackContent.headerNav?.customNavItems || [];
 
-            {/* Top Bar Strip Settings */}
-            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-bold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                    <Phone size={14} className="text-emerald-600" />
-                    <span>Top Helpline Header Strip</span>
-                  </h3>
-                  <p className="text-[11px] text-slate-500">Dark informational strip at the very top of all pages</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={content.topBar?.isVisible ?? true}
-                      onChange={(e) =>
-                        setContent({
-                          ...content,
-                          topBar: { ...(content.topBar || defaultFallbackContent.topBar!), isVisible: e.target.checked },
-                        })
-                      }
-                      className="rounded text-green-600 h-4 w-4"
-                    />
-                    <span>Show Top Bar</span>
-                  </label>
-                  <SectionSaveButton label="Save Strip" compact />
-                </div>
-              </div>
+        const updateNav = (patch: Partial<IHeaderNavConfig>) => {
+          setContent({
+            ...content,
+            headerNav: { ...navConf, ...patch },
+          });
+        };
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">Helpline Phone</label>
-                  <input
-                    type="text"
-                    value={content.topBar?.phone || ''}
-                    onChange={(e) =>
-                      setContent({
-                        ...content,
-                        topBar: { ...(content.topBar || defaultFallbackContent.topBar!), phone: e.target.value },
-                      })
-                    }
-                    placeholder="+91 8949049003"
-                    className="w-full border border-slate-300 rounded-lg p-2 text-xs font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">Office Hours</label>
-                  <input
-                    type="text"
-                    value={content.topBar?.officeHours || ''}
-                    onChange={(e) =>
-                      setContent({
-                        ...content,
-                        topBar: { ...(content.topBar || defaultFallbackContent.topBar!), officeHours: e.target.value },
-                      })
-                    }
-                    placeholder="10:00 AM to 6:30 PM (Mon - Sat)"
-                    className="w-full border border-slate-300 rounded-lg p-2 text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">GSTIN Number</label>
-                  <input
-                    type="text"
-                    value={content.topBar?.gstin || ''}
-                    onChange={(e) =>
-                      setContent({
-                        ...content,
-                        topBar: { ...(content.topBar || defaultFallbackContent.topBar!), gstin: e.target.value },
-                      })
-                    }
-                    placeholder="08DTUPM4205B1Z0"
-                    className="w-full border border-slate-300 rounded-lg p-2 text-xs font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">Location Label</label>
-                  <input
-                    type="text"
-                    value={content.topBar?.location || ''}
-                    onChange={(e) =>
-                      setContent({
-                        ...content,
-                        topBar: { ...(content.topBar || defaultFallbackContent.topBar!), location: e.target.value },
-                      })
-                    }
-                    placeholder="Kota, Rajasthan"
-                    className="w-full border border-slate-300 rounded-lg p-2 text-xs"
-                  />
-                </div>
-              </div>
-            </div>
+        const updateTopBar = (patch: Partial<ITopBarConfig>) => {
+          setContent({
+            ...content,
+            topBar: { ...topBarConf, ...patch },
+          });
+        };
 
-            {/* Brand Logo & Title */}
-            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="font-bold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                  <Home size={14} className="text-purple-600" />
-                  <span>Header Brand Title & Subtitle</span>
-                </h3>
-                <SectionSaveButton label="Save Titles" compact />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        const renderPreviewIcon = (iconName?: string, defaultIcon?: React.ReactNode, size = 13) => {
+          if (!iconName) return defaultIcon || null;
+          const k = iconName.toLowerCase().replace(/[-_\s]/g, '');
+          switch (k) {
+            case 'home': return <Home size={size} />;
+            case 'coins':
+            case 'wallet': return <Coins size={size} />;
+            case 'gift': return <Gift size={size} />;
+            case 'phone': return <Phone size={size} />;
+            case 'user': return <User size={size} />;
+            case 'battery': return <Battery size={size} />;
+            case 'zap': return <Zap size={size} />;
+            case 'sparkles': return <Sparkles size={size} />;
+            case 'shield': return <ShieldCheck size={size} />;
+            case 'file': return <FileText size={size} />;
+            case 'search': return <Search size={size} />;
+            case 'help': return <HelpCircle size={size} />;
+            case 'wrench': return <Wrench size={size} />;
+            case 'tag': return <Tag size={size} />;
+            case 'message': return <MessageSquare size={size} />;
+            default: return defaultIcon || null;
+          }
+        };
+
+        return (
+          <div className="space-y-6">
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-6">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">Brand Main Title</label>
-                  <input
-                    type="text"
-                    value={content.headerNav?.brandTitle || ''}
-                    onChange={(e) =>
-                      setContent({
-                        ...content,
-                        headerNav: { ...(content.headerNav || defaultFallbackContent.headerNav!), brandTitle: e.target.value },
-                      })
-                    }
-                    placeholder="EBS EKOSMART"
-                    className="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">Brand Subtitle</label>
-                  <input
-                    type="text"
-                    value={content.headerNav?.brandSubtitle || ''}
-                    onChange={(e) =>
-                      setContent({
-                        ...content,
-                        headerNav: { ...(content.headerNav || defaultFallbackContent.headerNav!), brandSubtitle: e.target.value },
-                      })
-                    }
-                    placeholder="Battery Solution • Li-ion & LFP"
-                    className="w-full border border-slate-300 rounded-lg p-2 text-xs"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Core Navigation Links Visibility */}
-            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="font-bold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                  <CheckCircle size={14} className="text-emerald-600" />
-                  <span>Core Navbar Links Toggles</span>
-                </h3>
-                <SectionSaveButton label="Save Core Links" compact />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs text-slate-800">Home Link</span>
-                    <input
-                      type="checkbox"
-                      checked={content.headerNav?.showHome ?? true}
-                      onChange={(e) =>
-                        setContent({
-                          ...content,
-                          headerNav: { ...(content.headerNav || defaultFallbackContent.headerNav!), showHome: e.target.checked },
-                        })
-                      }
-                      className="rounded text-green-600 h-4 w-4"
-                    />
-                  </div>
-                  <input
-                    type="text"
-                    value={content.headerNav?.homeLabel || 'Home'}
-                    onChange={(e) =>
-                      setContent({
-                        ...content,
-                        headerNav: { ...(content.headerNav || defaultFallbackContent.headerNav!), homeLabel: e.target.value },
-                      })
-                    }
-                    className="w-full border border-slate-300 rounded px-2 py-1 text-xs"
-                    placeholder="Home"
-                  />
-                </div>
-
-                <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs text-slate-800">Wallet & Coins</span>
-                    <input
-                      type="checkbox"
-                      checked={content.headerNav?.showWallet ?? true}
-                      onChange={(e) =>
-                        setContent({
-                          ...content,
-                          headerNav: { ...(content.headerNav || defaultFallbackContent.headerNav!), showWallet: e.target.checked },
-                        })
-                      }
-                      className="rounded text-green-600 h-4 w-4"
-                    />
-                  </div>
-                  <input
-                    type="text"
-                    value={content.headerNav?.walletLabel || 'Wallet & Coins'}
-                    onChange={(e) =>
-                      setContent({
-                        ...content,
-                        headerNav: { ...(content.headerNav || defaultFallbackContent.headerNav!), walletLabel: e.target.value },
-                      })
-                    }
-                    className="w-full border border-slate-300 rounded px-2 py-1 text-xs"
-                    placeholder="Wallet & Coins"
-                  />
-                </div>
-
-                <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs text-slate-800">Refer & Earn</span>
-                    <input
-                      type="checkbox"
-                      checked={content.headerNav?.showRefer ?? true}
-                      onChange={(e) =>
-                        setContent({
-                          ...content,
-                          headerNav: { ...(content.headerNav || defaultFallbackContent.headerNav!), showRefer: e.target.checked },
-                        })
-                      }
-                      className="rounded text-green-600 h-4 w-4"
-                    />
-                  </div>
-                  <input
-                    type="text"
-                    value={content.headerNav?.referLabel || 'Refer & Earn'}
-                    onChange={(e) =>
-                      setContent({
-                        ...content,
-                        headerNav: { ...(content.headerNav || defaultFallbackContent.headerNav!), referLabel: e.target.value },
-                      })
-                    }
-                    className="w-full border border-slate-300 rounded px-2 py-1 text-xs"
-                    placeholder="Refer & Earn"
-                  />
-                </div>
-
-                <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs text-slate-800">Account / Login CTA</span>
-                    <input
-                      type="checkbox"
-                      checked={content.headerNav?.showAccount ?? true}
-                      onChange={(e) =>
-                        setContent({
-                          ...content,
-                          headerNav: { ...(content.headerNav || defaultFallbackContent.headerNav!), showAccount: e.target.checked },
-                        })
-                      }
-                      className="rounded text-green-600 h-4 w-4"
-                    />
-                  </div>
-                  <input
-                    type="text"
-                    value={content.headerNav?.accountLabel || 'Account / Login'}
-                    onChange={(e) =>
-                      setContent({
-                        ...content,
-                        headerNav: { ...(content.headerNav || defaultFallbackContent.headerNav!), accountLabel: e.target.value },
-                      })
-                    }
-                    className="w-full border border-slate-300 rounded px-2 py-1 text-xs"
-                    placeholder="Account / Login"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Custom Navigation Links Manager */}
-            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
-              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
-                <div>
-                  <h3 className="font-bold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                    <List size={14} className="text-purple-600" />
-                    <span>Custom Navigation Menu Links</span>
-                  </h3>
-                  <p className="text-[11px] text-slate-500">
-                    Add custom top navbar items with routes, external links, and optional dropdown submenus.
+                  <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                    <List size={20} className="text-purple-600" />
+                    <span>Header Navigation Bar & Top Strip Settings</span>
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Configure brand header title, helpline bar, default core links (Home, Wallet, Refer, Contact, Account), and add custom navigation items and dropdowns.
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const currentNav = [...(content.headerNav?.customNavItems || defaultFallbackContent.headerNav?.customNavItems || [])];
-                      const newItem: ICustomNavItem = {
-                        id: `nav-${Date.now()}`,
-                        label: `Custom Link ${currentNav.length + 1}`,
-                        href: '/',
-                        isVisible: true,
-                        order: currentNav.length + 1,
-                        isExternal: false,
-                      };
-                      setContent({
-                        ...content,
-                        headerNav: {
-                          ...(content.headerNav || defaultFallbackContent.headerNav!),
-                          customNavItems: [...currentNav, newItem],
-                        },
-                      });
-                    }}
-                    className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer self-start sm:self-auto shadow-xs"
-                  >
-                    <Plus size={14} />
-                    <span>Add Navigation Item</span>
-                  </button>
-                  <SectionSaveButton label="Save Menu" compact />
+                  <div className="flex items-center bg-slate-100 rounded-xl p-1 border border-slate-200">
+                    <button
+                      type="button"
+                      onClick={() => setNavPreviewMode('desktop')}
+                      className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                        navPreviewMode === 'desktop'
+                          ? 'bg-white text-slate-800 shadow-xs'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      <Monitor size={13} />
+                      <span>Desktop</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNavPreviewMode('mobile')}
+                      className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                        navPreviewMode === 'mobile'
+                          ? 'bg-white text-slate-800 shadow-xs'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      <Smartphone size={13} />
+                      <span>Mobile</span>
+                    </button>
+                  </div>
+                  <SectionSaveButton label="Save Navbar" />
                 </div>
               </div>
 
-              <div className="space-y-3">
-                {(content.headerNav?.customNavItems || defaultFallbackContent.headerNav?.customNavItems || []).map((navItem, idx) => (
-                  <div key={navItem.id || idx} className="bg-white p-4 rounded-xl border border-slate-200 space-y-3 shadow-xs">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                      <div className="flex items-center gap-2 w-full sm:w-auto">
-                        <span className="w-6 h-6 rounded-full bg-purple-100 text-purple-800 font-bold text-xs flex items-center justify-center shrink-0">
-                          {idx + 1}
-                        </span>
-                        <input
-                          type="text"
-                          value={navItem.label}
-                          onChange={(e) => {
-                            const currentNav = [...(content.headerNav?.customNavItems || defaultFallbackContent.headerNav?.customNavItems || [])];
-                            currentNav[idx] = { ...currentNav[idx], label: e.target.value };
-                            setContent({
-                              ...content,
-                              headerNav: { ...(content.headerNav || defaultFallbackContent.headerNav!), customNavItems: currentNav },
-                            });
-                          }}
-                          placeholder="Nav Label"
-                          className="font-bold text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 w-48"
-                        />
-                        <input
-                          type="text"
-                          value={navItem.href}
-                          onChange={(e) => {
-                            const currentNav = [...(content.headerNav?.customNavItems || defaultFallbackContent.headerNav?.customNavItems || [])];
-                            currentNav[idx] = { ...currentNav[idx], href: e.target.value };
-                            setContent({
-                              ...content,
-                              headerNav: { ...(content.headerNav || defaultFallbackContent.headerNav!), customNavItems: currentNav },
-                            });
-                          }}
-                          placeholder="/path or url"
-                          className="text-xs font-mono border border-slate-300 rounded-lg px-2.5 py-1.5 flex-1 sm:w-64"
-                        />
+              {/* LIVE INTERACTIVE NAVBAR MOCKUP PREVIEW */}
+              <div className="rounded-2xl border border-slate-200 bg-slate-100/70 p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <Eye size={14} className="text-purple-600" />
+                    <span>Real-Time Public Navbar Preview ({navPreviewMode === 'desktop' ? 'Desktop' : 'Mobile Drawer'})</span>
+                  </span>
+                  <span className="text-[11px] text-slate-400 font-medium">Updates live as you edit below</span>
+                </div>
+
+                {navPreviewMode === 'desktop' ? (
+                  <div className="rounded-xl overflow-hidden border border-slate-300 shadow-sm bg-white">
+                    {/* Top Bar Preview */}
+                    {(topBarConf.isVisible ?? true) && (
+                      <div
+                        style={{
+                          backgroundColor: topBarConf.bgColor || '#0f172a',
+                          color: topBarConf.textColor || '#cbd5e1',
+                        }}
+                        className="text-[11px] py-1.5 px-4 flex justify-between items-center"
+                      >
+                        <div className="flex items-center gap-4">
+                          {(topBarConf.showPhone ?? true) && (
+                            <span style={{ color: topBarConf.accentColor || '#34d399' }} className="flex items-center gap-1 font-semibold">
+                              <Phone size={11} />
+                              <span>{topBarConf.phoneLabel || 'Helpline:'} {topBarConf.phone || '+91 8949049003'}</span>
+                            </span>
+                          )}
+                          {(topBarConf.showOfficeHours ?? true) && (
+                            <span className="flex items-center gap-1 opacity-80">
+                              <Clock size={11} />
+                              <span>{topBarConf.officeHours || '10:00 AM to 6:30 PM (Mon - Sat)'}</span>
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-4 opacity-80">
+                          {(topBarConf.showGstin ?? true) && (
+                            <span className="font-mono">GSTIN: {topBarConf.gstin || '08DTUPM4205B1Z0'}</span>
+                          )}
+                          {(topBarConf.showLocation ?? true) && (
+                            <span style={{ color: topBarConf.accentColor || '#34d399' }} className="flex items-center gap-1 font-semibold">
+                              <MapPin size={11} />
+                              <span>{topBarConf.location || 'Kota, Rajasthan'}</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Navbar Preview */}
+                    <div
+                      style={{
+                        backgroundColor: navConf.navBgColor || '#ffffff',
+                        borderColor: navConf.navBorderColor || '#e2e8f0',
+                      }}
+                      className="px-4 py-3 border-b flex items-center justify-between gap-4"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white shadow-xs">
+                          <Battery size={18} />
+                        </div>
+                        <div>
+                          <div className="font-black text-slate-900 text-sm leading-tight">
+                            {navConf.brandTitle || 'EBS EKOSMART'}
+                          </div>
+                          <div className="text-[10px] text-emerald-700 font-semibold leading-tight">
+                            {navConf.brandSubtitle || 'Battery Solution • Li-ion & LFP'}
+                          </div>
+                        </div>
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
-                        <label className="flex items-center gap-1.5 text-[11px] text-slate-600 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={navItem.isVisible !== false}
-                            onChange={(e) => {
-                              const currentNav = [...(content.headerNav?.customNavItems || defaultFallbackContent.headerNav?.customNavItems || [])];
-                              currentNav[idx] = { ...currentNav[idx], isVisible: e.target.checked };
-                              setContent({
-                                ...content,
-                                headerNav: { ...(content.headerNav || defaultFallbackContent.headerNav!), customNavItems: currentNav },
-                              });
+                      <div className="flex items-center gap-3 text-xs font-bold">
+                        {(navConf.showHome ?? true) && (
+                          <span className="text-emerald-700 flex items-center gap-1 border-b-2 border-emerald-600 pb-0.5">
+                            {renderPreviewIcon(navConf.homeIcon, <Home size={13} className="text-emerald-600" />)}
+                            <span>{navConf.homeLabel || 'Home'}</span>
+                          </span>
+                        )}
+
+                        {(navConf.showWallet ?? true) && (
+                          <span
+                            style={{
+                              backgroundColor: navConf.walletBgColor || '#fef3c7',
+                              color: navConf.walletTextColor || '#78350f',
+                              borderColor: navConf.walletBorderColor || '#fde68a',
                             }}
-                            className="rounded text-purple-600 h-3.5 w-3.5"
-                          />
-                          <span>Visible</span>
-                        </label>
+                            className="px-2.5 py-1 rounded-xl flex items-center gap-1 border shadow-xs"
+                          >
+                            {renderPreviewIcon(navConf.walletIcon, <Coins size={13} className="text-amber-600" />)}
+                            <span>{navConf.walletLabel || 'Wallet & Coins'}</span>
+                            {(navConf.showWalletBadge ?? true) && (
+                              <span className="bg-amber-200 text-amber-950 text-[10px] px-1 py-0.2 rounded font-black">
+                                500
+                              </span>
+                            )}
+                          </span>
+                        )}
 
-                        <label className="flex items-center gap-1.5 text-[11px] text-slate-600 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={navItem.isExternal || false}
-                            onChange={(e) => {
-                              const currentNav = [...(content.headerNav?.customNavItems || defaultFallbackContent.headerNav?.customNavItems || [])];
-                              currentNav[idx] = { ...currentNav[idx], isExternal: e.target.checked };
-                              setContent({
-                                ...content,
-                                headerNav: { ...(content.headerNav || defaultFallbackContent.headerNav!), customNavItems: currentNav },
-                              });
+                        {(navConf.showRefer ?? true) && (
+                          <span
+                            style={{
+                              backgroundColor: navConf.referBgColor || '#faf5ff',
+                              color: navConf.referTextColor || '#581c87',
+                              borderColor: navConf.referBorderColor || '#e9d5ff',
                             }}
-                            className="rounded text-purple-600 h-3.5 w-3.5"
-                          />
-                          <span>External Tab</span>
-                        </label>
+                            className="px-2.5 py-1 rounded-xl flex items-center gap-1 border shadow-xs"
+                          >
+                            {renderPreviewIcon(navConf.referIcon, <Gift size={13} className="text-purple-600" />)}
+                            <span>
+                              {navConf.referLabel || 'Refer & Earn'}
+                              {(navConf.showReferBonus ?? true) && ` (+${navConf.referBonusAmount || 500})`}
+                            </span>
+                          </span>
+                        )}
 
-                        {/* Move Up/Down */}
-                        <button
-                          type="button"
-                          disabled={idx === 0}
-                          onClick={() => {
-                            const currentNav = [...(content.headerNav?.customNavItems || defaultFallbackContent.headerNav?.customNavItems || [])];
-                            const temp = currentNav[idx];
-                            currentNav[idx] = currentNav[idx - 1];
-                            currentNav[idx - 1] = temp;
-                            setContent({
-                              ...content,
-                              headerNav: { ...(content.headerNav || defaultFallbackContent.headerNav!), customNavItems: currentNav },
-                            });
-                          }}
-                          className="p-1 text-slate-400 hover:text-slate-800 disabled:opacity-20 cursor-pointer"
-                          title="Move Up"
-                        >
-                          <ArrowUp size={13} />
-                        </button>
-                        <button
-                          type="button"
-                          disabled={idx === (content.headerNav?.customNavItems || []).length - 1}
-                          onClick={() => {
-                            const currentNav = [...(content.headerNav?.customNavItems || defaultFallbackContent.headerNav?.customNavItems || [])];
-                            const temp = currentNav[idx];
-                            currentNav[idx] = currentNav[idx + 1];
-                            currentNav[idx + 1] = temp;
-                            setContent({
-                              ...content,
-                              headerNav: { ...(content.headerNav || defaultFallbackContent.headerNav!), customNavItems: currentNav },
-                            });
-                          }}
-                          className="p-1 text-slate-400 hover:text-slate-800 disabled:opacity-20 cursor-pointer"
-                          title="Move Down"
-                        >
-                          <ArrowDown size={13} />
-                        </button>
+                        {/* Custom Nav Items Preview */}
+                        {customItems
+                          .filter((i) => i && i.isVisible !== false)
+                          .map((item) => {
+                            const itemType = item.itemType || 'link';
+                            let itemStyle: React.CSSProperties = {};
+                            let itemClass = 'flex items-center gap-1 transition ';
 
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const currentNav = [...(content.headerNav?.customNavItems || defaultFallbackContent.headerNav?.customNavItems || [])];
-                            currentNav.splice(idx, 1);
-                            setContent({
-                              ...content,
-                              headerNav: { ...(content.headerNav || defaultFallbackContent.headerNav!), customNavItems: currentNav },
-                            });
-                          }}
-                          className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 transition cursor-pointer"
-                          title="Delete Item"
-                        >
-                          <Trash2 size={13} />
-                        </button>
+                            if (itemType === 'button') {
+                              itemStyle = {
+                                backgroundColor: item.bgColor || '#059669',
+                                color: item.textColor || '#ffffff',
+                                borderColor: item.borderColor || undefined,
+                              };
+                              itemClass += 'px-3 py-1 rounded-xl shadow-xs';
+                            } else if (itemType === 'pill') {
+                              itemStyle = {
+                                backgroundColor: item.bgColor || '#f1f5f9',
+                                color: item.textColor || '#0f172a',
+                                borderColor: item.borderColor || '#cbd5e1',
+                              };
+                              itemClass += 'px-2.5 py-1 rounded-xl border shadow-xs';
+                            } else {
+                              itemStyle = { color: item.textColor || '#1e293b' };
+                              itemClass += 'hover:text-emerald-700';
+                            }
+
+                            return (
+                              <span key={item.id} style={itemStyle} className={itemClass}>
+                                {renderPreviewIcon(item.icon, null, 13)}
+                                <span>{item.label}</span>
+                                {item.badge && (
+                                  <span
+                                    style={{ backgroundColor: item.badgeColor || '#ef4444' }}
+                                    className="text-[10px] text-white px-1.5 py-0.2 rounded font-black"
+                                  >
+                                    {item.badge}
+                                  </span>
+                                )}
+                                {item.isExternal && <ExternalLink size={9} className="opacity-60" />}
+                              </span>
+                            );
+                          })}
+
+                        {(navConf.showContactDropdown ?? true) && (
+                          <span className="flex items-center gap-1 text-slate-800">
+                            {renderPreviewIcon(navConf.contactIcon, <Phone size={13} className="text-emerald-600" />)}
+                            <span>{navConf.contactLabel || 'Contact & Helpline'}</span>
+                            <ChevronDown size={11} className="text-slate-500" />
+                          </span>
+                        )}
+
+                        {(navConf.showAccount ?? true) && (
+                          <span
+                            style={{
+                              backgroundColor: navConf.accountBtnBg || '#059669',
+                              color: navConf.accountBtnText || '#ffffff',
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs"
+                          >
+                            {renderPreviewIcon(navConf.accountIcon, <User size={13} />)}
+                            <span>{navConf.accountLabel || 'Account / Login'}</span>
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
-                ))}
+                ) : (
+                  /* Mobile Preview */
+                  <div className="max-w-sm mx-auto rounded-2xl overflow-hidden border border-slate-300 shadow-md bg-slate-900 text-white">
+                    <div className="p-3 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded bg-emerald-600 flex items-center justify-center text-white">
+                          <Battery size={14} />
+                        </div>
+                        <span className="font-bold text-xs">{navConf.brandTitle || 'EBS EKOSMART'}</span>
+                      </div>
+                      <span className="text-[10px] text-emerald-400 font-mono">Mobile Drawer</span>
+                    </div>
+                    <div className="p-4 space-y-2 text-xs">
+                      <div className="p-2.5 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-between">
+                        <span>Customer Wallet</span>
+                        <span className="text-amber-400 font-bold flex items-center gap-1">
+                          <Coins size={12} />
+                          <span>500 Coins</span>
+                        </span>
+                      </div>
+                      <div className="space-y-1 pt-1">
+                        {(navConf.showHome ?? true) && (
+                          <div className="p-2 rounded-lg bg-emerald-900/40 text-emerald-300 font-bold flex items-center gap-2">
+                            {renderPreviewIcon(navConf.homeIcon, <Home size={13} />)}
+                            <span>{navConf.homeLabel || 'Home'}</span>
+                          </div>
+                        )}
+                        {(navConf.showWallet ?? true) && (
+                          <div className="p-2 rounded-lg bg-slate-800 text-slate-200 font-semibold flex items-center gap-2">
+                            {renderPreviewIcon(navConf.walletIcon, <Coins size={13} className="text-amber-400" />)}
+                            <span>{navConf.walletLabel || 'My Wallet'} (500 Coins)</span>
+                          </div>
+                        )}
+                        {(navConf.showRefer ?? true) && (
+                          <div className="p-2 rounded-lg bg-slate-800 text-slate-200 font-semibold flex items-center gap-2">
+                            {renderPreviewIcon(navConf.referIcon, <Gift size={13} className="text-purple-400" />)}
+                            <span>{navConf.referLabel || 'My Referrals'} (+{navConf.referBonusAmount || 500})</span>
+                          </div>
+                        )}
+                        {customItems
+                          .filter((i) => i && i.isVisible !== false)
+                          .map((item) => (
+                            <div key={item.id} className="p-2 rounded-lg bg-slate-800 text-slate-200 font-semibold flex items-center justify-between">
+                              <span className="flex items-center gap-2">
+                                {renderPreviewIcon(item.icon, <Tag size={13} className="text-emerald-400" />)}
+                                <span>{item.label}</span>
+                              </span>
+                              {item.badge && (
+                                <span
+                                  style={{ backgroundColor: item.badgeColor || '#ef4444' }}
+                                  className="text-[9px] text-white px-1.5 py-0.2 rounded font-black"
+                                >
+                                  {item.badge}
+                                </span>
+                              )}
+                            </div>
+                          ))}
+                        {(navConf.showContactDropdown ?? true) && (
+                          <div className="p-2 rounded-lg bg-slate-800 text-slate-200 font-semibold flex items-center gap-2">
+                            {renderPreviewIcon(navConf.contactIcon, <Phone size={13} className="text-emerald-400" />)}
+                            <span>{navConf.contactLabel || 'Contact Us'}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
 
-            {/* Save Bar */}
-            <div className="bg-slate-900 text-white rounded-2xl p-5 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-lg">
-              <div>
-                <h4 className="font-bold text-sm text-slate-100 flex items-center gap-2">
-                  <CheckCircle size={16} className="text-green-400" />
-                  <span>Publish Navigation Bar Configuration</span>
-                </h4>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Saving updates top bar strip, brand headers, and all custom navigation links across desktop & mobile.
-                </p>
+              {/* SECTION 1: GLOBAL NAVBAR & BRAND SETTINGS */}
+              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="font-bold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                      <Sliders size={14} className="text-purple-600" />
+                      <span>Global Navbar & Brand Settings</span>
+                    </h3>
+                    <p className="text-[11px] text-slate-500">Configure sticky behavior, container colors, and brand identity.</p>
+                  </div>
+                  <SectionSaveButton label="Save Brand" compact />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Brand Main Title</label>
+                    <input
+                      type="text"
+                      value={navConf.brandTitle || ''}
+                      onChange={(e) => updateNav({ brandTitle: e.target.value })}
+                      placeholder="EBS EKOSMART"
+                      className="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Brand Subtitle</label>
+                    <input
+                      type="text"
+                      value={navConf.brandSubtitle || ''}
+                      onChange={(e) => updateNav({ brandSubtitle: e.target.value })}
+                      placeholder="Battery Solution • Li-ion & LFP"
+                      className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Brand Logo Destination Link</label>
+                    <input
+                      type="text"
+                      value={navConf.logoLink || '/'}
+                      onChange={(e) => updateNav({ logoLink: e.target.value })}
+                      placeholder="/"
+                      className="w-full border border-slate-300 rounded-lg p-2 text-xs font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Navbar Background Color</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={navConf.navBgColor || '#ffffff'}
+                        onChange={(e) => updateNav({ navBgColor: e.target.value })}
+                        className="w-8 h-8 rounded border border-slate-300 p-0 cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={navConf.navBgColor || '#ffffff'}
+                        onChange={(e) => updateNav({ navBgColor: e.target.value })}
+                        className="flex-1 border border-slate-300 rounded-lg p-2 text-xs font-mono"
+                        placeholder="#ffffff"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Navbar Border Color</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={navConf.navBorderColor || '#e2e8f0'}
+                        onChange={(e) => updateNav({ navBorderColor: e.target.value })}
+                        className="w-8 h-8 rounded border border-slate-300 p-0 cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={navConf.navBorderColor || '#e2e8f0'}
+                        onChange={(e) => updateNav({ navBorderColor: e.target.value })}
+                        className="flex-1 border border-slate-300 rounded-lg p-2 text-xs font-mono"
+                        placeholder="#e2e8f0"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center pt-5">
+                    <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={navConf.isSticky ?? true}
+                        onChange={(e) => updateNav({ isSticky: e.target.checked })}
+                        className="rounded text-green-600 h-4 w-4"
+                      />
+                      <span>Sticky Navbar (Fixed on scroll)</span>
+                    </label>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-3 w-full sm:w-auto">
-                <button
-                  type="button"
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold transition shadow-md disabled:opacity-50"
-                >
-                  <Save size={16} />
-                  <span>{saving ? 'Saving...' : 'Save Navigation Settings'}</span>
-                </button>
+
+              {/* SECTION 2: TOP HELPLINE HEADER STRIP */}
+              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-bold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                      <Phone size={14} className="text-emerald-600" />
+                      <span>Top Helpline Header Strip</span>
+                    </h3>
+                    <p className="text-[11px] text-slate-500">Dark informational strip at the very top of all pages</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={topBarConf.isVisible ?? true}
+                        onChange={(e) => updateTopBar({ isVisible: e.target.checked })}
+                        className="rounded text-green-600 h-4 w-4"
+                      />
+                      <span>Show Top Bar</span>
+                    </label>
+                    <SectionSaveButton label="Save Strip" compact />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Helpline Phone</label>
+                    <input
+                      type="text"
+                      value={topBarConf.phone || ''}
+                      onChange={(e) => updateTopBar({ phone: e.target.value })}
+                      placeholder="+91 8949049003"
+                      className="w-full border border-slate-300 rounded-lg p-2 text-xs font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Helpline Label</label>
+                    <input
+                      type="text"
+                      value={topBarConf.phoneLabel || 'Helpline:'}
+                      onChange={(e) => updateTopBar({ phoneLabel: e.target.value })}
+                      placeholder="Helpline:"
+                      className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Office Hours</label>
+                    <input
+                      type="text"
+                      value={topBarConf.officeHours || ''}
+                      onChange={(e) => updateTopBar({ officeHours: e.target.value })}
+                      placeholder="10:00 AM to 6:30 PM (Mon - Sat)"
+                      className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">GSTIN Number</label>
+                    <input
+                      type="text"
+                      value={topBarConf.gstin || ''}
+                      onChange={(e) => updateTopBar({ gstin: e.target.value })}
+                      placeholder="08DTUPM4205B1Z0"
+                      className="w-full border border-slate-300 rounded-lg p-2 text-xs font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Location Label</label>
+                    <input
+                      type="text"
+                      value={topBarConf.location || ''}
+                      onChange={(e) => updateTopBar({ location: e.target.value })}
+                      placeholder="Kota, Rajasthan"
+                      className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Background Color</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={topBarConf.bgColor || '#0f172a'}
+                        onChange={(e) => updateTopBar({ bgColor: e.target.value })}
+                        className="w-8 h-8 rounded border border-slate-300 p-0 cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={topBarConf.bgColor || '#0f172a'}
+                        onChange={(e) => updateTopBar({ bgColor: e.target.value })}
+                        className="flex-1 border border-slate-300 rounded-lg p-2 text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Text Color</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={topBarConf.textColor || '#cbd5e1'}
+                        onChange={(e) => updateTopBar({ textColor: e.target.value })}
+                        className="w-8 h-8 rounded border border-slate-300 p-0 cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={topBarConf.textColor || '#cbd5e1'}
+                        onChange={(e) => updateTopBar({ textColor: e.target.value })}
+                        className="flex-1 border border-slate-300 rounded-lg p-2 text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Accent Highlight Color</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={topBarConf.accentColor || '#34d399'}
+                        onChange={(e) => updateTopBar({ accentColor: e.target.value })}
+                        className="w-8 h-8 rounded border border-slate-300 p-0 cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={topBarConf.accentColor || '#34d399'}
+                        onChange={(e) => updateTopBar({ accentColor: e.target.value })}
+                        className="flex-1 border border-slate-300 rounded-lg p-2 text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 3: CORE NAVBAR ITEMS SOFTCODING */}
+              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="font-bold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                      <CheckCircle size={14} className="text-emerald-600" />
+                      <span>Core Navigation Links (100% Soft-Coded)</span>
+                    </h3>
+                    <p className="text-[11px] text-slate-500">
+                      Customize labels, routes, icons, badges, and colors for Home, Wallet, Refer, Contact, and Account.
+                    </p>
+                  </div>
+                  <SectionSaveButton label="Save Core Links" compact />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Card 1: Home Link */}
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3 shadow-xs">
+                    <div className="flex items-center justify-between border-b pb-2">
+                      <div className="flex items-center gap-2">
+                        <Home size={16} className="text-emerald-600" />
+                        <span className="font-bold text-xs text-slate-800">Home Link</span>
+                      </div>
+                      <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={navConf.showHome ?? true}
+                          onChange={(e) => updateNav({ showHome: e.target.checked })}
+                          className="rounded text-green-600 h-4 w-4"
+                        />
+                        <span>Visible</span>
+                      </label>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-600 mb-1">Label</label>
+                        <input
+                          type="text"
+                          value={navConf.homeLabel || 'Home'}
+                          onChange={(e) => updateNav({ homeLabel: e.target.value })}
+                          className="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs font-bold"
+                          placeholder="Home"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-600 mb-1">Target Route</label>
+                        <input
+                          type="text"
+                          value={navConf.homeHref || '/'}
+                          onChange={(e) => updateNav({ homeHref: e.target.value })}
+                          className="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs font-mono"
+                          placeholder="/"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-semibold text-slate-600 mb-1">Icon</label>
+                      <select
+                        value={navConf.homeIcon || 'home'}
+                        onChange={(e) => updateNav({ homeIcon: e.target.value })}
+                        className="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs"
+                      >
+                        <option value="home">Home Icon</option>
+                        <option value="sparkles">Sparkles Icon</option>
+                        <option value="battery">Battery Icon</option>
+                        <option value="zap">Zap Icon</option>
+                        <option value="shield">Shield Icon</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Card 2: Wallet & Coins */}
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3 shadow-xs">
+                    <div className="flex items-center justify-between border-b pb-2">
+                      <div className="flex items-center gap-2">
+                        <Coins size={16} className="text-amber-600" />
+                        <span className="font-bold text-xs text-slate-800">Wallet & Coins Option</span>
+                      </div>
+                      <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={navConf.showWallet ?? true}
+                          onChange={(e) => updateNav({ showWallet: e.target.checked })}
+                          className="rounded text-green-600 h-4 w-4"
+                        />
+                        <span>Visible</span>
+                      </label>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-600 mb-1">Label</label>
+                        <input
+                          type="text"
+                          value={navConf.walletLabel || 'Wallet & Coins'}
+                          onChange={(e) => updateNav({ walletLabel: e.target.value })}
+                          className="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs font-bold"
+                          placeholder="Wallet & Coins"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-600 mb-1">Target Route</label>
+                        <input
+                          type="text"
+                          value={navConf.walletHref || '/customer/wallet'}
+                          onChange={(e) => updateNav({ walletHref: e.target.value })}
+                          className="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs font-mono"
+                          placeholder="/customer/wallet"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-600 mb-1">Pill Bg</label>
+                        <input
+                          type="color"
+                          value={navConf.walletBgColor || '#fef3c7'}
+                          onChange={(e) => updateNav({ walletBgColor: e.target.value })}
+                          className="w-full h-8 rounded border border-slate-300 p-0 cursor-pointer"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-600 mb-1">Text Color</label>
+                        <input
+                          type="color"
+                          value={navConf.walletTextColor || '#78350f'}
+                          onChange={(e) => updateNav({ walletTextColor: e.target.value })}
+                          className="w-full h-8 rounded border border-slate-300 p-0 cursor-pointer"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-600 mb-1">Border Color</label>
+                        <input
+                          type="color"
+                          value={navConf.walletBorderColor || '#fde68a'}
+                          onChange={(e) => updateNav({ walletBorderColor: e.target.value })}
+                          className="w-full h-8 rounded border border-slate-300 p-0 cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between pt-1">
+                      <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={navConf.showWalletBadge ?? true}
+                          onChange={(e) => updateNav({ showWalletBadge: e.target.checked })}
+                          className="rounded text-green-600 h-3.5 w-3.5"
+                        />
+                        <span>Show Live Balance Badge (Coins)</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Card 3: Refer & Earn */}
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3 shadow-xs">
+                    <div className="flex items-center justify-between border-b pb-2">
+                      <div className="flex items-center gap-2">
+                        <Gift size={16} className="text-purple-600" />
+                        <span className="font-bold text-xs text-slate-800">Refer & Earn Option</span>
+                      </div>
+                      <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={navConf.showRefer ?? true}
+                          onChange={(e) => updateNav({ showRefer: e.target.checked })}
+                          className="rounded text-green-600 h-4 w-4"
+                        />
+                        <span>Visible</span>
+                      </label>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-600 mb-1">Label</label>
+                        <input
+                          type="text"
+                          value={navConf.referLabel || 'Refer & Earn'}
+                          onChange={(e) => updateNav({ referLabel: e.target.value })}
+                          className="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs font-bold"
+                          placeholder="Refer & Earn"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-600 mb-1">Bonus Amount (+Coins)</label>
+                        <input
+                          type="number"
+                          value={navConf.referBonusAmount ?? 500}
+                          onChange={(e) => updateNav({ referBonusAmount: Number(e.target.value) || 500 })}
+                          className="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs font-bold"
+                          placeholder="500"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-600 mb-1">Pill Bg</label>
+                        <input
+                          type="color"
+                          value={navConf.referBgColor || '#faf5ff'}
+                          onChange={(e) => updateNav({ referBgColor: e.target.value })}
+                          className="w-full h-8 rounded border border-slate-300 p-0 cursor-pointer"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-600 mb-1">Text Color</label>
+                        <input
+                          type="color"
+                          value={navConf.referTextColor || '#581c87'}
+                          onChange={(e) => updateNav({ referTextColor: e.target.value })}
+                          className="w-full h-8 rounded border border-slate-300 p-0 cursor-pointer"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-600 mb-1">Border Color</label>
+                        <input
+                          type="color"
+                          value={navConf.referBorderColor || '#e9d5ff'}
+                          onChange={(e) => updateNav({ referBorderColor: e.target.value })}
+                          className="w-full h-8 rounded border border-slate-300 p-0 cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between pt-1">
+                      <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={navConf.showReferBonus ?? true}
+                          onChange={(e) => updateNav({ showReferBonus: e.target.checked })}
+                          className="rounded text-green-600 h-3.5 w-3.5"
+                        />
+                        <span>Append (+500) Bonus Text to Label</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Card 4: Contact & Helpline Dropdown */}
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3 shadow-xs">
+                    <div className="flex items-center justify-between border-b pb-2">
+                      <div className="flex items-center gap-2">
+                        <Phone size={16} className="text-emerald-600" />
+                        <span className="font-bold text-xs text-slate-800">Contact & Helpline Dropdown</span>
+                      </div>
+                      <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={navConf.showContactDropdown ?? true}
+                          onChange={(e) => updateNav({ showContactDropdown: e.target.checked })}
+                          className="rounded text-green-600 h-4 w-4"
+                        />
+                        <span>Visible</span>
+                      </label>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-600 mb-1">Dropdown Button Label</label>
+                        <input
+                          type="text"
+                          value={navConf.contactLabel || 'Contact & Helpline'}
+                          onChange={(e) => updateNav({ contactLabel: e.target.value })}
+                          className="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs font-bold"
+                          placeholder="Contact & Helpline"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-600 mb-1">Icon</label>
+                        <select
+                          value={navConf.contactIcon || 'phone'}
+                          onChange={(e) => updateNav({ contactIcon: e.target.value })}
+                          className="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs"
+                        >
+                          <option value="phone">Phone Helpline</option>
+                          <option value="message">Chat / Message</option>
+                          <option value="help">Help Circle</option>
+                          <option value="info">Info Icon</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="p-2.5 rounded-lg bg-emerald-50 text-[11px] text-emerald-800 flex items-center gap-2">
+                      <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
+                      <span>
+                        Dropdown automatically links to Helpline Call, WhatsApp Support, Email, Plant Maps, and all active Concern Divisions.
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Card 5: Account / Login CTA */}
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3 shadow-xs md:col-span-2">
+                    <div className="flex items-center justify-between border-b pb-2">
+                      <div className="flex items-center gap-2">
+                        <User size={16} className="text-emerald-600" />
+                        <span className="font-bold text-xs text-slate-800">Account / Login CTA Button</span>
+                      </div>
+                      <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={navConf.showAccount ?? true}
+                          onChange={(e) => updateNav({ showAccount: e.target.checked })}
+                          className="rounded text-green-600 h-4 w-4"
+                        />
+                        <span>Visible</span>
+                      </label>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-600 mb-1">Button Label</label>
+                        <input
+                          type="text"
+                          value={navConf.accountLabel || 'Account / Login'}
+                          onChange={(e) => updateNav({ accountLabel: e.target.value })}
+                          className="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs font-bold"
+                          placeholder="Account / Login"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-600 mb-1">Target Route</label>
+                        <input
+                          type="text"
+                          value={navConf.accountHref || '/customer/login'}
+                          onChange={(e) => updateNav({ accountHref: e.target.value })}
+                          className="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs font-mono"
+                          placeholder="/customer/login"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-600 mb-1">Button Background</label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={navConf.accountBtnBg || '#059669'}
+                            onChange={(e) => updateNav({ accountBtnBg: e.target.value })}
+                            className="w-8 h-8 rounded border border-slate-300 p-0 cursor-pointer"
+                          />
+                          <input
+                            type="text"
+                            value={navConf.accountBtnBg || '#059669'}
+                            onChange={(e) => updateNav({ accountBtnBg: e.target.value })}
+                            className="flex-1 border border-slate-300 rounded px-2 py-1.5 text-xs font-mono"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-600 mb-1">Button Text Color</label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={navConf.accountBtnText || '#ffffff'}
+                            onChange={(e) => updateNav({ accountBtnText: e.target.value })}
+                            className="w-8 h-8 rounded border border-slate-300 p-0 cursor-pointer"
+                          />
+                          <input
+                            type="text"
+                            value={navConf.accountBtnText || '#ffffff'}
+                            onChange={(e) => updateNav({ accountBtnText: e.target.value })}
+                            className="flex-1 border border-slate-300 rounded px-2 py-1.5 text-xs font-mono"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 4: CUSTOM NAVIGATION MENU ITEMS BUILDER */}
+              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
+                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                  <div>
+                    <h3 className="font-bold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                      <List size={14} className="text-purple-600" />
+                      <span>Custom Navigation Items Manager ({customItems.length} Items)</span>
+                    </h3>
+                    <p className="text-[11px] text-slate-500">
+                      Add new navigation items as regular links, highlight pills, or CTA buttons with badges, icons, and custom styling.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newItem: ICustomNavItem = {
+                          id: `nav-${Date.now()}`,
+                          label: `Custom Item ${customItems.length + 1}`,
+                          href: '/',
+                          itemType: 'link',
+                          icon: 'sparkles',
+                          isVisible: true,
+                          order: customItems.length + 1,
+                          isExternal: false,
+                        };
+                        updateNav({ customNavItems: [...customItems, newItem] });
+                      }}
+                      className="px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+                    >
+                      <Plus size={14} />
+                      <span>Add Navigation Item</span>
+                    </button>
+                    <SectionSaveButton label="Save Items" compact />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  {customItems.map((navItem, idx) => {
+                    const itemType = navItem.itemType || 'link';
+                    return (
+                      <div key={navItem.id || idx} className="bg-white p-4 rounded-xl border border-slate-200 space-y-3 shadow-xs">
+                        {/* Top row */}
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b pb-3">
+                          <div className="flex items-center gap-2.5 flex-1 w-full sm:w-auto">
+                            <span className="w-7 h-7 rounded-xl bg-purple-100 text-purple-800 font-black text-xs flex items-center justify-center shrink-0">
+                              {idx + 1}
+                            </span>
+                            <input
+                              type="text"
+                              value={navItem.label}
+                              onChange={(e) => {
+                                const next = [...customItems];
+                                next[idx] = { ...next[idx], label: e.target.value };
+                                updateNav({ customNavItems: next });
+                              }}
+                              placeholder="Navigation Label"
+                              className="font-bold text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 w-48 focus:border-purple-500"
+                            />
+                            <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1 border border-slate-200">
+                              {(['link', 'pill', 'button'] as const).map((st) => (
+                                <button
+                                  key={st}
+                                  type="button"
+                                  onClick={() => {
+                                    const next = [...customItems];
+                                    next[idx] = { ...next[idx], itemType: st };
+                                    updateNav({ customNavItems: next });
+                                  }}
+                                  className={`px-2.5 py-0.5 rounded text-[11px] font-bold capitalize transition cursor-pointer ${
+                                    itemType === st
+                                      ? 'bg-purple-600 text-white shadow-xs'
+                                      : 'text-slate-600 hover:text-slate-900'
+                                  }`}
+                                >
+                                  {st}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2.5 shrink-0">
+                            <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={navItem.isVisible !== false}
+                                onChange={(e) => {
+                                  const next = [...customItems];
+                                  next[idx] = { ...next[idx], isVisible: e.target.checked };
+                                  updateNav({ customNavItems: next });
+                                }}
+                                className="rounded text-purple-600 h-4 w-4"
+                              />
+                              <span>Visible</span>
+                            </label>
+
+                            <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={navItem.isExternal || false}
+                                onChange={(e) => {
+                                  const next = [...customItems];
+                                  next[idx] = { ...next[idx], isExternal: e.target.checked };
+                                  updateNav({ customNavItems: next });
+                                }}
+                                className="rounded text-purple-600 h-4 w-4"
+                              />
+                              <span>External Tab</span>
+                            </label>
+
+                            {/* Move Up/Down */}
+                            <button
+                              type="button"
+                              disabled={idx === 0}
+                              onClick={() => {
+                                const next = [...customItems];
+                                const temp = next[idx];
+                                next[idx] = next[idx - 1];
+                                next[idx - 1] = temp;
+                                updateNav({ customNavItems: next });
+                              }}
+                              className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg disabled:opacity-20 cursor-pointer"
+                              title="Move Up"
+                            >
+                              <ArrowUp size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              disabled={idx === customItems.length - 1}
+                              onClick={() => {
+                                const next = [...customItems];
+                                const temp = next[idx];
+                                next[idx] = next[idx + 1];
+                                next[idx + 1] = temp;
+                                updateNav({ customNavItems: next });
+                              }}
+                              className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg disabled:opacity-20 cursor-pointer"
+                              title="Move Down"
+                            >
+                              <ArrowDown size={14} />
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const next = [...customItems];
+                                next.splice(idx, 1);
+                                updateNav({ customNavItems: next });
+                              }}
+                              className="text-red-500 hover:text-red-700 p-1.5 rounded-lg hover:bg-red-50 transition cursor-pointer"
+                              title="Delete Item"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Controls Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                          <div>
+                            <label className="block text-[10px] font-semibold text-slate-600 mb-1">Route / Link URL</label>
+                            <input
+                              type="text"
+                              value={navItem.href}
+                              onChange={(e) => {
+                                const next = [...customItems];
+                                next[idx] = { ...next[idx], href: e.target.value };
+                                updateNav({ customNavItems: next });
+                              }}
+                              placeholder="/path or https://..."
+                              className="w-full text-xs font-mono border border-slate-300 rounded-lg px-2.5 py-1.5"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[10px] font-semibold text-slate-600 mb-1">Item Icon</label>
+                            <select
+                              value={navItem.icon || ''}
+                              onChange={(e) => {
+                                const next = [...customItems];
+                                next[idx] = { ...next[idx], icon: e.target.value };
+                                updateNav({ customNavItems: next });
+                              }}
+                              className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs"
+                            >
+                              <option value="">No Icon</option>
+                              <option value="home">Home</option>
+                              <option value="sparkles">Sparkles</option>
+                              <option value="coins">Coins / Wallet</option>
+                              <option value="gift">Gift / Bonus</option>
+                              <option value="phone">Phone</option>
+                              <option value="user">User</option>
+                              <option value="battery">Battery</option>
+                              <option value="zap">Zap Power</option>
+                              <option value="shield">Shield Warranty</option>
+                              <option value="file">File / Ticket</option>
+                              <option value="search">Search</option>
+                              <option value="help">Help / FAQ</option>
+                              <option value="wrench">Wrench Service</option>
+                              <option value="tag">Tag Offer</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-[10px] font-semibold text-slate-600 mb-1">Badge Text (Optional)</label>
+                            <input
+                              type="text"
+                              value={navItem.badge || ''}
+                              onChange={(e) => {
+                                const next = [...customItems];
+                                next[idx] = { ...next[idx], badge: e.target.value };
+                                updateNav({ customNavItems: next });
+                              }}
+                              placeholder="e.g. NEW, HOT, 500"
+                              className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-bold"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[10px] font-semibold text-slate-600 mb-1">Badge Color</label>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="color"
+                                value={navItem.badgeColor || '#ef4444'}
+                                onChange={(e) => {
+                                  const next = [...customItems];
+                                  next[idx] = { ...next[idx], badgeColor: e.target.value };
+                                  updateNav({ customNavItems: next });
+                                }}
+                                className="w-8 h-8 rounded border border-slate-300 p-0 cursor-pointer"
+                              />
+                              <input
+                                type="text"
+                                value={navItem.badgeColor || '#ef4444'}
+                                onChange={(e) => {
+                                  const next = [...customItems];
+                                  next[idx] = { ...next[idx], badgeColor: e.target.value };
+                                  updateNav({ customNavItems: next });
+                                }}
+                                className="flex-1 border border-slate-300 rounded-lg px-2 py-1.5 text-xs font-mono"
+                                placeholder="#ef4444"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Extra styling if pill or button */}
+                          {(itemType === 'pill' || itemType === 'button') && (
+                            <>
+                              <div>
+                                <label className="block text-[10px] font-semibold text-slate-600 mb-1">Background Color</label>
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="color"
+                                    value={navItem.bgColor || (itemType === 'button' ? '#059669' : '#f1f5f9')}
+                                    onChange={(e) => {
+                                      const next = [...customItems];
+                                      next[idx] = { ...next[idx], bgColor: e.target.value };
+                                      updateNav({ customNavItems: next });
+                                    }}
+                                    className="w-8 h-8 rounded border border-slate-300 p-0 cursor-pointer"
+                                  />
+                                  <input
+                                    type="text"
+                                    value={navItem.bgColor || (itemType === 'button' ? '#059669' : '#f1f5f9')}
+                                    onChange={(e) => {
+                                      const next = [...customItems];
+                                      next[idx] = { ...next[idx], bgColor: e.target.value };
+                                      updateNav({ customNavItems: next });
+                                    }}
+                                    className="flex-1 border border-slate-300 rounded-lg px-2 py-1.5 text-xs font-mono"
+                                  />
+                                </div>
+                              </div>
+
+                              <div>
+                                <label className="block text-[10px] font-semibold text-slate-600 mb-1">Text Color</label>
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="color"
+                                    value={navItem.textColor || (itemType === 'button' ? '#ffffff' : '#0f172a')}
+                                    onChange={(e) => {
+                                      const next = [...customItems];
+                                      next[idx] = { ...next[idx], textColor: e.target.value };
+                                      updateNav({ customNavItems: next });
+                                    }}
+                                    className="w-8 h-8 rounded border border-slate-300 p-0 cursor-pointer"
+                                  />
+                                  <input
+                                    type="text"
+                                    value={navItem.textColor || (itemType === 'button' ? '#ffffff' : '#0f172a')}
+                                    onChange={(e) => {
+                                      const next = [...customItems];
+                                      next[idx] = { ...next[idx], textColor: e.target.value };
+                                      updateNav({ customNavItems: next });
+                                    }}
+                                    className="flex-1 border border-slate-300 rounded-lg px-2 py-1.5 text-xs font-mono"
+                                  />
+                                </div>
+                              </div>
+
+                              <div>
+                                <label className="block text-[10px] font-semibold text-slate-600 mb-1">Border Color</label>
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="color"
+                                    value={navItem.borderColor || '#cbd5e1'}
+                                    onChange={(e) => {
+                                      const next = [...customItems];
+                                      next[idx] = { ...next[idx], borderColor: e.target.value };
+                                      updateNav({ customNavItems: next });
+                                    }}
+                                    className="w-8 h-8 rounded border border-slate-300 p-0 cursor-pointer"
+                                  />
+                                  <input
+                                    type="text"
+                                    value={navItem.borderColor || '#cbd5e1'}
+                                    onChange={(e) => {
+                                      const next = [...customItems];
+                                      next[idx] = { ...next[idx], borderColor: e.target.value };
+                                      updateNav({ customNavItems: next });
+                                    }}
+                                    className="flex-1 border border-slate-300 rounded-lg px-2 py-1.5 text-xs font-mono"
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="flex items-end">
+                                <div className="w-full p-2 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between">
+                                  <span className="text-[10px] text-slate-500 font-semibold">Live Item Preview:</span>
+                                  <span
+                                    style={{
+                                      backgroundColor: navItem.bgColor || (itemType === 'button' ? '#059669' : '#f1f5f9'),
+                                      color: navItem.textColor || (itemType === 'button' ? '#ffffff' : '#0f172a'),
+                                      borderColor: navItem.borderColor || '#cbd5e1',
+                                    }}
+                                    className="px-2.5 py-1 rounded-xl text-xs font-bold border flex items-center gap-1 shadow-xs"
+                                  >
+                                    {renderPreviewIcon(navItem.icon, null, 12)}
+                                    <span>{navItem.label}</span>
+                                    {navItem.badge && (
+                                      <span
+                                        style={{ backgroundColor: navItem.badgeColor || '#ef4444' }}
+                                        className="text-[9px] text-white px-1 py-0.2 rounded font-black"
+                                      >
+                                        {navItem.badge}
+                                      </span>
+                                    )}
+                                  </span>
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* SAVE BAR */}
+              <div className="bg-slate-900 text-white rounded-2xl p-5 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-lg">
+                <div>
+                  <h4 className="font-bold text-sm text-slate-100 flex items-center gap-2">
+                    <CheckCircle size={16} className="text-green-400" />
+                    <span>Publish Navigation Bar Configuration</span>
+                  </h4>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Saving updates top bar strip, brand headers, core navbar items, and all custom navigation links across desktop & mobile.
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                  <button
+                    type="button"
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold transition shadow-md disabled:opacity-50"
+                  >
+                    <Save size={16} />
+                    <span>{saving ? 'Saving...' : 'Save Navigation Settings'}</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Floating Quick Save Button (Always Accessible while scrolling) */}
       <div className="fixed bottom-6 right-6 z-40 flex items-center gap-2">

@@ -24,11 +24,62 @@ import {
   LogOut,
   Receipt,
   ChevronDown,
+  Battery,
+  Zap,
+  HelpCircle,
+  Bell,
+  Award,
+  Star,
+  MessageSquare,
+  Info,
+  CreditCard,
+  Wrench,
+  Compass,
+  Tag,
+  Layers,
 } from 'lucide-react';
 import { API_BASE, ADMIN_PORTAL_URL, EMPLOYEE_PORTAL_URL, resolveImageUrl } from '../config/api';
 import { useCustomerAuth } from '../context/CustomerAuthContext';
 import { useTheme } from '../context/ThemeContext';
 import CustomerLoginModal from './CustomerLoginModal';
+
+const NAV_ICON_MAP: Record<string, any> = {
+  home: Home,
+  coins: Coins,
+  wallet: Coins,
+  gift: Gift,
+  phone: Phone,
+  user: User,
+  battery: Battery,
+  zap: Zap,
+  sparkles: Sparkles,
+  shield: ShieldCheck,
+  file: FileText,
+  search: Search,
+  help: HelpCircle,
+  bell: Bell,
+  award: Award,
+  star: Star,
+  message: MessageSquare,
+  info: Info,
+  card: CreditCard,
+  wrench: Wrench,
+  compass: Compass,
+  bag: ShoppingBag,
+  receipt: Receipt,
+  tag: Tag,
+  layers: Layers,
+};
+
+const renderNavIcon = (iconName?: string, defaultIcon?: React.ReactNode, size = 15, className = '') => {
+  if (!iconName) return defaultIcon || null;
+  const key = iconName.toLowerCase().replace(/[-_\s]/g, '');
+  const Matched = NAV_ICON_MAP[key];
+  if (Matched) {
+    return <Matched size={size} className={className} />;
+  }
+  return defaultIcon || null;
+};
 
 const InstagramIcon = ({ size = 18, className = '' }: { size?: number; className?: string }) => (
   <svg
@@ -120,34 +171,63 @@ const defaultTopBar: TopBarContent = {
   accentColor: '#34d399',
 };
 
+interface CustomNavItem {
+  id: string;
+  label: string;
+  href: string;
+  icon?: string;
+  itemType?: 'link' | 'pill' | 'button';
+  bgColor?: string;
+  textColor?: string;
+  borderColor?: string;
+  badge?: string;
+  badgeColor?: string;
+  isVisible?: boolean;
+  order?: number;
+  isExternal?: boolean;
+  children?: Array<{ label: string; href: string; isExternal?: boolean }>;
+}
+
 interface HeaderNavContent {
   brandTitle?: string;
   brandSubtitle?: string;
   logoType?: 'preset' | 'image';
   logoImage?: string;
+  logoLink?: string;
   homeLabel?: string;
   showHome?: boolean;
+  homeHref?: string;
+  homeIcon?: string;
   walletLabel?: string;
   showWallet?: boolean;
+  walletHref?: string;
   showWalletBadge?: boolean;
+  walletBgColor?: string;
+  walletTextColor?: string;
+  walletBorderColor?: string;
+  walletIcon?: string;
   referLabel?: string;
   showRefer?: boolean;
+  referHref?: string;
+  showReferBonus?: boolean;
+  referBonusAmount?: number;
+  referBgColor?: string;
+  referTextColor?: string;
+  referBorderColor?: string;
+  referIcon?: string;
+  contactLabel?: string;
+  showContactDropdown?: boolean;
+  contactIcon?: string;
   accountLabel?: string;
   showAccount?: boolean;
+  accountHref?: string;
   accountBtnBg?: string;
   accountBtnText?: string;
+  accountIcon?: string;
   navBgColor?: string;
   navBorderColor?: string;
-  customNavItems?: Array<{
-    id: string;
-    label: string;
-    href: string;
-    icon?: string;
-    isVisible?: boolean;
-    order?: number;
-    isExternal?: boolean;
-    children?: Array<{ label: string; href: string; isExternal?: boolean }>;
-  }>;
+  isSticky?: boolean;
+  customNavItems?: CustomNavItem[];
 }
 
 const defaultHeaderNav: HeaderNavContent = {
@@ -155,19 +235,41 @@ const defaultHeaderNav: HeaderNavContent = {
   brandSubtitle: 'Battery Solution • Li-ion & LFP',
   logoType: 'preset',
   logoImage: '',
+  logoLink: '/',
   homeLabel: 'Home',
   showHome: true,
+  homeHref: '/',
+  homeIcon: 'home',
   walletLabel: 'Wallet & Coins',
   showWallet: true,
+  walletHref: '/customer/wallet',
   showWalletBadge: true,
+  walletBgColor: '#fef3c7',
+  walletTextColor: '#78350f',
+  walletBorderColor: '#fde68a',
+  walletIcon: 'coins',
   referLabel: 'Refer & Earn',
   showRefer: true,
+  referHref: '/customer/referrals',
+  showReferBonus: true,
+  referBonusAmount: 500,
+  referBgColor: '#faf5ff',
+  referTextColor: '#581c87',
+  referBorderColor: '#e9d5ff',
+  referIcon: 'gift',
+  contactLabel: 'Contact & Helpline',
+  showContactDropdown: true,
+  contactIcon: 'phone',
   accountLabel: 'Account / Login',
   showAccount: true,
+  accountHref: '/customer/login',
   accountBtnBg: '#059669',
   accountBtnText: '#ffffff',
+  accountIcon: 'user',
   navBgColor: '#ffffff',
   navBorderColor: '#e2e8f0',
+  isSticky: true,
+  customNavItems: [],
 };
 
 interface FooterContent {
@@ -454,7 +556,7 @@ const Layout = () => {
           backgroundColor: headerNav.navBgColor || '#ffffff',
           borderColor: headerNav.navBorderColor || '#e2e8f0',
         }}
-        className="shadow-xs border-b sticky top-0 z-30 transition-colors"
+        className={`shadow-xs border-b ${headerNav.isSticky !== false ? 'sticky top-0' : 'relative'} z-30 transition-colors`}
       >
         <div className="container mx-auto px-4 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -468,7 +570,7 @@ const Layout = () => {
               <MoreVertical size={20} className="text-slate-800" />
             </button>
 
-            <NavLink to="/" className="flex items-center gap-3">
+            <NavLink to={headerNav.logoLink || '/'} className="flex items-center gap-3">
               {(headerNav.logoType === 'image' && headerNav.logoImage) || (headerLogo.logoType === 'image' && headerLogo.logoImage) ? (
                 <img
                   src={resolveImageUrl(headerNav.logoImage || headerLogo.logoImage || '')}
@@ -492,14 +594,14 @@ const Layout = () => {
               {(headerNav.showHome ?? true) && (
                 <li>
                   <NavLink
-                    to="/"
+                    to={headerNav.homeHref || '/'}
                     className={({ isActive }) =>
                       isActive
                         ? 'text-emerald-700 flex items-center gap-1.5 border-b-2 border-emerald-600 pb-1 font-bold'
                         : 'hover:text-emerald-700 flex items-center gap-1.5 transition font-bold'
                     }
                   >
-                    <Home size={15} className="text-emerald-600" />
+                    {renderNavIcon(headerNav.homeIcon, <Home size={15} className="text-emerald-600" />)}
                     <span>{headerNav.homeLabel || 'Home'}</span>
                   </NavLink>
                 </li>
@@ -509,14 +611,21 @@ const Layout = () => {
               {(headerNav.showWallet ?? true) && (
                 <li>
                   <NavLink
-                    to="/customer/wallet"
+                    to={headerNav.walletHref || '/customer/wallet'}
+                    style={{
+                      backgroundColor: headerNav.walletBgColor || undefined,
+                      color: headerNav.walletTextColor || undefined,
+                      borderColor: headerNav.walletBorderColor || undefined,
+                    }}
                     className={({ isActive }) =>
-                      isActive
-                        ? 'text-amber-800 bg-amber-100/80 border border-amber-300 px-3 py-1.5 rounded-xl flex items-center gap-1.5 font-bold shadow-xs'
-                        : 'text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition font-bold shadow-xs'
+                      `px-3 py-1.5 rounded-xl flex items-center gap-1.5 font-bold shadow-xs border transition ${
+                        isActive
+                          ? 'border-amber-400 font-extrabold ring-1 ring-amber-400/30'
+                          : 'hover:brightness-95'
+                      } ${!headerNav.walletBgColor ? (isActive ? 'text-amber-800 bg-amber-100/80 border-amber-300' : 'text-amber-900 bg-amber-50 hover:bg-amber-100 border-amber-200') : ''}`
                     }
                   >
-                    <Coins size={15} className="text-amber-600 animate-pulse" />
+                    {renderNavIcon(headerNav.walletIcon, <Coins size={15} className="text-amber-600 animate-pulse" />)}
                     <span>{headerNav.walletLabel || 'Wallet & Coins'}</span>
                     {(headerNav.showWalletBadge ?? true) && isAuthenticated && (
                       <span className="bg-amber-200 text-amber-950 text-[10px] px-1.5 py-0.5 rounded-md font-black">
@@ -531,18 +640,25 @@ const Layout = () => {
               {(headerNav.showRefer ?? true) && (
                 <li>
                   <NavLink
-                    to="/customer/referrals"
+                    to={headerNav.referHref || '/customer/referrals'}
+                    style={{
+                      backgroundColor: headerNav.referBgColor || undefined,
+                      color: headerNav.referTextColor || undefined,
+                      borderColor: headerNav.referBorderColor || undefined,
+                    }}
                     className={({ isActive }) =>
-                      isActive
-                        ? 'text-purple-800 bg-purple-100/80 border border-purple-300 px-3 py-1.5 rounded-xl flex items-center gap-1.5 font-bold shadow-xs'
-                        : 'text-purple-900 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition font-bold shadow-xs'
+                      `px-3 py-1.5 rounded-xl flex items-center gap-1.5 font-bold shadow-xs border transition ${
+                        isActive
+                          ? 'border-purple-400 font-extrabold ring-1 ring-purple-400/30'
+                          : 'hover:brightness-95'
+                      } ${!headerNav.referBgColor ? (isActive ? 'text-purple-800 bg-purple-100/80 border-purple-300' : 'text-purple-900 bg-purple-50 hover:bg-purple-100 border-purple-200') : ''}`
                     }
                   >
-                    <Gift size={15} className="text-purple-600" />
+                    {renderNavIcon(headerNav.referIcon, <Gift size={15} className="text-purple-600" />)}
                     <span>
-                      {headerNav.referLabel
-                        ? `${headerNav.referLabel} (+${referrerCoins})`
-                        : `Refer & Earn (+${referrerCoins})`}
+                      {headerNav.referLabel || 'Refer & Earn'}
+                      {(headerNav.showReferBonus ?? true) &&
+                        ` (+${headerNav.referBonusAmount || referrerCoins || 500})`}
                     </span>
                   </NavLink>
                 </li>
@@ -552,9 +668,51 @@ const Layout = () => {
               {(headerNav.customNavItems || [])
                 .filter((item) => item && item.isVisible !== false)
                 .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-                .map((item: any) => {
-                  const linkHref = (item.href || item.url || '#').trim();
+                .map((item: CustomNavItem) => {
+                  const linkHref = (item.href || '#').trim();
                   const isExt = Boolean(item.isExternal || linkHref.startsWith('http'));
+                  const itemType = item.itemType || 'link';
+
+                  const itemContent = (
+                    <>
+                      {item.icon && renderNavIcon(item.icon, null, 14)}
+                      <span>{item.label}</span>
+                      {item.badge && (
+                        <span
+                          style={{ backgroundColor: item.badgeColor || '#ef4444' }}
+                          className="text-[10px] text-white px-1.5 py-0.5 rounded font-black tracking-wide"
+                        >
+                          {item.badge}
+                        </span>
+                      )}
+                      {isExt && <ExternalLink size={10} className="text-slate-400 ml-0.5" />}
+                    </>
+                  );
+
+                  let customStyle: React.CSSProperties = {};
+                  let className = 'transition font-bold flex items-center gap-1.5 ';
+
+                  if (itemType === 'button') {
+                    customStyle = {
+                      backgroundColor: item.bgColor || '#059669',
+                      color: item.textColor || '#ffffff',
+                      borderColor: item.borderColor || undefined,
+                    };
+                    className += 'px-3.5 py-1.5 rounded-xl shadow-xs hover:opacity-90 ';
+                  } else if (itemType === 'pill') {
+                    customStyle = {
+                      backgroundColor: item.bgColor || '#f1f5f9',
+                      color: item.textColor || '#0f172a',
+                      borderColor: item.borderColor || '#cbd5e1',
+                    };
+                    className += 'px-3 py-1.5 rounded-xl border shadow-xs hover:brightness-95 ';
+                  } else {
+                    customStyle = {
+                      color: item.textColor || undefined,
+                    };
+                    className += 'hover:text-emerald-700 py-1 ';
+                  }
+
                   return (
                     <li key={item.id || item.label}>
                       {isExt ? (
@@ -562,21 +720,24 @@ const Layout = () => {
                           href={linkHref}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="hover:text-emerald-700 flex items-center gap-1 transition font-bold"
+                          style={customStyle}
+                          className={className}
                         >
-                          <span>{item.label}</span>
-                          <ExternalLink size={10} className="text-slate-400" />
+                          {itemContent}
                         </a>
                       ) : (
                         <NavLink
                           to={linkHref}
+                          style={customStyle}
                           className={({ isActive }) =>
-                            isActive
-                              ? 'text-emerald-700 flex items-center gap-1.5 border-b-2 border-emerald-600 pb-1 font-bold'
-                              : 'hover:text-emerald-700 flex items-center gap-1.5 transition font-bold'
+                            `${className} ${
+                              isActive && itemType === 'link'
+                                ? 'text-emerald-700 border-b-2 border-emerald-600'
+                                : ''
+                            }`
                           }
                         >
-                          <span>{item.label}</span>
+                          {itemContent}
                         </NavLink>
                       )}
                     </li>
@@ -584,22 +745,23 @@ const Layout = () => {
                 })}
 
               {/* Contact & Support Dropdown (All items clickable <a> links) */}
-              <li className="relative">
-                <button
-                  type="button"
-                  onClick={() => setNavContactDropdownOpen(!navContactDropdownOpen)}
-                  className="flex items-center gap-1.5 text-slate-800 hover:text-emerald-700 transition font-bold py-1.5 cursor-pointer"
-                  aria-expanded={navContactDropdownOpen}
-                >
-                  <Phone size={14} className="text-emerald-600" />
-                  <span>Contact & Helpline</span>
-                  <ChevronDown
-                    size={13}
-                    className={`text-slate-500 transition-transform ${
-                      navContactDropdownOpen ? 'rotate-180' : ''
-                    }`}
-                  />
-                </button>
+              {(headerNav.showContactDropdown ?? true) && (
+                <li className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setNavContactDropdownOpen(!navContactDropdownOpen)}
+                    className="flex items-center gap-1.5 text-slate-800 hover:text-emerald-700 transition font-bold py-1.5 cursor-pointer"
+                    aria-expanded={navContactDropdownOpen}
+                  >
+                    {renderNavIcon(headerNav.contactIcon, <Phone size={14} className="text-emerald-600" />)}
+                    <span>{headerNav.contactLabel || 'Contact & Helpline'}</span>
+                    <ChevronDown
+                      size={13}
+                      className={`text-slate-500 transition-transform ${
+                        navContactDropdownOpen ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </button>
 
                 {navContactDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 text-xs font-medium animate-in fade-in max-h-[85vh] overflow-y-auto">
@@ -757,8 +919,9 @@ const Layout = () => {
                   </div>
                 )}
               </li>
+            )}
 
-              {/* Customer Account / Login Profile if authenticated */}
+            {/* Customer Account / Login Profile if authenticated */}
               {(headerNav.showAccount ?? true) && (
                 isAuthenticated && customer ? (
                   <li className="relative">
@@ -840,14 +1003,14 @@ const Layout = () => {
                 ) : (
                   <li>
                     <Link
-                      to="/customer/login"
+                      to={headerNav.accountHref || '/customer/login'}
                       style={{
                         backgroundColor: headerNav.accountBtnBg || '#059669',
                         color: headerNav.accountBtnText || '#ffffff',
                       }}
                       className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-xs hover:opacity-90"
                     >
-                      <User size={13} />
+                      {renderNavIcon(headerNav.accountIcon, <User size={13} />)}
                       <span>{headerNav.accountLabel || 'Account / Login'}</span>
                     </Link>
                   </li>
@@ -966,7 +1129,7 @@ const Layout = () => {
                 <nav className="space-y-1">
                   {(headerNav.showHome ?? true) && (
                     <NavLink
-                      to="/"
+                      to={headerNav.homeHref || '/'}
                       onClick={() => setMobileMenuOpen(false)}
                       className={({ isActive }) =>
                         `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
@@ -977,7 +1140,7 @@ const Layout = () => {
                       }
                     >
                       <span className="flex items-center gap-2.5">
-                        <Home size={15} className="text-emerald-400" />
+                        {renderNavIcon(headerNav.homeIcon, <Home size={15} className="text-emerald-400" />, 15, "text-emerald-400")}
                         <span>{headerNav.homeLabel || 'Home'}</span>
                       </span>
                       <ChevronRight size={14} className="text-slate-600" />
@@ -986,7 +1149,7 @@ const Layout = () => {
 
                   {(headerNav.showWallet ?? true) && (
                     <NavLink
-                      to="/customer/wallet"
+                      to={headerNav.walletHref || '/customer/wallet'}
                       onClick={() => setMobileMenuOpen(false)}
                       className={({ isActive }) =>
                         `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
@@ -997,7 +1160,7 @@ const Layout = () => {
                       }
                     >
                       <span className="flex items-center gap-2.5">
-                        <Coins size={15} className="text-amber-400" />
+                        {renderNavIcon(headerNav.walletIcon, <Coins size={15} className="text-amber-400" />, 15, "text-amber-400")}
                         <span>{headerNav.walletLabel || 'My Wallet'} ({customer?.walletBalance || 0} Coins)</span>
                       </span>
                       <ChevronRight size={14} className="text-slate-600" />
@@ -1006,7 +1169,7 @@ const Layout = () => {
 
                   {(headerNav.showRefer ?? true) && (
                     <NavLink
-                      to="/customer/referrals"
+                      to={headerNav.referHref || '/customer/referrals'}
                       onClick={() => setMobileMenuOpen(false)}
                       className={({ isActive }) =>
                         `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
@@ -1017,8 +1180,11 @@ const Layout = () => {
                       }
                     >
                       <span className="flex items-center gap-2.5">
-                        <Gift size={15} className="text-purple-400" />
-                        <span>{headerNav.referLabel || 'My Referrals'} ({customer?.referralCode || 'Referral Code'})</span>
+                        {renderNavIcon(headerNav.referIcon, <Gift size={15} className="text-purple-400" />, 15, "text-purple-400")}
+                        <span>
+                          {headerNav.referLabel || 'My Referrals'}
+                          {(headerNav.showReferBonus ?? true) && ` (+${headerNav.referBonusAmount || referrerCoins || 500})`}
+                        </span>
                       </span>
                       <ChevronRight size={14} className="text-slate-600" />
                     </NavLink>
@@ -1136,8 +1302,8 @@ const Layout = () => {
                   {(headerNav.customNavItems || [])
                     .filter((item) => item && item.isVisible !== false)
                     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-                    .map((item: any) => {
-                      const linkHref = (item.href || item.url || '#').trim();
+                    .map((item: CustomNavItem) => {
+                      const linkHref = (item.href || '#').trim();
                       const isExt = Boolean(item.isExternal || linkHref.startsWith('http'));
                       return (
                         <div key={item.id || item.label}>
@@ -1149,7 +1315,18 @@ const Layout = () => {
                               onClick={() => setMobileMenuOpen(false)}
                               className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition"
                             >
-                              <span>{item.label}</span>
+                              <span className="flex items-center gap-2.5">
+                                {renderNavIcon(item.icon, null, 15, "text-emerald-400")}
+                                <span>{item.label}</span>
+                                {item.badge && (
+                                  <span
+                                    style={{ backgroundColor: item.badgeColor || '#ef4444' }}
+                                    className="text-[10px] text-white px-1.5 py-0.5 rounded font-black"
+                                  >
+                                    {item.badge}
+                                  </span>
+                                )}
+                              </span>
                               <ExternalLink size={12} className="text-slate-500" />
                             </a>
                           ) : (
@@ -1164,7 +1341,18 @@ const Layout = () => {
                                 }`
                               }
                             >
-                              <span>{item.label}</span>
+                              <span className="flex items-center gap-2.5">
+                                {renderNavIcon(item.icon, null, 15, "text-emerald-400")}
+                                <span>{item.label}</span>
+                                {item.badge && (
+                                  <span
+                                    style={{ backgroundColor: item.badgeColor || '#ef4444' }}
+                                    className="text-[10px] text-white px-1.5 py-0.5 rounded font-black"
+                                  >
+                                    {item.badge}
+                                  </span>
+                                )}
+                              </span>
                               <ChevronRight size={14} className="text-slate-600" />
                             </NavLink>
                           )}
