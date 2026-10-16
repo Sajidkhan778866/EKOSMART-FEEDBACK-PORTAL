@@ -158,6 +158,22 @@ export interface IHeaderNavContent {
   referTextColor?: string;
   referBorderColor?: string;
   referIcon?: string;
+  showShowroomBilling?: boolean;
+  showroomBillingLabel?: string;
+  showroomBillingHref?: string;
+  showroomBillingIcon?: string;
+  showWarrantyCheck?: boolean;
+  warrantyCheckLabel?: string;
+  warrantyCheckHref?: string;
+  warrantyCheckIcon?: string;
+  showTrackTicket?: boolean;
+  trackTicketLabel?: string;
+  trackTicketHref?: string;
+  trackTicketIcon?: string;
+  showSupportTicket?: boolean;
+  supportTicketLabel?: string;
+  supportTicketHref?: string;
+  supportTicketIcon?: string;
   contactLabel?: string;
   showContactDropdown?: boolean;
   contactIcon?: string;
@@ -593,6 +609,22 @@ const contentSchema = new Schema<IContent>(
       referTextColor: { type: String, default: '' },
       referBorderColor: { type: String, default: '' },
       referIcon: { type: String, default: 'Gift' },
+      showShowroomBilling: { type: Boolean, default: true },
+      showroomBillingLabel: { type: String, default: 'Showroom Bills' },
+      showroomBillingHref: { type: String, default: '/showroom-billing' },
+      showroomBillingIcon: { type: String, default: 'Receipt' },
+      showWarrantyCheck: { type: Boolean, default: true },
+      warrantyCheckLabel: { type: String, default: 'Check Warranty' },
+      warrantyCheckHref: { type: String, default: '/warranty/check' },
+      warrantyCheckIcon: { type: String, default: 'ShieldCheck' },
+      showTrackTicket: { type: Boolean, default: true },
+      trackTicketLabel: { type: String, default: 'Track Ticket' },
+      trackTicketHref: { type: String, default: '/complaint/track' },
+      trackTicketIcon: { type: String, default: 'Search' },
+      showSupportTicket: { type: Boolean, default: false },
+      supportTicketLabel: { type: String, default: 'Support Ticket' },
+      supportTicketHref: { type: String, default: '/complaint/register' },
+      supportTicketIcon: { type: String, default: 'FileText' },
       contactLabel: { type: String, default: 'Contact & Helpline' },
       showContactDropdown: { type: Boolean, default: true },
       contactIcon: { type: String, default: 'Phone' },

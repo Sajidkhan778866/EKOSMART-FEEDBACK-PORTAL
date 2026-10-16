@@ -116,6 +116,22 @@ export const defaultHeaderNavData = {
   referTextColor: '',
   referBorderColor: '',
   referIcon: 'Gift',
+  showShowroomBilling: true,
+  showroomBillingLabel: 'Showroom Bills',
+  showroomBillingHref: '/showroom-billing',
+  showroomBillingIcon: 'Receipt',
+  showWarrantyCheck: true,
+  warrantyCheckLabel: 'Check Warranty',
+  warrantyCheckHref: '/warranty/check',
+  warrantyCheckIcon: 'ShieldCheck',
+  showTrackTicket: true,
+  trackTicketLabel: 'Track Ticket',
+  trackTicketHref: '/complaint/track',
+  trackTicketIcon: 'Search',
+  showSupportTicket: false,
+  supportTicketLabel: 'Support Ticket',
+  supportTicketHref: '/complaint/register',
+  supportTicketIcon: 'FileText',
   contactLabel: 'Contact & Helpline',
   showContactDropdown: true,
   contactIcon: 'Phone',
@@ -660,6 +676,21 @@ export const getOrCreateDefaultContent = async () => {
     if (!content.headerNav || !content.headerNav.brandTitle) {
       content.headerNav = defaultHeaderNavData;
       modified = true;
+    } else {
+      const existingNav = (content.headerNav as any).toObject ? (content.headerNav as any).toObject() : content.headerNav;
+      content.headerNav = {
+        ...defaultHeaderNavData,
+        ...existingNav,
+        showShowroomBilling: typeof existingNav.showShowroomBilling !== 'undefined' ? existingNav.showShowroomBilling : true,
+        showWarrantyCheck: typeof existingNav.showWarrantyCheck !== 'undefined' ? existingNav.showWarrantyCheck : true,
+        showTrackTicket: typeof existingNav.showTrackTicket !== 'undefined' ? existingNav.showTrackTicket : true,
+        showSupportTicket: typeof existingNav.showSupportTicket !== 'undefined' ? existingNav.showSupportTicket : false,
+        customNavItems:
+          existingNav.customNavItems && existingNav.customNavItems.length > 0
+            ? existingNav.customNavItems
+            : defaultHeaderNavData.customNavItems,
+      };
+      content.markModified('headerNav');
     }
     if (!content.serviceCards || content.serviceCards.length === 0) {
       content.serviceCards = defaultServiceCards;

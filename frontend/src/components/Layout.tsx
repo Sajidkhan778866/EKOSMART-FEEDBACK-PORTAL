@@ -215,6 +215,22 @@ interface HeaderNavContent {
   referTextColor?: string;
   referBorderColor?: string;
   referIcon?: string;
+  showShowroomBilling?: boolean;
+  showroomBillingLabel?: string;
+  showroomBillingHref?: string;
+  showroomBillingIcon?: string;
+  showWarrantyCheck?: boolean;
+  warrantyCheckLabel?: string;
+  warrantyCheckHref?: string;
+  warrantyCheckIcon?: string;
+  showTrackTicket?: boolean;
+  trackTicketLabel?: string;
+  trackTicketHref?: string;
+  trackTicketIcon?: string;
+  showSupportTicket?: boolean;
+  supportTicketLabel?: string;
+  supportTicketHref?: string;
+  supportTicketIcon?: string;
   contactLabel?: string;
   showContactDropdown?: boolean;
   contactIcon?: string;
@@ -257,6 +273,22 @@ const defaultHeaderNav: HeaderNavContent = {
   referTextColor: '#581c87',
   referBorderColor: '#e9d5ff',
   referIcon: 'gift',
+  showShowroomBilling: true,
+  showroomBillingLabel: 'Showroom Bills',
+  showroomBillingHref: '/showroom-billing',
+  showroomBillingIcon: 'receipt',
+  showWarrantyCheck: true,
+  warrantyCheckLabel: 'Check Warranty',
+  warrantyCheckHref: '/warranty/check',
+  warrantyCheckIcon: 'shield',
+  showTrackTicket: true,
+  trackTicketLabel: 'Track Ticket',
+  trackTicketHref: '/complaint/track',
+  trackTicketIcon: 'search',
+  showSupportTicket: false,
+  supportTicketLabel: 'Support Ticket',
+  supportTicketHref: '/complaint/register',
+  supportTicketIcon: 'file',
   contactLabel: 'Contact & Helpline',
   showContactDropdown: true,
   contactIcon: 'phone',
@@ -660,6 +692,74 @@ const Layout = () => {
                       {(headerNav.showReferBonus ?? true) &&
                         ` (+${headerNav.referBonusAmount || referrerCoins || 500})`}
                     </span>
+                  </NavLink>
+                </li>
+              )}
+
+              {/* Showroom Billing Option */}
+              {(headerNav.showShowroomBilling ?? true) && (
+                <li>
+                  <NavLink
+                    to={headerNav.showroomBillingHref || '/showroom-billing'}
+                    className={({ isActive }) =>
+                      isActive
+                        ? 'text-emerald-700 flex items-center gap-1.5 border-b-2 border-emerald-600 pb-1 font-bold'
+                        : 'hover:text-emerald-700 flex items-center gap-1.5 transition font-bold'
+                    }
+                  >
+                    {renderNavIcon(headerNav.showroomBillingIcon, <Receipt size={15} className="text-blue-600" />)}
+                    <span>{headerNav.showroomBillingLabel || 'Showroom Bills'}</span>
+                  </NavLink>
+                </li>
+              )}
+
+              {/* Check Battery Warranty Option */}
+              {(headerNav.showWarrantyCheck ?? true) && (
+                <li>
+                  <NavLink
+                    to={headerNav.warrantyCheckHref || '/warranty/check'}
+                    className={({ isActive }) =>
+                      isActive
+                        ? 'text-emerald-700 flex items-center gap-1.5 border-b-2 border-emerald-600 pb-1 font-bold'
+                        : 'hover:text-emerald-700 flex items-center gap-1.5 transition font-bold'
+                    }
+                  >
+                    {renderNavIcon(headerNav.warrantyCheckIcon, <ShieldCheck size={15} className="text-purple-600" />)}
+                    <span>{headerNav.warrantyCheckLabel || 'Check Warranty'}</span>
+                  </NavLink>
+                </li>
+              )}
+
+              {/* Track Support Ticket Option */}
+              {(headerNav.showTrackTicket ?? true) && (
+                <li>
+                  <NavLink
+                    to={headerNav.trackTicketHref || '/complaint/track'}
+                    className={({ isActive }) =>
+                      isActive
+                        ? 'text-emerald-700 flex items-center gap-1.5 border-b-2 border-emerald-600 pb-1 font-bold'
+                        : 'hover:text-emerald-700 flex items-center gap-1.5 transition font-bold'
+                    }
+                  >
+                    {renderNavIcon(headerNav.trackTicketIcon, <Search size={15} className="text-emerald-600" />)}
+                    <span>{headerNav.trackTicketLabel || 'Track Ticket'}</span>
+                  </NavLink>
+                </li>
+              )}
+
+              {/* Register / Support Ticket Option (if enabled) */}
+              {Boolean(headerNav.showSupportTicket) && (
+                <li>
+                  <NavLink
+                    to={headerNav.supportTicketHref || '/complaint/register'}
+                    className={({ isActive }) =>
+                      isActive
+                        ? 'text-emerald-700 flex items-center gap-1.5 border-b-2 border-emerald-600 pb-1 font-bold'
+                        : 'hover:text-emerald-700 flex items-center gap-1.5 transition font-bold'
+                    }
+                  >
+                    {renderNavIcon(headerNav.supportTicketIcon, <FileText size={15} className="text-amber-600" />)}
+                    <span>{headerNav.supportTicketLabel || 'Support Ticket'}</span>
                   </NavLink>
                 </li>
               )}
@@ -1208,77 +1308,85 @@ const Layout = () => {
                     <ChevronRight size={14} className="text-slate-600" />
                   </NavLink>
 
-                  <NavLink
-                    to="/showroom-billing"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={({ isActive }) =>
-                      `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
-                        isActive
-                          ? 'bg-blue-900/50 text-blue-400 border border-blue-700/50'
-                          : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                      }`
-                    }
-                  >
-                    <span className="flex items-center gap-2.5">
-                      <Receipt size={15} className="text-blue-400" />
-                      <span>Showroom Billing Counter</span>
-                    </span>
-                    <ChevronRight size={14} className="text-slate-600" />
-                  </NavLink>
+                  {(headerNav.showShowroomBilling ?? true) && (
+                    <NavLink
+                      to={headerNav.showroomBillingHref || '/showroom-billing'}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={({ isActive }) =>
+                        `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
+                          isActive
+                            ? 'bg-blue-900/50 text-blue-400 border border-blue-700/50'
+                            : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                        }`
+                      }
+                    >
+                      <span className="flex items-center gap-2.5">
+                        {renderNavIcon(headerNav.showroomBillingIcon, <Receipt size={15} className="text-blue-400" />, 15, "text-blue-400")}
+                        <span>{headerNav.showroomBillingLabel || 'Showroom Billing Counter'}</span>
+                      </span>
+                      <ChevronRight size={14} className="text-slate-600" />
+                    </NavLink>
+                  )}
 
-                  <NavLink
-                    to="/warranty/check"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={({ isActive }) =>
-                      `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
-                        isActive
-                          ? 'bg-emerald-900/50 text-emerald-400 border border-emerald-700/50'
-                          : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                      }`
-                    }
-                  >
-                    <span className="flex items-center gap-2.5">
-                      <ShieldCheck size={15} className="text-purple-400" />
-                      <span>Check Battery Warranty</span>
-                    </span>
-                    <ChevronRight size={14} className="text-slate-600" />
-                  </NavLink>
+                  {(headerNav.showWarrantyCheck ?? true) && (
+                    <NavLink
+                      to={headerNav.warrantyCheckHref || '/warranty/check'}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={({ isActive }) =>
+                        `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
+                          isActive
+                            ? 'bg-emerald-900/50 text-emerald-400 border border-emerald-700/50'
+                            : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                        }`
+                      }
+                    >
+                      <span className="flex items-center gap-2.5">
+                        {renderNavIcon(headerNav.warrantyCheckIcon, <ShieldCheck size={15} className="text-purple-400" />, 15, "text-purple-400")}
+                        <span>{headerNav.warrantyCheckLabel || 'Check Battery Warranty'}</span>
+                      </span>
+                      <ChevronRight size={14} className="text-slate-600" />
+                    </NavLink>
+                  )}
 
-                  <NavLink
-                    to="/complaint/register"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={({ isActive }) =>
-                      `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
-                        isActive
-                          ? 'bg-emerald-900/50 text-emerald-400 border border-emerald-700/50'
-                          : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                      }`
-                    }
-                  >
-                    <span className="flex items-center gap-2.5">
-                      <FileText size={15} className="text-emerald-400" />
-                      <span>Support Ticket</span>
-                    </span>
-                    <ChevronRight size={14} className="text-slate-600" />
-                  </NavLink>
+                  {Boolean(headerNav.showSupportTicket) && (
+                    <NavLink
+                      to={headerNav.supportTicketHref || '/complaint/register'}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={({ isActive }) =>
+                        `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
+                          isActive
+                            ? 'bg-emerald-900/50 text-emerald-400 border border-emerald-700/50'
+                            : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                        }`
+                      }
+                    >
+                      <span className="flex items-center gap-2.5">
+                        {renderNavIcon(headerNav.supportTicketIcon, <FileText size={15} className="text-emerald-400" />, 15, "text-emerald-400")}
+                        <span>{headerNav.supportTicketLabel || 'Support Ticket'}</span>
+                      </span>
+                      <ChevronRight size={14} className="text-slate-600" />
+                    </NavLink>
+                  )}
 
-                  <NavLink
-                    to="/complaint/track"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={({ isActive }) =>
-                      `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
-                        isActive
-                          ? 'bg-emerald-900/50 text-emerald-400 border border-emerald-700/50'
-                          : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                      }`
-                    }
-                  >
-                    <span className="flex items-center gap-2.5">
-                      <Search size={15} className="text-blue-400" />
-                      <span>Track Support Ticket</span>
-                    </span>
-                    <ChevronRight size={14} className="text-slate-600" />
-                  </NavLink>
+                  {(headerNav.showTrackTicket ?? true) && (
+                    <NavLink
+                      to={headerNav.trackTicketHref || '/complaint/track'}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={({ isActive }) =>
+                        `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
+                          isActive
+                            ? 'bg-emerald-900/50 text-emerald-400 border border-emerald-700/50'
+                            : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                        }`
+                      }
+                    >
+                      <span className="flex items-center gap-2.5">
+                        {renderNavIcon(headerNav.trackTicketIcon, <Search size={15} className="text-blue-400" />, 15, "text-blue-400")}
+                        <span>{headerNav.trackTicketLabel || 'Track Support Ticket'}</span>
+                      </span>
+                      <ChevronRight size={14} className="text-slate-600" />
+                    </NavLink>
+                  )}
 
                   <NavLink
                     to="/contact"

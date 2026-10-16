@@ -58,6 +58,7 @@ import {
   Smartphone,
   Monitor,
   Sliders,
+  Receipt,
 } from 'lucide-react';
 import { contentApi, customerApi, API_BASE_URL, resolveImageUrl } from '../api/client';
 
@@ -328,6 +329,22 @@ export interface IHeaderNavConfig {
   referTextColor?: string;
   referBorderColor?: string;
   referIcon?: string;
+  showShowroomBilling?: boolean;
+  showroomBillingLabel?: string;
+  showroomBillingHref?: string;
+  showroomBillingIcon?: string;
+  showWarrantyCheck?: boolean;
+  warrantyCheckLabel?: string;
+  warrantyCheckHref?: string;
+  warrantyCheckIcon?: string;
+  showTrackTicket?: boolean;
+  trackTicketLabel?: string;
+  trackTicketHref?: string;
+  trackTicketIcon?: string;
+  showSupportTicket?: boolean;
+  supportTicketLabel?: string;
+  supportTicketHref?: string;
+  supportTicketIcon?: string;
   contactLabel?: string;
   showContactDropdown?: boolean;
   contactIcon?: string;
@@ -594,6 +611,22 @@ const defaultFallbackContent: ICMSContent = {
     referTextColor: '#581c87',
     referBorderColor: '#e9d5ff',
     referIcon: 'gift',
+    showShowroomBilling: true,
+    showroomBillingLabel: 'Showroom Bills',
+    showroomBillingHref: '/showroom-billing',
+    showroomBillingIcon: 'receipt',
+    showWarrantyCheck: true,
+    warrantyCheckLabel: 'Check Warranty',
+    warrantyCheckHref: '/warranty/check',
+    warrantyCheckIcon: 'shield',
+    showTrackTicket: true,
+    trackTicketLabel: 'Track Ticket',
+    trackTicketHref: '/complaint/track',
+    trackTicketIcon: 'search',
+    showSupportTicket: false,
+    supportTicketLabel: 'Support Ticket',
+    supportTicketHref: '/complaint/register',
+    supportTicketIcon: 'file',
     contactLabel: 'Contact & Helpline',
     showContactDropdown: true,
     contactIcon: 'phone',
@@ -3894,6 +3927,220 @@ const ContentManager = () => {
                       <span className="text-[10px] text-slate-500">Text</span>
                     </div>
                   </div>
+                </div>
+
+                {/* 5. Showroom Bills */}
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-700 text-[11px]">Showroom Bills</span>
+                    <label className="flex items-center gap-1 text-[10px] text-slate-500 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={content.headerNav?.showShowroomBilling ?? true}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            headerNav: { ...(content.headerNav || {}), showShowroomBilling: e.target.checked },
+                          })
+                        }
+                        className="rounded text-green-600 h-3 w-3"
+                      />
+                      <span>Show</span>
+                    </label>
+                  </div>
+                  <input
+                    type="text"
+                    value={content.headerNav?.showroomBillingLabel ?? 'Showroom Bills'}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        headerNav: { ...(content.headerNav || {}), showroomBillingLabel: e.target.value },
+                      })
+                    }
+                    placeholder="Showroom Bills"
+                    className="w-full border border-slate-300 rounded-lg p-1.5 text-xs bg-white font-semibold"
+                  />
+                  <input
+                    type="text"
+                    value={content.headerNav?.showroomBillingHref ?? '/showroom-billing'}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        headerNav: { ...(content.headerNav || {}), showroomBillingHref: e.target.value },
+                      })
+                    }
+                    placeholder="/showroom-billing"
+                    className="w-full border border-slate-300 rounded-lg p-1 text-[11px] bg-white font-mono"
+                  />
+                </div>
+
+                {/* 6. Check Warranty */}
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-700 text-[11px]">Check Warranty</span>
+                    <label className="flex items-center gap-1 text-[10px] text-slate-500 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={content.headerNav?.showWarrantyCheck ?? true}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            headerNav: { ...(content.headerNav || {}), showWarrantyCheck: e.target.checked },
+                          })
+                        }
+                        className="rounded text-green-600 h-3 w-3"
+                      />
+                      <span>Show</span>
+                    </label>
+                  </div>
+                  <input
+                    type="text"
+                    value={content.headerNav?.warrantyCheckLabel ?? 'Check Warranty'}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        headerNav: { ...(content.headerNav || {}), warrantyCheckLabel: e.target.value },
+                      })
+                    }
+                    placeholder="Check Warranty"
+                    className="w-full border border-slate-300 rounded-lg p-1.5 text-xs bg-white font-semibold"
+                  />
+                  <input
+                    type="text"
+                    value={content.headerNav?.warrantyCheckHref ?? '/warranty/check'}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        headerNav: { ...(content.headerNav || {}), warrantyCheckHref: e.target.value },
+                      })
+                    }
+                    placeholder="/warranty/check"
+                    className="w-full border border-slate-300 rounded-lg p-1 text-[11px] bg-white font-mono"
+                  />
+                </div>
+
+                {/* 7. Track Ticket */}
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-700 text-[11px]">Track Ticket</span>
+                    <label className="flex items-center gap-1 text-[10px] text-slate-500 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={content.headerNav?.showTrackTicket ?? true}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            headerNav: { ...(content.headerNav || {}), showTrackTicket: e.target.checked },
+                          })
+                        }
+                        className="rounded text-green-600 h-3 w-3"
+                      />
+                      <span>Show</span>
+                    </label>
+                  </div>
+                  <input
+                    type="text"
+                    value={content.headerNav?.trackTicketLabel ?? 'Track Ticket'}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        headerNav: { ...(content.headerNav || {}), trackTicketLabel: e.target.value },
+                      })
+                    }
+                    placeholder="Track Ticket"
+                    className="w-full border border-slate-300 rounded-lg p-1.5 text-xs bg-white font-semibold"
+                  />
+                  <input
+                    type="text"
+                    value={content.headerNav?.trackTicketHref ?? '/complaint/track'}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        headerNav: { ...(content.headerNav || {}), trackTicketHref: e.target.value },
+                      })
+                    }
+                    placeholder="/complaint/track"
+                    className="w-full border border-slate-300 rounded-lg p-1 text-[11px] bg-white font-mono"
+                  />
+                </div>
+
+                {/* 8. Support Ticket */}
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-700 text-[11px]">Support Ticket</span>
+                    <label className="flex items-center gap-1 text-[10px] text-slate-500 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(content.headerNav?.showSupportTicket)}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            headerNav: { ...(content.headerNav || {}), showSupportTicket: e.target.checked },
+                          })
+                        }
+                        className="rounded text-green-600 h-3 w-3"
+                      />
+                      <span>Show</span>
+                    </label>
+                  </div>
+                  <input
+                    type="text"
+                    value={content.headerNav?.supportTicketLabel ?? 'Support Ticket'}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        headerNav: { ...(content.headerNav || {}), supportTicketLabel: e.target.value },
+                      })
+                    }
+                    placeholder="Support Ticket"
+                    className="w-full border border-slate-300 rounded-lg p-1.5 text-xs bg-white font-semibold"
+                  />
+                  <input
+                    type="text"
+                    value={content.headerNav?.supportTicketHref ?? '/complaint/register'}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        headerNav: { ...(content.headerNav || {}), supportTicketHref: e.target.value },
+                      })
+                    }
+                    placeholder="/complaint/register"
+                    className="w-full border border-slate-300 rounded-lg p-1 text-[11px] bg-white font-mono"
+                  />
+                </div>
+
+                {/* 9. Contact & Helpline Dropdown */}
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-700 text-[11px]">Contact Dropdown</span>
+                    <label className="flex items-center gap-1 text-[10px] text-slate-500 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={content.headerNav?.showContactDropdown ?? true}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            headerNav: { ...(content.headerNav || {}), showContactDropdown: e.target.checked },
+                          })
+                        }
+                        className="rounded text-green-600 h-3 w-3"
+                      />
+                      <span>Show</span>
+                    </label>
+                  </div>
+                  <input
+                    type="text"
+                    value={content.headerNav?.contactLabel ?? 'Contact & Helpline'}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        headerNav: { ...(content.headerNav || {}), contactLabel: e.target.value },
+                      })
+                    }
+                    placeholder="Contact & Helpline"
+                    className="w-full border border-slate-300 rounded-lg p-1.5 text-xs bg-white font-semibold"
+                  />
+                  <p className="text-[10px] text-slate-500">Links directly to telephone, whatsapp & concern divisions</p>
                 </div>
               </div>
 
@@ -12338,6 +12585,7 @@ const ContentManager = () => {
             case 'shield': return <ShieldCheck size={size} />;
             case 'file': return <FileText size={size} />;
             case 'search': return <Search size={size} />;
+            case 'receipt': return <Receipt size={size} />;
             case 'help': return <HelpCircle size={size} />;
             case 'wrench': return <Wrench size={size} />;
             case 'tag': return <Tag size={size} />;
@@ -12505,6 +12753,38 @@ const ContentManager = () => {
                           </span>
                         )}
 
+                        {/* Showroom Billing Preview */}
+                        {(navConf.showShowroomBilling ?? true) && (
+                          <span className="text-slate-800 flex items-center gap-1 hover:text-emerald-700">
+                            {renderPreviewIcon(navConf.showroomBillingIcon, <Receipt size={13} className="text-blue-600" />)}
+                            <span>{navConf.showroomBillingLabel || 'Showroom Bills'}</span>
+                          </span>
+                        )}
+
+                        {/* Check Warranty Preview */}
+                        {(navConf.showWarrantyCheck ?? true) && (
+                          <span className="text-slate-800 flex items-center gap-1 hover:text-emerald-700">
+                            {renderPreviewIcon(navConf.warrantyCheckIcon, <ShieldCheck size={13} className="text-purple-600" />)}
+                            <span>{navConf.warrantyCheckLabel || 'Check Warranty'}</span>
+                          </span>
+                        )}
+
+                        {/* Track Support Ticket Preview */}
+                        {(navConf.showTrackTicket ?? true) && (
+                          <span className="text-slate-800 flex items-center gap-1 hover:text-emerald-700">
+                            {renderPreviewIcon(navConf.trackTicketIcon, <Search size={13} className="text-emerald-600" />)}
+                            <span>{navConf.trackTicketLabel || 'Track Ticket'}</span>
+                          </span>
+                        )}
+
+                        {/* Support Ticket Preview */}
+                        {Boolean(navConf.showSupportTicket) && (
+                          <span className="text-slate-800 flex items-center gap-1 hover:text-emerald-700">
+                            {renderPreviewIcon(navConf.supportTicketIcon, <FileText size={13} className="text-amber-600" />)}
+                            <span>{navConf.supportTicketLabel || 'Support Ticket'}</span>
+                          </span>
+                        )}
+
                         {/* Custom Nav Items Preview */}
                         {customItems
                           .filter((i) => i && i.isVisible !== false)
@@ -12609,6 +12889,30 @@ const ContentManager = () => {
                           <div className="p-2 rounded-lg bg-slate-800 text-slate-200 font-semibold flex items-center gap-2">
                             {renderPreviewIcon(navConf.referIcon, <Gift size={13} className="text-purple-400" />)}
                             <span>{navConf.referLabel || 'My Referrals'} (+{navConf.referBonusAmount || 500})</span>
+                          </div>
+                        )}
+                        {(navConf.showShowroomBilling ?? true) && (
+                          <div className="p-2 rounded-lg bg-slate-800 text-slate-200 font-semibold flex items-center gap-2">
+                            {renderPreviewIcon(navConf.showroomBillingIcon, <Receipt size={13} className="text-blue-400" />)}
+                            <span>{navConf.showroomBillingLabel || 'Showroom Bills'}</span>
+                          </div>
+                        )}
+                        {(navConf.showWarrantyCheck ?? true) && (
+                          <div className="p-2 rounded-lg bg-slate-800 text-slate-200 font-semibold flex items-center gap-2">
+                            {renderPreviewIcon(navConf.warrantyCheckIcon, <ShieldCheck size={13} className="text-purple-400" />)}
+                            <span>{navConf.warrantyCheckLabel || 'Check Battery Warranty'}</span>
+                          </div>
+                        )}
+                        {Boolean(navConf.showSupportTicket) && (
+                          <div className="p-2 rounded-lg bg-slate-800 text-slate-200 font-semibold flex items-center gap-2">
+                            {renderPreviewIcon(navConf.supportTicketIcon, <FileText size={13} className="text-emerald-400" />)}
+                            <span>{navConf.supportTicketLabel || 'Support Ticket'}</span>
+                          </div>
+                        )}
+                        {(navConf.showTrackTicket ?? true) && (
+                          <div className="p-2 rounded-lg bg-slate-800 text-slate-200 font-semibold flex items-center gap-2">
+                            {renderPreviewIcon(navConf.trackTicketIcon, <Search size={13} className="text-blue-400" />)}
+                            <span>{navConf.trackTicketLabel || 'Track Ticket'}</span>
                           </div>
                         )}
                         {customItems
@@ -12884,6 +13188,253 @@ const ContentManager = () => {
                   <SectionSaveButton label="Save Core Links" compact />
                 </div>
 
+                {/* QUICK PRESETS & 1-CLICK TOGGLES CONTROL CENTER */}
+                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-3">
+                  <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                    <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                      <Sparkles size={14} className="text-purple-600" />
+                      <span>Quick Link Toggles & 1-Click Option Presets</span>
+                    </span>
+                    <span className="text-[11px] text-slate-400 font-medium">Click to toggle visibility or add new options</span>
+                  </div>
+
+                  {/* 1-Click Toggles for All 9 Core Links */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Core Navbar Links Status (Click to Toggle)</label>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => updateNav({ showHome: !(navConf.showHome ?? true) })}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 border cursor-pointer ${
+                          (navConf.showHome ?? true)
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-300 shadow-xs'
+                            : 'bg-slate-100 text-slate-400 border-slate-200 line-through'
+                        }`}
+                      >
+                        <Home size={12} />
+                        <span>Home</span>
+                        <span className="text-[10px]">{(navConf.showHome ?? true) ? 'ON' : 'OFF'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => updateNav({ showWallet: !(navConf.showWallet ?? true) })}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 border cursor-pointer ${
+                          (navConf.showWallet ?? true)
+                            ? 'bg-amber-50 text-amber-800 border-amber-300 shadow-xs'
+                            : 'bg-slate-100 text-slate-400 border-slate-200 line-through'
+                        }`}
+                      >
+                        <Coins size={12} />
+                        <span>Wallet & Coins</span>
+                        <span className="text-[10px]">{(navConf.showWallet ?? true) ? 'ON' : 'OFF'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => updateNav({ showRefer: !(navConf.showRefer ?? true) })}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 border cursor-pointer ${
+                          (navConf.showRefer ?? true)
+                            ? 'bg-purple-50 text-purple-800 border-purple-300 shadow-xs'
+                            : 'bg-slate-100 text-slate-400 border-slate-200 line-through'
+                        }`}
+                      >
+                        <Gift size={12} />
+                        <span>Refer & Earn</span>
+                        <span className="text-[10px]">{(navConf.showRefer ?? true) ? 'ON' : 'OFF'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => updateNav({ showShowroomBilling: !(navConf.showShowroomBilling ?? true) })}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 border cursor-pointer ${
+                          (navConf.showShowroomBilling ?? true)
+                            ? 'bg-blue-50 text-blue-800 border-blue-300 shadow-xs'
+                            : 'bg-slate-100 text-slate-400 border-slate-200 line-through'
+                        }`}
+                      >
+                        <Receipt size={12} />
+                        <span>Showroom Bills</span>
+                        <span className="text-[10px]">{(navConf.showShowroomBilling ?? true) ? 'ON' : 'OFF'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => updateNav({ showWarrantyCheck: !(navConf.showWarrantyCheck ?? true) })}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 border cursor-pointer ${
+                          (navConf.showWarrantyCheck ?? true)
+                            ? 'bg-purple-50 text-purple-800 border-purple-300 shadow-xs'
+                            : 'bg-slate-100 text-slate-400 border-slate-200 line-through'
+                        }`}
+                      >
+                        <ShieldCheck size={12} />
+                        <span>Check Warranty</span>
+                        <span className="text-[10px]">{(navConf.showWarrantyCheck ?? true) ? 'ON' : 'OFF'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => updateNav({ showTrackTicket: !(navConf.showTrackTicket ?? true) })}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 border cursor-pointer ${
+                          (navConf.showTrackTicket ?? true)
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-300 shadow-xs'
+                            : 'bg-slate-100 text-slate-400 border-slate-200 line-through'
+                        }`}
+                      >
+                        <Search size={12} />
+                        <span>Track Ticket</span>
+                        <span className="text-[10px]">{(navConf.showTrackTicket ?? true) ? 'ON' : 'OFF'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => updateNav({ showSupportTicket: !Boolean(navConf.showSupportTicket) })}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 border cursor-pointer ${
+                          Boolean(navConf.showSupportTicket)
+                            ? 'bg-amber-50 text-amber-800 border-amber-300 shadow-xs'
+                            : 'bg-slate-100 text-slate-400 border-slate-200 line-through'
+                        }`}
+                      >
+                        <FileText size={12} />
+                        <span>Support Ticket</span>
+                        <span className="text-[10px]">{Boolean(navConf.showSupportTicket) ? 'ON' : 'OFF'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => updateNav({ showContactDropdown: !(navConf.showContactDropdown ?? true) })}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 border cursor-pointer ${
+                          (navConf.showContactDropdown ?? true)
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-300 shadow-xs'
+                            : 'bg-slate-100 text-slate-400 border-slate-200 line-through'
+                        }`}
+                      >
+                        <Phone size={12} />
+                        <span>Contact Dropdown</span>
+                        <span className="text-[10px]">{(navConf.showContactDropdown ?? true) ? 'ON' : 'OFF'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => updateNav({ showAccount: !(navConf.showAccount ?? true) })}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 border cursor-pointer ${
+                          (navConf.showAccount ?? true)
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-300 shadow-xs'
+                            : 'bg-slate-100 text-slate-400 border-slate-200 line-through'
+                        }`}
+                      >
+                        <User size={12} />
+                        <span>Account CTA</span>
+                        <span className="text-[10px]">{(navConf.showAccount ?? true) ? 'ON' : 'OFF'}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 1-Click Presets for Adding More Options */}
+                  <div className="pt-2 border-t border-slate-100">
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Add More Preset Options (1-Click)</label>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const existing = customItems.find((i) => i.href === '/spare-parts' || i.label.toLowerCase().includes('spare'));
+                          if (!existing) {
+                            const newItem: ICustomNavItem = {
+                              id: `nav-spares-${Date.now()}`,
+                              label: 'EV Spare Parts',
+                              href: '/contact',
+                              itemType: 'pill',
+                              icon: 'wrench',
+                              badge: 'New',
+                              badgeColor: '#059669',
+                              bgColor: '#ecfdf5',
+                              textColor: '#065f46',
+                              borderColor: '#a7f3d0',
+                              isVisible: true,
+                              order: customItems.length + 1,
+                              isExternal: false,
+                            };
+                            updateNav({ customNavItems: [...customItems, newItem] });
+                          }
+                        }}
+                        className="px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200 flex items-center gap-1.5 transition cursor-pointer"
+                      >
+                        <Plus size={12} />
+                        <span>+ Add EV Spares Option</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const existing = customItems.find((i) => i.label.toLowerCase().includes('dealership'));
+                          if (!existing) {
+                            const newItem: ICustomNavItem = {
+                              id: `nav-dealer-${Date.now()}`,
+                              label: 'Dealership Enquiry',
+                              href: '/contact',
+                              itemType: 'link',
+                              icon: 'building',
+                              isVisible: true,
+                              order: customItems.length + 1,
+                              isExternal: false,
+                            };
+                            updateNav({ customNavItems: [...customItems, newItem] });
+                          }
+                        }}
+                        className="px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 flex items-center gap-1.5 transition cursor-pointer"
+                      >
+                        <Plus size={12} />
+                        <span>+ Add Dealership Option</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const existing = customItems.find((i) => i.label.toLowerCase().includes('battery care'));
+                          if (!existing) {
+                            const newItem: ICustomNavItem = {
+                              id: `nav-guide-${Date.now()}`,
+                              label: 'Battery Care Guide',
+                              href: '/battery-care',
+                              itemType: 'link',
+                              icon: 'battery',
+                              isVisible: true,
+                              order: customItems.length + 1,
+                              isExternal: false,
+                            };
+                            updateNav({ customNavItems: [...customItems, newItem] });
+                          }
+                        }}
+                        className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1.5 transition cursor-pointer"
+                      >
+                        <Plus size={12} />
+                        <span>+ Add Battery Guide Option</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newItem: ICustomNavItem = {
+                            id: `nav-${Date.now()}`,
+                            label: `New Option ${customItems.length + 1}`,
+                            href: '/',
+                            itemType: 'link',
+                            icon: 'sparkles',
+                            isVisible: true,
+                            order: customItems.length + 1,
+                            isExternal: false,
+                          };
+                          updateNav({ customNavItems: [...customItems, newItem] });
+                        }}
+                        className="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+                      >
+                        <Plus size={12} />
+                        <span>+ Add Custom Option</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Card 1: Home Link */}
                   <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3 shadow-xs">
@@ -13102,7 +13653,223 @@ const ContentManager = () => {
                     </div>
                   </div>
 
-                  {/* Card 4: Contact & Helpline Dropdown */}
+                  {/* Card 4: Showroom Bills Option */}
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3 shadow-xs">
+                    <div className="flex items-center justify-between border-b pb-2">
+                      <div className="flex items-center gap-2">
+                        <Receipt size={16} className="text-blue-600" />
+                        <span className="font-bold text-xs text-slate-800">Showroom Bills Option</span>
+                      </div>
+                      <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={navConf.showShowroomBilling ?? true}
+                          onChange={(e) => updateNav({ showShowroomBilling: e.target.checked })}
+                          className="rounded text-green-600 h-4 w-4"
+                        />
+                        <span>Visible</span>
+                      </label>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-600 mb-1">Label</label>
+                        <input
+                          type="text"
+                          value={navConf.showroomBillingLabel || 'Showroom Bills'}
+                          onChange={(e) => updateNav({ showroomBillingLabel: e.target.value })}
+                          className="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs font-bold"
+                          placeholder="Showroom Bills"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-600 mb-1">Target Route</label>
+                        <input
+                          type="text"
+                          value={navConf.showroomBillingHref || '/showroom-billing'}
+                          onChange={(e) => updateNav({ showroomBillingHref: e.target.value })}
+                          className="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs font-mono"
+                          placeholder="/showroom-billing"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-semibold text-slate-600 mb-1">Icon</label>
+                      <select
+                        value={navConf.showroomBillingIcon || 'receipt'}
+                        onChange={(e) => updateNav({ showroomBillingIcon: e.target.value })}
+                        className="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs"
+                      >
+                        <option value="receipt">Receipt / Bill Icon</option>
+                        <option value="coins">Coins / Payment Icon</option>
+                        <option value="file">File / Document Icon</option>
+                        <option value="home">Home Icon</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Card 5: Check Battery Warranty Option */}
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3 shadow-xs">
+                    <div className="flex items-center justify-between border-b pb-2">
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck size={16} className="text-purple-600" />
+                        <span className="font-bold text-xs text-slate-800">Check Battery Warranty</span>
+                      </div>
+                      <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={navConf.showWarrantyCheck ?? true}
+                          onChange={(e) => updateNav({ showWarrantyCheck: e.target.checked })}
+                          className="rounded text-green-600 h-4 w-4"
+                        />
+                        <span>Visible</span>
+                      </label>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-600 mb-1">Label</label>
+                        <input
+                          type="text"
+                          value={navConf.warrantyCheckLabel || 'Check Warranty'}
+                          onChange={(e) => updateNav({ warrantyCheckLabel: e.target.value })}
+                          className="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs font-bold"
+                          placeholder="Check Warranty"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-600 mb-1">Target Route</label>
+                        <input
+                          type="text"
+                          value={navConf.warrantyCheckHref || '/warranty/check'}
+                          onChange={(e) => updateNav({ warrantyCheckHref: e.target.value })}
+                          className="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs font-mono"
+                          placeholder="/warranty/check"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-semibold text-slate-600 mb-1">Icon</label>
+                      <select
+                        value={navConf.warrantyCheckIcon || 'shield'}
+                        onChange={(e) => updateNav({ warrantyCheckIcon: e.target.value })}
+                        className="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs"
+                      >
+                        <option value="shield">Shield Check Icon</option>
+                        <option value="battery">Battery Icon</option>
+                        <option value="zap">Zap / Power Icon</option>
+                        <option value="search">Search Icon</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Card 6: Track Support Ticket Option */}
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3 shadow-xs">
+                    <div className="flex items-center justify-between border-b pb-2">
+                      <div className="flex items-center gap-2">
+                        <Search size={16} className="text-emerald-600" />
+                        <span className="font-bold text-xs text-slate-800">Track Support Ticket</span>
+                      </div>
+                      <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={navConf.showTrackTicket ?? true}
+                          onChange={(e) => updateNav({ showTrackTicket: e.target.checked })}
+                          className="rounded text-green-600 h-4 w-4"
+                        />
+                        <span>Visible</span>
+                      </label>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-600 mb-1">Label</label>
+                        <input
+                          type="text"
+                          value={navConf.trackTicketLabel || 'Track Ticket'}
+                          onChange={(e) => updateNav({ trackTicketLabel: e.target.value })}
+                          className="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs font-bold"
+                          placeholder="Track Ticket"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-600 mb-1">Target Route</label>
+                        <input
+                          type="text"
+                          value={navConf.trackTicketHref || '/complaint/track'}
+                          onChange={(e) => updateNav({ trackTicketHref: e.target.value })}
+                          className="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs font-mono"
+                          placeholder="/complaint/track"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-semibold text-slate-600 mb-1">Icon</label>
+                      <select
+                        value={navConf.trackTicketIcon || 'search'}
+                        onChange={(e) => updateNav({ trackTicketIcon: e.target.value })}
+                        className="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs"
+                      >
+                        <option value="search">Search Magnifier Icon</option>
+                        <option value="file">File / Ticket Icon</option>
+                        <option value="help">Help / Query Icon</option>
+                        <option value="sparkles">Sparkles Icon</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Card 7: Support / Complaint Ticket Option */}
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3 shadow-xs">
+                    <div className="flex items-center justify-between border-b pb-2">
+                      <div className="flex items-center gap-2">
+                        <FileText size={16} className="text-amber-600" />
+                        <span className="font-bold text-xs text-slate-800">Support / Complaint Ticket</span>
+                      </div>
+                      <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(navConf.showSupportTicket)}
+                          onChange={(e) => updateNav({ showSupportTicket: e.target.checked })}
+                          className="rounded text-green-600 h-4 w-4"
+                        />
+                        <span>Visible</span>
+                      </label>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-600 mb-1">Label</label>
+                        <input
+                          type="text"
+                          value={navConf.supportTicketLabel || 'Support Ticket'}
+                          onChange={(e) => updateNav({ supportTicketLabel: e.target.value })}
+                          className="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs font-bold"
+                          placeholder="Support Ticket"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-600 mb-1">Target Route</label>
+                        <input
+                          type="text"
+                          value={navConf.supportTicketHref || '/complaint/register'}
+                          onChange={(e) => updateNav({ supportTicketHref: e.target.value })}
+                          className="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs font-mono"
+                          placeholder="/complaint/register"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-semibold text-slate-600 mb-1">Icon</label>
+                      <select
+                        value={navConf.supportTicketIcon || 'file'}
+                        onChange={(e) => updateNav({ supportTicketIcon: e.target.value })}
+                        className="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs"
+                      >
+                        <option value="file">File / Ticket Icon</option>
+                        <option value="phone">Phone Helpline</option>
+                        <option value="message">Message Icon</option>
+                        <option value="shield">Shield Icon</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Card 8: Contact & Helpline Dropdown */}
                   <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3 shadow-xs">
                     <div className="flex items-center justify-between border-b pb-2">
                       <div className="flex items-center gap-2">
@@ -13152,7 +13919,7 @@ const ContentManager = () => {
                     </div>
                   </div>
 
-                  {/* Card 5: Account / Login CTA */}
+                  {/* Card 9: Account / Login CTA */}
                   <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3 shadow-xs md:col-span-2">
                     <div className="flex items-center justify-between border-b pb-2">
                       <div className="flex items-center gap-2">
