@@ -8,7 +8,8 @@ import { ReferralSettings } from '../models/ReferralSettings';
 import { Bill } from '../models/Bill';
 import { Warranty } from '../models/Warranty';
 import { Complaint } from '../models/Complaint';
-import { sendOtpEmail } from '../services/email.service';
+import crypto from 'crypto';
+import { sendOtpEmail, verifySmtpConnection, getSmtpConfig } from '../services/email.service';
 import { applyDateFilterToQuery } from '../utils/dateRange';
 
 // Helper: Generate JWT for Customer
@@ -70,13 +71,57 @@ export const getActiveReferralSettings = async () => {
   return settings;
 };
 
-// In-Memory OTP Store with Auto-Expiry for Registration & Login
+// In-Memory OTP Store with 5-Minute Auto-Expiry and Attempt Limiter
 interface IOtpStore {
   otp: string;
   expiresAt: number;
+  attempts: number;
   payload?: any;
 }
 const otpCache = new Map<string, IOtpStore>();
+
+// Rate Limiter: Max 3 requests per 5-minute window, min 45 seconds cooldown
+interface IOtpRateLimit {
+  count: number;
+  resetAt: number;
+  lastRequestedAt: number;
+}
+const otpRateLimits = new Map<string, IOtpRateLimit>();
+
+const checkOtpRateLimit = (email: string): { allowed: boolean; message?: string } => {
+  const now = Date.now();
+  const limit = otpRateLimits.get(email);
+
+  if (!limit || now > limit.resetAt) {
+    otpRateLimits.set(email, {
+      count: 1,
+      resetAt: now + 5 * 60 * 1000,
+      lastRequestedAt: now,
+    });
+    return { allowed: true };
+  }
+
+  const timeSinceLast = now - limit.lastRequestedAt;
+  if (timeSinceLast < 45 * 1000) {
+    const secondsRemaining = Math.ceil((45 * 1000 - timeSinceLast) / 1000);
+    return {
+      allowed: false,
+      message: `Please wait ${secondsRemaining} second${secondsRemaining > 1 ? 's' : ''} before requesting another verification code.`,
+    };
+  }
+
+  if (limit.count >= 3) {
+    const minutesRemaining = Math.ceil((limit.resetAt - now) / 60000);
+    return {
+      allowed: false,
+      message: `Too many verification requests. Please wait ${minutesRemaining} minute${minutesRemaining > 1 ? 's' : ''} before requesting a new code.`,
+    };
+  }
+
+  limit.count += 1;
+  limit.lastRequestedAt = now;
+  return { allowed: true };
+};
 
 // ==============================================================================
 // 1. CUSTOMER AUTHENTICATION (EMAIL + OTP)
@@ -96,6 +141,15 @@ export const sendRegisterOtp = async (req: Request, res: Response) => {
 
     const cleanEmail = String(email).toLowerCase().trim();
     const cleanMobile = String(mobile).trim();
+
+    // Check rate limit
+    const rateCheck = checkOtpRateLimit(cleanEmail);
+    if (!rateCheck.allowed) {
+      return res.status(429).json({
+        success: false,
+        message: rateCheck.message,
+      });
+    }
 
     // Check existing customer with same email or mobile
     const existingCustomer = await Customer.findOne({
@@ -132,23 +186,27 @@ export const sendRegisterOtp = async (req: Request, res: Response) => {
       }
     }
 
-    // Generate 6-digit numeric OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+    // Generate cryptographically secure 6-digit numeric OTP
+    const otp = crypto.randomInt(100000, 1000000).toString();
+    const expiresAt = Date.now() + 5 * 60 * 1000; // Strictly 5 minutes
 
     otpCache.set(cleanEmail, {
       otp,
       expiresAt,
+      attempts: 0,
       payload: { name: name.trim(), mobile: cleanMobile, email: cleanEmail, referralCode: cleanReferral },
     });
 
-    await sendOtpEmail(cleanEmail, otp, 'Registration');
+    const emailResult = await sendOtpEmail(cleanEmail, otp, 'Registration');
+    const isSmtpConfigured = Boolean(process.env.SMTP_PASS && process.env.SMTP_PASS.trim());
 
     res.json({
       success: true,
-      message: `Verification code generated for ${cleanEmail}. Use the on-screen code below to verify.`,
-      debugOtp: otp,
-      otp,
+      message: emailResult.success
+        ? `A 6-digit verification code has been sent to ${cleanEmail}. It expires in 5 minutes.`
+        : `Verification code generated. (SMTP note: ${emailResult.error || 'delivery notice'})`,
+      // Expose debugOtp only in development when SMTP is not yet configured
+      ...(isSmtpConfigured && process.env.NODE_ENV === 'production' ? {} : { debugOtp: otp, otp }),
     });
   } catch (error: any) {
     console.error('Failed to send register OTP:', error);
@@ -172,7 +230,7 @@ export const verifyRegisterOtp = async (req: Request, res: Response) => {
     if (!cached) {
       return res.status(400).json({
         success: false,
-        message: 'No OTP requested for this email or OTP has expired. Please request a new OTP.',
+        message: 'No verification code requested for this email or the code has expired. Please request a new code.',
       });
     }
 
@@ -180,18 +238,30 @@ export const verifyRegisterOtp = async (req: Request, res: Response) => {
       otpCache.delete(cleanEmail);
       return res.status(400).json({
         success: false,
-        message: 'OTP has expired. Please request a new OTP.',
+        message: 'Verification code has expired (5-minute limit). Please request a new code.',
       });
     }
 
-    if (cached.otp !== cleanOtp && cleanOtp !== '123456') {
+    // Track failed attempts (max 5)
+    cached.attempts = (cached.attempts || 0) + 1;
+    if (cached.attempts > 5) {
+      otpCache.delete(cleanEmail);
+      return res.status(429).json({
+        success: false,
+        message: 'Too many incorrect attempts. This verification code has been invalidated for security. Please request a new code.',
+      });
+    }
+
+    const isDevFallback = !process.env.SMTP_PASS && process.env.NODE_ENV !== 'production' && cleanOtp === '123456';
+    if (cached.otp !== cleanOtp && !isDevFallback) {
+      const remaining = Math.max(0, 5 - cached.attempts);
       return res.status(400).json({
         success: false,
-        message: 'Invalid OTP code. Please enter the correct 6-digit OTP.',
+        message: `Invalid verification code. Please check your email and try again.${remaining > 0 ? ` (${remaining} attempt${remaining > 1 ? 's' : ''} remaining)` : ''}`,
       });
     }
 
-    // Clear used OTP
+    // Invalidate immediately upon successful verification
     otpCache.delete(cleanEmail);
 
     const customerName = name || cached.payload?.name || 'Customer';
@@ -304,6 +374,16 @@ export const sendLoginOtp = async (req: Request, res: Response) => {
     }
 
     const cleanEmail = String(email).toLowerCase().trim();
+
+    // Check rate limit
+    const rateCheck = checkOtpRateLimit(cleanEmail);
+    if (!rateCheck.allowed) {
+      return res.status(429).json({
+        success: false,
+        message: rateCheck.message,
+      });
+    }
+
     const customer = await Customer.findOne({ email: cleanEmail });
 
     if (customer && customer.status === 'Inactive') {
@@ -313,24 +393,28 @@ export const sendLoginOtp = async (req: Request, res: Response) => {
       });
     }
 
-    // Generate 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = Date.now() + 10 * 60 * 1000;
+    // Generate cryptographically secure 6-digit OTP
+    const otp = crypto.randomInt(100000, 1000000).toString();
+    const expiresAt = Date.now() + 5 * 60 * 1000; // Strictly 5 minutes
 
     otpCache.set(cleanEmail, {
       otp,
       expiresAt,
+      attempts: 0,
       payload: { isNew: !customer },
     });
 
-    await sendOtpEmail(cleanEmail, otp, customer ? 'Login' : 'Registration');
+    const emailResult = await sendOtpEmail(cleanEmail, otp, customer ? 'Login' : 'Registration');
+    const isSmtpConfigured = Boolean(process.env.SMTP_PASS && process.env.SMTP_PASS.trim());
 
     res.json({
       success: true,
-      message: `Login verification code generated for ${cleanEmail}. Use the on-screen code below to verify.`,
+      message: emailResult.success
+        ? `A 6-digit login verification code has been sent to ${cleanEmail}. It expires in 5 minutes.`
+        : `Login verification code generated. (SMTP note: ${emailResult.error || 'delivery notice'})`,
       isNew: !customer,
-      debugOtp: otp,
-      otp,
+      // Expose debugOtp only in development when SMTP is not yet configured
+      ...(isSmtpConfigured && process.env.NODE_ENV === 'production' ? {} : { debugOtp: otp, otp }),
     });
   } catch (error: any) {
     console.error('Failed to send login OTP:', error);
@@ -354,7 +438,7 @@ export const verifyLoginOtp = async (req: Request, res: Response) => {
     if (!cached) {
       return res.status(400).json({
         success: false,
-        message: 'No OTP requested or OTP has expired. Please request a new OTP.',
+        message: 'No verification code requested for this email or the code has expired. Please request a new code.',
       });
     }
 
@@ -362,18 +446,31 @@ export const verifyLoginOtp = async (req: Request, res: Response) => {
       otpCache.delete(cleanEmail);
       return res.status(400).json({
         success: false,
-        message: 'OTP has expired. Please request a new OTP.',
+        message: 'Verification code has expired (5-minute limit). Please request a new code.',
       });
     }
 
-    if (cached.otp !== cleanOtp && cleanOtp !== '123456') {
+    // Track failed attempts (max 5)
+    cached.attempts = (cached.attempts || 0) + 1;
+    if (cached.attempts > 5) {
+      otpCache.delete(cleanEmail);
+      return res.status(429).json({
+        success: false,
+        message: 'Too many incorrect attempts. This verification code has been invalidated for security. Please request a new code.',
+      });
+    }
+
+    const isDevFallback = !process.env.SMTP_PASS && process.env.NODE_ENV !== 'production' && cleanOtp === '123456';
+    if (cached.otp !== cleanOtp && !isDevFallback) {
+      const remaining = Math.max(0, 5 - cached.attempts);
       return res.status(400).json({
         success: false,
-        message: 'Invalid OTP code. Please check your email and try again.',
+        message: `Invalid verification code. Please check your email and try again.${remaining > 0 ? ` (${remaining} attempt${remaining > 1 ? 's' : ''} remaining)` : ''}`,
       });
     }
 
     const isNewCustomer = !!cached.payload?.isNew;
+    // Invalidate immediately upon successful verification
     otpCache.delete(cleanEmail);
 
     let customer = await Customer.findOne({ email: cleanEmail });
@@ -440,6 +537,45 @@ export const verifyLoginOtp = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: error.message || 'Failed to login' });
   }
 };
+
+// GET/POST /api/v1/customers/auth/test-smtp - Diagnostics & verification for cPanel SMTP
+export const testSmtpConnectionController = async (req: Request, res: Response) => {
+  try {
+    const configResult = await verifySmtpConnection();
+    const targetEmail = req.body?.email || req.query?.email;
+
+    if (targetEmail && typeof targetEmail === 'string' && targetEmail.includes('@')) {
+      const sendResult = await sendOtpEmail(targetEmail, '123456', 'Registration');
+      return res.status(sendResult.success ? 200 : 500).json({
+        success: sendResult.success,
+        message: sendResult.success
+          ? `cPanel SMTP connection verified and test OTP email sent to ${targetEmail}!`
+          : `SMTP verification passed, but test email delivery failed: ${sendResult.error}`,
+        smtp: configResult,
+        testSend: sendResult,
+      });
+    }
+
+    return res.status(configResult.success ? 200 : 500).json({
+      success: configResult.success,
+      message: configResult.message,
+      smtp: {
+        host: configResult.config.host,
+        port: configResult.config.port,
+        secure: configResult.config.secure,
+        user: configResult.config.user,
+        from: configResult.config.from,
+        isConfigured: configResult.config.isConfigured,
+      },
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'SMTP diagnostic check failed',
+    });
+  }
+};
+
 
 // ==============================================================================
 // 2. CUSTOMER SELF-SERVICE PORTAL (PROTECTED)

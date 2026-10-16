@@ -4,6 +4,7 @@ import {
   verifyRegisterOtp,
   sendLoginOtp,
   verifyLoginOtp,
+  testSmtpConnectionController,
   getCustomerProfile,
   updateCustomerProfile,
   getMyWallet,
@@ -37,6 +38,8 @@ router.post('/auth/send-register-otp', sendRegisterOtp);
 router.post('/auth/verify-register-otp', verifyRegisterOtp);
 router.post('/auth/send-login-otp', sendLoginOtp);
 router.post('/auth/verify-login-otp', verifyLoginOtp);
+router.get('/auth/test-smtp', testSmtpConnectionController);
+router.post('/auth/test-smtp', testSmtpConnectionController);
 router.get('/referral-settings/public', getReferralSettings);
 router.get('/eligible-services', getEligibleServices);
 

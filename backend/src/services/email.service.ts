@@ -1,3 +1,5 @@
+import nodemailer, { Transporter } from 'nodemailer';
+
 export interface SendEmailOptions {
   to: string;
   subject: string;
@@ -5,9 +7,240 @@ export interface SendEmailOptions {
   text?: string;
 }
 
-export const sendOtpEmail = async (email: string, otp: string, purpose: 'Registration' | 'Login'): Promise<boolean> => {
-  console.log(`[Ekosmart OTP Service] >>> OTP for ${purpose} sent to [${email}]: ${otp} (Valid for 10 minutes) <<<`);
-  return true;
+export interface SmtpConfigInfo {
+  host: string;
+  port: number;
+  secure: boolean;
+  user: string;
+  from: string;
+  isConfigured: boolean;
+}
+
+/**
+ * Returns the current cPanel SMTP configuration from environment variables.
+ */
+export const getSmtpConfig = (): SmtpConfigInfo => {
+  const host = process.env.SMTP_HOST || 'mail.ekosmartdrivecomplain.in';
+  const port = Number(process.env.SMTP_PORT) || 465;
+  const secure = port === 465;
+  const user = process.env.SMTP_USER || 'support_otp_email@ekosmartdrivecomplain.in';
+  const from = process.env.SMTP_FROM || `"Ekosmart OTP Verification" <${user}>`;
+  const isConfigured = Boolean(process.env.SMTP_PASS && process.env.SMTP_PASS.trim());
+
+  return { host, port, secure, user, from, isConfigured };
+};
+
+let cachedTransporter: Transporter | null = null;
+
+/**
+ * Lazily creates or returns the cached Nodemailer transporter.
+ */
+export const getTransporter = (): Transporter | null => {
+  const config = getSmtpConfig();
+  if (!config.isConfigured) {
+    return null;
+  }
+
+  if (!cachedTransporter) {
+    cachedTransporter = nodemailer.createTransport({
+      host: config.host,
+      port: config.port,
+      secure: config.secure,
+      auth: {
+        user: config.user,
+        pass: process.env.SMTP_PASS!,
+      },
+      tls: {
+        rejectUnauthorized: process.env.SMTP_REJECT_UNAUTHORIZED === 'true',
+      },
+      pool: true,
+      maxConnections: 5,
+      maxMessages: 100,
+    });
+  }
+
+  return cachedTransporter;
+};
+
+/**
+ * Resets the cached transporter (useful when environment variables are updated at runtime).
+ */
+export const resetTransporter = () => {
+  if (cachedTransporter) {
+    try {
+      cachedTransporter.close();
+    } catch {
+      // ignore
+    }
+    cachedTransporter = null;
+  }
+};
+
+/**
+ * Verifies the cPanel SMTP connection.
+ */
+export const verifySmtpConnection = async (): Promise<{
+  success: boolean;
+  message: string;
+  config: SmtpConfigInfo;
+}> => {
+  const config = getSmtpConfig();
+  if (!config.isConfigured) {
+    return {
+      success: false,
+      message: 'SMTP_PASS is not configured in server environment. Please set SMTP_PASS in cPanel / .env.',
+      config,
+    };
+  }
+
+  try {
+    resetTransporter();
+    const transporter = getTransporter();
+    if (!transporter) {
+      return { success: false, message: 'Could not initialize SMTP transporter.', config };
+    }
+    await transporter.verify();
+    return {
+      success: true,
+      message: `SMTP connection to ${config.host}:${config.port} via ${config.user} successfully verified!`,
+      config,
+    };
+  } catch (error: any) {
+    console.error('[SMTP Verify Error]:', error.message || error);
+    return {
+      success: false,
+      message: `SMTP Connection Failed: ${error.message || 'Unknown error'}. Check outgoing server, port (${config.port}), credentials, and cPanel mail server status.`,
+      config,
+    };
+  }
+};
+
+/**
+ * Sends a branded Ekosmart OTP verification email via cPanel SMTP.
+ */
+export const sendOtpEmail = async (
+  email: string,
+  otp: string,
+  purpose: 'Registration' | 'Login'
+): Promise<{ success: boolean; messageId?: string; error?: string }> => {
+  const config = getSmtpConfig();
+  const purposeTitle = purpose === 'Registration' ? 'Customer Account Registration' : 'Customer Portal Login Verification';
+  const purposeText = purpose === 'Registration' ? 'registering a new Ekosmart customer account' : 'logging into your Ekosmart customer account';
+  const subject = `Your Ekosmart Verification Code: ${otp} (Valid for 5 minutes)`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${subject}</title>
+      </head>
+      <body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f1f5f9; padding: 30px 15px;">
+          <tr>
+            <td align="center">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 540px; background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); border: 1px solid #e2e8f0;">
+                <!-- Header Banner -->
+                <tr>
+                  <td style="background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%); padding: 32px 30px; text-align: center; color: #ffffff;">
+                    <div style="display: inline-block; background-color: #059669; color: #ffffff; font-weight: 900; font-size: 11px; padding: 4px 12px; border-radius: 999px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">
+                      Official Ekosmart Portal
+                    </div>
+                    <h1 style="margin: 0; font-size: 22px; font-weight: 900; letter-spacing: -0.5px; color: #ffffff;">
+                      EKOSMART EV BATTERY SOLUTION
+                    </h1>
+                    <p style="margin: 6px 0 0 0; font-size: 12px; color: #a7f3d0;">
+                      Clean Energy & Smart Electric Mobility • Kota Central Plant
+                    </p>
+                  </td>
+                </tr>
+
+                <!-- Content Area -->
+                <tr>
+                  <td style="padding: 36px 32px;">
+                    <h2 style="margin: 0 0 12px 0; font-size: 18px; font-weight: 800; color: #0f172a;">
+                      ${purposeTitle}
+                    </h2>
+                    <p style="margin: 0 0 24px 0; font-size: 14px; line-height: 1.6; color: #475569;">
+                      Hello, we received a request for ${purposeText} for your Ekosmart customer account associated with <strong style="color: #0f172a;">${email}</strong>. Use the 6-digit verification code below to proceed:
+                    </p>
+
+                    <!-- OTP Display Box -->
+                    <div style="background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%); border: 2px dashed #059669; border-radius: 16px; padding: 24px; text-align: center; margin-bottom: 24px;">
+                      <span style="font-size: 11px; font-weight: bold; text-transform: uppercase; color: #047857; letter-spacing: 1px; display: block; margin-bottom: 8px;">
+                        Your 6-Digit Verification Code
+                      </span>
+                      <div style="font-size: 38px; font-weight: 900; font-family: 'Courier New', Courier, monospace; letter-spacing: 10px; color: #064e3b; margin: 4px 0; padding: 8px 12px; display: inline-block;">
+                        ${otp}
+                      </div>
+                      <div style="margin-top: 10px; font-size: 12px; font-weight: 700; color: #b45309; background-color: #fef3c7; display: inline-block; padding: 4px 12px; border-radius: 999px;">
+                        ⏱️ Valid for 5 minutes only
+                      </div>
+                    </div>
+
+                    <!-- Security Guidance -->
+                    <div style="background-color: #f8fafc; border-left: 4px solid #059669; padding: 14px 16px; border-radius: 8px; margin-bottom: 24px;">
+                      <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #334155;">
+                        <strong>Security Warning:</strong> Never share this code with anyone. Ekosmart representatives will never ask for your OTP over phone, WhatsApp, or email.
+                      </p>
+                    </div>
+
+                    <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #64748b;">
+                      If you did not request this verification code, please ignore this email. No changes will be made to your account.
+                    </p>
+                  </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                  <td style="background-color: #0f172a; padding: 24px 30px; text-align: center; color: #94a3b8; font-size: 11px; line-height: 1.6;">
+                    <p style="margin: 0; color: #e2e8f0; font-weight: bold;">
+                      EKOSMART CLEAN ENERGY & GREEN MOBILITY
+                    </p>
+                    <p style="margin: 4px 0 0 0;">
+                      Plot No. 14, Electronic Complex, Road No. 1, IPIA, Kota, Rajasthan - 324005
+                    </p>
+                    <p style="margin: 4px 0 0 0; color: #34d399;">
+                      Central Helpline: +91 8949049003 | Email: support_otp_email@ekosmartdrivecomplain.in
+                    </p>
+                    <p style="margin: 8px 0 0 0; font-size: 10px; color: #64748b; font-family: monospace;">
+                      GSTIN: 08DTUPM4205B1Z0 | Automated System Message
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>
+  `;
+
+  const text = `Your Ekosmart ${purpose} verification code is: ${otp}\n\nThis code is valid for 5 minutes only.\nNever share this code with anyone.\n\nEkosmart Clean Energy & Green Mobility - Kota, Rajasthan\nHelpline: +91 8949049003`;
+
+  const transporter = getTransporter();
+
+  if (!transporter) {
+    console.warn(`[Ekosmart OTP Service] (Development Mode) SMTP_PASS not configured. OTP for ${purpose} [${email}]: ${otp} (Valid for 5 mins)`);
+    return { success: true, messageId: 'dev-mode-fallback' };
+  }
+
+  try {
+    const info = await transporter.sendMail({
+      from: config.from,
+      to: email,
+      subject,
+      text,
+      html,
+    });
+
+    console.log(`[Ekosmart OTP Service] >>> OTP verification email dispatched to [${email}] (Message ID: ${info.messageId}) <<<`);
+    return { success: true, messageId: info.messageId };
+  } catch (error: any) {
+    console.error(`[Ekosmart OTP Service] Error dispatching OTP email to [${email}]:`, error.message || error);
+    return { success: false, error: error.message || 'SMTP delivery failed' };
+  }
 };
 
 export interface ISoftBillEmailParams {
@@ -21,7 +254,9 @@ export interface ISoftBillEmailParams {
   templateConfig?: any;
 }
 
-export const sendInvoiceSoftCopyEmail = async (params: ISoftBillEmailParams): Promise<{ success: boolean; message: string }> => {
+export const sendInvoiceSoftCopyEmail = async (
+  params: ISoftBillEmailParams
+): Promise<{ success: boolean; message: string }> => {
   const { to, bill, customer, referralCode, coinsAwarded, customMatter, customSubject, templateConfig } = params;
 
   if (!to || !to.includes('@')) {
@@ -96,106 +331,77 @@ export const sendInvoiceSoftCopyEmail = async (params: ISoftBillEmailParams): Pr
                     <p style="margin: 2px 0 0 0; font-size: 10px; color: #94a3b8; font-family: monospace;">GSTIN: 08DTUPM4205B1Z0 | CIN: U31909RJ2023PTC085432</p>
                   </td>
                   <td align="right" valign="top">
-                    <span style="display: inline-block; background-color: #059669; color: #ffffff; font-size: 11px; font-weight: bold; padding: 4px 10px; rounded-radius: 8px; font-family: monospace;">
+                    <span style="display: inline-block; background-color: #059669; color: #ffffff; font-size: 11px; font-weight: bold; padding: 4px 10px; border-radius: 8px; font-family: monospace;">
                       ${invoiceNumber}
                     </span>
-                    <p style="margin: 6px 0 0 0; font-size: 10px; color: #94a3b8;">Date: ${invoiceDate}</p>
                   </td>
                 </tr>
               </table>
             </td>
           </tr>
 
-          <!-- Soft Matter & Greeting -->
+          <!-- Message Body -->
           <tr>
-            <td style="padding: 24px 30px; background-color: #ffffff;">
-              <div style="background-color: #f1f5f9; border-left: 4px solid #059669; padding: 16px; border-radius: 0 12px 12px 0; font-size: 13px; line-height: 1.6; color: #334155;">
+            <td style="padding: 24px 30px 16px 30px;">
+              <div style="font-size: 13px; line-height: 1.6; color: #334155; margin-bottom: 20px;">
                 ${parsedMatter}
               </div>
             </td>
           </tr>
 
-          <!-- Customer & Invoice Metadata Box -->
+          <!-- Bill Summary Card -->
           <tr>
             <td style="padding: 0 30px 20px 30px;">
-              <table width="100%" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; font-size: 12px;">
+              <table width="100%" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
                 <tr>
-                  <td width="50%" valign="top" style="padding-right: 10px;">
-                    <strong style="color: #64748b; font-size: 10px; text-transform: uppercase;">Billed Customer:</strong><br/>
-                    <strong style="font-size: 14px; color: #0f172a;">${customerName}</strong><br/>
-                    <span style="color: #475569; font-family: monospace;">📱 ${customerMobile}</span><br/>
-                    ${customerAddress ? `<span style="color: #64748b; font-size: 11px;">📍 ${customerAddress}</span>` : ''}
+                  <td width="50%" valign="top">
+                    <p style="margin: 0 0 4px 0; font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase;">Customer Details</p>
+                    <p style="margin: 0; font-size: 13px; font-weight: bold; color: #0f172a;">${customerName}</p>
+                    <p style="margin: 2px 0; font-size: 12px; color: #475569;">${customerMobile}</p>
+                    ${customerAddress ? `<p style="margin: 2px 0; font-size: 11px; color: #64748b;">${customerAddress}</p>` : ''}
                   </td>
                   <td width="50%" valign="top" align="right">
-                    <strong style="color: #64748b; font-size: 10px; text-transform: uppercase;">Payment Details:</strong><br/>
-                    <span style="display: inline-block; background-color: #d1fae5; color: #065f46; font-size: 11px; font-weight: bold; padding: 2px 8px; border-radius: 6px; margin-top: 2px;">
-                      ${paymentMode} • ${paymentStatus}
-                    </span><br/>
-                    <span style="color: #64748b; font-size: 11px;">Counter: ${showroom}</span>
+                    <p style="margin: 0 0 4px 0; font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase;">Invoice Details</p>
+                    <p style="margin: 0; font-size: 12px; color: #0f172a;">Date: <strong>${invoiceDate}</strong></p>
+                    <p style="margin: 2px 0; font-size: 12px; color: #0f172a;">Counter: <strong>${showroom}</strong></p>
+                    <p style="margin: 2px 0; font-size: 12px; color: #0f172a;">Status: <span style="color: #059669; font-weight: bold;">${paymentStatus}</span> (${paymentMode})</p>
                   </td>
                 </tr>
               </table>
-            </td>
-          </tr>
 
-          <!-- Line Items Table -->
-          <tr>
-            <td style="padding: 0 30px 20px 30px;">
-              <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse: collapse; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
-                <thead>
-                  <tr style="background-color: #f1f5f9; font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: bold; border-bottom: 1px solid #e2e8f0;">
-                    <th align="left" style="padding: 10px 8px;">Description</th>
-                    <th align="left" style="padding: 10px 8px;">Serial #</th>
-                    <th align="center" style="padding: 10px 8px;">Qty</th>
-                    <th align="right" style="padding: 10px 8px;">Rate (₹)</th>
-                    <th align="right" style="padding: 10px 8px;">Amount (₹)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${itemsHtml}
-                </tbody>
+              <!-- Product Line Items -->
+              <table width="100%" cellspacing="0" cellpadding="0" style="border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; margin-bottom: 16px;">
+                <tr style="background-color: #f1f5f9; text-align: left; font-size: 11px; text-transform: uppercase; color: #475569;">
+                  <th style="padding: 10px 8px;">Product</th>
+                  <th style="padding: 10px 8px;">Serial No.</th>
+                  <th style="padding: 10px 8px; text-align: center;">Qty</th>
+                  <th style="padding: 10px 8px; text-align: right;">Rate</th>
+                  <th style="padding: 10px 8px; text-align: right;">Amount</th>
+                </tr>
+                ${itemsHtml}
               </table>
-            </td>
-          </tr>
 
-          <!-- Summary & Totals -->
-          <tr>
-            <td style="padding: 0 30px 20px 30px;">
+              <!-- Financial Totals -->
               <table width="100%">
                 <tr>
-                  <td width="55%" valign="top">
-                    ${
-                      bill.warrantyGenerated
-                        ? `
-                      <div style="background-color: #ecfdf5; border: 1px solid #a7f3d0; padding: 12px; border-radius: 10px; font-size: 11px; color: #065f46;">
-                        <strong>🛡️ Official EBS Warranty Active</strong><br/>
-                        <span style="color: #047857;">Verified replacement & technical service covered across all authorized service depots.</span>
-                      </div>
-                    `
-                        : ''
-                    }
-                  </td>
-                  <td width="45%" align="right" valign="top">
-                    <table style="font-size: 12px; line-height: 1.8; color: #475569;">
+                  <td width="60%"></td>
+                  <td width="40%">
+                    <table width="100%" style="font-size: 12px; color: #334155;">
                       <tr>
-                        <td>Subtotal:</td>
-                        <td align="right" style="font-weight: bold; font-family: monospace;">₹${subtotal}</td>
+                        <td style="padding: 2px 0;">Subtotal:</td>
+                        <td align="right" style="padding: 2px 0; font-family: monospace;">₹${subtotal}</td>
                       </tr>
-                      ${
-                        discountTotal !== '0'
-                          ? `
-                        <tr style="color: #059669;">
-                          <td>Discount:</td>
-                          <td align="right" style="font-weight: bold; font-family: monospace;">-₹${discountTotal}</td>
+                      ${discountTotal !== '0' ? `
+                        <tr>
+                          <td style="padding: 2px 0; color: #dc2626;">Discount:</td>
+                          <td align="right" style="padding: 2px 0; color: #dc2626; font-family: monospace;">-₹${discountTotal}</td>
                         </tr>
-                      `
-                          : ''
-                      }
+                      ` : ''}
                       <tr>
-                        <td>GST Tax (18%):</td>
-                        <td align="right" style="font-weight: bold; font-family: monospace;">₹${taxTotal}</td>
+                        <td style="padding: 2px 0;">GST / Tax:</td>
+                        <td align="right" style="padding: 2px 0; font-family: monospace;">₹${taxTotal}</td>
                       </tr>
-                      <tr style="font-size: 15px; font-weight: 900; color: #0f172a; border-top: 1px solid #cbd5e1;">
+                      <tr style="border-top: 1.5px solid #0f172a; font-size: 14px; font-weight: bold; color: #0f172a;">
                         <td style="padding-top: 4px;">Grand Total:</td>
                         <td align="right" style="padding-top: 4px; color: #059669; font-family: monospace;">₹${grandTotal}</td>
                       </tr>
@@ -244,10 +450,34 @@ export const sendInvoiceSoftCopyEmail = async (params: ISoftBillEmailParams): Pr
     </html>
   `;
 
-  console.log(`[Ekosmart Soft Copy Email Service] >>> Soft Copy Invoice [${invoiceNumber}] & Referral Code [${refCode}] dispatched to [${to}] <<<`);
+  const config = getSmtpConfig();
+  const transporter = getTransporter();
 
+  if (transporter) {
+    try {
+      await transporter.sendMail({
+        from: config.from,
+        to,
+        subject,
+        html,
+      });
+      console.log(`[Ekosmart Soft Copy Email Service] >>> Soft copy invoice ${invoiceNumber} dispatched to ${to} via cPanel SMTP <<<`);
+      return {
+        success: true,
+        message: `Soft copy bill and referral code emailed successfully to ${to}.`,
+      };
+    } catch (err: any) {
+      console.error(`[Ekosmart Soft Copy Email Service] Error sending invoice to ${to}:`, err.message || err);
+      return {
+        success: false,
+        message: `Invoice generated, but email delivery encountered an error: ${err.message || 'SMTP delivery failed'}`,
+      };
+    }
+  }
+
+  console.log(`[Ekosmart Soft Copy Email Service] >>> Soft Copy Invoice [${invoiceNumber}] & Referral Code [${refCode}] simulated for [${to}] (SMTP not configured) <<<`);
   return {
     success: true,
-    message: `Soft copy bill and referral code emailed successfully to ${to}.`,
+    message: `Soft copy bill and referral code recorded for ${to}.`,
   };
 };

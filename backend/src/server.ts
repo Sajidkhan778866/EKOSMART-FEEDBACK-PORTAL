@@ -16,9 +16,16 @@ process.on('uncaughtException', (err) => {
 
 connectDB()
   .then(() => {
-    const server = app.listen(Number(PORT), '0.0.0.0', () => {
-      console.log(`[Server] Ekosmart API Server running on port ${PORT} (0.0.0.0)`);
-    });
+    const rawPort = process.env.PORT || 5000;
+    const isNamedPipeOrSocket = isNaN(Number(rawPort));
+
+    const server = isNamedPipeOrSocket
+      ? app.listen(rawPort, () => {
+          console.log(`[Server] Ekosmart API Server running on Passenger socket/pipe: ${rawPort}`);
+        })
+      : app.listen(Number(rawPort), '0.0.0.0', () => {
+          console.log(`[Server] Ekosmart API Server running on port ${rawPort} (0.0.0.0)`);
+        });
 
 
     const shutdown = async () => {
