@@ -4,6 +4,8 @@ import {
   verifyRegisterOtp,
   sendLoginOtp,
   verifyLoginOtp,
+  sendComplaintOtp,
+  verifyComplaintOtp,
   testSmtpConnectionController,
   getCustomerProfile,
   updateCustomerProfile,
@@ -38,6 +40,8 @@ router.post('/auth/send-register-otp', sendRegisterOtp);
 router.post('/auth/verify-register-otp', verifyRegisterOtp);
 router.post('/auth/send-login-otp', sendLoginOtp);
 router.post('/auth/verify-login-otp', verifyLoginOtp);
+router.post('/auth/send-complaint-otp', sendComplaintOtp);
+router.post('/auth/verify-complaint-otp', verifyComplaintOtp);
 router.get('/auth/test-smtp', testSmtpConnectionController);
 router.post('/auth/test-smtp', testSmtpConnectionController);
 router.get('/referral-settings/public', getReferralSettings);

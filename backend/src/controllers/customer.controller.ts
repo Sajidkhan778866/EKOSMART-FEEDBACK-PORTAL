@@ -576,6 +576,109 @@ export const testSmtpConnectionController = async (req: Request, res: Response) 
   }
 };
 
+// POST /api/v1/customers/auth/send-complaint-otp - Send OTP for complaint verification
+export const sendComplaintOtp = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email address is required' });
+    }
+
+    const cleanEmail = String(email).toLowerCase().trim();
+    if (!cleanEmail.includes('@')) {
+      return res.status(400).json({ success: false, message: 'Please provide a valid email address' });
+    }
+
+    const rateCheck = checkOtpRateLimit(cleanEmail);
+    if (!rateCheck.allowed) {
+      return res.status(429).json({ success: false, message: rateCheck.message });
+    }
+
+    const otp = crypto.randomInt(100000, 1000000).toString();
+    const expiresAt = Date.now() + 5 * 60 * 1000;
+
+    otpCache.set(cleanEmail, {
+      otp,
+      expiresAt,
+      attempts: 0,
+      payload: { type: 'complaint' },
+    });
+
+    const emailResult = await sendOtpEmail(cleanEmail, otp, 'Complaint');
+    const isSmtpConfigured = Boolean(process.env.SMTP_PASS && process.env.SMTP_PASS.trim());
+
+    res.json({
+      success: true,
+      message: emailResult.success
+        ? `A 6-digit verification code has been sent to ${cleanEmail}. It expires in 5 minutes.`
+        : `Verification code generated. (SMTP note: ${emailResult.error || 'delivery notice'})`,
+      ...(isSmtpConfigured && process.env.NODE_ENV === 'production' ? {} : { debugOtp: otp, otp }),
+    });
+  } catch (error: any) {
+    console.error('Failed to send complaint OTP:', error);
+    res.status(500).json({ success: false, message: error.message || 'Failed to send OTP' });
+  }
+};
+
+// POST /api/v1/customers/auth/verify-complaint-otp - Verify complaint OTP
+export const verifyComplaintOtp = async (req: Request, res: Response) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+      return res.status(400).json({ success: false, message: 'Email and verification code are required' });
+    }
+
+    const cleanEmail = String(email).toLowerCase().trim();
+    const cleanOtp = String(otp).trim();
+
+    const cached = otpCache.get(cleanEmail);
+    if (!cached) {
+      return res.status(400).json({
+        success: false,
+        message: 'No verification code requested or it has expired. Please request a new code.',
+      });
+    }
+
+    if (Date.now() > cached.expiresAt) {
+      otpCache.delete(cleanEmail);
+      return res.status(400).json({
+        success: false,
+        message: 'Verification code has expired (5-minute limit). Please request a new code.',
+      });
+    }
+
+    cached.attempts = (cached.attempts || 0) + 1;
+    if (cached.attempts > 5) {
+      otpCache.delete(cleanEmail);
+      return res.status(429).json({
+        success: false,
+        message: 'Too many incorrect attempts. This code has been invalidated. Please request a new one.',
+      });
+    }
+
+    const isDevFallback = !process.env.SMTP_PASS && process.env.NODE_ENV !== 'production' && cleanOtp === '123456';
+    if (cached.otp !== cleanOtp && !isDevFallback) {
+      const remaining = Math.max(0, 5 - cached.attempts);
+      return res.status(400).json({
+        success: false,
+        message: `Invalid verification code. Please check your email and try again.${remaining > 0 ? ` (${remaining} attempt${remaining > 1 ? 's' : ''} remaining)` : ''}`,
+      });
+    }
+
+    // Invalidate immediately upon successful verification
+    otpCache.delete(cleanEmail);
+
+    res.json({
+      success: true,
+      message: 'Email successfully verified!',
+    });
+  } catch (error: any) {
+    console.error('Failed to verify complaint OTP:', error);
+    res.status(500).json({ success: false, message: error.message || 'Failed to verify OTP' });
+  }
+};
+
+
 
 // ==============================================================================
 // 2. CUSTOMER SELF-SERVICE PORTAL (PROTECTED)

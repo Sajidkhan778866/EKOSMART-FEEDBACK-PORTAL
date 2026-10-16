@@ -322,32 +322,52 @@ export const RegisterComplaint = () => {
 
   const handleSendEmailOtp = async () => {
     setOtpError('');
-    if (!customerEmail || !customerEmail.includes('@')) {
+    const cleanEmail = customerEmail.trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@')) {
       setOtpError('Please enter a valid Email Address to receive OTP.');
       return;
     }
 
     setOtpSending(true);
     try {
-      // Generate a 6-digit verification code
-      const generatedCode = Math.floor(100000 + Math.random() * 900000).toString();
-      setOtpCode(generatedCode);
-      setOtpSent(true);
-      setOtpError('');
-    } catch {
-      setOtpError('Network error while sending OTP.');
+      const res = await axios.post(`${API_BASE}/customers/auth/send-complaint-otp`, {
+        email: cleanEmail,
+      });
+      if (res.data?.success) {
+        setOtpCode(res.data.debugOtp || '');
+        setOtpSent(true);
+        setOtpError('');
+      } else {
+        setOtpError(res.data?.message || 'Failed to send verification code.');
+      }
+    } catch (err: any) {
+      setOtpError(err.response?.data?.message || 'Network error while sending verification code.');
     } finally {
       setOtpSending(false);
     }
   };
 
-  const handleVerifyEmailOtp = () => {
+  const handleVerifyEmailOtp = async () => {
     setOtpError('');
-    if (userOtp.trim() === otpCode || userOtp.trim() === '123456') {
-      setOtpVerified(true);
-      setOtpError('');
-    } else {
-      setOtpError('Invalid OTP code. Please enter the correct code.');
+    const cleanOtp = userOtp.trim();
+    if (!cleanOtp) {
+      setOtpError('Please enter the 6-digit verification code.');
+      return;
+    }
+
+    try {
+      const res = await axios.post(`${API_BASE}/customers/auth/verify-complaint-otp`, {
+        email: customerEmail.trim().toLowerCase(),
+        otp: cleanOtp,
+      });
+      if (res.data?.success) {
+        setOtpVerified(true);
+        setOtpError('');
+      } else {
+        setOtpError(res.data?.message || 'Invalid verification code.');
+      }
+    } catch (err: any) {
+      setOtpError(err.response?.data?.message || 'Invalid or expired verification code.');
     }
   };
 
@@ -623,9 +643,15 @@ export const RegisterComplaint = () => {
                       <div className="mt-3 p-3.5 bg-blue-50/80 border border-blue-200 rounded-xl space-y-2">
                         <div className="flex justify-between items-center text-[11px] text-blue-900">
                           <span>Verification code sent to email:</span>
-                          <span className="font-mono bg-white px-2 py-0.5 rounded border border-blue-300 font-bold text-blue-700">
-                            Demo OTP: {otpCode}
-                          </span>
+                          {otpCode ? (
+                            <span className="font-mono bg-white px-2 py-0.5 rounded border border-blue-300 font-bold text-blue-700">
+                              Dev OTP: {otpCode}
+                            </span>
+                          ) : (
+                            <span className="text-emerald-700 font-medium">
+                              Sent to inbox (5m limit)
+                            </span>
+                          )}
                         </div>
                         <div className="flex items-center gap-2">
                           <input

@@ -121,11 +121,23 @@ export const verifySmtpConnection = async (): Promise<{
 export const sendOtpEmail = async (
   email: string,
   otp: string,
-  purpose: 'Registration' | 'Login'
+  purpose: 'Registration' | 'Login' | 'Complaint' | 'General' = 'General'
 ): Promise<{ success: boolean; messageId?: string; error?: string }> => {
   const config = getSmtpConfig();
-  const purposeTitle = purpose === 'Registration' ? 'Customer Account Registration' : 'Customer Portal Login Verification';
-  const purposeText = purpose === 'Registration' ? 'registering a new Ekosmart customer account' : 'logging into your Ekosmart customer account';
+  let purposeTitle = 'Verification Code';
+  let purposeText = 'verifying your request';
+
+  if (purpose === 'Registration') {
+    purposeTitle = 'Customer Account Registration';
+    purposeText = 'registering a new Ekosmart customer account';
+  } else if (purpose === 'Login') {
+    purposeTitle = 'Customer Portal Login Verification';
+    purposeText = 'logging into your Ekosmart customer account';
+  } else if (purpose === 'Complaint') {
+    purposeTitle = 'Service Complaint Verification';
+    purposeText = 'submitting a service or battery complaint ticket';
+  }
+
   const subject = `Your Ekosmart Verification Code: ${otp} (Valid for 5 minutes)`;
 
   const html = `
