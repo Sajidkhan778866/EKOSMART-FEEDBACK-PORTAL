@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { MoreVertical, Menu, LogOut, Package, User } from 'lucide-react';
+import { MoreVertical, Menu, LogOut, User } from 'lucide-react';
 import Sidebar from './Sidebar';
 import { useAuth } from '../context/AuthContext';
 import { EbsLogo } from './EbsLogo';
@@ -66,14 +66,6 @@ const Layout = () => {
 
           {/* Right Header User / Actions Section */}
           <div className="flex items-center gap-2 sm:gap-3 relative">
-            <button
-              onClick={() => navigate('/stock')}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
-            >
-              <Package size={14} />
-              <span>Stock Manager</span>
-            </button>
-
             {/* User Profile Pill with 3-Dot Options */}
             <div className="relative">
               <button
