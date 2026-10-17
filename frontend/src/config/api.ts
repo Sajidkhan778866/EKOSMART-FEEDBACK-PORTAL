@@ -32,8 +32,8 @@ const getDynamicHost = () => {
     return import.meta.env.VITE_API_URL.replace(/\/api\/v1\/?$/, '').replace(/\/api\/?$/, '');
   }
   if (typeof window !== 'undefined' && window.location) {
-    const { hostname, protocol, port } = window.location;
-    if (hostname.endsWith('.vercel.app') || (!port && hostname !== 'localhost' && hostname !== '127.0.0.1')) {
+    const { hostname, protocol, origin, port } = window.location;
+    if (hostname.endsWith('.vercel.app')) {
       // If deployed on Vercel and not backend itself, route to active deployed backend
       if (!hostname.startsWith('backend-') && !hostname.startsWith('api-')) {
         return 'https://backend-sajidkhan778866s-projects.vercel.app';
@@ -41,7 +41,11 @@ const getDynamicHost = () => {
       if (hostname.startsWith('backend-') && hostname !== 'backend-sajidkhan778866s-projects.vercel.app') {
         return 'https://backend-sajidkhan778866s-projects.vercel.app';
       }
-      return window.location.origin;
+      return origin;
+    }
+    // On cPanel or custom production domain (e.g. ekosmartdrive.in)
+    if (!port && hostname !== 'localhost' && hostname !== '127.0.0.1') {
+      return origin;
     }
     if (hostname && hostname !== 'localhost' && hostname !== '127.0.0.1') {
       return `${protocol}//${hostname}:5000`;
@@ -72,7 +76,7 @@ export const ADMIN_PORTAL_URL =
   window.location.hostname &&
   window.location.hostname !== 'localhost' &&
   window.location.hostname !== '127.0.0.1'
-    ? 'https://ekosmartadminportal.vercel.app'
+    ? `${window.location.origin}/admin`
     : 'http://localhost:5001');
 
 export const EMPLOYEE_PORTAL_URL =
@@ -81,7 +85,7 @@ export const EMPLOYEE_PORTAL_URL =
   window.location.hostname &&
   window.location.hostname !== 'localhost' &&
   window.location.hostname !== '127.0.0.1'
-    ? 'https://ekosmartemployeeportal.vercel.app'
+    ? `${window.location.origin}/employee`
     : 'http://localhost:5002');
 
 /**

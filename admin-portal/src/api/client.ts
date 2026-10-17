@@ -51,14 +51,18 @@ export const getDynamicHost = () => {
   }
   if (typeof window !== 'undefined' && window.location) {
     const { hostname, protocol, origin, port } = window.location;
-    // On Vercel or cloud deployment without explicit port
-    if (hostname.endsWith('.vercel.app') || (!port && hostname !== 'localhost' && hostname !== '127.0.0.1')) {
+    // On Vercel cloud deployment without explicit port
+    if (hostname.endsWith('.vercel.app')) {
       if (!hostname.startsWith('backend-') && !hostname.startsWith('api-')) {
         return 'https://backend-sajidkhan778866s-projects.vercel.app';
       }
       if (hostname.startsWith('backend-') && hostname !== 'backend-sajidkhan778866s-projects.vercel.app') {
         return 'https://backend-sajidkhan778866s-projects.vercel.app';
       }
+      return origin;
+    }
+    // On cPanel or custom production domain (e.g. ekosmartdrive.in)
+    if (!port && hostname !== 'localhost' && hostname !== '127.0.0.1') {
       return origin;
     }
     // On local LAN / Wi-Fi IP address
