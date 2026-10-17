@@ -8,6 +8,7 @@ Options -Indexes
 # 2. SPA URL Rewriting for Single Page Application
 <IfModule mod_rewrite.c>
   RewriteEngine On
+  RewriteBase /employee/
 
   # Force HTTPS
   RewriteCond %{HTTPS} off

@@ -32,9 +32,11 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 function App() {
+  const basename = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin') ? '/admin' : '/';
+
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <BrowserRouter basename={basename}>
         <Routes>
           <Route
             path="/login"
