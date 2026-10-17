@@ -125,10 +125,8 @@ app.use('/api/v1/uploads', express.static(path.join(process.cwd(), 'backend/uplo
 
 // Health Check with Database Status
 const healthCheckHandler = async (_req: Request, res: Response) => {
-  try {
-    await connectDB();
-  } catch (err: any) {
-    // error is captured in lastConnectionError
+  if (!isDbConnected()) {
+    connectDB().catch(() => {});
   }
   const dbStatus = getDbStatus();
   const healthy = isDbConnected();

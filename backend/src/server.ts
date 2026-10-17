@@ -16,14 +16,14 @@ process.on('uncaughtException', (err) => {
 
 // Start listening immediately on Passenger socket/port
 const rawPort = process.env.PORT || 5000;
-const isNamedPipeOrSocket = isNaN(Number(rawPort));
+const isPassenger = typeof (global as any).PhusionPassenger !== 'undefined' || rawPort === 'passenger';
 
-const server = isNamedPipeOrSocket
-  ? app.listen(rawPort, () => {
-      console.log(`[Server] Ekosmart API Server running on Passenger socket/pipe: ${rawPort}`);
+const server = isPassenger
+  ? app.listen('passenger', () => {
+      console.log('[Server] Ekosmart API Server running under Phusion Passenger');
     })
-  : app.listen(Number(rawPort), '0.0.0.0', () => {
-      console.log(`[Server] Ekosmart API Server running on port ${rawPort} (0.0.0.0)`);
+  : app.listen(rawPort, () => {
+      console.log(`[Server] Ekosmart API Server running on port ${rawPort}`);
     });
 
 // Connect to MongoDB asynchronously without blocking HTTP listener

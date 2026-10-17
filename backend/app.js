@@ -27,3 +27,6 @@ if (!fs.existsSync(distServerPath)) {
 
 // Require and run the compiled server
 require(distServerPath);
+
+// Export the underlying Express application instance for Passenger frameworks
+module.exports = require('./dist/app').default || require('./dist/app');
