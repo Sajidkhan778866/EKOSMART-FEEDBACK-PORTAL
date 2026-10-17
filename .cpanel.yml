@@ -17,3 +17,7 @@ deployment:
     - /bin/cp -a backend/dist/. "$API_DEPLOY_PATH/dist/"
     - /bin/cp backend/package.json "$API_DEPLOY_PATH"
     - /bin/cp backend/app.js "$API_DEPLOY_PATH"
+    - /bin/mkdir -p "$DEPLOY_PATH/api"
+    - /bin/cp api/.htaccess "$DEPLOY_PATH/api/.htaccess"
+    - /bin/mkdir -p "$API_DEPLOY_PATH/tmp"
+    - /bin/touch "$API_DEPLOY_PATH/tmp/restart.txt"
