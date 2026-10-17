@@ -88,8 +88,8 @@ const defaultContactCMS: ContactCMSData = {
   helplinePhone: '+91 8949049003',
   alternatePhone: '+91 9549730483',
   whatsappNumber: '+91 8949049003',
-  supportEmail: 'support@ekosmartdrive.in',
-  salesEmail: 'sales@ekosmartdrive.in',
+  supportEmail: 'Smartdrive5640@gmail.com',
+  salesEmail: 'Smartdrive5640@gmail.com',
   plantAddress: 'Rang Talab, Near by Star Kids School, Kota, Rajasthan - 324002',
   officeHours: '10:00 AM to 6:30 PM (Mon - Sat)',
   gstin: '08DTUPM4205B1Z0',
@@ -106,7 +106,7 @@ const defaultContactCMS: ContactCMSData = {
     {
       name: 'Lithium Battery Solution (EBS)',
       phone: '+91 8949049003',
-      email: 'battery@ekosmartdrive.in',
+      email: 'Smartdrive5640@gmail.com',
       whatsapp: '+91 8949049003',
       inCharge: 'Lead Battery Diagnostic Engineer',
       officeHours: '10:00 AM - 6:30 PM (Mon - Sat)',
@@ -115,7 +115,7 @@ const defaultContactCMS: ContactCMSData = {
     {
       name: 'EV Spare Parts Wholesale/Retail',
       phone: '+91 8949049003',
-      email: 'parts@ekosmartdrive.in',
+      email: 'Smartdrive5640@gmail.com',
       whatsapp: '+91 8949049003',
       inCharge: 'Parts Logistics Manager',
       officeHours: '10:00 AM - 6:30 PM (Mon - Sat)',
@@ -124,7 +124,7 @@ const defaultContactCMS: ContactCMSData = {
     {
       name: 'Drive Rental Assistance',
       phone: '+91 8949049003',
-      email: 'rental@ekosmartdrive.in',
+      email: 'Smartdrive5640@gmail.com',
       whatsapp: '+91 8949049003',
       inCharge: 'Fleet Mobility Lead',
       officeHours: '24/7 Helpline Support',
@@ -133,7 +133,7 @@ const defaultContactCMS: ContactCMSData = {
     {
       name: 'Showroom & Dealership Inquiries',
       phone: '+91 8949049003',
-      email: 'showroom@ekosmartdrive.in',
+      email: 'Smartdrive5640@gmail.com',
       whatsapp: '+91 8949049003',
       inCharge: 'Dealership Franchise Head',
       officeHours: '10:00 AM - 7:00 PM (Mon - Sat)',
@@ -142,7 +142,7 @@ const defaultContactCMS: ContactCMSData = {
     {
       name: 'Plant Commercial Warranty Inspection',
       phone: '+91 8949049003',
-      email: 'warranty@ekosmartdrive.in',
+      email: 'Smartdrive5640@gmail.com',
       whatsapp: '+91 8949049003',
       inCharge: 'Chief Quality & Warranty Officer',
       officeHours: '10:00 AM - 6:00 PM (Mon - Sat)',

@@ -383,7 +383,7 @@ pages_html.append(render_page(8, "PAGE 8 — PUBLIC CONTACT & LEGAL POLICY MANAG
     <ul style="margin: 2px 0 0 10px; padding: 0; font-size: 7.1pt;">
       <li><strong>Central Plant:</strong> Electronic Complex, Road No. 1, IPIA, Kota, Rajasthan.</li>
       <li><strong>Phone Directory:</strong> +91 8949049003 / +91 9549730483.</li>
-      <li><strong>Official Email:</strong> hr@ekosmartdrive.in / support@ekosmartdrive.in.</li>
+      <li><strong>Official Email:</strong> hr@ekosmartdrive.in / Smartdrive5640@gmail.com.</li>
       <li><strong>Working Hours:</strong> Monday – Saturday: 09:00 AM – 07:00 PM.</li>
     </ul>
   </div>

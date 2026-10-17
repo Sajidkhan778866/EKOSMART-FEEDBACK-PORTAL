@@ -399,7 +399,7 @@ export const getContactTemplate = (): ISectionConfig[] => [
           companyName: 'EKOSMART EV BATTERY SOLUTION',
           address: 'Plot No. 12, Electronic Complex, Road No. 1, IPIA, Kota, Rajasthan - 324005',
           phones: ['+91 8949049003', '+91 9549730483'],
-          emails: ['support@ekosmartdrive.in', 'hr@ekosmartdrive.in'],
+          emails: ['Smartdrive5640@gmail.com', 'hr@ekosmartdrive.in'],
           workingHours: 'Monday – Saturday: 09:00 AM – 07:00 PM (Closed on Sunday)',
         },
       },

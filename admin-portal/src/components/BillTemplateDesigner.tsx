@@ -348,7 +348,7 @@ export const DEFAULT_TEMPLATES: IBillTemplate[] = [
       emailMatter: 'Dear {{customerName}},\n\nThank you for choosing EKOSMART Clean Energy & Green Mobility. Please find your official GST Tax Invoice, Warranty Certificate registration, and exclusive Customer Referral Code details attached below.\n\nYour Unique Referral Code is: {{referralCode}}\nShare this code with your friends and family so they receive {{welcomeCoins}} Coins, and you receive {{referrerCoins}} Coins on their qualifying purchase!',
       referralBoxTitle: 'Ekosmart Referral & Rewards Program',
       referralBoxMessage: 'Share your referral code {{referralCode}} with friends & earn {{coins}} Coins on every qualifying purchase!',
-      footerHelplineText: 'For billing assistance or warranty queries, contact Kota Helpline: +91 8949049003 | support@ekosmartdrive.in',
+      footerHelplineText: 'For billing assistance or warranty queries, contact Kota Helpline: +91 8949049003 | Smartdrive5640@gmail.com',
       showReferralCode: true,
       showCoinsSummary: true,
       showWarrantyBadge: true,
@@ -488,7 +488,7 @@ export const normalizeTemplate = (tpl?: any): IBillTemplate => {
     tagline: company.tagline || company.subtitle || 'Clean Energy & Smart Electric Mobility',
     address: company.address || 'Plot No. 14, Electronic Complex, Road No. 1, IPIA, Kota, Rajasthan - 324005',
     phone: company.phone || '+91 8949049003 / +91 9549730483',
-    email: company.email || (isSalary ? 'hr@ekosmartdrive.in' : 'support@ekosmartdrive.in'),
+    email: company.email || (isSalary ? 'hr@ekosmartdrive.in' : 'Smartdrive5640@gmail.com'),
     website: company.website || 'www.ekosmartdrive.in',
     gstin: company.gstin || '08DTUPM4205B1Z0',
     cin: company.cin || 'U31909RJ2023PTC085432',
@@ -637,7 +637,7 @@ export const normalizeTemplate = (tpl?: any): IBillTemplate => {
     emailMatter: tpl.softBillEmailConfig?.emailMatter || 'Dear {{customerName}},\n\nThank you for choosing EKOSMART Clean Energy & Green Mobility. Please find your official GST Tax Invoice, Warranty Certificate registration, and exclusive Customer Referral Code details attached below.\n\nYour Unique Referral Code is: {{referralCode}}\nShare this code with your friends and family so they receive {{welcomeCoins}} Coins, and you receive {{referrerCoins}} Coins on their qualifying purchase!',
     referralBoxTitle: tpl.softBillEmailConfig?.referralBoxTitle || 'Ekosmart Referral & Rewards Program',
     referralBoxMessage: tpl.softBillEmailConfig?.referralBoxMessage || 'Share your referral code {{referralCode}} with friends & earn {{coins}} Coins on every qualifying purchase!',
-    footerHelplineText: tpl.softBillEmailConfig?.footerHelplineText || 'For billing assistance or warranty queries, contact Kota Helpline: +91 8949049003 | support@ekosmartdrive.in',
+    footerHelplineText: tpl.softBillEmailConfig?.footerHelplineText || 'For billing assistance or warranty queries, contact Kota Helpline: +91 8949049003 | Smartdrive5640@gmail.com',
     showReferralCode: tpl.softBillEmailConfig?.showReferralCode !== undefined ? Boolean(tpl.softBillEmailConfig.showReferralCode) : true,
     showCoinsSummary: tpl.softBillEmailConfig?.showCoinsSummary !== undefined ? Boolean(tpl.softBillEmailConfig.showCoinsSummary) : true,
     showWarrantyBadge: tpl.softBillEmailConfig?.showWarrantyBadge !== undefined ? Boolean(tpl.softBillEmailConfig.showWarrantyBadge) : true,
@@ -3882,7 +3882,7 @@ export const BillTemplateDesigner: React.FC<BillTemplateDesignerProps> = ({
                       },
                     })
                   }
-                  placeholder="Helpline: +91 8949049003 | support@ekosmartdrive.in"
+                  placeholder="Helpline: +91 8949049003 | Smartdrive5640@gmail.com"
                   className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
                 />
               </div>
@@ -4141,7 +4141,7 @@ export const BillTemplateDesigner: React.FC<BillTemplateDesignerProps> = ({
               <div className="bg-slate-100 p-3 border-b border-slate-200 text-[11px] space-y-1 text-slate-600">
                 <div className="flex justify-between items-center">
                   <div>
-                    <span className="font-bold text-slate-700">From:</span> EKOSMART Billing Counter &lt;support@ekosmartdrive.in&gt;
+                    <span className="font-bold text-slate-700">From:</span> EKOSMART Billing Counter &lt;Smartdrive5640@gmail.com&gt;
                   </div>
                   <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-bold rounded-md text-[10px]">
                     Live Email Mockup

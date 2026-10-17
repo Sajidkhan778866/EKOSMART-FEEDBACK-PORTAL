@@ -779,7 +779,7 @@ const defaultFallbackContent: ICMSContent = {
     disclaimer: 'Official customer support, complaint tracking & battery warranty verification portal',
     address: 'Rang Talab, Near by Star Kids School, Kota, Rajasthan - 324002',
     phone: '+91 8949049003',
-    email: 'support@ekosmartdrive.in',
+    email: 'Smartdrive5640@gmail.com',
     website: 'www.ekosmartdrive.in',
     gstin: '08DTUPM4205B1Z0',
     officeHours: '10:00 AM - 6:30 PM (Mon - Sat)',
@@ -825,7 +825,7 @@ const defaultFallbackContent: ICMSContent = {
         links: [
           { label: 'Kota Plant Directory', href: '/contact' },
           { label: 'Helpline: +91 8949049003', href: 'tel:+918949049003', isExternal: true },
-          { label: 'support@ekosmartdrive.in', href: 'mailto:support@ekosmartdrive.in', isExternal: true },
+          { label: 'Smartdrive5640@gmail.com', href: 'mailto:Smartdrive5640@gmail.com', isExternal: true },
           { label: 'Kota Plant Google Map', href: 'https://maps.google.com/?q=Kota,Rajasthan', isExternal: true },
         ],
       },
@@ -853,7 +853,7 @@ const defaultFallbackContent: ICMSContent = {
     helplinePhone: '+91 8949049003',
     alternatePhone: '+91 9549730483',
     whatsappNumber: '+91 8949049003',
-    supportEmail: 'support@ekosmartdrive.in',
+    supportEmail: 'Smartdrive5640@gmail.com',
     salesEmail: 'sales@ekosmartdrive.in',
     plantAddress: 'Rang Talab, Near by Star Kids School, Kota, Rajasthan - 324002',
     officeHours: 'Mon - Sat: 10:00 AM - 6:30 PM',
@@ -1026,7 +1026,7 @@ const defaultFallbackContent: ICMSContent = {
     whatsappBtnBg: '#25D366',
     whatsappBtnTextColor: '#ffffff',
     alternatePhone: '+91 8949049003',
-    supportEmail: 'support@ekosmartdrive.in',
+    supportEmail: 'Smartdrive5640@gmail.com',
   },
   quickActionsConfig: {
     isVisible: true,
@@ -1397,7 +1397,7 @@ const ContentManager = () => {
     return {
       name: optName,
       phone: content.contactInfo?.helplinePhone || '+91 8949049003',
-      email: content.contactInfo?.supportEmail || 'support@ekosmartdrive.in',
+      email: content.contactInfo?.supportEmail || 'Smartdrive5640@gmail.com',
       whatsapp: content.contactInfo?.whatsappNumber || '+91 8949049003',
       inCharge: 'Department In-Charge',
       officeHours: content.contactInfo?.officeHours || '10:00 AM - 6:30 PM (Mon - Sat)',
@@ -7958,7 +7958,7 @@ const ContentManager = () => {
                             batteryBanner: { ...cur, supportEmail: e.target.value },
                           });
                         }}
-                        placeholder="support@ekosmartdrive.in"
+                        placeholder="Smartdrive5640@gmail.com"
                         className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-mono text-xs"
                       />
                     </div>
@@ -10049,7 +10049,7 @@ const ContentManager = () => {
               <label className="block font-semibold text-slate-700 mb-1">Official Support Email</label>
               <input
                 type="text"
-                value={content.footer.email || 'support@ekosmartdrive.in'}
+                value={content.footer.email || 'Smartdrive5640@gmail.com'}
                 onChange={(e) =>
                   setContent({
                     ...content,
@@ -10420,7 +10420,7 @@ const ContentManager = () => {
                 <ul className="list-disc list-inside space-y-0.5 text-emerald-700">
                   <li><strong>Helpline:</strong> Direct phone call link (<code className="bg-emerald-100 px-1 rounded">tel:{content.footer.phone || '+918949049003'}</code>)</li>
                   <li><strong>WhatsApp:</strong> Direct encrypted chat link (<code className="bg-emerald-100 px-1 rounded">wa.me</code>)</li>
-                  <li><strong>Support Email:</strong> Mail client trigger (<code className="bg-emerald-100 px-1 rounded">mailto:{content.footer.email || 'support@ekosmartdrive.in'}</code>)</li>
+                  <li><strong>Support Email:</strong> Mail client trigger (<code className="bg-emerald-100 px-1 rounded">mailto:{content.footer.email || 'Smartdrive5640@gmail.com'}</code>)</li>
                   <li><strong>Kota Plant Address:</strong> Google Maps navigation link</li>
                   <li><strong>Department Portals:</strong> One-click navigation to Warranty Check, Service Tickets, and Full Directory</li>
                 </ul>

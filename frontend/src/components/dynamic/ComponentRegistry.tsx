@@ -950,7 +950,7 @@ export const ContactDirectoryBlock: React.FC<{ props: any }> = ({ props = {} }) 
     title = 'Customer Support & Works Location',
     subtitle = 'Reach out for warranty claims, technical consultations, or dealership queries.',
     phone = '+91 8949049003',
-    email = 'support@ekosmartdrive.in',
+    email = 'Smartdrive5640@gmail.com',
     address = 'Plot No. 14, Electronic Complex, Road No. 1, IPIA, Kota, Rajasthan - 324005',
     officeHours = '10:00 AM to 6:30 PM (Monday - Saturday)',
   } = props;

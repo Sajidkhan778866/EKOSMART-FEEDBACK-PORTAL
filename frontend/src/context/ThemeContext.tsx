@@ -140,7 +140,7 @@ const defaultTheme: IThemeConfig = {
     disclaimer: 'Official customer support, complaint tracking & battery warranty verification portal',
     address: 'Plot No. 14, Electronic Complex, Road No. 1, IPIA, Kota, Rajasthan - 324005',
     phone: '+91 8949049003',
-    email: 'support@ekosmartdrive.in',
+    email: 'Smartdrive5640@gmail.com',
     website: 'www.ekosmartdrive.in',
     gstin: '08DTUPM4205B1Z0',
     officeHours: '10:00 AM to 6:30 PM (Mon - Sat)',

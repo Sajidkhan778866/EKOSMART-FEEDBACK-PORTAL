@@ -339,7 +339,7 @@ const defaultFooter: FooterContent = {
   disclaimer: 'Official customer support, complaint tracking & battery warranty verification portal',
   address: 'Rang Talab, Near by Star Kids School, Kota, Rajasthan - 324002',
   phone: '+91 8949049003',
-  email: 'support@ekosmartdrive.in',
+  email: 'Smartdrive5640@gmail.com',
   website: 'www.ekosmartdrive.in',
   gstin: '08DTUPM4205B1Z0',
   officeHours: '10:00 AM to 6:30 PM (Mon - Sat)',
@@ -525,7 +525,7 @@ const Layout = () => {
       ) || {
         name: divName,
         phone: footer.phone || '+91 8949049003',
-        email: footer.email || 'support@ekosmartdrive.in',
+        email: footer.email || 'Smartdrive5640@gmail.com',
         whatsapp: footer.whatsappNumber || footer.phone || '+91 8949049003',
       }
     );
@@ -907,7 +907,7 @@ const Layout = () => {
                     )}
 
                     <a
-                      href={`mailto:${footer.email || 'support@ekosmartdrive.in'}`}
+                      href={`mailto:${footer.email || 'Smartdrive5640@gmail.com'}`}
                       onClick={() => setNavContactDropdownOpen(false)}
                       className="flex items-center gap-3 px-4 py-2.5 hover:bg-blue-50 text-slate-700 hover:text-blue-800 transition"
                     >
@@ -917,7 +917,7 @@ const Layout = () => {
                       <div>
                         <div className="font-bold text-slate-900 text-xs">Email Official Support</div>
                         <div className="text-[11px] text-slate-500 font-mono truncate max-w-[180px]">
-                          {footer.email || 'support@ekosmartdrive.in'}
+                          {footer.email || 'Smartdrive5640@gmail.com'}
                         </div>
                       </div>
                     </a>
@@ -1532,11 +1532,11 @@ const Layout = () => {
                   )}
 
                   <a
-                    href={`mailto:${footer.email || 'support@ekosmartdrive.in'}`}
+                    href={`mailto:${footer.email || 'Smartdrive5640@gmail.com'}`}
                     className="flex items-center gap-2 text-slate-400 hover:text-blue-400 text-[11px] font-mono transition"
                   >
                     <Mail size={13} className="text-blue-400" />
-                    <span className="truncate">{footer.email || 'support@ekosmartdrive.in'}</span>
+                    <span className="truncate">{footer.email || 'Smartdrive5640@gmail.com'}</span>
                   </a>
 
                   <a
@@ -1700,12 +1700,12 @@ const Layout = () => {
 
               {/* Clickable Email */}
               <a
-                href={`mailto:${footer.email || 'support@ekosmartdrive.in'}`}
+                href={`mailto:${footer.email || 'Smartdrive5640@gmail.com'}`}
                 className="flex items-center gap-2.5 text-slate-300 hover:text-emerald-400 transition group"
                 title="Click to Compose Email"
               >
                 <Mail size={15} className="text-emerald-400 shrink-0 group-hover:scale-110 transition-transform" />
-                <span className="font-mono group-hover:underline">{footer.email || 'support@ekosmartdrive.in'}</span>
+                <span className="font-mono group-hover:underline">{footer.email || 'Smartdrive5640@gmail.com'}</span>
               </a>
 
               {/* Clickable WhatsApp Hotline */}

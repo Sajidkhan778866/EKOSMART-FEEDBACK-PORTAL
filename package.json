@@ -48,7 +48,6 @@
     "@types/multer": "^2.2.0",
     "@types/node": "^22.20.2",
     "@types/nodemailer": "^8.0.2",
-    "@vercel/node": "^5.1.10",
     "typescript": "^5.9.3"
   }
 }

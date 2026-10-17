@@ -275,7 +275,7 @@ const defaultFooter: IFooterConfig = {
   socialLinks: [
     { platform: 'whatsapp', url: 'https://wa.me/918949049003', isVisible: true },
     { platform: 'phone', url: 'tel:+918949049003', isVisible: true },
-    { platform: 'mail', url: 'mailto:support@ekosmartdrive.in', isVisible: true },
+    { platform: 'mail', url: 'mailto:Smartdrive5640@gmail.com', isVisible: true },
   ],
   badges: [
     { title: 'ISO 9001:2015', subtitle: 'Certified Manufacturing & Servicing', icon: 'Award' },

@@ -595,7 +595,7 @@ const RenderComponentPreview: React.FC<{ cmp: IComponentConfig; theme: IThemeCon
             <p className="text-xs text-slate-300">Plot No. 14, Electronic Complex, Road No. 1, IPIA, Kota - 324005</p>
             <div className="pt-2 text-xs font-mono text-slate-200 space-y-1">
               <p>📞 Phone: +91 8949049003</p>
-              <p>✉️ Email: support@ekosmartdrive.in</p>
+              <p>✉️ Email: Smartdrive5640@gmail.com</p>
               <p>⏰ Timings: 10:00 AM - 6:30 PM (Mon-Sat)</p>
             </div>
           </div>

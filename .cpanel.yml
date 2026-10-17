@@ -1,0 +1,19 @@
+---
+deployment:
+  tasks:
+    - export DEPLOY_PATH=/home/ekosmart/public_html/
+    - /bin/test -d dist
+    - /bin/mkdir -p "$DEPLOY_PATH"
+    - /bin/cp -a dist/. "$DEPLOY_PATH"
+    - /bin/test -d admin-portal/dist
+    - /bin/mkdir -p "$DEPLOY_PATH/admin"
+    - /bin/cp -a admin-portal/dist/. "$DEPLOY_PATH/admin/"
+    - /bin/test -d employee-portal/dist
+    - /bin/mkdir -p "$DEPLOY_PATH/employee"
+    - /bin/cp -a employee-portal/dist/. "$DEPLOY_PATH/employee/"
+    - export API_DEPLOY_PATH=/home/ekosmart/ekosmart-api/
+    - /bin/test -d backend/dist
+    - /bin/mkdir -p "$API_DEPLOY_PATH/dist"
+    - /bin/cp -a backend/dist/. "$API_DEPLOY_PATH/dist/"
+    - /bin/cp backend/package.json "$API_DEPLOY_PATH"
+    - /bin/cp backend/app.js "$API_DEPLOY_PATH"

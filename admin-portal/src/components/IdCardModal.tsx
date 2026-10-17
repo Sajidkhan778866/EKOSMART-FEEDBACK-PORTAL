@@ -278,7 +278,7 @@ export const IdCardModal: FC<IdCardModalProps> = ({ employee, onClose }) => {
     setCompanySubtitle('Battery Solution & EV Spare Parts');
     setPlantAddress('Rang Talab, Near by Star Kids School, Kota (Raj) - 324002');
     setPlantPhone('+91 8949049003');
-    setPlantEmail('support@ekosmart.in');
+    setPlantEmail('Smartdrive5640@gmail.com');
     setGstin('08DTUPM4205B1Z0');
     setDisclaimer('Property of Ekosmart Battery Solution. If found, please return to Rang Talab, Kota or call helpline.');
     setSignatoryTitle('Authorized Officer');

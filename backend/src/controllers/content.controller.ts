@@ -268,7 +268,7 @@ export const defaultFooterData = {
   disclaimer: 'Official customer support, complaint tracking & battery warranty verification portal',
   address: 'Rang Talab, Near by Star Kids School, Kota, Rajasthan - 324002',
   phone: '+91 8949049003',
-  email: 'support@ekosmartdrive.in',
+  email: 'Smartdrive5640@gmail.com',
   website: 'www.ekosmartdrive.in',
   gstin: '08DTUPM4205B1Z0',
   officeHours: '10:00 AM to 6:30 PM (Mon - Sat)',
@@ -304,7 +304,7 @@ Our operations comply with the Indian Information Technology Act, 2000, and GST 
 
 4. Contact & Support Division:
 For privacy inquiries or technical support:
-- Email: support@ekosmartdrive.in
+- Email: Smartdrive5640@gmail.com
 - Phone: +91 8949049003
 - Address: Rang Talab, Near by Star Kids School, Kota, Rajasthan - 324002
 - Office Timings: 10:00 AM to 6:30 PM (Mon - Sat)`,
@@ -394,7 +394,7 @@ export const defaultContactData = {
     'Need technical assistance with your Lithium-Ion / LFP battery pack, genuine EV spare parts, warranty verification, or showroom dealership inquiries? Our Kota Central Plant engineering team is here to help.',
   badgeText: 'Official Ekosmart Support & Contact Directory',
   helplinePhone: '+91 8949049003',
-  supportEmail: 'support@ekosmartdrive.in',
+  supportEmail: 'Smartdrive5640@gmail.com',
   plantAddress: 'Rang Talab, Near by Star Kids School, Kota, Rajasthan - 324002',
   officeHours: '10:00 AM to 6:30 PM (Mon - Sat)',
   gstin: '08DTUPM4205B1Z0',
@@ -634,7 +634,7 @@ export const defaultBatteryBanner: IBatteryBanner = {
   whatsappBtnBg: '#25D366',
   whatsappBtnTextColor: '#ffffff',
   alternatePhone: '+91 8949049003',
-  supportEmail: 'support@ekosmartdrive.in',
+  supportEmail: 'Smartdrive5640@gmail.com',
 };
 
 export const defaultCustomerLoginTimer = {

@@ -18,7 +18,7 @@ Our operations comply with the Indian Information Technology Act, 2000, and GST 
 
 4. Contact & Support Division:
 For privacy inquiries or technical support:
-- Email: support@ekosmartdrive.in
+- Email: Smartdrive5640@gmail.com
 - Phone: +91 8949049003
 - Address: Rang Talab, Near by Star Kids School, Kota, Rajasthan - 324002
 - Office Timings: 10:00 AM to 6:30 PM (Mon - Sat)`,
@@ -111,7 +111,7 @@ const PrivacyPolicy = () => {
           </div>
           <div className="flex items-center gap-2.5">
             <Mail size={16} className="text-emerald-400 flex-shrink-0" />
-            <span>Email: support@ekosmartdrive.in</span>
+            <span>Email: Smartdrive5640@gmail.com</span>
           </div>
           <div className="flex items-start gap-2.5">
             <MapPin size={16} className="text-emerald-400 flex-shrink-0 mt-0.5" />

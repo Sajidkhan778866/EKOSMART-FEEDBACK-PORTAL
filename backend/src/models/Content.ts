@@ -711,7 +711,7 @@ const contentSchema = new Schema<IContent>(
       helplinePhone: { type: String, default: '+91 8949049003' },
       alternatePhone: { type: String, default: '+91 9549730483' },
       whatsappNumber: { type: String, default: '+91 8949049003' },
-      supportEmail: { type: String, default: 'support@ekosmartdrive.in' },
+      supportEmail: { type: String, default: 'Smartdrive5640@gmail.com' },
       salesEmail: { type: String, default: 'sales@ekosmartdrive.in' },
       plantAddress: { type: String, default: 'Rang Talab, Near by Star Kids School, Kota, Rajasthan - 324002' },
       officeHours: { type: String, default: '10:00 AM to 6:30 PM (Mon - Sat)' },
@@ -785,7 +785,7 @@ const contentSchema = new Schema<IContent>(
       disclaimer: { type: String, default: 'Official customer support, complaint tracking & battery warranty verification portal' },
       address: { type: String, default: 'Rang Talab, Near by Star Kids School, Kota, Rajasthan - 324002' },
       phone: { type: String, default: '+91 8949049003' },
-      email: { type: String, default: 'support@ekosmartdrive.in' },
+      email: { type: String, default: 'Smartdrive5640@gmail.com' },
       website: { type: String, default: 'www.ekosmartdrive.in' },
       gstin: { type: String, default: '08DTUPM4205B1Z0' },
       officeHours: { type: String, default: '10:00 AM to 6:30 PM (Mon - Sat)' },
@@ -824,7 +824,7 @@ Our operations comply with the Indian Information Technology Act, 2000, and GST 
 
 4. Contact & Support Division:
 For privacy inquiries or technical support:
-- Email: support@ekosmartdrive.in
+- Email: Smartdrive5640@gmail.com
 - Phone: +91 8949049003
 - Address: Rang Talab, Near by Star Kids School, Kota, Rajasthan - 324002
 - Office Timings: 10:00 AM to 6:30 PM (Mon - Sat)`,
@@ -1005,7 +1005,7 @@ Bulk battery orders applicable as per Minimum Order Quantity (MOQ 5 / MOQ 10) te
       whatsappBtnBg: { type: String, default: '#25D366' },
       whatsappBtnTextColor: { type: String, default: '#ffffff' },
       alternatePhone: { type: String, default: '+91 9549730483' },
-      supportEmail: { type: String, default: 'support@ekosmartdrive.in' },
+      supportEmail: { type: String, default: 'Smartdrive5640@gmail.com' },
     },
     quickActionsConfig: {
       isVisible: { type: Boolean, default: true },

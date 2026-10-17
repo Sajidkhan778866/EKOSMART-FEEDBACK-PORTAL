@@ -354,7 +354,7 @@ const defaultBatteryBanner: BatteryBannerContent = {
   whatsappBtnBg: '#25D366',
   whatsappBtnTextColor: '#ffffff',
   alternatePhone: '+91 8949049003',
-  supportEmail: 'support@ekosmartdrive.in',
+  supportEmail: 'Smartdrive5640@gmail.com',
 };
 
 const defaultQuickActionsConfig: QuickActionsConfig = {

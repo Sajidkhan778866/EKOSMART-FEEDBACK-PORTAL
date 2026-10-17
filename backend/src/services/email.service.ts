@@ -453,7 +453,7 @@ export const sendInvoiceSoftCopyEmail = async (
             <td style="background-color: #0f172a; padding: 20px 30px; text-align: center; color: #94a3b8; font-size: 11px; line-height: 1.6;">
               <p style="margin: 0; color: #e2e8f0; font-weight: bold;">EKOSMART EV BATTERY SOLUTION • Kota, Rajasthan</p>
               <p style="margin: 2px 0 0 0;">Plot No. 14, Electronic Complex, Road No. 1, IPIA, Kota - 324005</p>
-              <p style="margin: 4px 0 0 0; color: #10b981;">Helpline: +91 8949049003 / +91 9549730483 | Email: support@ekosmartdrive.in</p>
+              <p style="margin: 4px 0 0 0; color: #10b981;">Helpline: +91 8949049003 / +91 9549730483 | Email: Smartdrive5640@gmail.com</p>
               <p style="margin: 8px 0 0 0; font-size: 10px; color: #64748b;">This is an authorized computer-generated soft copy tax invoice.</p>
             </td>
           </tr>
