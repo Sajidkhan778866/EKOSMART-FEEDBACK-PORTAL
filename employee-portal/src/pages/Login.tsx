@@ -85,17 +85,11 @@ const Login = () => {
         setError('');
       } else {
         setConfigError(
-          'Backend is reachable, but MongoDB database is disconnected. In your Vercel Backend Project Settings > Environment Variables, add DATABASE_URL (MongoDB Atlas connection URI).'
+          'Backend is reachable, but MongoDB database is disconnected. Please verify your backend DATABASE_URL configuration.'
         );
       }
     } else {
-      if (candidate.includes('.vercel.app')) {
-        setConfigError(
-          'Saved, but backend blocked the request. If using Vercel, disable "Vercel Authentication" in your Backend Project Settings > Deployment Protection.'
-        );
-      } else {
-        setConfigSuccess(`Saved URL: ${newBase}. (Could not verify health endpoint)`);
-      }
+      setConfigSuccess(`Saved URL: ${newBase}. (Could not verify health endpoint)`);
     }
   };
 
@@ -126,10 +120,10 @@ const Login = () => {
       } else if (err.response?.status === 403) {
         setError('This employee account has been deactivated. Please contact administrator.');
       } else if (err.response?.status === 405) {
-        setError('Backend API URL not configured in Vercel. Click "Configure Backend URL" below to connect.');
+        setError('Backend API service returned 405. Please check backend connection below.');
         setShowConfig(true);
       } else if (err.response?.status === 404) {
-        setError('Backend API endpoint not found. Click "Configure Backend URL" below to connect your deployed backend.');
+        setError('Backend API endpoint not found. Click "Configure Backend URL" below to check connection.');
         setShowConfig(true);
       } else if (err.response?.status === 503) {
         setError('Database is currently connecting. Please wait a few moments and try again.');
@@ -260,7 +254,7 @@ const Login = () => {
                     type="text"
                     value={customUrlInput}
                     onChange={(e) => setCustomUrlInput(e.target.value)}
-                    placeholder="https://backend-sajidkhan778866s-projects.vercel.app"
+                    placeholder="https://ekosmartdrive.in/api/v1"
                     className="flex-1 px-3 py-2 border border-slate-300 rounded text-slate-800 font-mono text-xs focus:ring-1 focus:ring-indigo-500"
                   />
                   <button
@@ -274,7 +268,7 @@ const Login = () => {
                   </button>
                 </div>
                 <p className="text-[10px] text-slate-400">
-                  Tip: In Vercel, set <span className="font-mono font-bold">VITE_API_URL</span> in Project Settings for permanent configuration.
+                  Active Endpoint: <span className="font-mono font-bold text-slate-600">{currentBaseUrl}</span>
                 </p>
               </div>
             </div>

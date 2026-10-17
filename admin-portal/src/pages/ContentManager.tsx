@@ -68,7 +68,7 @@ const FRONTEND_URL =
   window.location.hostname &&
   window.location.hostname !== 'localhost' &&
   window.location.hostname !== '127.0.0.1'
-    ? 'https://ekosmartcustomersite.vercel.app'
+    ? window.location.origin
     : 'http://localhost:5003');
 
 interface IServiceCard {

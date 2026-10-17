@@ -18,6 +18,10 @@ Options -Indexes
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
 
+  # Exclude /api from SPA rewrite so backend API requests reach backend
+  RewriteCond %{REQUEST_URI} ^/api [NC]
+  RewriteRule ^ - [L]
+
   # All other routes fallback to index.html for client-side routing
   RewriteRule ^ index.html [L]
 </IfModule>

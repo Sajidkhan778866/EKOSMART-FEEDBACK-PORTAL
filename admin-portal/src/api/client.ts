@@ -144,12 +144,12 @@ apiClient.interceptors.response.use(
   (response) => {
     // If response is HTML (happens when a static SPA rewrite intercepts the API route)
     if (typeof response.data === 'string' && response.data.trim().toLowerCase().startsWith('<!doctype html')) {
-      const error: any = new Error('Backend API endpoint returned HTML. Please verify backend deployment and VITE_API_URL.');
+      const error: any = new Error('Backend API endpoint returned HTML. Please verify backend deployment.');
       error.response = {
         status: 404,
         data: {
           success: false,
-          message: 'Backend API returned HTML instead of JSON. Ensure VITE_API_URL is configured in your Vercel project.',
+          message: 'Backend API returned HTML instead of JSON. Ensure backend server is running.',
         },
       };
       return Promise.reject(error);
