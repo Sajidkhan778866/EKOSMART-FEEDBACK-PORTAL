@@ -93,7 +93,7 @@ const Sidebar = ({ onClose }: SidebarProps) => {
       <div className="p-4 border-t border-slate-800 space-y-3 bg-slate-950/40">
         <div className="px-2">
           <p className="text-xs font-bold text-slate-200">{user?.name || 'Super Admin'}</p>
-          <p className="text-[11px] text-slate-400 font-mono">{user?.email || 'admin@ekosmart.com'}</p>
+          <p className="text-[11px] text-slate-400 font-mono">{user?.email || 'Smartdrive5640@gmail.com'}</p>
         </div>
         <button
           onClick={handleLogout}

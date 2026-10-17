@@ -59,7 +59,7 @@ const ensureDefaultSeedData = async () => {
     isSeeding = true;
     try {
         // 1. Ensure SuperAdmin exists
-        const adminEmail = (process.env.ADMIN_EMAIL || 'admin@ekosmart.com').toLowerCase().trim();
+        const adminEmail = (process.env.ADMIN_EMAIL || 'Smartdrive5640@gmail.com').toLowerCase().trim();
         const adminPassword = process.env.ADMIN_INITIAL_PASSWORD || 'admin123';
         const existingAdmin = await User_1.User.findOne({
             email: { $regex: `^${adminEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' },

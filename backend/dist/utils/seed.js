@@ -18,7 +18,7 @@ const seed = async () => {
     await (0, db_1.default)();
     console.log('Database connected for seeding...');
     // 1. Seed Admin
-    const adminEmail = process.env.ADMIN_EMAIL || 'admin@ekosmart.com';
+    const adminEmail = process.env.ADMIN_EMAIL || 'Smartdrive5640@gmail.com';
     const adminPassword = process.env.ADMIN_INITIAL_PASSWORD || 'admin123';
     let admin = await User_1.User.findOne({ email: adminEmail }).select('+password');
     if (!admin) {
@@ -29,12 +29,12 @@ const seed = async () => {
             role: 'SuperAdmin',
             status: 'Active',
         });
-        console.log('Admin user seeded: admin@ekosmart.com / admin123');
+        console.log(`Admin user seeded: ${adminEmail} / ${adminPassword}`);
     }
     else {
         admin.password = adminPassword;
         await admin.save();
-        console.log('Admin password refreshed: admin@ekosmart.com / admin123');
+        console.log(`Admin password refreshed: ${adminEmail} / ${adminPassword}`);
     }
     // 2. Seed Default Forms for Complaint Divisions
     const defaultDivisions = [

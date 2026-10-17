@@ -5,7 +5,7 @@ import { authApi, getApiBaseUrl, getCustomApiUrl, setCustomApiUrl, clearCustomAp
 import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState('Smartdrive5640@gmail.com');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -183,7 +183,7 @@ const Login = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
-                placeholder="admin@ekosmart.com"
+                placeholder="Smartdrive5640@gmail.com"
               />
               <Mail size={18} className="absolute left-4 top-3.5 text-slate-400" />
             </div>
@@ -225,13 +225,13 @@ const Login = () => {
             <button
               type="button"
               onClick={() => {
-                setEmail('admin@ekosmart.com');
+                setEmail('Smartdrive5640@gmail.com');
                 setPassword('admin123');
                 setError('');
               }}
               className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-md font-medium transition cursor-pointer"
             >
-              Autofill Default: <span className="font-mono text-green-700 font-bold">admin@ekosmart.com / admin123</span>
+              Autofill Default: <span className="font-mono text-green-700 font-bold">Smartdrive5640@gmail.com / admin123</span>
             </button>
             <div>
               <button
