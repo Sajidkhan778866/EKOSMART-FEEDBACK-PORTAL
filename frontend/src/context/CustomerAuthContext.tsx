@@ -32,9 +32,9 @@ interface CustomerAuthContextType {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  sendRegisterOtp: (data: { name: string; email: string; mobile: string; referralCode?: string }) => Promise<{ success: boolean; message: string; debugOtp?: string }>;
+  sendRegisterOtp: (data: { name: string; email: string; mobile: string; referralCode?: string }) => Promise<{ success: boolean; message: string }>;
   verifyRegisterOtp: (data: { email: string; otp: string; name: string; mobile: string; referralCode?: string; address?: string; city?: string; state?: string }) => Promise<{ success: boolean; message: string; data?: any }>;
-  sendLoginOtp: (email: string) => Promise<{ success: boolean; message: string; debugOtp?: string; isNew?: boolean }>;
+  sendLoginOtp: (email: string) => Promise<{ success: boolean; message: string; isNew?: boolean }>;
   verifyLoginOtp: (email: string, otp: string) => Promise<{ success: boolean; message: string; data?: any }>;
   logout: () => void;
   refreshProfile: () => Promise<void>;

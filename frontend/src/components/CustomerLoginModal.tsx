@@ -37,7 +37,6 @@ export default function CustomerLoginModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-  const [debugOtp, setDebugOtp] = useState<string | null>(null);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [verifiedSuccess, setVerifiedSuccess] = useState(false);
 
@@ -59,7 +58,6 @@ export default function CustomerLoginModal({
         setOtp('');
         setError('');
         setSuccessMsg('');
-        setDebugOtp(null);
         setVerifiedSuccess(false);
       }, 300);
     }
@@ -90,9 +88,8 @@ export default function CustomerLoginModal({
     try {
       const res = await sendLoginOtp(cleanEmail);
       if (res.success) {
-        setSuccessMsg(res.message || 'OTP sent successfully!');
-        setDebugOtp(res.debugOtp || (res as any).otp || '123456');
-        setResendCooldown(30);
+        setSuccessMsg('A 6-digit verification code has been sent to your email.');
+        setResendCooldown(45);
         setStep(2);
       } else {
         setError(res.message || 'Failed to send OTP.');
@@ -142,8 +139,7 @@ export default function CustomerLoginModal({
       const res = await sendLoginOtp(email.trim().toLowerCase());
       if (res.success) {
         setSuccessMsg('A new OTP has been sent to your email.');
-        setDebugOtp(res.debugOtp || (res as any).otp || '123456');
-        setResendCooldown(30);
+        setResendCooldown(45);
       } else {
         setError(res.message || 'Failed to resend OTP.');
       }
@@ -226,28 +222,13 @@ export default function CustomerLoginModal({
               )}
 
               {step === 2 && (
-                <div className="mb-4 p-4 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs space-y-2 animate-in fade-in shadow-xs">
-                  <div className="flex items-start gap-2.5">
-                    <CheckCircle2 size={18} className="shrink-0 mt-0.5 text-emerald-600" />
-                    <div>
-                      <p className="font-bold text-emerald-950">Instant Verification Code (On-Screen OTP)</p>
-                      <p className="text-[11px] text-emerald-800">
-                        {successMsg || `Instant code generated for ${email}:`}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-emerald-200">
-                    <span className="text-xs text-emerald-950 font-bold">
-                      Your Code: <strong className="font-mono text-emerald-900 text-base tracking-widest bg-emerald-100 px-3 py-1 rounded-xl border border-emerald-300 shadow-inner">{debugOtp || '123456'}</strong>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setOtp(debugOtp || '123456')}
-                      className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl font-bold text-xs transition shadow-xs cursor-pointer flex items-center gap-1"
-                    >
-                      <span>Auto-fill Code</span>
-                      <span>⚡</span>
-                    </button>
+                <div className="mb-4 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-start gap-2.5 animate-in fade-in">
+                  <CheckCircle2 size={16} className="shrink-0 mt-0.5 text-emerald-600" />
+                  <div>
+                    <p className="font-bold text-emerald-950">Verification Code Sent</p>
+                    <p className="text-[11px] text-emerald-700 mt-0.5">
+                      {successMsg || `We sent a 6-digit security code to ${email}. It will expire in 5 minutes.`}
+                    </p>
                   </div>
                 </div>
               )}

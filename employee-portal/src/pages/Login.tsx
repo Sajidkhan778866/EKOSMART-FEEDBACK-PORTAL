@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Lock, User, AlertCircle, Loader2, Settings, CheckCircle2, RefreshCw } from 'lucide-react';
-import { empAuthApi, getApiBaseUrl, getCustomApiUrl, setCustomApiUrl, clearCustomApiUrl } from '../api/client';
+import { empAuthApi, getApiBaseUrl, getCustomApiUrl, setCustomApiUrl, clearCustomApiUrl, normalizeApiBaseUrl } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
@@ -29,10 +29,12 @@ const Login = () => {
   }, []);
 
   const testBackendConnection = async (targetUrl: string) => {
-    const cleanUrl = targetUrl.trim().replace(/\/+$/, '');
+    const cleanBase = normalizeApiBaseUrl(targetUrl);
+    const hostBase = cleanBase.replace(/\/api\/v1\/?$/, '');
     const candidateUrls = [
-      cleanUrl.endsWith('/api/v1') ? `${cleanUrl}/health` : `${cleanUrl}/api/v1/health`,
-      `${cleanUrl}/health`,
+      `${cleanBase}/health`,
+      `${hostBase}/api/health`,
+      `${hostBase}/health`,
     ];
 
     for (const testUrl of candidateUrls) {
@@ -41,7 +43,10 @@ const Login = () => {
         const contentType = res.headers.get('content-type') || '';
         if (contentType.includes('application/json')) {
           const data = await res.json();
-          const dbConnected = data?.database?.readyState === 1 || data?.database?.state === 'connected';
+          const dbConnected =
+            data?.database?.readyState === 1 ||
+            data?.database?.state === 'connected' ||
+            data?.database?.status === 'connected';
           return { ok: true, serverReachable: true, dbConnected, data };
         }
       } catch (err) {
@@ -60,18 +65,14 @@ const Login = () => {
       clearCustomApiUrl();
       const def = getApiBaseUrl();
       setCurrentBaseUrl(def);
-      setConfigSuccess('Reset to default API URL.');
+      setConfigSuccess(`Reset to default API URL: ${def}`);
       setError('');
       setTimeout(() => setConfigSuccess(''), 3000);
       return;
     }
 
     setTestingConnection(true);
-    let candidate = customUrlInput.trim().replace(/\/+$/, '');
-    if (!candidate.startsWith('http://') && !candidate.startsWith('https://')) {
-      candidate = `https://${candidate}`;
-    }
-
+    const candidate = normalizeApiBaseUrl(customUrlInput);
     const testResult = await testBackendConnection(candidate);
     setTestingConnection(false);
 
@@ -85,7 +86,7 @@ const Login = () => {
         setError('');
       } else {
         setConfigError(
-          'Backend is reachable, but MongoDB database is disconnected. Please verify your backend DATABASE_URL configuration.'
+          'Backend is reachable, but MongoDB database is pending/disconnected. Please verify your backend DATABASE_URL configuration.'
         );
       }
     } else {

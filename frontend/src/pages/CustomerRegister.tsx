@@ -15,6 +15,7 @@ import {
   Copy,
   Share2,
   Sparkles,
+  Inbox,
 } from 'lucide-react';
 
 export default function CustomerRegister() {
@@ -36,9 +37,18 @@ export default function CustomerRegister() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-  const [debugOtp, setDebugOtp] = useState<string | null>(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [newCustomerInfo, setNewCustomerInfo] = useState<any>(null);
   const [copied, setCopied] = useState(false);
+
+  // 45-second cooldown timer countdown
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const interval = setInterval(() => {
+      setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [resendCooldown]);
 
   // Auto-detect referral code from URL params (?ref=..., ?referral=..., ?code=...)
   useEffect(() => {
@@ -54,6 +64,8 @@ export default function CustomerRegister() {
   // Step 1: Send Registration OTP
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (resendCooldown > 0) return;
+
     setError('');
     setSuccessMsg('');
 
@@ -73,7 +85,7 @@ export default function CustomerRegister() {
 
       if (res.success) {
         setSuccessMsg(res.message);
-        setDebugOtp(res.debugOtp || (res as any).otp || '123456');
+        setResendCooldown(45);
         setStep(2);
       } else {
         setError(res.message || 'Failed to send OTP.');
@@ -299,28 +311,18 @@ export default function CustomerRegister() {
             </p>
           </div>
 
-          <div className="mb-5 p-4 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs space-y-2 shadow-xs">
+          <div className="mb-5 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs space-y-1.5 shadow-xs">
             <div className="flex items-start gap-2.5">
-              <CheckCircle2 size={18} className="flex-shrink-0 mt-0.5 text-emerald-600" />
+              <Inbox size={18} className="flex-shrink-0 mt-0.5 text-emerald-600" />
               <div>
-                <p className="font-bold text-emerald-950">Instant Verification Code (On-Screen OTP)</p>
-                <p className="text-[11px] text-emerald-800">
-                  {successMsg || `Instant code generated for ${formData.email}:`}
+                <p className="font-bold text-emerald-950">Verification Code Sent via Email</p>
+                <p className="text-[11px] text-emerald-800 leading-relaxed">
+                  {successMsg || `A 6-digit verification code has been dispatched to ${formData.email}.`}
+                </p>
+                <p className="text-[10px] text-emerald-700 mt-1">
+                  ⏱️ Valid for 5 minutes. Please check your inbox and spam folder.
                 </p>
               </div>
-            </div>
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-emerald-200">
-              <span className="text-xs text-emerald-950 font-bold">
-                Your Code: <strong className="font-mono text-emerald-900 text-base tracking-widest bg-emerald-100 px-3 py-1 rounded-xl border border-emerald-300 shadow-inner">{debugOtp || '123456'}</strong>
-              </span>
-              <button
-                type="button"
-                onClick={() => setOtp(debugOtp || '123456')}
-                className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl font-bold text-xs transition shadow-xs cursor-pointer flex items-center gap-1"
-              >
-                <span>Auto-fill Code</span>
-                <span>⚡</span>
-              </button>
             </div>
           </div>
 
@@ -343,7 +345,7 @@ export default function CustomerRegister() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || otp.length !== 6}
               className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 text-sm"
             >
               {loading ? (
@@ -362,19 +364,23 @@ export default function CustomerRegister() {
             <div className="flex items-center justify-between text-xs pt-2">
               <button
                 type="button"
-                onClick={() => setStep(1)}
-                className="text-slate-500 hover:text-slate-800 transition"
+                onClick={() => {
+                  setStep(1);
+                  setOtp('');
+                  setError('');
+                }}
+                className="text-slate-500 hover:text-slate-800 transition cursor-pointer"
               >
                 ← Edit details
               </button>
               <button
                 type="button"
                 onClick={handleSendOtp}
-                disabled={loading}
-                className="text-emerald-700 font-bold hover:underline flex items-center gap-1"
+                disabled={loading || resendCooldown > 0}
+                className="text-emerald-700 font-bold hover:underline flex items-center gap-1 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
               >
-                <RefreshCw size={12} />
-                <span>Resend OTP</span>
+                <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
+                <span>{resendCooldown > 0 ? `Resend Code (${resendCooldown}s)` : 'Resend Code'}</span>
               </button>
             </div>
           </form>

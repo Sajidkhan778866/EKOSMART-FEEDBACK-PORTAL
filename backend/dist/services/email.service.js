@@ -9,11 +9,11 @@ const nodemailer_1 = __importDefault(require("nodemailer"));
  * Returns the current cPanel SMTP configuration from environment variables.
  */
 const getSmtpConfig = () => {
-    const host = process.env.SMTP_HOST || 'mail.ekosmartdrivecomplain.in';
+    const host = process.env.SMTP_HOST || 'server62.hostingraja.org';
     const port = Number(process.env.SMTP_PORT) || 465;
-    const secure = port === 465;
+    const secure = process.env.SMTP_SECURE !== undefined ? process.env.SMTP_SECURE === 'true' : port === 465;
     const user = process.env.SMTP_USER || 'support_otp_email@ekosmartdrivecomplain.in';
-    const from = process.env.SMTP_FROM || `"Ekosmart OTP Verification" <${user}>`;
+    const from = process.env.SMTP_FROM || `"Ekosmart Verification" <${user}>`;
     const isConfigured = Boolean(process.env.SMTP_PASS && process.env.SMTP_PASS.trim());
     return { host, port, secure, user, from, isConfigured };
 };
@@ -36,8 +36,11 @@ const getTransporter = () => {
                 user: config.user,
                 pass: process.env.SMTP_PASS,
             },
+            connectionTimeout: 15000,
+            greetingTimeout: 15000,
+            socketTimeout: 20000,
             tls: {
-                rejectUnauthorized: process.env.SMTP_REJECT_UNAUTHORIZED === 'true',
+                rejectUnauthorized: process.env.SMTP_REJECT_UNAUTHORIZED !== 'false',
             },
             pool: true,
             maxConnections: 5,
@@ -208,8 +211,11 @@ const sendOtpEmail = async (email, otp, purpose = 'General') => {
     const text = `Your Ekosmart ${purpose} verification code is: ${otp}\n\nThis code is valid for 5 minutes only.\nNever share this code with anyone.\n\nEkosmart Clean Energy & Green Mobility - Kota, Rajasthan\nHelpline: +91 8949049003`;
     const transporter = (0, exports.getTransporter)();
     if (!transporter) {
-        console.warn(`[Ekosmart OTP Service] (Development Mode) SMTP_PASS not configured. OTP for ${purpose} [${email}]: ${otp} (Valid for 5 mins)`);
-        return { success: true, messageId: 'dev-mode-fallback' };
+        console.error(`[Ekosmart OTP Service] SMTP_PASS is not configured. Cannot dispatch OTP for ${purpose} to [${email}].`);
+        return {
+            success: false,
+            error: 'SMTP email server is not configured (SMTP_PASS missing). Please configure SMTP_PASS in server environment.',
+        };
     }
     try {
         const info = await transporter.sendMail({

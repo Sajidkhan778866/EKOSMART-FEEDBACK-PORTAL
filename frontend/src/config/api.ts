@@ -1,55 +1,71 @@
-export const sanitizeApiUrl = (url: string): string => {
+export const normalizeApiBaseUrl = (rawUrl?: string): string => {
+  if (!rawUrl || typeof rawUrl !== 'string') return '';
+  let url = rawUrl.trim();
   if (!url) return '';
-  let clean = url.trim().replace(/\/+$/, '');
-  // If preview vercel hash or old preview deployment URL, normalize to main production domain
-  if (clean.includes('.vercel.app') && clean.includes('backend-') && !clean.includes('backend-sajidkhan778866s-projects.vercel.app')) {
-    clean = 'https://backend-sajidkhan778866s-projects.vercel.app';
+
+  // Add protocol if missing
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    if (url.startsWith('localhost') || url.startsWith('127.0.0.1')) {
+      url = `http://${url}`;
+    } else {
+      url = `https://${url}`;
+    }
   }
-  return clean;
+
+  // Remove trailing slashes
+  url = url.replace(/\/+$/, '');
+
+  // Strip off any existing /api/v1, /api, or /v1 suffixes cleanly
+  while (url.endsWith('/api/v1') || url.endsWith('/api') || url.endsWith('/v1')) {
+    if (url.endsWith('/api/v1')) {
+      url = url.slice(0, -7).replace(/\/+$/, '');
+    } else if (url.endsWith('/api')) {
+      url = url.slice(0, -4).replace(/\/+$/, '');
+    } else if (url.endsWith('/v1')) {
+      url = url.slice(0, -3).replace(/\/+$/, '');
+    }
+  }
+
+  return `${url}/api/v1`;
+};
+
+export const sanitizeApiUrl = (url: string): string => {
+  return normalizeApiBaseUrl(url);
 };
 
 export const getCustomApiUrl = (): string => {
   if (typeof window !== 'undefined' && window.localStorage) {
     const custom = localStorage.getItem('ekosmart_api_url');
     if (custom && custom.trim()) {
-      const sanitized = sanitizeApiUrl(custom);
-      if (sanitized !== custom.trim()) {
-        localStorage.setItem('ekosmart_api_url', sanitized);
+      const normalized = normalizeApiBaseUrl(custom);
+      if (normalized !== custom.trim()) {
+        localStorage.setItem('ekosmart_api_url', normalized);
       }
-      return sanitized;
+      return normalized;
     }
   }
   return '';
 };
 
-const getDynamicHost = () => {
+export const getDynamicHost = (): string => {
   const custom = getCustomApiUrl();
   if (custom) {
-    return custom.replace(/\/api\/v1\/?$/, '').replace(/\/api\/?$/, '');
+    return normalizeApiBaseUrl(custom).replace(/\/api\/v1\/?$/, '');
   }
-  if (import.meta.env.VITE_API_HOST) return import.meta.env.VITE_API_HOST;
+  if (import.meta.env.VITE_API_HOST) {
+    return import.meta.env.VITE_API_HOST.trim().replace(/\/+$/, '');
+  }
   if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL.replace(/\/api\/v1\/?$/, '').replace(/\/api\/?$/, '');
+    return normalizeApiBaseUrl(import.meta.env.VITE_API_URL).replace(/\/api\/v1\/?$/, '');
   }
   if (typeof window !== 'undefined' && window.location) {
-    const { hostname, protocol, origin, port } = window.location;
-    if (hostname.endsWith('.vercel.app')) {
-      // If deployed on Vercel and not backend itself, route to active deployed backend
-      if (!hostname.startsWith('backend-') && !hostname.startsWith('api-')) {
-        return 'https://backend-sajidkhan778866s-projects.vercel.app';
-      }
-      if (hostname.startsWith('backend-') && hostname !== 'backend-sajidkhan778866s-projects.vercel.app') {
-        return 'https://backend-sajidkhan778866s-projects.vercel.app';
-      }
-      return origin;
-    }
-    // On cPanel or custom production domain (e.g. ekosmartdrive.in)
-    if (!port && hostname !== 'localhost' && hostname !== '127.0.0.1') {
-      return origin;
-    }
-    if (hostname && hostname !== 'localhost' && hostname !== '127.0.0.1') {
+    const { hostname, protocol, origin } = window.location;
+    // On local LAN / Wi-Fi IP address or localhost
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
       return `${protocol}//${hostname}:5000`;
     }
+    // On cPanel or custom production domain (e.g. ekosmartdrive.in)
+    return origin;
   }
   return 'http://localhost:5000';
 };
@@ -59,15 +75,23 @@ export const API_HOST = getDynamicHost();
 export const API_BASE = (() => {
   const custom = getCustomApiUrl();
   if (custom) {
-    return custom.endsWith('/api/v1') ? custom : custom.endsWith('/api') ? `${custom}/v1` : `${custom}/api/v1`;
+    return normalizeApiBaseUrl(custom);
   }
   if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
+    return normalizeApiBaseUrl(import.meta.env.VITE_API_URL);
   }
-  if (typeof window !== 'undefined' && window.location.port) {
-    return `${window.location.origin}/api/v1`;
+  if (typeof window !== 'undefined' && window.location) {
+    const { hostname, origin, port } = window.location;
+    // When running in local development with Vite dev server (e.g. port 5003)
+    if (port && (hostname === 'localhost' || hostname === '127.0.0.1')) {
+      return `${origin}/api/v1`;
+    }
+    // In production on cPanel (e.g. https://www.ekosmartdrive.in)
+    if (hostname && hostname !== 'localhost' && hostname !== '127.0.0.1') {
+      return normalizeApiBaseUrl(origin);
+    }
   }
-  return `${getDynamicHost()}/api/v1`;
+  return normalizeApiBaseUrl(getDynamicHost());
 })();
 
 export const ADMIN_PORTAL_URL =

@@ -14,6 +14,7 @@ const Bill_1 = require("../models/Bill");
 const Warranty_1 = require("../models/Warranty");
 const Complaint_1 = require("../models/Complaint");
 const crypto_1 = __importDefault(require("crypto"));
+const bcrypt_1 = __importDefault(require("bcrypt"));
 const email_service_1 = require("../services/email.service");
 const dateRange_1 = require("../utils/dateRange");
 // Helper: Generate JWT for Customer
@@ -160,21 +161,24 @@ const sendRegisterOtp = async (req, res) => {
         // Generate cryptographically secure 6-digit numeric OTP
         const otp = crypto_1.default.randomInt(100000, 1000000).toString();
         const expiresAt = Date.now() + 5 * 60 * 1000; // Strictly 5 minutes
+        const emailResult = await (0, email_service_1.sendOtpEmail)(cleanEmail, otp, 'Registration');
+        if (!emailResult.success) {
+            return res.status(502).json({
+                success: false,
+                message: `Failed to deliver verification code email: ${emailResult.error || 'SMTP delivery failed'}. Please check your email address or try again shortly.`,
+            });
+        }
+        const hashedOtp = await bcrypt_1.default.hash(otp, 10);
         otpCache.set(cleanEmail, {
-            otp,
+            hashedOtp,
             expiresAt,
             attempts: 0,
+            purpose: 'Registration',
             payload: { name: name.trim(), mobile: cleanMobile, email: cleanEmail, referralCode: cleanReferral },
         });
-        const emailResult = await (0, email_service_1.sendOtpEmail)(cleanEmail, otp, 'Registration');
-        const isSmtpConfigured = Boolean(process.env.SMTP_PASS && process.env.SMTP_PASS.trim());
-        res.json({
+        return res.json({
             success: true,
-            message: emailResult.success
-                ? `A 6-digit verification code has been sent to ${cleanEmail}. It expires in 5 minutes.`
-                : `Verification code generated. (SMTP note: ${emailResult.error || 'delivery notice'})`,
-            // Expose debugOtp only in development when SMTP is not yet configured
-            ...(isSmtpConfigured && process.env.NODE_ENV === 'production' ? {} : { debugOtp: otp, otp }),
+            message: `A 6-digit verification code has been sent to ${cleanEmail}. It expires in 5 minutes.`,
         });
     }
     catch (error) {
@@ -193,10 +197,10 @@ const verifyRegisterOtp = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Email and OTP are required.' });
         }
         const cached = otpCache.get(cleanEmail);
-        if (!cached) {
+        if (!cached || cached.purpose !== 'Registration') {
             return res.status(400).json({
                 success: false,
-                message: 'No verification code requested for this email or the code has expired. Please request a new code.',
+                message: 'No verification code requested for registration or the code has expired. Please request a new code.',
             });
         }
         if (Date.now() > cached.expiresAt) {
@@ -206,18 +210,18 @@ const verifyRegisterOtp = async (req, res) => {
                 message: 'Verification code has expired (5-minute limit). Please request a new code.',
             });
         }
-        // Track failed attempts (max 5)
+        // Track failed attempts (max 3)
         cached.attempts = (cached.attempts || 0) + 1;
-        if (cached.attempts > 5) {
+        if (cached.attempts > 3) {
             otpCache.delete(cleanEmail);
             return res.status(429).json({
                 success: false,
                 message: 'Too many incorrect attempts. This verification code has been invalidated for security. Please request a new code.',
             });
         }
-        const isDevFallback = !process.env.SMTP_PASS && process.env.NODE_ENV !== 'production' && cleanOtp === '123456';
-        if (cached.otp !== cleanOtp && !isDevFallback) {
-            const remaining = Math.max(0, 5 - cached.attempts);
+        const isMatch = await bcrypt_1.default.compare(cleanOtp, cached.hashedOtp);
+        if (!isMatch) {
+            const remaining = Math.max(0, 3 - cached.attempts);
             return res.status(400).json({
                 success: false,
                 message: `Invalid verification code. Please check your email and try again.${remaining > 0 ? ` (${remaining} attempt${remaining > 1 ? 's' : ''} remaining)` : ''}`,
@@ -343,22 +347,25 @@ const sendLoginOtp = async (req, res) => {
         // Generate cryptographically secure 6-digit OTP
         const otp = crypto_1.default.randomInt(100000, 1000000).toString();
         const expiresAt = Date.now() + 5 * 60 * 1000; // Strictly 5 minutes
+        const emailResult = await (0, email_service_1.sendOtpEmail)(cleanEmail, otp, customer ? 'Login' : 'Registration');
+        if (!emailResult.success) {
+            return res.status(502).json({
+                success: false,
+                message: `Failed to deliver login verification code email: ${emailResult.error || 'SMTP delivery failed'}. Please check your email address or try again shortly.`,
+            });
+        }
+        const hashedOtp = await bcrypt_1.default.hash(otp, 10);
         otpCache.set(cleanEmail, {
-            otp,
+            hashedOtp,
             expiresAt,
             attempts: 0,
+            purpose: 'Login',
             payload: { isNew: !customer },
         });
-        const emailResult = await (0, email_service_1.sendOtpEmail)(cleanEmail, otp, customer ? 'Login' : 'Registration');
-        const isSmtpConfigured = Boolean(process.env.SMTP_PASS && process.env.SMTP_PASS.trim());
-        res.json({
+        return res.json({
             success: true,
-            message: emailResult.success
-                ? `A 6-digit login verification code has been sent to ${cleanEmail}. It expires in 5 minutes.`
-                : `Login verification code generated. (SMTP note: ${emailResult.error || 'delivery notice'})`,
+            message: `A 6-digit login verification code has been sent to ${cleanEmail}. It expires in 5 minutes.`,
             isNew: !customer,
-            // Expose debugOtp only in development when SMTP is not yet configured
-            ...(isSmtpConfigured && process.env.NODE_ENV === 'production' ? {} : { debugOtp: otp, otp }),
         });
     }
     catch (error) {
@@ -377,10 +384,10 @@ const verifyLoginOtp = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Email and OTP are required.' });
         }
         const cached = otpCache.get(cleanEmail);
-        if (!cached) {
+        if (!cached || cached.purpose !== 'Login') {
             return res.status(400).json({
                 success: false,
-                message: 'No verification code requested for this email or the code has expired. Please request a new code.',
+                message: 'No verification code requested for login or the code has expired. Please request a new code.',
             });
         }
         if (Date.now() > cached.expiresAt) {
@@ -390,18 +397,18 @@ const verifyLoginOtp = async (req, res) => {
                 message: 'Verification code has expired (5-minute limit). Please request a new code.',
             });
         }
-        // Track failed attempts (max 5)
+        // Track failed attempts (max 3)
         cached.attempts = (cached.attempts || 0) + 1;
-        if (cached.attempts > 5) {
+        if (cached.attempts > 3) {
             otpCache.delete(cleanEmail);
             return res.status(429).json({
                 success: false,
                 message: 'Too many incorrect attempts. This verification code has been invalidated for security. Please request a new code.',
             });
         }
-        const isDevFallback = !process.env.SMTP_PASS && process.env.NODE_ENV !== 'production' && cleanOtp === '123456';
-        if (cached.otp !== cleanOtp && !isDevFallback) {
-            const remaining = Math.max(0, 5 - cached.attempts);
+        const isMatch = await bcrypt_1.default.compare(cleanOtp, cached.hashedOtp);
+        if (!isMatch) {
+            const remaining = Math.max(0, 3 - cached.attempts);
             return res.status(400).json({
                 success: false,
                 message: `Invalid verification code. Please check your email and try again.${remaining > 0 ? ` (${remaining} attempt${remaining > 1 ? 's' : ''} remaining)` : ''}`,
@@ -478,7 +485,8 @@ const testSmtpConnectionController = async (req, res) => {
         const configResult = await (0, email_service_1.verifySmtpConnection)();
         const targetEmail = req.body?.email || req.query?.email;
         if (targetEmail && typeof targetEmail === 'string' && targetEmail.includes('@')) {
-            const sendResult = await (0, email_service_1.sendOtpEmail)(targetEmail, '123456', 'Registration');
+            const testOtp = crypto_1.default.randomInt(100000, 1000000).toString();
+            const sendResult = await (0, email_service_1.sendOtpEmail)(targetEmail, testOtp, 'Registration');
             return res.status(sendResult.success ? 200 : 500).json({
                 success: sendResult.success,
                 message: sendResult.success
@@ -526,20 +534,24 @@ const sendComplaintOtp = async (req, res) => {
         }
         const otp = crypto_1.default.randomInt(100000, 1000000).toString();
         const expiresAt = Date.now() + 5 * 60 * 1000;
+        const emailResult = await (0, email_service_1.sendOtpEmail)(cleanEmail, otp, 'Complaint');
+        if (!emailResult.success) {
+            return res.status(502).json({
+                success: false,
+                message: `Failed to deliver verification code email: ${emailResult.error || 'SMTP delivery failed'}. Please check your email address or try again shortly.`,
+            });
+        }
+        const hashedOtp = await bcrypt_1.default.hash(otp, 10);
         otpCache.set(cleanEmail, {
-            otp,
+            hashedOtp,
             expiresAt,
             attempts: 0,
+            purpose: 'Complaint',
             payload: { type: 'complaint' },
         });
-        const emailResult = await (0, email_service_1.sendOtpEmail)(cleanEmail, otp, 'Complaint');
-        const isSmtpConfigured = Boolean(process.env.SMTP_PASS && process.env.SMTP_PASS.trim());
-        res.json({
+        return res.json({
             success: true,
-            message: emailResult.success
-                ? `A 6-digit verification code has been sent to ${cleanEmail}. It expires in 5 minutes.`
-                : `Verification code generated. (SMTP note: ${emailResult.error || 'delivery notice'})`,
-            ...(isSmtpConfigured && process.env.NODE_ENV === 'production' ? {} : { debugOtp: otp, otp }),
+            message: `A 6-digit verification code has been sent to ${cleanEmail}. It expires in 5 minutes.`,
         });
     }
     catch (error) {
@@ -558,10 +570,10 @@ const verifyComplaintOtp = async (req, res) => {
         const cleanEmail = String(email).toLowerCase().trim();
         const cleanOtp = String(otp).trim();
         const cached = otpCache.get(cleanEmail);
-        if (!cached) {
+        if (!cached || cached.purpose !== 'Complaint') {
             return res.status(400).json({
                 success: false,
-                message: 'No verification code requested or it has expired. Please request a new code.',
+                message: 'No verification code requested for complaint or it has expired. Please request a new code.',
             });
         }
         if (Date.now() > cached.expiresAt) {
@@ -571,17 +583,18 @@ const verifyComplaintOtp = async (req, res) => {
                 message: 'Verification code has expired (5-minute limit). Please request a new code.',
             });
         }
+        // Track failed attempts (max 3)
         cached.attempts = (cached.attempts || 0) + 1;
-        if (cached.attempts > 5) {
+        if (cached.attempts > 3) {
             otpCache.delete(cleanEmail);
             return res.status(429).json({
                 success: false,
-                message: 'Too many incorrect attempts. This code has been invalidated. Please request a new one.',
+                message: 'Too many incorrect attempts. This code has been invalidated for security. Please request a new one.',
             });
         }
-        const isDevFallback = !process.env.SMTP_PASS && process.env.NODE_ENV !== 'production' && cleanOtp === '123456';
-        if (cached.otp !== cleanOtp && !isDevFallback) {
-            const remaining = Math.max(0, 5 - cached.attempts);
+        const isMatch = await bcrypt_1.default.compare(cleanOtp, cached.hashedOtp);
+        if (!isMatch) {
+            const remaining = Math.max(0, 3 - cached.attempts);
             return res.status(400).json({
                 success: false,
                 message: `Invalid verification code. Please check your email and try again.${remaining > 0 ? ` (${remaining} attempt${remaining > 1 ? 's' : ''} remaining)` : ''}`,
@@ -589,7 +602,7 @@ const verifyComplaintOtp = async (req, res) => {
         }
         // Invalidate immediately upon successful verification
         otpCache.delete(cleanEmail);
-        res.json({
+        return res.json({
             success: true,
             message: 'Email successfully verified!',
         });

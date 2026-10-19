@@ -151,10 +151,19 @@ export const RegisterComplaint = () => {
   // Email OTP state
   const [otpSent, setOtpSent] = useState(false);
   const [otpSending, setOtpSending] = useState(false);
-  const [otpCode, setOtpCode] = useState('');
   const [userOtp, setUserOtp] = useState('');
   const [otpVerified, setOtpVerified] = useState(false);
   const [otpError, setOtpError] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  // 45-second cooldown timer countdown
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const interval = setInterval(() => {
+      setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [resendCooldown]);
 
   // Dynamic CMS logo branding
   const [cmsHero, setCmsHero] = useState<{
@@ -321,6 +330,7 @@ export const RegisterComplaint = () => {
   };
 
   const handleSendEmailOtp = async () => {
+    if (resendCooldown > 0) return;
     setOtpError('');
     const cleanEmail = customerEmail.trim().toLowerCase();
     if (!cleanEmail || !cleanEmail.includes('@')) {
@@ -334,8 +344,8 @@ export const RegisterComplaint = () => {
         email: cleanEmail,
       });
       if (res.data?.success) {
-        setOtpCode(res.data.debugOtp || '');
         setOtpSent(true);
+        setResendCooldown(45);
         setOtpError('');
       } else {
         setOtpError(res.data?.message || 'Failed to send verification code.');
@@ -350,7 +360,7 @@ export const RegisterComplaint = () => {
   const handleVerifyEmailOtp = async () => {
     setOtpError('');
     const cleanOtp = userOtp.trim();
-    if (!cleanOtp) {
+    if (!cleanOtp || cleanOtp.length !== 6) {
       setOtpError('Please enter the 6-digit verification code.');
       return;
     }
@@ -380,9 +390,9 @@ export const RegisterComplaint = () => {
       return;
     }
 
-    // Auto-verify if customer filled valid email
-    if (!otpVerified && customerEmail.includes('@')) {
-      setOtpVerified(true);
+    if (otpSent && !otpVerified) {
+      setErrorMessage('Please verify your email address with the 6-digit OTP code before submitting.');
+      return;
     }
 
     setSubmitting(true);
@@ -630,10 +640,16 @@ export const RegisterComplaint = () => {
                         <button
                           type="button"
                           onClick={handleSendEmailOtp}
-                          disabled={otpSending || !customerEmail}
-                          className="px-5 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition shadow-sm whitespace-nowrap cursor-pointer"
+                          disabled={otpSending || !customerEmail || resendCooldown > 0}
+                          className="px-5 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition shadow-sm whitespace-nowrap cursor-pointer disabled:cursor-not-allowed"
                         >
-                          {otpSending ? 'Sending...' : 'Send OTP'}
+                          {otpSending
+                            ? 'Sending...'
+                            : resendCooldown > 0
+                            ? `Resend (${resendCooldown}s)`
+                            : otpSent
+                            ? 'Resend OTP'
+                            : 'Send OTP'}
                         </button>
                       )}
                     </div>
@@ -643,29 +659,24 @@ export const RegisterComplaint = () => {
                       <div className="mt-3 p-3.5 bg-blue-50/80 border border-blue-200 rounded-xl space-y-2">
                         <div className="flex justify-between items-center text-[11px] text-blue-900">
                           <span>Verification code sent to email:</span>
-                          {otpCode ? (
-                            <span className="font-mono bg-white px-2 py-0.5 rounded border border-blue-300 font-bold text-blue-700">
-                              Dev OTP: {otpCode}
-                            </span>
-                          ) : (
-                            <span className="text-emerald-700 font-medium">
-                              Sent to inbox (5m limit)
-                            </span>
-                          )}
+                          <span className="text-emerald-700 font-medium">
+                            Sent to inbox (5m limit)
+                          </span>
                         </div>
                         <div className="flex items-center gap-2">
                           <input
                             type="text"
                             maxLength={6}
                             value={userOtp}
-                            onChange={(e) => setUserOtp(e.target.value)}
+                            onChange={(e) => setUserOtp(e.target.value.replace(/\D/g, ''))}
                             placeholder="Enter 6-digit OTP"
                             className="flex-1 px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-mono font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                           />
                           <button
                             type="button"
                             onClick={handleVerifyEmailOtp}
-                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition shadow-xs cursor-pointer"
+                            disabled={userOtp.trim().length !== 6}
+                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold rounded-lg transition shadow-xs cursor-pointer"
                           >
                             Verify OTP
                           </button>
