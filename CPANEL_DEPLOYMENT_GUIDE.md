@@ -212,6 +212,33 @@ The OTP system is protected by the following safeguards:
 
 ---
 
+## Step 6: Database Backups & Restoration Procedures
+
+Because the production database is hosted on **MongoDB Atlas** (or an external MongoDB cluster), follow these procedures for regular backups and point-in-time recovery:
+
+### 6.1 Automated Cloud Backups (MongoDB Atlas)
+1. Log into **MongoDB Atlas** > **Database** > **Backup** tab for your cluster.
+2. Enable **Cloud Backup** (or Scheduled Snapshots on M2/M5/M10+ clusters) to automatically retain daily snapshots.
+3. For Free Tier (M0) clusters, use `mongodump` / `mongorestore` via a scheduled cron job or local administrative machine:
+
+```bash
+# Full Database Backup (Export BSON archive)
+mongodump --uri="mongodb+srv://<username>:<password>@<cluster>.mongodb.net/ekosmart" --archive="ekosmart_backup_$(date +%F).gz" --gzip
+
+# Full Database Restore
+mongorestore --uri="mongodb+srv://<username>:<password>@<cluster>.mongodb.net/ekosmart" --archive="ekosmart_backup_YYYY-MM-DD.gz" --gzip --drop
+```
+
+### 6.2 Application-Level CSV / Excel Exports
+Administrators can also export human-readable CSV/Excel backups directly from the **Admin Portal** (`/admin`) at any time:
+- **Billing & GST Invoices**: `/api/v1/billing/export/csv`
+- **Stock & Inventory**: `/api/v1/stock/export/csv`
+- **Customers, Referrals & Wallet Ledger**: `/api/v1/customers/export/csv`, `/api/v1/customers/referrals/export/csv`, `/api/v1/customers/wallet/export/csv`
+- **Complaints & Warranties**: `/api/v1/complaints/export`, `/api/v1/warranty/export/csv`
+- **Employee Directory**: `/api/v1/admin/employees/export`
+
+---
+
 ## Deployment Checklist
 
 - [x] Nodemailer & cPanel SMTP service configured (`backend/src/services/email.service.ts`)

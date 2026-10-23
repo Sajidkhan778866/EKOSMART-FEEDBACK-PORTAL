@@ -23,9 +23,19 @@ import leaveRoutes from './routes/leave.routes';
 const app: Express = express();
 
 // Allowed Origins Parser
-const rawAllowedOrigins = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(',').map((s) => s.trim().toLowerCase())
-  : [];
+const configuredOrigins = [
+  process.env.CORS_ORIGIN,
+  process.env.FRONTEND_URL,
+  'https://www.ekosmartdrive.in',
+  'https://ekosmartdrive.in',
+  'https://www.ekosmartdrivecomplain.in',
+  'https://ekosmartdrivecomplain.in',
+]
+  .filter(Boolean)
+  .join(',')
+  .split(',')
+  .map((s) => s.trim().toLowerCase().replace(/\/+$/, ''))
+  .filter(Boolean);
 
 const corsOptions: cors.CorsOptions = {
   origin: (requestOrigin, callback) => {
@@ -34,12 +44,14 @@ const corsOptions: cors.CorsOptions = {
       return callback(null, true);
     }
 
-    const originLower = requestOrigin.toLowerCase();
+    const originLower = requestOrigin.toLowerCase().replace(/\/+$/, '');
 
     // 2. Allow if wildcard or in configured list
     if (
-      rawAllowedOrigins.includes('*') ||
-      rawAllowedOrigins.includes(originLower) ||
+      configuredOrigins.includes('*') ||
+      configuredOrigins.includes(originLower) ||
+      originLower.endsWith('.ekosmartdrive.in') ||
+      originLower.endsWith('.ekosmartdrivecomplain.in') ||
       originLower.endsWith('.vercel.app') ||
       originLower.includes('localhost') ||
       originLower.includes('127.0.0.1') ||

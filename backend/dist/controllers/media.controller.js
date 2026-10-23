@@ -42,7 +42,13 @@ const uploadMediaAsset = async (req, res) => {
         }
         const { name, category = 'general', altText = '', tags = '' } = req.body;
         const cleanTags = typeof tags === 'string' ? tags.split(',').map((t) => t.trim()).filter(Boolean) : [];
-        const fileUrl = `/uploads/${req.file.filename}`;
+        let fileUrl = '';
+        if (req.file.buffer) {
+            fileUrl = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+        }
+        else if (req.file.filename) {
+            fileUrl = `/uploads/${req.file.filename}`;
+        }
         const asset = await MediaAsset_1.default.create({
             name: name || req.file.originalname,
             category,

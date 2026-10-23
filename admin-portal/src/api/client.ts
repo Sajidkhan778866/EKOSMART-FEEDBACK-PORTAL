@@ -193,7 +193,8 @@ apiClient.interceptors.response.use(
         console.warn('[AdminAPI] 401 Unauthorized encountered. Clearing invalid token and redirecting to login...');
         localStorage.removeItem('ekosmart_admin_token');
         localStorage.removeItem('ekosmart_admin_user');
-        window.location.href = '/login?expired=true';
+        const prefix = window.location.pathname.startsWith('/admin') ? '/admin' : '';
+        window.location.href = `${prefix}/login?expired=true`;
       }
     }
 

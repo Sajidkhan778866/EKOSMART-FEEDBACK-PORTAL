@@ -186,6 +186,18 @@ apiClient.interceptors.response.use(
         message: 'Backend API endpoint returned HTML. Please check VITE_API_URL or backend server.',
       };
     }
+
+    // Auto-handle 401 Unauthorized (expired / missing / invalid token)
+    if (error.response?.status === 401) {
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+        console.warn('[EmployeeAPI] 401 Unauthorized encountered. Clearing invalid token and redirecting to login...');
+        localStorage.removeItem('ekosmart_emp_token');
+        localStorage.removeItem('ekosmart_emp_user');
+        const prefix = window.location.pathname.startsWith('/employee') ? '/employee' : '';
+        window.location.href = `${prefix}/login?expired=true`;
+      }
+    }
+
     return Promise.reject(error);
   }
 );

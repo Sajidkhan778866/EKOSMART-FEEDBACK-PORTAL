@@ -15,16 +15,16 @@ router.get('/me/payslips/:id', auth_1.protect, employee_controller_1.getMyPaysli
 router.get('/payslips/all', auth_1.protect, (0, auth_1.authorize)('ADMIN', 'SUPER_ADMIN', 'SUPERADMIN', 'MANAGER'), employee_controller_1.getAllPayslips);
 router.delete('/payslips/:payslipId', auth_1.protect, (0, auth_1.authorize)('ADMIN', 'SUPER_ADMIN', 'SUPERADMIN'), employee_controller_1.deletePayslip);
 // Admin Employee CRUD Endpoints
-router.get('/', employee_controller_1.getEmployees);
-router.get('/export', employee_controller_1.exportEmployees);
-router.post('/', upload_1.uploadEmployeePhoto.single('photo'), employee_controller_1.createEmployee);
-router.get('/eligible/:division', employee_controller_1.getEligibleEmployees);
-router.get('/:id', employee_controller_1.getEmployeeById);
-router.get('/:id/tasks', employee_controller_1.getEmployeeTasks);
-router.patch('/:id', upload_1.uploadEmployeePhoto.single('photo'), employee_controller_1.updateEmployee);
-router.put('/:id', upload_1.uploadEmployeePhoto.single('photo'), employee_controller_1.updateEmployee);
-router.patch('/:id/status', employee_controller_1.toggleEmployeeStatus);
-router.delete('/:id', employee_controller_1.deleteEmployee);
+router.get('/', auth_1.protect, employee_controller_1.getEmployees);
+router.get('/export', auth_1.protect, (0, auth_1.authorize)('ADMIN', 'SUPER_ADMIN', 'SUPERADMIN', 'MANAGER'), employee_controller_1.exportEmployees);
+router.post('/', auth_1.protect, (0, auth_1.authorize)('ADMIN', 'SUPER_ADMIN', 'SUPERADMIN', 'MANAGER'), upload_1.uploadEmployeePhoto.single('photo'), employee_controller_1.createEmployee);
+router.get('/eligible/:division', auth_1.protect, employee_controller_1.getEligibleEmployees);
+router.get('/:id', auth_1.protect, employee_controller_1.getEmployeeById);
+router.get('/:id/tasks', auth_1.protect, employee_controller_1.getEmployeeTasks);
+router.patch('/:id', auth_1.protect, (0, auth_1.authorize)('ADMIN', 'SUPER_ADMIN', 'SUPERADMIN', 'MANAGER'), upload_1.uploadEmployeePhoto.single('photo'), employee_controller_1.updateEmployee);
+router.put('/:id', auth_1.protect, (0, auth_1.authorize)('ADMIN', 'SUPER_ADMIN', 'SUPERADMIN', 'MANAGER'), upload_1.uploadEmployeePhoto.single('photo'), employee_controller_1.updateEmployee);
+router.patch('/:id/status', auth_1.protect, (0, auth_1.authorize)('ADMIN', 'SUPER_ADMIN', 'SUPERADMIN', 'MANAGER'), employee_controller_1.toggleEmployeeStatus);
+router.delete('/:id', auth_1.protect, (0, auth_1.authorize)('ADMIN', 'SUPER_ADMIN', 'SUPERADMIN'), employee_controller_1.deleteEmployee);
 // Individual Salary Structure & Generation
 router.get('/:id/salary', auth_1.protect, (0, auth_1.authorize)('ADMIN', 'SUPER_ADMIN', 'SUPERADMIN', 'MANAGER'), employee_controller_1.getEmployeeSalary);
 router.put('/:id/salary', auth_1.protect, (0, auth_1.authorize)('ADMIN', 'SUPER_ADMIN', 'SUPERADMIN'), employee_controller_1.updateEmployeeSalary);

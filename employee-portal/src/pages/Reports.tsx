@@ -17,8 +17,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import axios from 'axios';
-import { API_BASE_URL } from '../api/client';
+import { apiClient, complaintApi } from '../api/client';
 import { TicketDetailModal } from '../components/TicketDetailModal';
 import { printElement } from '../utils/print';
 
@@ -50,8 +49,8 @@ export const Reports = () => {
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
-    axios
-      .get(`${API_BASE_URL}/forms/public/sections`)
+    apiClient
+      .get('/forms/public/sections')
       .then((res) => {
         if (res.data.success && Array.isArray(res.data.data)) {
           setAvailableDivisions(
@@ -73,7 +72,7 @@ export const Reports = () => {
       if (endDate) params.endDate = endDate;
       if (searchQuery.trim()) params.search = searchQuery.trim();
 
-      const res = await axios.get(`${API_BASE_URL}/complaints/admin`, { params });
+      const res = await complaintApi.getAll(params);
       if (res.data.success) {
         const allComplaints = res.data.data || [];
         const userEmpId = (user?.employeeId || '').trim().toLowerCase();

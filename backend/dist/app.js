@@ -58,19 +58,31 @@ const media_routes_1 = __importDefault(require("./routes/media.routes"));
 const leave_routes_1 = __importDefault(require("./routes/leave.routes"));
 const app = (0, express_1.default)();
 // Allowed Origins Parser
-const rawAllowedOrigins = process.env.CORS_ORIGIN
-    ? process.env.CORS_ORIGIN.split(',').map((s) => s.trim().toLowerCase())
-    : [];
+const configuredOrigins = [
+    process.env.CORS_ORIGIN,
+    process.env.FRONTEND_URL,
+    'https://www.ekosmartdrive.in',
+    'https://ekosmartdrive.in',
+    'https://www.ekosmartdrivecomplain.in',
+    'https://ekosmartdrivecomplain.in',
+]
+    .filter(Boolean)
+    .join(',')
+    .split(',')
+    .map((s) => s.trim().toLowerCase().replace(/\/+$/, ''))
+    .filter(Boolean);
 const corsOptions = {
     origin: (requestOrigin, callback) => {
         // 1. Allow server-to-server, curl, mobile apps, or same-origin requests (no origin header)
         if (!requestOrigin) {
             return callback(null, true);
         }
-        const originLower = requestOrigin.toLowerCase();
+        const originLower = requestOrigin.toLowerCase().replace(/\/+$/, '');
         // 2. Allow if wildcard or in configured list
-        if (rawAllowedOrigins.includes('*') ||
-            rawAllowedOrigins.includes(originLower) ||
+        if (configuredOrigins.includes('*') ||
+            configuredOrigins.includes(originLower) ||
+            originLower.endsWith('.ekosmartdrive.in') ||
+            originLower.endsWith('.ekosmartdrivecomplain.in') ||
             originLower.endsWith('.vercel.app') ||
             originLower.includes('localhost') ||
             originLower.includes('127.0.0.1') ||

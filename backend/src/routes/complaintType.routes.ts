@@ -5,13 +5,14 @@ import {
   updateComplaintType,
   deleteComplaintType,
 } from '../controllers/complaintType.controller';
+import { protect, authorize } from '../middleware/auth';
 
 const router = express.Router();
 
 router.get('/', getComplaintTypes);
-router.post('/', createComplaintType);
-router.put('/:id', updateComplaintType);
-router.patch('/:id', updateComplaintType);
-router.delete('/:id', deleteComplaintType);
+router.post('/', protect, authorize('ADMIN', 'SUPER_ADMIN', 'SUPERADMIN', 'MANAGER'), createComplaintType);
+router.put('/:id', protect, authorize('ADMIN', 'SUPER_ADMIN', 'SUPERADMIN', 'MANAGER'), updateComplaintType);
+router.patch('/:id', protect, authorize('ADMIN', 'SUPER_ADMIN', 'SUPERADMIN', 'MANAGER'), updateComplaintType);
+router.delete('/:id', protect, authorize('ADMIN', 'SUPER_ADMIN', 'SUPERADMIN'), deleteComplaintType);
 
 export default router;

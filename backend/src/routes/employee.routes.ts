@@ -32,16 +32,16 @@ router.get('/payslips/all', protect, authorize('ADMIN', 'SUPER_ADMIN', 'SUPERADM
 router.delete('/payslips/:payslipId', protect, authorize('ADMIN', 'SUPER_ADMIN', 'SUPERADMIN'), deletePayslip);
 
 // Admin Employee CRUD Endpoints
-router.get('/', getEmployees);
-router.get('/export', exportEmployees);
-router.post('/', uploadEmployeePhoto.single('photo'), createEmployee);
-router.get('/eligible/:division', getEligibleEmployees);
-router.get('/:id', getEmployeeById);
-router.get('/:id/tasks', getEmployeeTasks);
-router.patch('/:id', uploadEmployeePhoto.single('photo'), updateEmployee);
-router.put('/:id', uploadEmployeePhoto.single('photo'), updateEmployee);
-router.patch('/:id/status', toggleEmployeeStatus);
-router.delete('/:id', deleteEmployee);
+router.get('/', protect, getEmployees);
+router.get('/export', protect, authorize('ADMIN', 'SUPER_ADMIN', 'SUPERADMIN', 'MANAGER'), exportEmployees);
+router.post('/', protect, authorize('ADMIN', 'SUPER_ADMIN', 'SUPERADMIN', 'MANAGER'), uploadEmployeePhoto.single('photo'), createEmployee);
+router.get('/eligible/:division', protect, getEligibleEmployees);
+router.get('/:id', protect, getEmployeeById);
+router.get('/:id/tasks', protect, getEmployeeTasks);
+router.patch('/:id', protect, authorize('ADMIN', 'SUPER_ADMIN', 'SUPERADMIN', 'MANAGER'), uploadEmployeePhoto.single('photo'), updateEmployee);
+router.put('/:id', protect, authorize('ADMIN', 'SUPER_ADMIN', 'SUPERADMIN', 'MANAGER'), uploadEmployeePhoto.single('photo'), updateEmployee);
+router.patch('/:id/status', protect, authorize('ADMIN', 'SUPER_ADMIN', 'SUPERADMIN', 'MANAGER'), toggleEmployeeStatus);
+router.delete('/:id', protect, authorize('ADMIN', 'SUPER_ADMIN', 'SUPERADMIN'), deleteEmployee);
 
 // Individual Salary Structure & Generation
 router.get('/:id/salary', protect, authorize('ADMIN', 'SUPER_ADMIN', 'SUPERADMIN', 'MANAGER'), getEmployeeSalary);

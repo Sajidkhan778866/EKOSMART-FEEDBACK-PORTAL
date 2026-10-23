@@ -10,10 +10,10 @@
     "employee-portal"
   ],
   "scripts": {
-    "build": "npm run build --prefix backend && npm run build --prefix admin-portal && npm run build --prefix employee-portal && npm run build --prefix frontend",
+    "build": "npm run build:backend && npm run build:admin && npm run build:employee && npm run build:frontend",
     "build:all": "npm run build:backend && npm run build:admin && npm run build:employee && npm run build:frontend",
     "build:backend": "npm run build --prefix backend",
-    "build:frontend": "npm run build --prefix frontend",
+    "build:frontend": "npm run build --prefix frontend && node -e \"const fs=require('fs');if(fs.existsSync('frontend/dist'))fs.cpSync('frontend/dist','dist',{recursive:true,force:true})\"",
     "build:admin": "npm run build --prefix admin-portal",
     "build:employee": "npm run build --prefix employee-portal"
   },

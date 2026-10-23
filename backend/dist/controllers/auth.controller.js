@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.employeeLogin = exports.adminLogin = void 0;
+exports.getMe = exports.employeeLogin = exports.adminLogin = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const User_1 = require("../models/User");
 const Employee_1 = require("../models/Employee");
@@ -184,3 +184,64 @@ const employeeLogin = async (req, res) => {
     }
 };
 exports.employeeLogin = employeeLogin;
+const getMe = async (req, res) => {
+    try {
+        const authUser = req.user;
+        if (!authUser || !authUser.id) {
+            return res.status(401).json({ success: false, message: 'Not authenticated' });
+        }
+        const roleUpper = (authUser.role || '').toString().toUpperCase();
+        if (roleUpper === 'ADMIN' || roleUpper === 'SUPER_ADMIN' || roleUpper === 'SUPERADMIN') {
+            const admin = await User_1.User.findById(authUser.id);
+            if (admin) {
+                return res.json({
+                    success: true,
+                    data: {
+                        _id: admin._id,
+                        name: admin.name,
+                        email: admin.email,
+                        role: admin.role,
+                        status: admin.status,
+                    },
+                });
+            }
+        }
+        const employee = await Employee_1.Employee.findOne({
+            $or: [
+                { _id: authUser.id },
+                authUser.employeeId ? { employeeId: authUser.employeeId } : null,
+            ].filter(Boolean),
+        });
+        if (employee) {
+            return res.json({
+                success: true,
+                data: {
+                    _id: employee._id,
+                    name: employee.name,
+                    employeeId: employee.employeeId,
+                    email: employee.email,
+                    mobile: employee.mobile,
+                    department: employee.department,
+                    designation: employee.designation,
+                    division: employee.division,
+                    role: employee.role,
+                    permissions: employee.permissions || [],
+                    status: employee.status,
+                    warrantyAccess: employee.warrantyAccess,
+                },
+            });
+        }
+        return res.json({
+            success: true,
+            data: authUser,
+        });
+    }
+    catch (error) {
+        console.error('[GetMe] Error:', error);
+        return res.status(500).json({
+            success: false,
+            message: error.message || 'Failed to fetch user profile',
+        });
+    }
+};
+exports.getMe = getMe;

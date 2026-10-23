@@ -202,3 +202,67 @@ export const employeeLogin = async (req: Request, res: Response) => {
     });
   }
 };
+
+export const getMe = async (req: Request, res: Response) => {
+  try {
+    const authUser = (req as any).user;
+    if (!authUser || !authUser.id) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+
+    const roleUpper = (authUser.role || '').toString().toUpperCase();
+    if (roleUpper === 'ADMIN' || roleUpper === 'SUPER_ADMIN' || roleUpper === 'SUPERADMIN') {
+      const admin = await User.findById(authUser.id);
+      if (admin) {
+        return res.json({
+          success: true,
+          data: {
+            _id: admin._id,
+            name: admin.name,
+            email: admin.email,
+            role: admin.role,
+            status: admin.status,
+          },
+        });
+      }
+    }
+
+    const employee = await Employee.findOne({
+      $or: [
+        { _id: authUser.id },
+        authUser.employeeId ? { employeeId: authUser.employeeId } : null,
+      ].filter(Boolean) as any,
+    });
+
+    if (employee) {
+      return res.json({
+        success: true,
+        data: {
+          _id: employee._id,
+          name: employee.name,
+          employeeId: employee.employeeId,
+          email: employee.email,
+          mobile: employee.mobile,
+          department: employee.department,
+          designation: employee.designation,
+          division: employee.division,
+          role: employee.role,
+          permissions: employee.permissions || [],
+          status: employee.status,
+          warrantyAccess: employee.warrantyAccess,
+        },
+      });
+    }
+
+    return res.json({
+      success: true,
+      data: authUser,
+    });
+  } catch (error: any) {
+    console.error('[GetMe] Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to fetch user profile',
+    });
+  }
+};
