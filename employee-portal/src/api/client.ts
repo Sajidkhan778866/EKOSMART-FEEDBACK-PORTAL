@@ -81,6 +81,10 @@ export const getDynamicHost = (): string => {
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
       return `${protocol}//${hostname}:5000`;
     }
+    // On Vercel cloud deployment
+    if (hostname.endsWith('.vercel.app')) {
+      return 'https://backend-sajidkhan778866s-projects.vercel.app';
+    }
     // On cPanel or custom production domain (e.g. ekosmartdrive.in)
     return origin;
   }
@@ -101,6 +105,9 @@ export const getApiBaseUrl = (): string => {
     // Vite proxy forwards /api to backend http://localhost:5000
     if (port && (hostname === 'localhost' || hostname === '127.0.0.1')) {
       return `${origin}/api/v1`;
+    }
+    if (hostname.endsWith('.vercel.app')) {
+      return 'https://backend-sajidkhan778866s-projects.vercel.app/api/v1';
     }
     // In production on cPanel (e.g. https://www.ekosmartdrive.in)
     if (hostname && hostname !== 'localhost' && hostname !== '127.0.0.1') {
