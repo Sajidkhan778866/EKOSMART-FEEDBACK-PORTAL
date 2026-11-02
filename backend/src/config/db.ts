@@ -1,14 +1,39 @@
 import mongoose from 'mongoose';
 import { ensureDefaultSeedData } from '../utils/autoSeed';
 
+const isPlaceholderUri = (val?: string): boolean => {
+  if (!val || !val.trim()) return true;
+  const v = val.trim();
+  return v.includes('<cluster') || v.includes('<username>') || v.includes('<password>') || v.includes('<db_');
+};
+
 const getMongoUri = (): string => {
-  const uri =
+  const explicitUri =
     process.env.DATABASE_URL ||
     process.env.MONGODB_URI ||
     process.env.MONGO_URI ||
-    process.env.MONGODB_URL ||
-    'mongodb://127.0.0.1:27017/ekosmart';
-  return uri.trim();
+    process.env.MONGODB_URL;
+
+  if (explicitUri && !isPlaceholderUri(explicitUri)) {
+    return explicitUri.trim();
+  }
+
+  // Support structured DB_* environment variables if provided
+  if (process.env.DB_HOST && !isPlaceholderUri(process.env.DB_HOST)) {
+    const host = process.env.DB_HOST.trim();
+    const port = (process.env.DB_PORT || '').trim();
+    const dbName = (process.env.DB_NAME || 'ekosmart').trim();
+    const user = (process.env.DB_USER || '').trim();
+    const pass = process.env.DB_PASSWORD || '';
+    const isSrv = process.env.DB_SSL === 'srv' || host.includes('.mongodb.net');
+    const protocol = isSrv ? 'mongodb+srv' : 'mongodb';
+    const authPart = user ? `${encodeURIComponent(user)}:${encodeURIComponent(pass)}@` : '';
+    const portPart = !isSrv && port ? `:${port}` : '';
+    const queryPart = isSrv ? '?retryWrites=true&w=majority' : (process.env.DB_SSL === 'true' ? '?tls=true' : '');
+    return `${protocol}://${authPart}${host}${portPart}/${dbName}${queryPart}`;
+  }
+
+  return 'mongodb://127.0.0.1:27017/ekosmart';
 };
 
 interface MongooseCache {
@@ -148,14 +173,34 @@ export const getDbStatus = () => {
     2: 'connecting',
     3: 'disconnecting',
   };
+  const activeUri = getMongoUri();
   return {
     state: states[mongoose.connection.readyState] || 'unknown',
     readyState: mongoose.connection.readyState,
     host: mongoose.connection.host || 'unknown',
-    name: mongoose.connection.name || 'unknown',
-    isCloud: getMongoUri().includes('mongodb+srv'),
+    port: mongoose.connection.port || (activeUri.includes('mongodb+srv') ? 27017 : 27017),
+    name: mongoose.connection.name || 'ekosmart',
+    isCloud: activeUri.includes('mongodb+srv'),
     lastError: lastConnectionError,
   };
+};
+
+export const reconnectDB = async (newUri?: string): Promise<typeof mongoose> => {
+  if (newUri && newUri.trim()) {
+    process.env.DATABASE_URL = newUri.trim();
+    process.env.MONGODB_URI = newUri.trim();
+  }
+  try {
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.disconnect();
+    }
+  } catch {
+    // ignore disconnect errors
+  }
+  cached.conn = null;
+  cached.promise = null;
+  lastConnectionError = null;
+  return await connectDB();
 };
 
 export default connectDB;

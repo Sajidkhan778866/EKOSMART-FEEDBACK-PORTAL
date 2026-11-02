@@ -3,16 +3,38 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getDbStatus = exports.isDbConnected = void 0;
+exports.reconnectDB = exports.getDbStatus = exports.isDbConnected = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const autoSeed_1 = require("../utils/autoSeed");
+const isPlaceholderUri = (val) => {
+    if (!val || !val.trim())
+        return true;
+    const v = val.trim();
+    return v.includes('<cluster') || v.includes('<username>') || v.includes('<password>') || v.includes('<db_');
+};
 const getMongoUri = () => {
-    const uri = process.env.DATABASE_URL ||
+    const explicitUri = process.env.DATABASE_URL ||
         process.env.MONGODB_URI ||
         process.env.MONGO_URI ||
-        process.env.MONGODB_URL ||
-        'mongodb://127.0.0.1:27017/ekosmart';
-    return uri.trim();
+        process.env.MONGODB_URL;
+    if (explicitUri && !isPlaceholderUri(explicitUri)) {
+        return explicitUri.trim();
+    }
+    // Support structured DB_* environment variables if provided
+    if (process.env.DB_HOST && !isPlaceholderUri(process.env.DB_HOST)) {
+        const host = process.env.DB_HOST.trim();
+        const port = (process.env.DB_PORT || '').trim();
+        const dbName = (process.env.DB_NAME || 'ekosmart').trim();
+        const user = (process.env.DB_USER || '').trim();
+        const pass = process.env.DB_PASSWORD || '';
+        const isSrv = process.env.DB_SSL === 'srv' || host.includes('.mongodb.net');
+        const protocol = isSrv ? 'mongodb+srv' : 'mongodb';
+        const authPart = user ? `${encodeURIComponent(user)}:${encodeURIComponent(pass)}@` : '';
+        const portPart = !isSrv && port ? `:${port}` : '';
+        const queryPart = isSrv ? '?retryWrites=true&w=majority' : (process.env.DB_SSL === 'true' ? '?tls=true' : '');
+        return `${protocol}://${authPart}${host}${portPart}/${dbName}${queryPart}`;
+    }
+    return 'mongodb://127.0.0.1:27017/ekosmart';
 };
 let cached = global.mongooseCache || { conn: null, promise: null };
 if (!global.mongooseCache) {
@@ -125,14 +147,35 @@ const getDbStatus = () => {
         2: 'connecting',
         3: 'disconnecting',
     };
+    const activeUri = getMongoUri();
     return {
         state: states[mongoose_1.default.connection.readyState] || 'unknown',
         readyState: mongoose_1.default.connection.readyState,
         host: mongoose_1.default.connection.host || 'unknown',
-        name: mongoose_1.default.connection.name || 'unknown',
-        isCloud: getMongoUri().includes('mongodb+srv'),
+        port: mongoose_1.default.connection.port || (activeUri.includes('mongodb+srv') ? 27017 : 27017),
+        name: mongoose_1.default.connection.name || 'ekosmart',
+        isCloud: activeUri.includes('mongodb+srv'),
         lastError: lastConnectionError,
     };
 };
 exports.getDbStatus = getDbStatus;
+const reconnectDB = async (newUri) => {
+    if (newUri && newUri.trim()) {
+        process.env.DATABASE_URL = newUri.trim();
+        process.env.MONGODB_URI = newUri.trim();
+    }
+    try {
+        if (mongoose_1.default.connection.readyState !== 0) {
+            await mongoose_1.default.disconnect();
+        }
+    }
+    catch {
+        // ignore disconnect errors
+    }
+    cached.conn = null;
+    cached.promise = null;
+    lastConnectionError = null;
+    return await connectDB();
+};
+exports.reconnectDB = reconnectDB;
 exports.default = connectDB;

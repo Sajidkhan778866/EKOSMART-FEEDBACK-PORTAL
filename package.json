@@ -10,12 +10,13 @@
     "employee-portal"
   ],
   "scripts": {
-    "build": "npm run build:backend && npm run build:admin && npm run build:employee && npm run build:frontend",
-    "build:all": "npm run build:backend && npm run build:admin && npm run build:employee && npm run build:frontend",
+    "build": "npm run build:backend && npm run build:admin && npm run build:employee && npm run build:frontend && npm run assemble:dist",
+    "build:all": "npm run build:backend && npm run build:admin && npm run build:employee && npm run build:frontend && npm run assemble:dist",
     "build:backend": "npm run build --prefix backend",
-    "build:frontend": "npm run build --prefix frontend && node -e \"const fs=require('fs');if(fs.existsSync('frontend/dist'))fs.cpSync('frontend/dist','dist',{recursive:true,force:true})\"",
+    "build:frontend": "npm run build --prefix frontend",
     "build:admin": "npm run build --prefix admin-portal",
-    "build:employee": "npm run build --prefix employee-portal"
+    "build:employee": "npm run build --prefix employee-portal",
+    "assemble:dist": "node -e \"const fs=require('fs');if(fs.existsSync('frontend/dist'))fs.cpSync('frontend/dist','dist',{recursive:true,force:true});if(fs.existsSync('admin-portal/dist'))fs.cpSync('admin-portal/dist','dist/admin',{recursive:true,force:true});if(fs.existsSync('employee-portal/dist'))fs.cpSync('employee-portal/dist','dist/employee',{recursive:true,force:true});\""
   },
   "allowScripts": {
     "esbuild": true,

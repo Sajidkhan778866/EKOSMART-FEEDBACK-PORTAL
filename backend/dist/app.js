@@ -56,6 +56,7 @@ const page_routes_1 = __importDefault(require("./routes/page.routes"));
 const theme_routes_1 = __importDefault(require("./routes/theme.routes"));
 const media_routes_1 = __importDefault(require("./routes/media.routes"));
 const leave_routes_1 = __importDefault(require("./routes/leave.routes"));
+const database_routes_1 = __importDefault(require("./routes/database.routes"));
 const app = (0, express_1.default)();
 // Allowed Origins Parser
 const configuredOrigins = [
@@ -110,9 +111,10 @@ app.use(express_1.default.json({ limit: '50mb' }));
 app.use(express_1.default.urlencoded({ limit: '50mb', extended: true }));
 // Serverless DB auto-connection middleware
 app.use(async (req, res, next) => {
-    // Allow health check, root ping and static uploads to bypass DB block if needed
+    // Allow health check, root ping, database setup routes, and static uploads to bypass DB block if needed
     if (req.path === '/' ||
         req.path.endsWith('/health') ||
+        req.path.includes('/database') ||
         req.path.startsWith('/uploads') ||
         req.path.startsWith('/api/v1/uploads') ||
         req.path.startsWith('/api/uploads')) {
@@ -199,6 +201,7 @@ const mountRoutes = (prefix) => {
     app.use(`${prefix}/theme`, theme_routes_1.default);
     app.use(`${prefix}/media`, media_routes_1.default);
     app.use(`${prefix}/leaves`, leave_routes_1.default);
+    app.use(`${prefix}/database`, database_routes_1.default);
 };
 mountRoutes('/api/v1');
 mountRoutes('/api');

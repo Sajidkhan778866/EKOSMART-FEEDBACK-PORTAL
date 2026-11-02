@@ -35,6 +35,9 @@ router.get('/me/complaints', auth_1.protectCustomer, customer_controller_1.getMy
 // 3. ADMIN MANAGEMENT ROUTES (PROTECTED)
 // ============================================================================
 // Referral & Wallet Management
+router.get('/smtp-settings', auth_1.protect, (0, auth_1.authorize)('ADMIN', 'SUPER_ADMIN', 'SUPERADMIN'), customer_controller_1.getSmtpSettingsController);
+router.put('/smtp-settings', auth_1.protect, (0, auth_1.authorize)('ADMIN', 'SUPER_ADMIN', 'SUPERADMIN'), customer_controller_1.saveSmtpSettingsController);
+router.post('/smtp-settings/test', auth_1.protect, (0, auth_1.authorize)('ADMIN', 'SUPER_ADMIN', 'SUPERADMIN'), customer_controller_1.testSmtpConnectionController);
 router.get('/referral-settings', auth_1.protect, customer_controller_1.getReferralSettings);
 router.put('/referral-settings', auth_1.protect, (0, auth_1.authorize)('ADMIN', 'SUPER_ADMIN', 'SUPERADMIN'), customer_controller_1.updateReferralSettings);
 router.get('/referrals/all', auth_1.protect, customer_controller_1.getAllReferrals);

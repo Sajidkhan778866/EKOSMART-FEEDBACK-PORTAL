@@ -7,7 +7,7 @@ import { Content } from '../models/Content';
 import { defaultServiceCards } from '../controllers/content.controller';
 import { generateBarcodeSVG } from './barcode';
 
-let isSeeding = false;
+let seedPromise: Promise<void> | null = null;
 let seedCompleted = false;
 
 /**
@@ -16,16 +16,18 @@ let seedCompleted = false;
  * Completely safe and idempotent — never deletes or overwrites existing production data.
  */
 export const ensureDefaultSeedData = async (): Promise<void> => {
-  if (isSeeding || seedCompleted) {
+  if (seedCompleted) {
     return;
   }
+  if (seedPromise) {
+    return seedPromise;
+  }
 
-  isSeeding = true;
-
-  try {
+  seedPromise = (async () => {
+    try {
     // 1. Ensure SuperAdmin exists
     const adminEmail = (process.env.ADMIN_EMAIL || 'Smartdrive5640@gmail.com').toLowerCase().trim();
-    const adminPassword = process.env.ADMIN_INITIAL_PASSWORD || 'admin123';
+    const adminPassword = process.env.ADMIN_INITIAL_PASSWORD || 'Shoyab@1516';
 
     const existingAdmin = await User.findOne({
       email: { $regex: `^${adminEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' },
@@ -337,10 +339,13 @@ export const ensureDefaultSeedData = async (): Promise<void> => {
       console.warn('[AutoSeed] BillTemplate seed notice:', e.message);
     }
 
-    seedCompleted = true;
-  } catch (error: any) {
-    console.error('[AutoSeed] Error during auto-seeding:', error.message || error);
-  } finally {
-    isSeeding = false;
-  }
+      seedCompleted = true;
+    } catch (error: any) {
+      console.error('[AutoSeed] Error during auto-seeding:', error.message || error);
+    } finally {
+      seedPromise = null;
+    }
+  })();
+
+  return seedPromise;
 };

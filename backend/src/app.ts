@@ -19,6 +19,7 @@ import pageRoutes from './routes/page.routes';
 import themeRoutes from './routes/theme.routes';
 import mediaRoutes from './routes/media.routes';
 import leaveRoutes from './routes/leave.routes';
+import databaseRoutes from './routes/database.routes';
 
 const app: Express = express();
 
@@ -84,10 +85,11 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Serverless DB auto-connection middleware
 app.use(async (req: Request, res: Response, next: NextFunction) => {
-  // Allow health check, root ping and static uploads to bypass DB block if needed
+  // Allow health check, root ping, database setup routes, and static uploads to bypass DB block if needed
   if (
     req.path === '/' ||
     req.path.endsWith('/health') ||
+    req.path.includes('/database') ||
     req.path.startsWith('/uploads') ||
     req.path.startsWith('/api/v1/uploads') ||
     req.path.startsWith('/api/uploads')
@@ -181,6 +183,7 @@ const mountRoutes = (prefix: string) => {
   app.use(`${prefix}/theme`, themeRoutes);
   app.use(`${prefix}/media`, mediaRoutes);
   app.use(`${prefix}/leaves`, leaveRoutes);
+  app.use(`${prefix}/database`, databaseRoutes);
 };
 
 mountRoutes('/api/v1');

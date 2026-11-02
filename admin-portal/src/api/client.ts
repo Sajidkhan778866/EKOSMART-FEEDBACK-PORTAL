@@ -374,4 +374,19 @@ export const frontendBuilderApi = {
   seedDefaults: () => apiClient.post('/frontend-builder/seed-defaults'),
 };
 
+export const databaseApi = {
+  getStatus: () => apiClient.get('/database/status'),
+  testConnection: (data: any) => apiClient.post('/database/test', data),
+  saveConfiguration: (data: any) => apiClient.post('/database/save', data),
+  reconnect: () => apiClient.post('/database/reconnect'),
+};
+
+export const smtpApi = {
+  getSettings: () => apiClient.get('/customers/smtp-settings'),
+  saveSettings: (data: any) => apiClient.put('/customers/smtp-settings', data),
+  testConnection: (data?: any) => apiClient.post('/customers/smtp-settings/test', data || {}),
+};
+
+
+
 

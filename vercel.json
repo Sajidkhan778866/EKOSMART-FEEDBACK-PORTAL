@@ -1,0 +1,35 @@
+{
+  "version": 2,
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api"
+    },
+    {
+      "source": "/uploads/(.*)",
+      "destination": "/api"
+    },
+    {
+      "source": "/admin",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/admin/((?!assets/).*)",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/employee",
+      "destination": "/employee/index.html"
+    },
+    {
+      "source": "/employee/((?!assets/).*)",
+      "destination": "/employee/index.html"
+    },
+    {
+      "source": "/((?!api/|admin/|employee/|assets/).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

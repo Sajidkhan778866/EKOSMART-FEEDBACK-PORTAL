@@ -8,9 +8,11 @@ import { ReferralSettings } from '../models/ReferralSettings';
 import { Bill } from '../models/Bill';
 import { Warranty } from '../models/Warranty';
 import { Complaint } from '../models/Complaint';
+import { OtpRecord } from '../models/OtpRecord';
 import crypto from 'crypto';
 import bcrypt from 'bcrypt';
-import { sendOtpEmail, verifySmtpConnection, getSmtpConfig } from '../services/email.service';
+import { sendOtpEmail, verifySmtpConnection, getSmtpConfig, getSmtpConfigAsync, saveSmtpConfiguration } from '../services/email.service';
+import { isDbConnected } from '../config/db';
 import { applyDateFilterToQuery } from '../utils/dateRange';
 
 // Helper: Generate JWT for Customer
@@ -72,7 +74,7 @@ export const getActiveReferralSettings = async () => {
   return settings;
 };
 
-// In-Memory OTP Store with 5-Minute Auto-Expiry, Bcrypt Hash & Max 3 Attempt Limiter
+// Persistent MongoDB + In-Memory OTP Store with 5-Minute Auto-Expiry, Bcrypt Hash & Max 3 Attempt Limiter
 interface IOtpStore {
   hashedOtp: string;
   expiresAt: number;
@@ -81,6 +83,106 @@ interface IOtpStore {
   payload?: any;
 }
 const otpCache = new Map<string, IOtpStore>();
+
+const saveOtpStore = async (
+  email: string,
+  purpose: 'Registration' | 'Login' | 'Complaint',
+  hashedOtp: string,
+  expiresAt: number,
+  payload?: any
+) => {
+  const cleanEmail = email.toLowerCase().trim();
+  otpCache.set(cleanEmail, {
+    hashedOtp,
+    expiresAt,
+    attempts: 0,
+    purpose,
+    payload,
+  });
+
+  if (isDbConnected()) {
+    try {
+      await OtpRecord.findOneAndUpdate(
+        { email: cleanEmail, purpose },
+        {
+          $set: {
+            email: cleanEmail,
+            purpose,
+            hashedOtp,
+            expiresAt: new Date(expiresAt),
+            attempts: 0,
+            payload: payload || {},
+            lastRequestedAt: new Date(),
+          },
+        },
+        { upsert: true, new: true }
+      );
+    } catch (err) {
+      console.warn('[OTP Store] DB write fallback to memory:', (err as any)?.message);
+    }
+  }
+};
+
+const getOtpStore = async (
+  email: string,
+  purpose: 'Registration' | 'Login' | 'Complaint'
+): Promise<IOtpStore | null> => {
+  const cleanEmail = email.toLowerCase().trim();
+
+  if (isDbConnected()) {
+    try {
+      const doc = await OtpRecord.findOne({ email: cleanEmail, purpose }).lean();
+      if (doc) {
+        return {
+          hashedOtp: doc.hashedOtp,
+          expiresAt: new Date(doc.expiresAt).getTime(),
+          attempts: doc.attempts || 0,
+          purpose: doc.purpose as any,
+          payload: doc.payload,
+        };
+      }
+    } catch {
+      // Fallback to in-memory cache
+    }
+  }
+
+  const cached = otpCache.get(cleanEmail);
+  if (cached && cached.purpose === purpose) {
+    return cached;
+  }
+  return null;
+};
+
+const incrementOtpAttempts = async (
+  email: string,
+  purpose: 'Registration' | 'Login' | 'Complaint',
+  nextAttempts: number
+) => {
+  const cleanEmail = email.toLowerCase().trim();
+  const cached = otpCache.get(cleanEmail);
+  if (cached) {
+    cached.attempts = nextAttempts;
+  }
+  if (isDbConnected()) {
+    try {
+      await OtpRecord.updateOne({ email: cleanEmail, purpose }, { $set: { attempts: nextAttempts } });
+    } catch {
+      // ignore
+    }
+  }
+};
+
+const clearOtpStore = async (email: string, purpose: 'Registration' | 'Login' | 'Complaint') => {
+  const cleanEmail = email.toLowerCase().trim();
+  otpCache.delete(cleanEmail);
+  if (isDbConnected()) {
+    try {
+      await OtpRecord.deleteOne({ email: cleanEmail, purpose });
+    } catch {
+      // ignore
+    }
+  }
+};
 
 // Rate Limiter: Max 3 requests per 5-minute window, min 45 seconds cooldown
 interface IOtpRateLimit {
@@ -202,12 +304,11 @@ export const sendRegisterOtp = async (req: Request, res: Response) => {
 
     const hashedOtp = await bcrypt.hash(otp, 10);
 
-    otpCache.set(cleanEmail, {
-      hashedOtp,
-      expiresAt,
-      attempts: 0,
-      purpose: 'Registration',
-      payload: { name: name.trim(), mobile: cleanMobile, email: cleanEmail, referralCode: cleanReferral },
+    await saveOtpStore(cleanEmail, 'Registration', hashedOtp, expiresAt, {
+      name: name.trim(),
+      mobile: cleanMobile,
+      email: cleanEmail,
+      referralCode: cleanReferral,
     });
 
     return res.json({
@@ -232,7 +333,7 @@ export const verifyRegisterOtp = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'Email and OTP are required.' });
     }
 
-    const cached = otpCache.get(cleanEmail);
+    const cached = await getOtpStore(cleanEmail, 'Registration');
     if (!cached || cached.purpose !== 'Registration') {
       return res.status(400).json({
         success: false,
@@ -241,7 +342,7 @@ export const verifyRegisterOtp = async (req: Request, res: Response) => {
     }
 
     if (Date.now() > cached.expiresAt) {
-      otpCache.delete(cleanEmail);
+      await clearOtpStore(cleanEmail, 'Registration');
       return res.status(400).json({
         success: false,
         message: 'Verification code has expired (5-minute limit). Please request a new code.',
@@ -249,9 +350,10 @@ export const verifyRegisterOtp = async (req: Request, res: Response) => {
     }
 
     // Track failed attempts (max 3)
-    cached.attempts = (cached.attempts || 0) + 1;
-    if (cached.attempts > 3) {
-      otpCache.delete(cleanEmail);
+    const nextAttempts = (cached.attempts || 0) + 1;
+    await incrementOtpAttempts(cleanEmail, 'Registration', nextAttempts);
+    if (nextAttempts > 3) {
+      await clearOtpStore(cleanEmail, 'Registration');
       return res.status(429).json({
         success: false,
         message: 'Too many incorrect attempts. This verification code has been invalidated for security. Please request a new code.',
@@ -260,7 +362,7 @@ export const verifyRegisterOtp = async (req: Request, res: Response) => {
 
     const isMatch = await bcrypt.compare(cleanOtp, cached.hashedOtp);
     if (!isMatch) {
-      const remaining = Math.max(0, 3 - cached.attempts);
+      const remaining = Math.max(0, 3 - nextAttempts);
       return res.status(400).json({
         success: false,
         message: `Invalid verification code. Please check your email and try again.${remaining > 0 ? ` (${remaining} attempt${remaining > 1 ? 's' : ''} remaining)` : ''}`,
@@ -268,7 +370,7 @@ export const verifyRegisterOtp = async (req: Request, res: Response) => {
     }
 
     // Invalidate immediately upon successful verification
-    otpCache.delete(cleanEmail);
+    await clearOtpStore(cleanEmail, 'Registration');
 
     const customerName = name || cached.payload?.name || 'Customer';
     const customerMobile = mobile || cached.payload?.mobile;
@@ -413,13 +515,7 @@ export const sendLoginOtp = async (req: Request, res: Response) => {
 
     const hashedOtp = await bcrypt.hash(otp, 10);
 
-    otpCache.set(cleanEmail, {
-      hashedOtp,
-      expiresAt,
-      attempts: 0,
-      purpose: 'Login',
-      payload: { isNew: !customer },
-    });
+    await saveOtpStore(cleanEmail, 'Login', hashedOtp, expiresAt, { isNew: !customer });
 
     return res.json({
       success: true,
@@ -444,7 +540,7 @@ export const verifyLoginOtp = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'Email and OTP are required.' });
     }
 
-    const cached = otpCache.get(cleanEmail);
+    const cached = await getOtpStore(cleanEmail, 'Login');
     if (!cached || cached.purpose !== 'Login') {
       return res.status(400).json({
         success: false,
@@ -453,7 +549,7 @@ export const verifyLoginOtp = async (req: Request, res: Response) => {
     }
 
     if (Date.now() > cached.expiresAt) {
-      otpCache.delete(cleanEmail);
+      await clearOtpStore(cleanEmail, 'Login');
       return res.status(400).json({
         success: false,
         message: 'Verification code has expired (5-minute limit). Please request a new code.',
@@ -461,9 +557,10 @@ export const verifyLoginOtp = async (req: Request, res: Response) => {
     }
 
     // Track failed attempts (max 3)
-    cached.attempts = (cached.attempts || 0) + 1;
-    if (cached.attempts > 3) {
-      otpCache.delete(cleanEmail);
+    const nextAttempts = (cached.attempts || 0) + 1;
+    await incrementOtpAttempts(cleanEmail, 'Login', nextAttempts);
+    if (nextAttempts > 3) {
+      await clearOtpStore(cleanEmail, 'Login');
       return res.status(429).json({
         success: false,
         message: 'Too many incorrect attempts. This verification code has been invalidated for security. Please request a new code.',
@@ -472,7 +569,7 @@ export const verifyLoginOtp = async (req: Request, res: Response) => {
 
     const isMatch = await bcrypt.compare(cleanOtp, cached.hashedOtp);
     if (!isMatch) {
-      const remaining = Math.max(0, 3 - cached.attempts);
+      const remaining = Math.max(0, 3 - nextAttempts);
       return res.status(400).json({
         success: false,
         message: `Invalid verification code. Please check your email and try again.${remaining > 0 ? ` (${remaining} attempt${remaining > 1 ? 's' : ''} remaining)` : ''}`,
@@ -481,7 +578,7 @@ export const verifyLoginOtp = async (req: Request, res: Response) => {
 
     const isNewCustomer = !!cached.payload?.isNew;
     // Invalidate immediately upon successful verification
-    otpCache.delete(cleanEmail);
+    await clearOtpStore(cleanEmail, 'Login');
 
     let customer = await Customer.findOne({ email: cleanEmail });
 
@@ -548,41 +645,105 @@ export const verifyLoginOtp = async (req: Request, res: Response) => {
   }
 };
 
-// GET/POST /api/v1/customers/auth/test-smtp - Diagnostics & verification for cPanel SMTP
+// GET/POST /api/v1/customers/auth/test-smtp - Diagnostics & verification for SMTP
 export const testSmtpConnectionController = async (req: Request, res: Response) => {
   try {
-    const configResult = await verifySmtpConnection();
+    const customParams =
+      req.body && (req.body.host || req.body.user || req.body.pass || req.body.port)
+        ? {
+            host: req.body.host,
+            port: req.body.port ? Number(req.body.port) : undefined,
+            secure: req.body.secure,
+            user: req.body.user,
+            pass: req.body.pass,
+            useStoredPassword: req.body.useStoredPassword,
+            from: req.body.from,
+            rejectUnauthorized: req.body.rejectUnauthorized,
+          }
+        : undefined;
+
+    const configResult = await verifySmtpConnection(customParams);
     const targetEmail = req.body?.email || req.query?.email;
 
     if (targetEmail && typeof targetEmail === 'string' && targetEmail.includes('@')) {
       const testOtp = crypto.randomInt(100000, 1000000).toString();
       const sendResult = await sendOtpEmail(targetEmail, testOtp, 'Registration');
-      return res.status(sendResult.success ? 200 : 500).json({
+      return res.status(sendResult.success ? 200 : 400).json({
         success: sendResult.success,
         message: sendResult.success
-          ? `cPanel SMTP connection verified and test OTP email sent to ${targetEmail}!`
-          : `SMTP verification passed, but test email delivery failed: ${sendResult.error}`,
-        smtp: configResult,
+          ? `SMTP connection verified and test 6-digit OTP email sent to ${targetEmail}!`
+          : `Test email delivery failed: ${sendResult.error}`,
+        smtp: configResult.config,
         testSend: sendResult,
       });
     }
 
-    return res.status(configResult.success ? 200 : 500).json({
+    return res.status(configResult.success ? 200 : 400).json({
       success: configResult.success,
       message: configResult.message,
-      smtp: {
-        host: configResult.config.host,
-        port: configResult.config.port,
-        secure: configResult.config.secure,
-        user: configResult.config.user,
-        from: configResult.config.from,
-        isConfigured: configResult.config.isConfigured,
-      },
+      smtp: configResult.config,
     });
   } catch (error: any) {
     return res.status(500).json({
       success: false,
       message: error.message || 'SMTP diagnostic check failed',
+    });
+  }
+};
+
+// GET /api/v1/customers/smtp-settings (Protected Admin)
+export const getSmtpSettingsController = async (_req: Request, res: Response) => {
+  try {
+    const config = await getSmtpConfigAsync(true);
+    return res.json({
+      success: true,
+      data: config,
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to fetch SMTP configuration.',
+    });
+  }
+};
+
+// PUT /api/v1/customers/smtp-settings (Protected Admin)
+export const saveSmtpSettingsController = async (req: Request, res: Response) => {
+  try {
+    const { host, port, secure, user, pass, useStoredPassword, from, rejectUnauthorized } = req.body || {};
+    if (!host || !user) {
+      return res.status(400).json({
+        success: false,
+        message: 'SMTP Host and SMTP Username / Mailbox are required.',
+      });
+    }
+
+    const updated = await saveSmtpConfiguration({
+      host: String(host),
+      port: Number(port) || 465,
+      secure: secure !== undefined ? Boolean(secure) : Number(port) === 465,
+      user: String(user),
+      pass: pass ? String(pass) : undefined,
+      useStoredPassword: Boolean(useStoredPassword),
+      from: from ? String(from) : undefined,
+      rejectUnauthorized: Boolean(rejectUnauthorized),
+      updatedBy: (req as any).user?.email || 'Admin',
+    });
+
+    const verification = await verifySmtpConnection();
+
+    return res.json({
+      success: true,
+      verified: verification.success,
+      message: verification.success
+        ? `SMTP configuration saved and verified (${updated.host}:${updated.port})!`
+        : `SMTP configuration saved (${updated.host}:${updated.port}), but connection verification returned: ${verification.message}`,
+      data: updated,
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to save SMTP configuration.',
     });
   }
 };
@@ -618,13 +779,7 @@ export const sendComplaintOtp = async (req: Request, res: Response) => {
 
     const hashedOtp = await bcrypt.hash(otp, 10);
 
-    otpCache.set(cleanEmail, {
-      hashedOtp,
-      expiresAt,
-      attempts: 0,
-      purpose: 'Complaint',
-      payload: { type: 'complaint' },
-    });
+    await saveOtpStore(cleanEmail, 'Complaint', hashedOtp, expiresAt, { type: 'complaint' });
 
     return res.json({
       success: true,
@@ -647,7 +802,7 @@ export const verifyComplaintOtp = async (req: Request, res: Response) => {
     const cleanEmail = String(email).toLowerCase().trim();
     const cleanOtp = String(otp).trim();
 
-    const cached = otpCache.get(cleanEmail);
+    const cached = await getOtpStore(cleanEmail, 'Complaint');
     if (!cached || cached.purpose !== 'Complaint') {
       return res.status(400).json({
         success: false,
@@ -656,7 +811,7 @@ export const verifyComplaintOtp = async (req: Request, res: Response) => {
     }
 
     if (Date.now() > cached.expiresAt) {
-      otpCache.delete(cleanEmail);
+      await clearOtpStore(cleanEmail, 'Complaint');
       return res.status(400).json({
         success: false,
         message: 'Verification code has expired (5-minute limit). Please request a new code.',
@@ -664,9 +819,10 @@ export const verifyComplaintOtp = async (req: Request, res: Response) => {
     }
 
     // Track failed attempts (max 3)
-    cached.attempts = (cached.attempts || 0) + 1;
-    if (cached.attempts > 3) {
-      otpCache.delete(cleanEmail);
+    const nextAttempts = (cached.attempts || 0) + 1;
+    await incrementOtpAttempts(cleanEmail, 'Complaint', nextAttempts);
+    if (nextAttempts > 3) {
+      await clearOtpStore(cleanEmail, 'Complaint');
       return res.status(429).json({
         success: false,
         message: 'Too many incorrect attempts. This code has been invalidated for security. Please request a new one.',
@@ -675,7 +831,7 @@ export const verifyComplaintOtp = async (req: Request, res: Response) => {
 
     const isMatch = await bcrypt.compare(cleanOtp, cached.hashedOtp);
     if (!isMatch) {
-      const remaining = Math.max(0, 3 - cached.attempts);
+      const remaining = Math.max(0, 3 - nextAttempts);
       return res.status(400).json({
         success: false,
         message: `Invalid verification code. Please check your email and try again.${remaining > 0 ? ` (${remaining} attempt${remaining > 1 ? 's' : ''} remaining)` : ''}`,
@@ -683,7 +839,7 @@ export const verifyComplaintOtp = async (req: Request, res: Response) => {
     }
 
     // Invalidate immediately upon successful verification
-    otpCache.delete(cleanEmail);
+    await clearOtpStore(cleanEmail, 'Complaint');
 
     return res.json({
       success: true,

@@ -1,4 +1,6 @@
 import nodemailer, { Transporter } from 'nodemailer';
+import { isDbConnected } from '../config/db';
+import { SmtpConfig } from '../models/SmtpConfig';
 
 export interface SendEmailOptions {
   to: string;
@@ -13,60 +15,110 @@ export interface SmtpConfigInfo {
   secure: boolean;
   user: string;
   from: string;
+  rejectUnauthorized: boolean;
   isConfigured: boolean;
+  hasPassword: boolean;
+  source: 'database' | 'environment' | 'default';
 }
 
+interface InternalSmtpCredentials extends SmtpConfigInfo {
+  pass: string;
+}
+
+let runtimeSmtpOverride: Partial<InternalSmtpCredentials> | null = null;
+let lastDbFetchTime = 0;
+
 /**
- * Returns the current cPanel SMTP configuration from environment variables.
+ * Synchronous config getter (reads runtime cache + environment variables).
  */
 export const getSmtpConfig = (): SmtpConfigInfo => {
-  const host = process.env.SMTP_HOST || 'server62.hostingraja.org';
-  const port = Number(process.env.SMTP_PORT) || 465;
-  const secure = process.env.SMTP_SECURE !== undefined ? process.env.SMTP_SECURE === 'true' : port === 465;
-  const user = process.env.SMTP_USER || 'support_otp_email@ekosmartdrivecomplain.in';
-  const from = process.env.SMTP_FROM || `"Ekosmart Verification" <${user}>`;
-  const isConfigured = Boolean(process.env.SMTP_PASS && process.env.SMTP_PASS.trim());
+  const creds = getInternalSmtpCredentialsSync();
+  const { pass, ...publicInfo } = creds;
+  return publicInfo;
+};
 
-  return { host, port, secure, user, from, isConfigured };
+const getInternalSmtpCredentialsSync = (): InternalSmtpCredentials => {
+  const envHost = process.env.SMTP_HOST?.trim();
+  const envPort = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined;
+  const envUser = process.env.SMTP_USER?.trim();
+  const envPass = process.env.SMTP_PASS?.trim();
+  const envFrom = process.env.SMTP_FROM?.trim();
+
+  const host = runtimeSmtpOverride?.host || envHost || 'server62.hostingraja.org';
+  const port = runtimeSmtpOverride?.port || envPort || 465;
+  const secure =
+    runtimeSmtpOverride?.secure !== undefined
+      ? runtimeSmtpOverride.secure
+      : process.env.SMTP_SECURE !== undefined
+      ? process.env.SMTP_SECURE === 'true'
+      : port === 465;
+  const user = runtimeSmtpOverride?.user || envUser || 'support_otp_email@ekosmartdrivecomplain.in';
+  const pass = runtimeSmtpOverride?.pass !== undefined ? runtimeSmtpOverride.pass : envPass || '';
+  const from = runtimeSmtpOverride?.from || envFrom || `"Ekosmart Verification" <${user}>`;
+  // Default rejectUnauthorized to false so cPanel shared SSL certificates (*.hostingraja.org) work cleanly on Vercel
+  const rejectUnauthorized =
+    runtimeSmtpOverride?.rejectUnauthorized !== undefined
+      ? runtimeSmtpOverride.rejectUnauthorized
+      : process.env.SMTP_REJECT_UNAUTHORIZED === 'true';
+
+  const hasPassword = Boolean(pass && pass.trim());
+  const source: 'database' | 'environment' | 'default' = runtimeSmtpOverride
+    ? 'database'
+    : envPass || envHost || envUser
+    ? 'environment'
+    : 'default';
+
+  return {
+    host,
+    port,
+    secure,
+    user,
+    pass,
+    from,
+    rejectUnauthorized,
+    isConfigured: hasPassword,
+    hasPassword,
+    source,
+  };
+};
+
+/**
+ * Asynchronous config loader that syncs saved SMTP settings from MongoDB across Vercel Serverless instances.
+ */
+export const loadSmtpCredentialsAsync = async (forceRefresh = false): Promise<InternalSmtpCredentials> => {
+  const now = Date.now();
+  if ((forceRefresh || !runtimeSmtpOverride || now - lastDbFetchTime > 30000) && isDbConnected()) {
+    try {
+      const doc = await SmtpConfig.findOne({ key: 'global_smtp_config' }).select('+pass').lean();
+      if (doc) {
+        runtimeSmtpOverride = {
+          host: doc.host,
+          port: doc.port,
+          secure: doc.secure,
+          user: doc.user,
+          pass: doc.pass || process.env.SMTP_PASS?.trim() || '',
+          from: doc.from,
+          rejectUnauthorized: Boolean(doc.rejectUnauthorized),
+        };
+        lastDbFetchTime = now;
+      }
+    } catch {
+      // Ignore DB lookup errors and fall back to env vars
+    }
+  }
+  return getInternalSmtpCredentialsSync();
+};
+
+export const getSmtpConfigAsync = async (forceRefresh = false): Promise<SmtpConfigInfo> => {
+  const creds = await loadSmtpCredentialsAsync(forceRefresh);
+  const { pass, ...publicInfo } = creds;
+  return publicInfo;
 };
 
 let cachedTransporter: Transporter | null = null;
 
 /**
- * Lazily creates or returns the cached Nodemailer transporter.
- */
-export const getTransporter = (): Transporter | null => {
-  const config = getSmtpConfig();
-  if (!config.isConfigured) {
-    return null;
-  }
-
-  if (!cachedTransporter) {
-    cachedTransporter = nodemailer.createTransport({
-      host: config.host,
-      port: config.port,
-      secure: config.secure,
-      auth: {
-        user: config.user,
-        pass: process.env.SMTP_PASS!,
-      },
-      connectionTimeout: 15000,
-      greetingTimeout: 15000,
-      socketTimeout: 20000,
-      tls: {
-        rejectUnauthorized: process.env.SMTP_REJECT_UNAUTHORIZED !== 'false',
-      },
-      pool: true,
-      maxConnections: 5,
-      maxMessages: 100,
-    });
-  }
-
-  return cachedTransporter;
-};
-
-/**
- * Resets the cached transporter (useful when environment variables are updated at runtime).
+ * Resets the cached transporter (used when SMTP settings are updated at runtime).
  */
 export const resetTransporter = () => {
   if (cachedTransporter) {
@@ -80,53 +132,276 @@ export const resetTransporter = () => {
 };
 
 /**
- * Verifies the cPanel SMTP connection.
+ * Creates a Nodemailer transporter for given credentials.
+ * Disables connection pooling on Vercel Serverless to prevent stale frozen socket errors.
  */
-export const verifySmtpConnection = async (): Promise<{
+const buildTransporter = (creds: InternalSmtpCredentials, overrideHost?: string): Transporter => {
+  const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+  const activeHost = overrideHost || creds.host;
+
+  return nodemailer.createTransport({
+    host: activeHost,
+    port: creds.port,
+    secure: creds.secure,
+    auth: {
+      user: creds.user,
+      pass: creds.pass,
+    },
+    connectionTimeout: 12000,
+    greetingTimeout: 12000,
+    socketTimeout: 15000,
+    tls: {
+      rejectUnauthorized: creds.rejectUnauthorized,
+    },
+    pool: !isServerless,
+    maxConnections: 3,
+    maxMessages: 50,
+  });
+};
+
+export const getTransporter = (): Transporter | null => {
+  const creds = getInternalSmtpCredentialsSync();
+  if (!creds.isConfigured) {
+    return null;
+  }
+
+  const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+  if (isServerless) {
+    return buildTransporter(creds);
+  }
+
+  if (!cachedTransporter) {
+    cachedTransporter = buildTransporter(creds);
+  }
+
+  return cachedTransporter;
+};
+
+/**
+ * Saves SMTP configuration to MongoDB and updates runtime state immediately.
+ */
+export const saveSmtpConfiguration = async (params: {
+  host: string;
+  port: number;
+  secure?: boolean;
+  user: string;
+  pass?: string;
+  useStoredPassword?: boolean;
+  from?: string;
+  rejectUnauthorized?: boolean;
+  updatedBy?: string;
+}): Promise<SmtpConfigInfo> => {
+  const existing = await loadSmtpCredentialsAsync(true);
+  const finalPass =
+    params.pass && params.pass.trim()
+      ? params.pass.trim()
+      : params.useStoredPassword
+      ? existing.pass
+      : '';
+
+  const port = Number(params.port) || 465;
+  const secure = params.secure !== undefined ? Boolean(params.secure) : port === 465;
+  const host = params.host.trim() || 'server62.hostingraja.org';
+  const user = params.user.trim();
+  const from = params.from?.trim() || `"Ekosmart Verification" <${user}>`;
+  const rejectUnauthorized = Boolean(params.rejectUnauthorized);
+
+  // Update process.env in current instance
+  process.env.SMTP_HOST = host;
+  process.env.SMTP_PORT = String(port);
+  process.env.SMTP_SECURE = String(secure);
+  process.env.SMTP_USER = user;
+  if (finalPass) {
+    process.env.SMTP_PASS = finalPass;
+  }
+  process.env.SMTP_FROM = from;
+  process.env.SMTP_REJECT_UNAUTHORIZED = String(rejectUnauthorized);
+
+  runtimeSmtpOverride = {
+    host,
+    port,
+    secure,
+    user,
+    pass: finalPass,
+    from,
+    rejectUnauthorized,
+  };
+  lastDbFetchTime = Date.now();
+  resetTransporter();
+
+  if (isDbConnected()) {
+    await SmtpConfig.findOneAndUpdate(
+      { key: 'global_smtp_config' },
+      {
+        $set: {
+          key: 'global_smtp_config',
+          host,
+          port,
+          secure,
+          user,
+          pass: finalPass,
+          from,
+          rejectUnauthorized,
+          updatedBy: params.updatedBy || 'Admin',
+        },
+      },
+      { upsert: true, new: true }
+    );
+  }
+
+  return getSmtpConfig();
+};
+
+/**
+ * Verifies the active or candidate SMTP connection.
+ */
+export const verifySmtpConnection = async (customParams?: {
+  host?: string;
+  port?: number;
+  secure?: boolean;
+  user?: string;
+  pass?: string;
+  useStoredPassword?: boolean;
+  from?: string;
+  rejectUnauthorized?: boolean;
+}): Promise<{
   success: boolean;
   message: string;
   config: SmtpConfigInfo;
 }> => {
-  const config = getSmtpConfig();
-  if (!config.isConfigured) {
+  const baseCreds = await loadSmtpCredentialsAsync(true);
+
+  const testCreds: InternalSmtpCredentials = customParams
+    ? {
+        host: customParams.host?.trim() || baseCreds.host,
+        port: Number(customParams.port) || baseCreds.port,
+        secure:
+          customParams.secure !== undefined
+            ? Boolean(customParams.secure)
+            : (Number(customParams.port) || baseCreds.port) === 465,
+        user: customParams.user?.trim() || baseCreds.user,
+        pass:
+          customParams.pass && customParams.pass.trim()
+            ? customParams.pass.trim()
+            : customParams.useStoredPassword !== false
+            ? baseCreds.pass
+            : '',
+        from: customParams.from?.trim() || baseCreds.from,
+        rejectUnauthorized:
+          customParams.rejectUnauthorized !== undefined
+            ? Boolean(customParams.rejectUnauthorized)
+            : baseCreds.rejectUnauthorized,
+        isConfigured: false,
+        hasPassword: false,
+        source: baseCreds.source,
+      }
+    : baseCreds;
+
+  testCreds.hasPassword = Boolean(testCreds.pass && testCreds.pass.trim());
+  testCreds.isConfigured = testCreds.hasPassword;
+
+  const { pass, ...publicConfig } = testCreds;
+
+  if (!testCreds.isConfigured) {
     return {
       success: false,
-      message: 'SMTP_PASS is not configured in server environment. Please set SMTP_PASS in cPanel / .env.',
-      config,
+      message:
+        'SMTP_PASS is not configured. Please enter your SMTP mailbox password in Admin Settings or set SMTP_PASS in Vercel Environment Variables.',
+      config: publicConfig,
     };
   }
 
   try {
-    resetTransporter();
-    const transporter = getTransporter();
-    if (!transporter) {
-      return { success: false, message: 'Could not initialize SMTP transporter.', config };
-    }
+    const transporter = buildTransporter(testCreds);
     await transporter.verify();
+    transporter.close();
     return {
       success: true,
-      message: `SMTP connection to ${config.host}:${config.port} via ${config.user} successfully verified!`,
-      config,
+      message: `SMTP connection to ${testCreds.host}:${testCreds.port} (${testCreds.user}) verified successfully!`,
+      config: publicConfig,
     };
   } catch (error: any) {
+    // If host was mail.ekosmartdrivecomplain.in or mail.ekosmartdrive.in and DNS/connection failed, try fallback server62.hostingraja.org
+    if (
+      testCreds.host !== 'server62.hostingraja.org' &&
+      (error.code === 'ENOTFOUND' || error.code === 'ETIMEDOUT' || error.code === 'ECONNREFUSED')
+    ) {
+      try {
+        const fallbackTransporter = buildTransporter(testCreds, 'server62.hostingraja.org');
+        await fallbackTransporter.verify();
+        fallbackTransporter.close();
+        return {
+          success: true,
+          message: `SMTP connection verified via fallback host server62.hostingraja.org:${testCreds.port} (${testCreds.user})!`,
+          config: { ...publicConfig, host: 'server62.hostingraja.org' },
+        };
+      } catch {
+        // Ignore fallback error and report original error
+      }
+    }
+
     console.error('[SMTP Verify Error]:', error.message || error);
     return {
       success: false,
-      message: `SMTP Connection Failed: ${error.message || 'Unknown error'}. Check outgoing server, port (${config.port}), credentials, and cPanel mail server status.`,
-      config,
+      message: `SMTP Connection Failed (${testCreds.host}:${testCreds.port}): ${
+        error.message || 'Unknown error'
+      }. Please verify SMTP host, port, mailbox username (${testCreds.user}), and password.`,
+      config: publicConfig,
     };
   }
 };
 
 /**
- * Sends a branded Ekosmart OTP verification email via cPanel SMTP.
+ * Helper to dispatch mail with automatic fallback host retry for cPanel / Vercel serverless environments.
+ */
+const dispatchMailWithFallback = async (
+  creds: InternalSmtpCredentials,
+  mailOptions: { from: string; to: string; subject: string; text?: string; html: string }
+) => {
+  const transporter = buildTransporter(creds);
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    if (process.env.VERCEL) {
+      transporter.close();
+    }
+    return info;
+  } catch (primaryErr: any) {
+    try {
+      transporter.close();
+    } catch {
+      // ignore
+    }
+
+    // Automatic fallback between cPanel mail hostname and HostingRaja server hostname
+    const fallbackHost =
+      creds.host === 'server62.hostingraja.org' ? 'mail.ekosmartdrive.in' : 'server62.hostingraja.org';
+
+    if (
+      creds.host.includes('ekosmartdrive') ||
+      creds.host.includes('hostingraja.org')
+    ) {
+      try {
+        const fallbackTransporter = buildTransporter(creds, fallbackHost);
+        const info = await fallbackTransporter.sendMail(mailOptions);
+        fallbackTransporter.close();
+        return info;
+      } catch {
+        // Throw primary error
+      }
+    }
+    throw primaryErr;
+  }
+};
+
+/**
+ * Sends a branded Ekosmart OTP verification email via SMTP.
  */
 export const sendOtpEmail = async (
   email: string,
   otp: string,
   purpose: 'Registration' | 'Login' | 'Complaint' | 'General' = 'General'
 ): Promise<{ success: boolean; messageId?: string; error?: string }> => {
-  const config = getSmtpConfig();
+  const creds = await loadSmtpCredentialsAsync();
   let purposeTitle = 'Verification Code';
   let purposeText = 'verifying your request';
 
@@ -234,19 +509,17 @@ export const sendOtpEmail = async (
 
   const text = `Your Ekosmart ${purpose} verification code is: ${otp}\n\nThis code is valid for 5 minutes only.\nNever share this code with anyone.\n\nEkosmart Clean Energy & Green Mobility - Kota, Rajasthan\nHelpline: +91 8949049003`;
 
-  const transporter = getTransporter();
-
-  if (!transporter) {
+  if (!creds.isConfigured) {
     console.error(`[Ekosmart OTP Service] SMTP_PASS is not configured. Cannot dispatch OTP for ${purpose} to [${email}].`);
     return {
       success: false,
-      error: 'SMTP email server is not configured (SMTP_PASS missing). Please configure SMTP_PASS in server environment.',
+      error: 'SMTP email server is not configured (SMTP_PASS missing). Please configure SMTP in Admin Settings or Vercel Environment Variables.',
     };
   }
 
   try {
-    const info = await transporter.sendMail({
-      from: config.from,
+    const info = await dispatchMailWithFallback(creds, {
+      from: creds.from,
       to: email,
       subject,
       text,
@@ -284,9 +557,15 @@ export const sendInvoiceSoftCopyEmail = async (
   const customerName = bill.customerName || customer?.name || 'Valued Customer';
   const customerMobile = bill.customerMobile || customer?.mobile || '';
   const customerAddress = bill.customerAddress || customer?.address || '';
-  const refCode = referralCode || customer?.referralCode || bill.referralCodeUsed || 'EKO' + Math.random().toString(36).substring(2, 7).toUpperCase();
+  const refCode =
+    referralCode ||
+    customer?.referralCode ||
+    bill.referralCodeUsed ||
+    'EKO' + Math.random().toString(36).substring(2, 7).toUpperCase();
   const invoiceNumber = bill.invoiceNumber || 'EBS-INV';
-  const invoiceDate = bill.createdAt ? new Date(bill.createdAt).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN');
+  const invoiceDate = bill.createdAt
+    ? new Date(bill.createdAt).toLocaleDateString('en-IN')
+    : new Date().toLocaleDateString('en-IN');
   const grandTotal = bill.grandTotal !== undefined ? bill.grandTotal.toLocaleString('en-IN') : '0';
   const subtotal = bill.subtotal !== undefined ? bill.subtotal.toLocaleString('en-IN') : '0';
   const taxTotal = bill.taxTotal !== undefined ? bill.taxTotal.toLocaleString('en-IN') : '0';
@@ -294,13 +573,21 @@ export const sendInvoiceSoftCopyEmail = async (
   const paymentMode = bill.paymentMode || 'UPI';
   const paymentStatus = bill.paymentStatus || 'Paid';
   const showroom = bill.showroom || 'Ekosmart Showroom Counter';
-  const rewardCoins = coinsAwarded !== undefined ? Number(coinsAwarded) : (bill.rewardCoinsAwarded || templateConfig?.softBillEmailConfig?.rewardCoins || 500);
+  const rewardCoins =
+    coinsAwarded !== undefined
+      ? Number(coinsAwarded)
+      : bill.rewardCoinsAwarded || templateConfig?.softBillEmailConfig?.rewardCoins || 500;
   const welcomeCoins = templateConfig?.softBillEmailConfig?.welcomeCoins || 500;
   const referrerCoins = templateConfig?.softBillEmailConfig?.referrerCoins || 100;
 
-  const subject = customSubject || templateConfig?.softBillEmailConfig?.emailSubject?.replace('{{invoiceNumber}}', invoiceNumber) || `Official EKOSMART Showroom GST Tax Invoice & Soft Copy - ${invoiceNumber}`;
-  
-  const rawMatter = customMatter || templateConfig?.softBillEmailConfig?.emailMatter || 
+  const subject =
+    customSubject ||
+    templateConfig?.softBillEmailConfig?.emailSubject?.replace('{{invoiceNumber}}', invoiceNumber) ||
+    `Official EKOSMART Showroom GST Tax Invoice & Soft Copy - ${invoiceNumber}`;
+
+  const rawMatter =
+    customMatter ||
+    templateConfig?.softBillEmailConfig?.emailMatter ||
     `Dear {{customerName}},\n\nThank you for choosing EKOSMART Clean Energy & Green Mobility. Please find attached below your official Soft Copy GST Tax Invoice, Warranty Certificate registration, and exclusive Customer Referral Code.\n\nYour Unique Referral Code is: {{referralCode}}\nShare this code with your friends & family so they receive {{welcomeCoins}} Coins, and you earn {{referrerCoins}} Coins on their qualifying purchase!`;
 
   const parsedMatter = rawMatter
@@ -409,12 +696,16 @@ export const sendInvoiceSoftCopyEmail = async (
                         <td style="padding: 2px 0;">Subtotal:</td>
                         <td align="right" style="padding: 2px 0; font-family: monospace;">₹${subtotal}</td>
                       </tr>
-                      ${discountTotal !== '0' ? `
+                      ${
+                        discountTotal !== '0'
+                          ? `
                         <tr>
                           <td style="padding: 2px 0; color: #dc2626;">Discount:</td>
                           <td align="right" style="padding: 2px 0; color: #dc2626; font-family: monospace;">-₹${discountTotal}</td>
                         </tr>
-                      ` : ''}
+                      `
+                          : ''
+                      }
                       <tr>
                         <td style="padding: 2px 0;">GST / Tax:</td>
                         <td align="right" style="padding: 2px 0; font-family: monospace;">₹${taxTotal}</td>
@@ -468,18 +759,17 @@ export const sendInvoiceSoftCopyEmail = async (
     </html>
   `;
 
-  const config = getSmtpConfig();
-  const transporter = getTransporter();
+  const creds = await loadSmtpCredentialsAsync();
 
-  if (transporter) {
+  if (creds.isConfigured) {
     try {
-      await transporter.sendMail({
-        from: config.from,
+      await dispatchMailWithFallback(creds, {
+        from: creds.from,
         to,
         subject,
         html,
       });
-      console.log(`[Ekosmart Soft Copy Email Service] >>> Soft copy invoice ${invoiceNumber} dispatched to ${to} via cPanel SMTP <<<`);
+      console.log(`[Ekosmart Soft Copy Email Service] >>> Soft copy invoice ${invoiceNumber} dispatched to ${to} via SMTP <<<`);
       return {
         success: true,
         message: `Soft copy bill and referral code emailed successfully to ${to}.`,

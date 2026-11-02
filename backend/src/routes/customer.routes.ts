@@ -7,6 +7,8 @@ import {
   sendComplaintOtp,
   verifyComplaintOtp,
   testSmtpConnectionController,
+  getSmtpSettingsController,
+  saveSmtpSettingsController,
   getCustomerProfile,
   updateCustomerProfile,
   getMyWallet,
@@ -63,6 +65,9 @@ router.get('/me/complaints', protectCustomer, getMyComplaints);
 // 3. ADMIN MANAGEMENT ROUTES (PROTECTED)
 // ============================================================================
 // Referral & Wallet Management
+router.get('/smtp-settings', protect, authorize('ADMIN', 'SUPER_ADMIN', 'SUPERADMIN'), getSmtpSettingsController);
+router.put('/smtp-settings', protect, authorize('ADMIN', 'SUPER_ADMIN', 'SUPERADMIN'), saveSmtpSettingsController);
+router.post('/smtp-settings/test', protect, authorize('ADMIN', 'SUPER_ADMIN', 'SUPERADMIN'), testSmtpConnectionController);
 router.get('/referral-settings', protect, getReferralSettings);
 router.put('/referral-settings', protect, authorize('ADMIN', 'SUPER_ADMIN', 'SUPERADMIN'), updateReferralSettings);
 router.get('/referrals/all', protect, getAllReferrals);
