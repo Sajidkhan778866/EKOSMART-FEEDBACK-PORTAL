@@ -5,7 +5,6 @@ import {
   Wallet,
   Gift,
   ShoppingBag,
-  ShieldCheck,
   ClipboardList,
   User,
   Copy,
@@ -126,7 +125,8 @@ export default function CustomerDashboard() {
         </div>
       </div>
 
-      {/* Primary Highlights: Wallet & Referral Code */}
+      {/* Primary Highlights: Wallet & Referral Code (Removed) */}
+      {false && (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* 1. Wallet Balance Card */}
         <div className="bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-white rounded-3xl p-6 border-2 border-amber-300/80 shadow-sm flex flex-col justify-between space-y-4">
@@ -241,64 +241,45 @@ export default function CustomerDashboard() {
           </Link>
         </div>
       </div>
+      )}
 
       {/* Quick Navigation Action Grid */}
       <div>
         <h2 className="text-base font-bold text-slate-800 mb-3 tracking-wide">Customer Services & Modules</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <Link
-            to="/customer/wallet"
-            className="bg-white p-4 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:shadow-md transition text-center group flex flex-col items-center justify-center space-y-2"
-          >
-            <div className="p-3 rounded-2xl bg-amber-50 text-amber-600 group-hover:scale-110 transition-transform">
-              <Coins size={22} />
-            </div>
-            <span className="text-xs font-bold text-slate-800 group-hover:text-emerald-700">My Wallet</span>
-          </Link>
-
-          <Link
-            to="/customer/referrals"
-            className="bg-white p-4 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:shadow-md transition text-center group flex flex-col items-center justify-center space-y-2"
-          >
-            <div className="p-3 rounded-2xl bg-purple-50 text-purple-600 group-hover:scale-110 transition-transform">
-              <Gift size={22} />
-            </div>
-            <span className="text-xs font-bold text-slate-800 group-hover:text-emerald-700">My Referrals</span>
-          </Link>
-
-          <Link
-            to="/customer/purchases"
-            className="bg-white p-4 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:shadow-md transition text-center group flex flex-col items-center justify-center space-y-2"
-          >
-            <div className="p-3 rounded-2xl bg-blue-50 text-blue-600 group-hover:scale-110 transition-transform">
-              <ShoppingBag size={22} />
-            </div>
-            <span className="text-xs font-bold text-slate-800 group-hover:text-emerald-700">My Purchases</span>
-          </Link>
-
-          <Link
-            to="/warranty/check"
-            className="bg-white p-4 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:shadow-md transition text-center group flex flex-col items-center justify-center space-y-2"
+            to="/complaint/register"
+            className="bg-white p-5 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:shadow-md transition text-center group flex flex-col items-center justify-center space-y-2"
           >
             <div className="p-3 rounded-2xl bg-emerald-50 text-emerald-600 group-hover:scale-110 transition-transform">
-              <ShieldCheck size={22} />
+              <ClipboardList size={22} />
             </div>
-            <span className="text-xs font-bold text-slate-800 group-hover:text-emerald-700">My Warranty</span>
+            <span className="text-xs font-bold text-slate-800 group-hover:text-emerald-700">Register Complaint</span>
           </Link>
 
           <Link
             to="/complaint/track"
-            className="bg-white p-4 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:shadow-md transition text-center group flex flex-col items-center justify-center space-y-2"
+            className="bg-white p-5 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:shadow-md transition text-center group flex flex-col items-center justify-center space-y-2"
           >
             <div className="p-3 rounded-2xl bg-rose-50 text-rose-600 group-hover:scale-110 transition-transform">
               <ClipboardList size={22} />
             </div>
-            <span className="text-xs font-bold text-slate-800 group-hover:text-emerald-700">My Complaints</span>
+            <span className="text-xs font-bold text-slate-800 group-hover:text-emerald-700">Track Complaints</span>
+          </Link>
+
+          <Link
+            to="/contact"
+            className="bg-white p-5 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:shadow-md transition text-center group flex flex-col items-center justify-center space-y-2"
+          >
+            <div className="p-3 rounded-2xl bg-blue-50 text-blue-600 group-hover:scale-110 transition-transform">
+              <ChevronRight size={22} />
+            </div>
+            <span className="text-xs font-bold text-slate-800 group-hover:text-emerald-700">Contact Support</span>
           </Link>
 
           <Link
             to="/customer/profile"
-            className="bg-white p-4 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:shadow-md transition text-center group flex flex-col items-center justify-center space-y-2"
+            className="bg-white p-5 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:shadow-md transition text-center group flex flex-col items-center justify-center space-y-2"
           >
             <div className="p-3 rounded-2xl bg-slate-100 text-slate-700 group-hover:scale-110 transition-transform">
               <User size={22} />
@@ -308,7 +289,8 @@ export default function CustomerDashboard() {
         </div>
       </div>
 
-      {/* Recent Purchases & Wallet History Preview */}
+      {/* Recent Purchases & Wallet History Preview (Removed) */}
+      {false && (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Recent Purchases */}
         <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
@@ -402,6 +384,7 @@ export default function CustomerDashboard() {
           )}
         </div>
       </div>
+      )}
     </div>
   );
 }

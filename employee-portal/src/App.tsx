@@ -57,7 +57,7 @@ function App() {
             <Route path="idcard" element={<MyIdCard />} />
             <Route path="salary" element={<MySalarySlip />} />
             <Route path="complaints" element={<Complaints />} />
-            <Route path="warranty" element={<Dashboard />} />
+            <Route path="warranty" element={<Navigate to="/dashboard" replace />} />
             <Route path="reports" element={<Reports />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>

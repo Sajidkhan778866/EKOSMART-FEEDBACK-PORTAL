@@ -19,11 +19,8 @@ import {
   Phone,
   Mail,
   ShoppingBag,
-  ShieldCheck,
   ClipboardList,
   Save,
-  Check,
-  Copy,
 } from 'lucide-react';
 import { customerApi } from '../api/client';
 import { DateRangeFilter, type DateRangeState } from '../components/DateRangeFilter';
@@ -94,7 +91,7 @@ export default function Customers({ defaultTab }: CustomersProps) {
 
   // Adjust Wallet Modal
   const [showAdjustModal, setShowAdjustModal] = useState(false);
-  const [selectedForAdjust, setSelectedForAdjust] = useState<CustomerItem | null>(null);
+  const [selectedForAdjust] = useState<CustomerItem | null>(null);
   const [adjustForm, setAdjustForm] = useState({
     amount: 100,
     type: 'credit' as 'credit' | 'debit',
@@ -125,7 +122,6 @@ export default function Customers({ defaultTab }: CustomersProps) {
 
   // Toast / Alerts
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   const showAlert = (type: 'success' | 'error', message: string) => {
     setAlert({ type, message });
@@ -369,12 +365,6 @@ export default function Customers({ defaultTab }: CustomersProps) {
     }
   };
 
-  const copyCode = (code: string) => {
-    navigator.clipboard.writeText(code);
-    setCopiedCode(code);
-    setTimeout(() => setCopiedCode(null), 2000);
-  };
-
   return (
     <div className="space-y-6">
       {/* Alert toast */}
@@ -402,15 +392,16 @@ export default function Customers({ defaultTab }: CustomersProps) {
               <Users size={22} />
             </div>
             <div>
-              <h1 className="text-2xl font-black text-slate-800 tracking-tight">Customer & Referral Hub</h1>
+              <h1 className="text-2xl font-black text-slate-800 tracking-tight">Customer Directory</h1>
               <p className="text-xs text-slate-500 mt-0.5">
-                Manage customer dossiers, unique referral codes, coin wallets, and soft-coded reward settings.
+                Manage verified customer dossiers, contact information, and service complaint records.
               </p>
             </div>
           </div>
         </div>
 
-        {/* Tab Controls */}
+        {/* Tab Controls (Hidden Wallet & Referrals) */}
+        {false && (
         <div className="flex items-center bg-slate-100 p-1.5 rounded-2xl border border-slate-200 text-xs font-bold">
           <button
             onClick={() => setActiveTab('directory')}
@@ -440,6 +431,7 @@ export default function Customers({ defaultTab }: CustomersProps) {
             <span>Wallet Logs</span>
           </button>
         </div>
+        )}
       </div>
 
       {/* ========================================================================= */}
@@ -516,9 +508,7 @@ export default function Customers({ defaultTab }: CustomersProps) {
                     <tr className="bg-slate-50 border-b border-slate-200 font-bold text-slate-500 uppercase tracking-wider text-[11px]">
                       <th className="py-3.5 px-5">Customer ID</th>
                       <th className="py-3.5 px-5">Name & Contact</th>
-                      <th className="py-3.5 px-5">Referral Code</th>
-                      <th className="py-3.5 px-5">Referred By</th>
-                      <th className="py-3.5 px-5">Wallet Coins</th>
+                      <th className="py-3.5 px-5">Category</th>
                       <th className="py-3.5 px-5">Joined Date</th>
                       <th className="py-3.5 px-5 text-right">Actions</th>
                     </tr>
@@ -543,52 +533,15 @@ export default function Customers({ defaultTab }: CustomersProps) {
                           </div>
                         </td>
                         <td className="py-3.5 px-5">
-                          <div className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-900 border border-amber-200 rounded-lg font-mono font-bold text-xs">
-                            <Gift size={12} className="text-amber-600" />
-                            <span>{c.referralCode || 'N/A'}</span>
-                            {c.referralCode && (
-                              <button
-                                onClick={() => copyCode(c.referralCode!)}
-                                className="ml-1 text-amber-600 hover:text-amber-800"
-                                title="Copy code"
-                              >
-                                {copiedCode === c.referralCode ? <Check size={11} /> : <Copy size={11} />}
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                        <td className="py-3.5 px-5 text-slate-600">
-                          {c.referredBy ? (
-                            <div>
-                              <p className="font-semibold text-slate-700">{c.referredBy.name}</p>
-                              <p className="text-[10px] text-slate-400 font-mono">{c.referredBy.referralCode}</p>
-                            </div>
-                          ) : (
-                            <span className="text-slate-400 text-xs">Direct / None</span>
-                          )}
-                        </td>
-                        <td className="py-3.5 px-5">
-                          <div className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl font-black text-xs">
-                            <Coins size={13} className="text-amber-500 fill-amber-500" />
-                            <span>{c.walletBalance || 0} Coins</span>
-                          </div>
+                          <span className="inline-flex items-center px-2.5 py-1 bg-slate-100 text-slate-700 border border-slate-200 rounded-lg font-bold text-xs">
+                            {c.customerType || 'Retail'}
+                          </span>
                         </td>
                         <td className="py-3.5 px-5 text-slate-500">
                           {new Date(c.createdAt).toLocaleDateString('en-IN')}
                         </td>
                         <td className="py-3.5 px-5 text-right">
                           <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              onClick={() => {
-                                setSelectedForAdjust(c);
-                                setShowAdjustModal(true);
-                              }}
-                              className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer"
-                              title="Credit / Debit Wallet Coins"
-                            >
-                              <Coins size={12} />
-                              <span>Adjust</span>
-                            </button>
                             <button
                               onClick={() => handleOpenDossier(c._id)}
                               className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer"
@@ -905,99 +858,17 @@ export default function Customers({ defaultTab }: CustomersProps) {
             </div>
 
             {/* Quick Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200">
-                <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider block">Wallet Balance</span>
-                <div className="flex items-center gap-1.5 mt-1 font-black text-2xl text-emerald-900">
-                  <Coins size={20} className="text-amber-500 fill-amber-500" />
-                  <span>{dossierCustomer.customer?.walletBalance || 0}</span>
-                </div>
-                <span className="text-[10px] text-emerald-700 mt-1 block">
-                  Total Earned: {dossierCustomer.customer?.totalEarnedCoins || 0} Coins
-                </span>
-              </div>
-
-              <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200">
-                <span className="text-[11px] font-bold text-amber-800 uppercase tracking-wider block">Referral Code</span>
-                <div className="mt-1 font-mono font-black text-xl text-amber-900 flex items-center justify-between">
-                  <span>{dossierCustomer.customer?.referralCode}</span>
-                  <button
-                    onClick={() => copyCode(dossierCustomer.customer?.referralCode)}
-                    className="p-1 text-amber-700 hover:text-amber-900"
-                  >
-                    <Copy size={14} />
-                  </button>
-                </div>
-                <span className="text-[10px] text-amber-700 mt-1 block">
-                  Referred {dossierCustomer.referrals?.length || 0} friends
-                </span>
-              </div>
-
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
                 <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">Contact Details</span>
                 <p className="text-xs font-bold text-slate-800 mt-1">{dossierCustomer.customer?.mobile}</p>
                 <p className="text-[11px] text-slate-500">{dossierCustomer.customer?.email || 'No email registered'}</p>
               </div>
-            </div>
-
-            {/* Purchases / Bills Section */}
-            <div className="space-y-2 pt-2 border-t border-slate-100">
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
-                <ShoppingBag size={14} className="text-emerald-600" />
-                <span>Showroom & Plant Invoices ({dossierCustomer.purchases?.length || 0})</span>
+              <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200">
+                <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider block">Customer Category</span>
+                <p className="text-sm font-black text-emerald-900 mt-1">{dossierCustomer.customer?.customerType || 'Retail'}</p>
+                <p className="text-[11px] text-emerald-700">Customer ID: {dossierCustomer.customer?.customerId}</p>
               </div>
-              {dossierCustomer.purchases?.length === 0 ? (
-                <p className="text-xs text-slate-400 italic">No counter purchases found.</p>
-              ) : (
-                <div className="space-y-2">
-                  {dossierCustomer.purchases?.map((b: any) => (
-                    <div key={b._id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex justify-between items-center text-xs">
-                      <div>
-                        <p className="font-bold text-slate-800 font-mono">{b.invoiceNumber}</p>
-                        <p className="text-[11px] text-slate-500">
-                          {b.items?.map((i: any) => i.productName).join(', ') || 'Vehicle & Spares'}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-black text-slate-900">₹{b.totalAmount?.toLocaleString('en-IN')}</p>
-                        <span className="text-[10px] text-emerald-600 font-bold">
-                          {b.purchaseRewardAwarded ? '+500 Coins Rewarded' : ''}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Active Warranties Section */}
-            <div className="space-y-2 pt-2 border-t border-slate-100">
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
-                <ShieldCheck size={14} className="text-emerald-600" />
-                <span>Registered Warranties ({dossierCustomer.warranties?.length || 0})</span>
-              </div>
-              {dossierCustomer.warranties?.length === 0 ? (
-                <p className="text-xs text-slate-400 italic">No active product warranties registered.</p>
-              ) : (
-                <div className="space-y-2">
-                  {dossierCustomer.warranties?.map((w: any) => (
-                    <div key={w._id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex justify-between items-center text-xs">
-                      <div>
-                        <p className="font-bold text-slate-800">{w.product || 'Lithium Battery Pack'}</p>
-                        <p className="text-[11px] text-slate-500 font-mono">Serial: {w.serialNumber}</p>
-                      </div>
-                      <div className="text-right">
-                        <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-bold rounded-md text-[10px]">
-                          {w.status || 'Active'}
-                        </span>
-                        <p className="text-[10px] text-slate-400 mt-0.5">
-                          Exp: {new Date(w.warrantyExpiryDate).toLocaleDateString('en-IN')}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
 
             {/* Complaints Section */}

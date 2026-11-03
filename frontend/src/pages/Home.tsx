@@ -239,10 +239,10 @@ const defaultHero: HeroContent = {
   primaryButtonVisible: true,
   primaryButtonBgColor: '#10b981',
   primaryButtonTextColor: '#020617',
-  secondaryButtonText: 'Check Battery Warranty',
-  secondaryButtonLink: '/warranty/check',
-  secondaryButtonTarget: '_blank',
-  secondaryButtonVisible: true,
+  secondaryButtonText: 'Track Ticket Status',
+  secondaryButtonLink: '/complaint/track',
+  secondaryButtonTarget: '_self',
+  secondaryButtonVisible: false,
   secondaryButtonBgColor: 'rgba(255, 255, 255, 0.1)',
   secondaryButtonTextColor: '#ffffff',
   secondaryButtonBorderColor: 'rgba(255, 255, 255, 0.2)',
@@ -388,6 +388,25 @@ const defaultQuickActionsConfig: QuickActionsConfig = {
 
 const defaultQuickActions: QuickActionItem[] = [
   {
+    id: 'act-register',
+    title: 'Register Complaint',
+    subtitle: 'Raise a new battery or EV support ticket',
+    url: '/complaint/register',
+    icon: 'FileText',
+    iconType: 'icon',
+    iconImage: '',
+    color: 'emerald',
+    customColor: '',
+    customBg: '',
+    customTextColor: '',
+    isVisible: true,
+    order: 1,
+    target: '_self',
+    showExternalIcon: false,
+    badge: '',
+    badgeColor: '',
+  },
+  {
     id: 'act-track',
     title: 'Track Ticket',
     subtitle: 'Live complaint inspection status',
@@ -400,47 +419,9 @@ const defaultQuickActions: QuickActionItem[] = [
     customBg: '',
     customTextColor: '',
     isVisible: true,
-    order: 1,
+    order: 2,
     target: '_self',
     showExternalIcon: false,
-    badge: '',
-    badgeColor: '',
-  },
-  {
-    id: 'act-warranty-reg',
-    title: 'Warranty Registration',
-    subtitle: 'Register new sales & serial number',
-    url: '/warranty/register',
-    icon: 'ShieldCheck',
-    iconType: 'icon',
-    iconImage: '',
-    color: 'amber',
-    customColor: '',
-    customBg: '',
-    customTextColor: '',
-    isVisible: true,
-    order: 2,
-    target: '_blank',
-    showExternalIcon: true,
-    badge: '',
-    badgeColor: '',
-  },
-  {
-    id: 'act-warranty-check',
-    title: 'Check Warranty',
-    subtitle: '3-Yr (48V) & 1.5-Yr (60V/72V) status',
-    url: '/warranty/check',
-    icon: 'ShieldAlert',
-    iconType: 'icon',
-    iconImage: '',
-    color: 'emerald',
-    customColor: '',
-    customBg: '',
-    customTextColor: '',
-    isVisible: true,
-    order: 3,
-    target: '_blank',
-    showExternalIcon: true,
     badge: '',
     badgeColor: '',
   },
@@ -457,7 +438,7 @@ const defaultQuickActions: QuickActionItem[] = [
     customBg: '',
     customTextColor: '',
     isVisible: true,
-    order: 4,
+    order: 3,
     target: '_self',
     showExternalIcon: false,
     badge: '',
@@ -1162,7 +1143,7 @@ const Home = () => {
                 </Link>
               )
             )}
-            {(hero.secondaryButtonVisible ?? true) && hero.secondaryButtonText && (
+            {(hero.secondaryButtonVisible ?? false) && hero.secondaryButtonText && !/warranty|wallet/i.test(hero.secondaryButtonLink || '') && (
               (hero.secondaryButtonTarget === '_self' && hero.secondaryButtonLink && !hero.secondaryButtonLink.startsWith('http')) ? (
                 <Link
                   to={hero.secondaryButtonLink || '/warranty/check'}
@@ -1384,8 +1365,8 @@ const Home = () => {
       </section>
       )}
 
-      {/* Ekosmart Customer Wallet & Referral Rewards Banner */}
-      {sectionLayouts.rewards?.isVisible !== false && (
+      {/* Ekosmart Customer Wallet & Referral Rewards Banner (Removed) */}
+      {false && sectionLayouts.rewards?.isVisible !== false && (
         <section
           style={{
             maxWidth: sectionLayouts.rewards?.maxWidth,
@@ -1521,7 +1502,7 @@ const Home = () => {
                 }
               >
                 {quickActions
-                  .filter((act) => act && act.isVisible !== false)
+                  .filter((act) => act && act.isVisible !== false && !/warranty|wallet|referral/i.test(act.url || (act as any).linkUrl || ''))
                   .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
                   .map((act, idx, arr) => {
                     const actUrl = (act.url || (act as any).linkUrl || '/').trim();

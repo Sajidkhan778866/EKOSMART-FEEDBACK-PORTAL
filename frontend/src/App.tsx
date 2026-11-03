@@ -4,8 +4,6 @@ import ErrorBoundary from './components/ErrorBoundary';
 import Home from './pages/Home';
 import RegisterComplaint from './pages/RegisterComplaint';
 import TrackComplaint from './pages/TrackComplaint';
-import WarrantyCheck from './pages/WarrantyCheck';
-import WarrantyRegister from './pages/WarrantyRegister';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsConditions from './pages/TermsConditions';
 import RefundPolicy from './pages/RefundPolicy';
@@ -20,11 +18,7 @@ import { CustomerAuthProvider, useCustomerAuth } from './context/CustomerAuthCon
 import CustomerRegister from './pages/CustomerRegister';
 import CustomerLogin from './pages/CustomerLogin';
 import CustomerDashboard from './pages/CustomerDashboard';
-import CustomerWallet from './pages/CustomerWallet';
-import CustomerReferrals from './pages/CustomerReferrals';
-import CustomerPurchases from './pages/CustomerPurchases';
 import CustomerProfile from './pages/CustomerProfile';
-import ShowroomBillingPublic from './pages/ShowroomBillingPublic';
 
 // Protected Customer Route Component
 const ProtectedCustomerRoute = ({ children }: { children: React.ReactNode }) => {
@@ -53,14 +47,12 @@ function App() {
                 {/* Core Dynamic Pages */}
                 <Route index element={<Home />} />
                 
-                {/* Support & Warranty */}
+                {/* Support & Complaints */}
                 <Route path="complaint/register" element={<RegisterComplaint />} />
                 <Route path="complaint/track" element={<TrackComplaint />} />
-                <Route path="warranty/check" element={<WarrantyCheck />} />
-                <Route path="warranty/register" element={<WarrantyRegister />} />
-                
-                {/* Showroom Public Info */}
-                <Route path="showroom-billing" element={<ShowroomBillingPublic />} />
+                <Route path="warranty/check" element={<Navigate to="/" replace />} />
+                <Route path="warranty/register" element={<Navigate to="/" replace />} />
+                <Route path="showroom-billing" element={<Navigate to="/" replace />} />
                 
                 {/* Customer Authentication */}
                 <Route path="customer/register" element={<CustomerRegister />} />
@@ -77,30 +69,9 @@ function App() {
                     </ProtectedCustomerRoute>
                   }
                 />
-                <Route
-                  path="customer/wallet"
-                  element={
-                    <ProtectedCustomerRoute>
-                      <CustomerWallet />
-                    </ProtectedCustomerRoute>
-                  }
-                />
-                <Route
-                  path="customer/referrals"
-                  element={
-                    <ProtectedCustomerRoute>
-                      <CustomerReferrals />
-                    </ProtectedCustomerRoute>
-                  }
-                />
-                <Route
-                  path="customer/purchases"
-                  element={
-                    <ProtectedCustomerRoute>
-                      <CustomerPurchases />
-                    </ProtectedCustomerRoute>
-                  }
-                />
+                <Route path="customer/wallet" element={<Navigate to="/customer/dashboard" replace />} />
+                <Route path="customer/referrals" element={<Navigate to="/customer/dashboard" replace />} />
+                <Route path="customer/purchases" element={<Navigate to="/customer/dashboard" replace />} />
                 <Route
                   path="customer/profile"
                   element={

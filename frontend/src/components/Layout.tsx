@@ -260,27 +260,27 @@ const defaultHeaderNav: HeaderNavContent = {
   homeHref: '/',
   homeIcon: 'home',
   walletLabel: 'Wallet & Coins',
-  showWallet: true,
+  showWallet: false,
   walletHref: '/customer/wallet',
-  showWalletBadge: true,
+  showWalletBadge: false,
   walletBgColor: '#fef3c7',
   walletTextColor: '#78350f',
   walletBorderColor: '#fde68a',
   walletIcon: 'coins',
   referLabel: 'Refer & Earn',
-  showRefer: true,
+  showRefer: false,
   referHref: '/customer/referrals',
-  showReferBonus: true,
+  showReferBonus: false,
   referBonusAmount: 500,
   referBgColor: '#faf5ff',
   referTextColor: '#581c87',
   referBorderColor: '#e9d5ff',
   referIcon: 'gift',
-  showShowroomBilling: true,
+  showShowroomBilling: false,
   showroomBillingLabel: 'Showroom Bills',
   showroomBillingHref: '/showroom-billing',
   showroomBillingIcon: 'receipt',
-  showWarrantyCheck: true,
+  showWarrantyCheck: false,
   warrantyCheckLabel: 'Check Warranty',
   warrantyCheckHref: '/warranty/check',
   warrantyCheckIcon: 'shield',
@@ -288,8 +288,8 @@ const defaultHeaderNav: HeaderNavContent = {
   trackTicketLabel: 'Track Ticket',
   trackTicketHref: '/complaint/track',
   trackTicketIcon: 'search',
-  showSupportTicket: false,
-  supportTicketLabel: 'Support Ticket',
+  showSupportTicket: true,
+  supportTicketLabel: 'Register Complaint',
   supportTicketHref: '/complaint/register',
   supportTicketIcon: 'file',
   contactLabel: 'Contact & Helpline',
@@ -672,8 +672,8 @@ const Layout = () => {
                 </li>
               )}
 
-              {/* Customer Wallet Option */}
-              {(headerNav.showWallet ?? true) && (
+              {/* Customer Wallet Option (Removed) */}
+              {false && (headerNav.showWallet ?? false) && (
                 <li>
                   <NavLink
                     to={headerNav.walletHref || '/customer/wallet'}
@@ -701,8 +701,8 @@ const Layout = () => {
                 </li>
               )}
 
-              {/* Refer & Earn Option */}
-              {(headerNav.showRefer ?? true) && (
+              {/* Refer & Earn Option (Removed) */}
+              {false && (headerNav.showRefer ?? false) && (
                 <li>
                   <NavLink
                     to={headerNav.referHref || '/customer/referrals'}
@@ -729,8 +729,8 @@ const Layout = () => {
                 </li>
               )}
 
-              {/* Showroom Billing Option */}
-              {(headerNav.showShowroomBilling ?? false) && (
+              {/* Showroom Billing Option (Removed) */}
+              {false && (headerNav.showShowroomBilling ?? false) && (
                 <li>
                   <NavLink
                     to={headerNav.showroomBillingHref || '/showroom-billing'}
@@ -746,8 +746,8 @@ const Layout = () => {
                 </li>
               )}
 
-              {/* Check Battery Warranty Option */}
-              {(headerNav.showWarrantyCheck ?? true) && (
+              {/* Check Battery Warranty Option (Removed) */}
+              {false && (headerNav.showWarrantyCheck ?? false) && (
                 <li>
                   <NavLink
                     to={headerNav.warrantyCheckHref || '/warranty/check'}
@@ -780,8 +780,8 @@ const Layout = () => {
                 </li>
               )}
 
-              {/* Register / Support Ticket Option (if enabled) */}
-              {Boolean(headerNav.showSupportTicket) && (
+              {/* Register / Support Ticket Option */}
+              {(headerNav.showSupportTicket ?? true) && (
                 <li>
                   <NavLink
                     to={headerNav.supportTicketHref || '/complaint/register'}
@@ -792,14 +792,14 @@ const Layout = () => {
                     }
                   >
                     {renderNavIcon(headerNav.supportTicketIcon, <FileText size={15} className="text-amber-600" />)}
-                    <span>{headerNav.supportTicketLabel || 'Support Ticket'}</span>
+                    <span>{headerNav.supportTicketLabel || 'Register Complaint'}</span>
                   </NavLink>
                 </li>
               )}
 
               {/* Softcoded Custom Navigation Items */}
               {(headerNav.customNavItems || [])
-                .filter((item) => item && item.isVisible !== false)
+                .filter((item) => item && item.isVisible !== false && !/warranty|wallet|referral|showroom-billing/i.test(item.href || ''))
                 .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
                 .map((item: CustomNavItem) => {
                   const linkHref = (item.href || '#').trim();
@@ -1074,9 +1074,6 @@ const Layout = () => {
                         <div className="px-4 py-2 border-b border-slate-100">
                           <p className="font-bold text-slate-900 truncate">{customer.name}</p>
                           <p className="text-[11px] text-slate-500 font-mono">{customer.customerId}</p>
-                          <p className="text-[11px] text-amber-600 font-bold mt-0.5">
-                            {customer.walletBalance || 0} Coins Available
-                          </p>
                         </div>
                         <Link
                           to="/customer/dashboard"
@@ -1085,30 +1082,6 @@ const Layout = () => {
                         >
                           <Home size={14} className="text-emerald-600" />
                           <span>Dashboard</span>
-                        </Link>
-                        <Link
-                          to="/customer/wallet"
-                          onClick={() => setUserDropdownOpen(false)}
-                          className="flex items-center gap-2 px-4 py-2 hover:bg-slate-50 text-slate-700"
-                        >
-                          <Coins size={14} className="text-amber-500" />
-                          <span>My Wallet ({customer.walletBalance || 0} Coins)</span>
-                        </Link>
-                        <Link
-                          to="/customer/referrals"
-                          onClick={() => setUserDropdownOpen(false)}
-                          className="flex items-center gap-2 px-4 py-2 hover:bg-slate-50 text-slate-700"
-                        >
-                          <Gift size={14} className="text-purple-500" />
-                          <span>My Referrals ({customer.referralCode})</span>
-                        </Link>
-                        <Link
-                          to="/customer/purchases"
-                          onClick={() => setUserDropdownOpen(false)}
-                          className="flex items-center gap-2 px-4 py-2 hover:bg-slate-50 text-slate-700"
-                        >
-                          <ShoppingBag size={14} className="text-blue-500" />
-                          <span>My Purchases & Bills</span>
                         </Link>
                         <Link
                           to="/customer/profile"
@@ -1152,15 +1125,8 @@ const Layout = () => {
             </ul>
           </nav>
 
-          {/* Right Mobile Support / Wallet Button */}
+          {/* Right Mobile Support Button */}
           <div className="md:hidden flex items-center gap-2">
-            <NavLink
-              to="/customer/wallet"
-              className="px-2.5 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-xl text-xs font-bold shadow-xs flex items-center gap-1"
-            >
-              <Coins size={13} className="text-amber-600" />
-              <span>{isAuthenticated ? `${customer?.walletBalance || 0}` : 'Wallet'}</span>
-            </NavLink>
             <NavLink
               to="/complaint/register"
               className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs flex items-center gap-1"
@@ -1211,12 +1177,6 @@ const Layout = () => {
                       <p className="font-bold text-white text-xs">{customer.name}</p>
                       <p className="text-[10px] text-slate-400 font-mono">{customer.customerId}</p>
                     </div>
-                    <div className="text-right">
-                      <span className="text-xs font-black text-amber-400 flex items-center gap-1">
-                        <Coins size={12} />
-                        <span>{customer.walletBalance || 0} Coins</span>
-                      </span>
-                    </div>
                   </div>
                   <div className="pt-2 border-t border-slate-700/80 flex gap-2">
                     <Link
@@ -1240,15 +1200,15 @@ const Layout = () => {
               ) : (
                 <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-900/60 to-emerald-800/40 border border-emerald-700/50 flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-bold text-white">Join Ekosmart Rewards</p>
-                    <p className="text-[10px] text-emerald-300">Earn Coins on Showroom Purchases</p>
+                    <p className="text-xs font-bold text-white">Customer Portal</p>
+                    <p className="text-[10px] text-emerald-300">Register & Track Service Tickets</p>
                   </div>
                   <Link
-                    to="/customer/register"
+                    to="/customer/login"
                     onClick={() => setMobileMenuOpen(false)}
                     className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 rounded-xl text-xs font-black"
                   >
-                    Register
+                    Login
                   </Link>
                 </div>
               )}
@@ -1280,108 +1240,7 @@ const Layout = () => {
                     </NavLink>
                   )}
 
-                  {(headerNav.showWallet ?? true) && (
-                    <NavLink
-                      to={headerNav.walletHref || '/customer/wallet'}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className={({ isActive }) =>
-                        `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
-                          isActive
-                            ? 'bg-amber-900/50 text-amber-400 border border-amber-700/50'
-                            : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                        }`
-                      }
-                    >
-                      <span className="flex items-center gap-2.5">
-                        {renderNavIcon(headerNav.walletIcon, <Coins size={15} className="text-amber-400" />, 15, "text-amber-400")}
-                        <span>{headerNav.walletLabel || 'My Wallet'} ({customer?.walletBalance || 0} Coins)</span>
-                      </span>
-                      <ChevronRight size={14} className="text-slate-600" />
-                    </NavLink>
-                  )}
-
-                  {(headerNav.showRefer ?? true) && (
-                    <NavLink
-                      to={headerNav.referHref || '/customer/referrals'}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className={({ isActive }) =>
-                        `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
-                          isActive
-                            ? 'bg-purple-900/50 text-purple-400 border border-purple-700/50'
-                            : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                        }`
-                      }
-                    >
-                      <span className="flex items-center gap-2.5">
-                        {renderNavIcon(headerNav.referIcon, <Gift size={15} className="text-purple-400" />, 15, "text-purple-400")}
-                        <span>
-                          {headerNav.referLabel || 'My Referrals'}
-                          {(headerNav.showReferBonus ?? true) && ` (+${headerNav.referBonusAmount || referrerCoins || 500})`}
-                        </span>
-                      </span>
-                      <ChevronRight size={14} className="text-slate-600" />
-                    </NavLink>
-                  )}
-
-                  <NavLink
-                    to="/customer/purchases"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={({ isActive }) =>
-                      `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
-                        isActive
-                          ? 'bg-blue-900/50 text-blue-400 border border-blue-700/50'
-                          : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                      }`
-                    }
-                  >
-                    <span className="flex items-center gap-2.5">
-                      <ShoppingBag size={15} className="text-blue-400" />
-                      <span>My Purchases & Bills</span>
-                    </span>
-                    <ChevronRight size={14} className="text-slate-600" />
-                  </NavLink>
-
-                  {(headerNav.showShowroomBilling ?? false) && (
-                    <NavLink
-                      to={headerNav.showroomBillingHref || '/showroom-billing'}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className={({ isActive }) =>
-                        `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
-                          isActive
-                            ? 'bg-blue-900/50 text-blue-400 border border-blue-700/50'
-                            : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                        }`
-                      }
-                    >
-                      <span className="flex items-center gap-2.5">
-                        {renderNavIcon(headerNav.showroomBillingIcon, <Receipt size={15} className="text-blue-400" />, 15, "text-blue-400")}
-                        <span>{headerNav.showroomBillingLabel || 'Showroom Billing Counter'}</span>
-                      </span>
-                      <ChevronRight size={14} className="text-slate-600" />
-                    </NavLink>
-                  )}
-
-                  {(headerNav.showWarrantyCheck ?? true) && (
-                    <NavLink
-                      to={headerNav.warrantyCheckHref || '/warranty/check'}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className={({ isActive }) =>
-                        `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
-                          isActive
-                            ? 'bg-emerald-900/50 text-emerald-400 border border-emerald-700/50'
-                            : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                        }`
-                      }
-                    >
-                      <span className="flex items-center gap-2.5">
-                        {renderNavIcon(headerNav.warrantyCheckIcon, <ShieldCheck size={15} className="text-purple-400" />, 15, "text-purple-400")}
-                        <span>{headerNav.warrantyCheckLabel || 'Check Battery Warranty'}</span>
-                      </span>
-                      <ChevronRight size={14} className="text-slate-600" />
-                    </NavLink>
-                  )}
-
-                  {Boolean(headerNav.showSupportTicket) && (
+                  {(headerNav.showSupportTicket ?? true) && (
                     <NavLink
                       to={headerNav.supportTicketHref || '/complaint/register'}
                       onClick={() => setMobileMenuOpen(false)}
@@ -1395,7 +1254,7 @@ const Layout = () => {
                     >
                       <span className="flex items-center gap-2.5">
                         {renderNavIcon(headerNav.supportTicketIcon, <FileText size={15} className="text-emerald-400" />, 15, "text-emerald-400")}
-                        <span>{headerNav.supportTicketLabel || 'Support Ticket'}</span>
+                        <span>{headerNav.supportTicketLabel || 'Register Complaint'}</span>
                       </span>
                       <ChevronRight size={14} className="text-slate-600" />
                     </NavLink>
@@ -1441,7 +1300,7 @@ const Layout = () => {
 
                   {/* Softcoded Custom Nav Links */}
                   {(headerNav.customNavItems || [])
-                    .filter((item) => item && item.isVisible !== false)
+                    .filter((item) => item && item.isVisible !== false && !/warranty|wallet|referral|showroom-billing/i.test(item.href || ''))
                     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
                     .map((item: CustomNavItem) => {
                       const linkHref = (item.href || '#').trim();
@@ -1879,7 +1738,9 @@ const Layout = () => {
                 <div key={col.id || idx} className="space-y-2 text-xs">
                   <h4 className="text-slate-200 font-bold text-sm tracking-wide mb-3">{col.title}</h4>
                   <ul className="space-y-2.5 font-medium">
-                    {(col.links || []).map((lnk: any, lIdx: number) => {
+                    {(col.links || [])
+                      .filter((lnk: any) => !/warranty|wallet|referral|showroom-billing/i.test(lnk?.href || lnk?.url || ''))
+                      .map((lnk: any, lIdx: number) => {
                       const linkHref = (lnk.href || lnk.url || '#').trim();
                       const isExt = Boolean(
                         lnk.isExternal ||
@@ -1915,24 +1776,6 @@ const Layout = () => {
                 <h4 className="text-slate-200 font-bold text-sm tracking-wide mb-3">Support & Services</h4>
                 <ul className="space-y-2.5 font-medium">
                   <li>
-                    <NavLink to="/customer/wallet" className="hover:text-amber-400 transition flex items-center gap-2">
-                      <Coins size={13} className="text-amber-400" />
-                      <span>Customer Wallet & Coins</span>
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to="/customer/referrals" className="hover:text-purple-400 transition flex items-center gap-2">
-                      <Gift size={13} className="text-purple-400" />
-                      <span>Referral Program (+500 Coins)</span>
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to="/showroom-billing" className="hover:text-blue-400 transition flex items-center gap-2">
-                      <Receipt size={13} className="text-blue-400" />
-                      <span>Showroom Counter Invoicing</span>
-                    </NavLink>
-                  </li>
-                  <li>
                     <NavLink to="/complaint/register" className="hover:text-emerald-400 transition flex items-center gap-2">
                       <FileText size={13} className="text-emerald-400" />
                       <span>Support (Register Ticket)</span>
@@ -1945,9 +1788,9 @@ const Layout = () => {
                     </NavLink>
                   </li>
                   <li>
-                    <NavLink to="/warranty/check" className="hover:text-emerald-400 transition flex items-center gap-2">
-                      <ShieldCheck size={13} className="text-purple-400" />
-                      <span>Check Battery Warranty</span>
+                    <NavLink to="/contact" className="hover:text-emerald-400 transition flex items-center gap-2">
+                      <Phone size={13} className="text-amber-400" />
+                      <span>Contact & Helpline Directory</span>
                     </NavLink>
                   </li>
                 </ul>

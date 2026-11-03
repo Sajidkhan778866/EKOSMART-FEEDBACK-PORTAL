@@ -10,9 +10,6 @@ import {
   ResponsiveContainer,
   LineChart,
   Line,
-  PieChart,
-  Pie,
-  Cell,
 } from 'recharts';
 import {
   ClipboardList,
@@ -25,7 +22,6 @@ import {
   RefreshCw,
   Phone,
   Layers,
-  ShoppingBag,
   Users,
 } from 'lucide-react';
 import { dashboardApi, complaintApi, employeeApi, complaintTypeApi, formApi } from '../api/client';
@@ -113,12 +109,6 @@ const fallbackWeeklyActivity = [
   { name: 'Sun', warranties: 18, complaints: 14, bills: 5 },
 ];
 
-const fallbackPieData = [
-  { name: 'Active', value: 400, color: '#3b82f6' },
-  { name: 'Expiring Soon', value: 300, color: '#f59e0b' },
-  { name: 'Expired', value: 300, color: '#ef4444' },
-];
-
 const fallbackBarData = [
   { name: 'Battery', complaints: 45 },
   { name: 'Rental', complaints: 30 },
@@ -150,7 +140,6 @@ const Dashboard = () => {
     'Rental',
     'Showroom',
     'Spare Parts',
-    'Warranty',
     'Plant',
   ]);
   const [complaintTypesList, setComplaintTypesList] = useState<any[]>([]);
@@ -186,7 +175,7 @@ const Dashboard = () => {
     try {
       const secRes = await formApi.getSections();
       if (secRes.data.success && Array.isArray(secRes.data.data) && secRes.data.data.length > 0) {
-        setAvailableDivisions(['All', ...secRes.data.data]);
+        setAvailableDivisions(['All', ...secRes.data.data.filter((s: string) => s !== 'Warranty')]);
       }
     } catch (e) {
       console.warn('Failed to load dynamic sections in Dashboard:', e);
@@ -304,20 +293,15 @@ const Dashboard = () => {
   const rangeResolved = stats?.todayStats?.resolvedAndClosed ?? (stats?.resolvedComplaints || 0);
   const rangePending = stats?.todayStats?.pendingComplaints ?? (stats?.pendingComplaints || 0);
   const rangeCustomers = stats?.todayStats?.customers ?? (stats?.totalCustomers || 0);
-  const rangeWarranties = stats?.todayStats?.warranties ?? (stats?.totalWarranties || 0);
+  const activeEmployeesCount = stats?.activeEmployees ?? stats?.allTimeStats?.activeEmployees ?? employeesList.length;
 
   // All Time Stats
   const allTimeComplaints = stats?.allTimeStats?.totalComplaints ?? 124;
 
   const weeklyLineData =
-    stats?.weeklyActivity && stats.weeklyActivity.length > 0 && stats.weeklyActivity.some(d => d.complaints > 0 || d.warranties > 0)
+    stats?.weeklyActivity && stats.weeklyActivity.length > 0 && stats.weeklyActivity.some(d => d.complaints > 0)
       ? stats.weeklyActivity
       : fallbackWeeklyActivity;
-
-  const pieData =
-    stats?.warrantyBreakdown && stats.warrantyBreakdown.length > 0
-      ? stats.warrantyBreakdown
-      : fallbackPieData;
 
   const barData =
     stats?.divisionBreakdown && stats.divisionBreakdown.length > 0
@@ -386,7 +370,7 @@ const Dashboard = () => {
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Real-time complaint tracking, warranty management, and engineer allocation metrics.
+            Real-time complaint tracking, division analytics, and engineer allocation metrics.
           </p>
         </div>
 
@@ -408,7 +392,7 @@ const Dashboard = () => {
       </div>
 
       {/* ============================================================ */}
-      {/* 6 TOP KPI METRICS CARDS (ACTIVE DATE RANGE: TODAY DEFAULT)    */}
+      {/* 4 TOP KPI METRICS CARDS (ACTIVE DATE RANGE: TODAY DEFAULT)    */}
       {/* ============================================================ */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Complaints in Period */}
@@ -441,17 +425,17 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Card 3: Active Warranties */}
+        {/* Card 3: Active Employees */}
         <div className="bg-white p-5 rounded-2xl shadow-xs border border-slate-200 flex items-center gap-4 hover:shadow-md transition">
           <div className="w-13 h-13 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center flex-shrink-0">
-            <ShoppingBag size={26} />
+            <UserCheck size={26} />
           </div>
           <div>
-            <h3 className="text-slate-500 text-xs font-semibold">Warranties Registered</h3>
+            <h3 className="text-slate-500 text-xs font-semibold">Active Staff / Engineers</h3>
             <p className="text-2xl md:text-3xl font-black text-purple-700 tracking-tight mt-0.5">
-              {rangeWarranties}
+              {activeEmployeesCount}
             </p>
-            <span className="text-[10px] text-slate-400">Active warranty coverage</span>
+            <span className="text-[10px] text-slate-400">Assigned across divisions</span>
           </div>
         </div>
 
@@ -471,27 +455,23 @@ const Dashboard = () => {
       </div>
 
       {/* ============================================================ */}
-      {/* CHARTS SECTION (WEEKLY ACTIVITY + WARRANTY STATUS)            */}
+      {/* CHARTS SECTION (WEEKLY ACTIVITY + DIVISION BREAKDOWN)         */}
       {/* ============================================================ */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Weekly Activity (Complaints vs Warranties) */}
-        <div className="bg-white p-6 rounded-2xl shadow-xs border border-slate-100 lg:col-span-2">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Weekly Complaint Activity */}
+        <div className="bg-white p-6 rounded-2xl shadow-xs border border-slate-100">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-base font-bold text-slate-800">
-              Weekly Activity (Complaints vs Warranties)
+              Weekly Complaint Activity
             </h2>
             <div className="flex items-center gap-4 text-xs font-semibold">
-              <span className="flex items-center gap-1.5 text-blue-600">
-                <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
-                <span>Warranties</span>
-              </span>
               <span className="flex items-center gap-1.5 text-red-500">
                 <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>
-                <span>Complaints</span>
+                <span>Complaints Filed</span>
               </span>
             </div>
           </div>
-          <div className="h-72">
+          <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={weeklyLineData} margin={{ top: 10, right: 20, bottom: 5, left: 0 }}>
                 <CartesianGrid stroke="#f1f5f9" strokeDasharray="5 5" vertical={false} />
@@ -507,15 +487,6 @@ const Dashboard = () => {
                 />
                 <Line
                   type="monotone"
-                  dataKey="warranties"
-                  name="Warranties Registered"
-                  stroke="#3b82f6"
-                  strokeWidth={3.5}
-                  dot={{ r: 4, fill: '#3b82f6', strokeWidth: 2, stroke: '#ffffff' }}
-                  activeDot={{ r: 7 }}
-                />
-                <Line
-                  type="monotone"
                   dataKey="complaints"
                   name="Complaints Filed"
                   stroke="#ef4444"
@@ -528,47 +499,8 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Warranty Status Donut Chart */}
-        <div className="bg-white p-6 rounded-2xl shadow-xs border border-slate-100 flex flex-col justify-between">
-          <h2 className="text-base font-bold text-slate-800 mb-2">Warranty Status</h2>
-          <div className="h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={55}
-                  outerRadius={75}
-                  paddingAngle={6}
-                  dataKey="value"
-                >
-                  {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} stroke="#ffffff" strokeWidth={2} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    borderRadius: '10px',
-                    border: '1px solid #e2e8f0',
-                    fontSize: '12px',
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="flex flex-wrap justify-center gap-4 mt-2">
-            {pieData.map((entry) => (
-              <div key={entry.name} className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }}></div>
-                <span className="text-xs text-slate-600 font-semibold">{entry.name}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
         {/* Bar Chart - Complaints by Division */}
-        <div className="bg-white p-6 rounded-2xl shadow-xs border border-slate-100 lg:col-span-3">
+        <div className="bg-white p-6 rounded-2xl shadow-xs border border-slate-100">
           <div className="flex justify-between items-center mb-6">
             <div>
               <h2 className="text-base font-bold text-slate-800">Complaints by Division</h2>

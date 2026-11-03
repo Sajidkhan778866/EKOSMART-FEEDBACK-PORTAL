@@ -3,7 +3,6 @@ import {
   Home,
   CreditCard,
   ClipboardList,
-  ShieldCheck,
   FileText,
   FileSpreadsheet,
   LogOut,
@@ -27,7 +26,6 @@ const Sidebar = ({ onClose }: SidebarProps) => {
     { name: 'My ID Card', path: '/idcard', icon: <CreditCard size={18} /> },
     { name: 'My Salary Slip', path: '/salary', icon: <FileSpreadsheet size={18} /> },
     { name: 'Complaints', path: '/complaints', icon: <ClipboardList size={18} /> },
-    { name: 'Warranty', path: '/warranty', icon: <ShieldCheck size={18} /> },
     { name: 'Reports', path: '/reports', icon: <FileText size={18} /> },
   ];
 

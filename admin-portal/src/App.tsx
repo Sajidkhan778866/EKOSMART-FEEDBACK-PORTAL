@@ -5,7 +5,6 @@ import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Employees from './pages/Employees';
 import Complaints from './pages/Complaints';
-import Warranty from './pages/Warranty';
 import Forms from './pages/Forms';
 import Customers from './pages/Customers';
 import Reports from './pages/Reports';
@@ -64,10 +63,10 @@ function App() {
             <Route path="billing" element={<Navigate to="/dashboard" replace />} />
             <Route path="employees" element={<Employees />} />
             <Route path="complaints" element={<Complaints />} />
-            <Route path="warranty" element={<Warranty />} />
+            <Route path="warranty" element={<Navigate to="/dashboard" replace />} />
             <Route path="forms" element={<Forms />} />
             <Route path="customers" element={<Customers />} />
-            <Route path="wallet" element={<Customers defaultTab="wallet" />} />
+            <Route path="wallet" element={<Navigate to="/dashboard" replace />} />
             <Route path="cms" element={<ContentManager />} />
             <Route path="reports" element={<Reports />} />
             <Route path="settings" element={<Settings />} />

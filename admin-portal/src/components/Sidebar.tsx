@@ -3,14 +3,12 @@ import {
   Home,
   Users,
   ClipboardList,
-  ShieldCheck,
   UserCheck,
   FileText,
   LayoutTemplate,
   BarChart2,
   Settings,
   LogOut,
-  Coins,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { EbsLogo } from './EbsLogo';
@@ -27,9 +25,7 @@ const Sidebar = ({ onClose }: SidebarProps) => {
   const menuItems = [
     { name: 'Dashboard', path: '/dashboard', icon: <Home size={18} /> },
     { name: 'Employees', path: '/employees', icon: <Users size={18} /> },
-    { name: 'Customer Wallets', path: '/wallet', icon: <Coins size={18} /> },
     { name: 'Complaints', path: '/complaints', icon: <ClipboardList size={18} /> },
-    { name: 'Warranty', path: '/warranty', icon: <ShieldCheck size={18} /> },
     { name: 'Customers', path: '/customers', icon: <UserCheck size={18} /> },
     { name: 'Form Builder', path: '/forms', icon: <FileText size={18} /> },
     { name: 'Content CMS', path: '/cms', icon: <LayoutTemplate size={18} /> },

@@ -509,7 +509,7 @@ const Settings = () => {
       <div>
         <h1 className="text-2xl font-black text-slate-800">System Configuration</h1>
         <p className="text-slate-500 text-xs">
-          Manage business architecture, soft-coded referral coin rewards, and database settings.
+          Manage business architecture, SMTP OTP email server, and persistent database settings.
         </p>
       </div>
 
@@ -527,8 +527,9 @@ const Settings = () => {
       )}
 
       {/* ============================================================================== */}
-      {/* 1. SOFT-CODED CUSTOMER WALLET & REWARD COINS MATRIX (Requested)                 */}
+      {/* 1. SOFT-CODED CUSTOMER WALLET & REWARD COINS MATRIX (Hidden)                   */}
       {/* ============================================================================== */}
+      {false && (
       <div className="bg-white p-6 sm:p-7 rounded-3xl border border-slate-200 shadow-sm space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
           <div className="flex items-center gap-3">
@@ -771,6 +772,7 @@ const Settings = () => {
           </form>
         )}
       </div>
+      )}
 
       {/* ============================================================================== */}
       {/* 2. SOFT-CODED CUSTOMER LOGIN PROMPT & TIMER (Requested)                        */}
@@ -1198,7 +1200,7 @@ const Settings = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+        <div className="grid grid-cols-1 gap-4 text-xs">
           <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
             <span className="font-bold text-slate-700 block mb-1">Complaint Divisions (Active)</span>
             <ul className="list-disc list-inside text-slate-600 space-y-1">
@@ -1211,17 +1213,6 @@ const Settings = () => {
               ✓ Plant is excluded from Complaint Tracker
             </span>
           </div>
-
-          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
-            <span className="font-bold text-slate-700 block mb-1">Warranty Categories (Active)</span>
-            <ul className="list-disc list-inside text-slate-600 space-y-1">
-              <li>Showroom Sales</li>
-              <li>Plant Commercial Units</li>
-            </ul>
-            <span className="text-[10px] text-emerald-700 font-semibold mt-2 block">
-              ✓ Completely separated from complaint system
-            </span>
-          </div>
         </div>
 
         <div className="flex items-center justify-between border-b border-slate-100 pb-4 pt-2">
@@ -1232,7 +1223,7 @@ const Settings = () => {
                 Database Setup & Connection Manager (cPanel Ready)
               </h3>
               <p className="text-xs text-slate-400">
-                Configure, test, and monitor the persistent MongoDB database for Billing, Inventory, Feedback & Warranties
+                Configure, test, and monitor the persistent MongoDB database for Customer Support, Complaints & Staff
               </p>
             </div>
           </div>
@@ -1265,12 +1256,9 @@ const Settings = () => {
         </div>
 
         {/* Live Connection & Collection Summary */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5 text-center">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center">
           {[
-            { label: 'Invoices / Bills', count: dbCollections.bills },
-            { label: 'Stock Items', count: dbCollections.stock },
             { label: 'Complaints', count: dbCollections.complaints },
-            { label: 'Warranties', count: dbCollections.warranties },
             { label: 'Customers', count: dbCollections.customers },
             { label: 'Employees', count: dbCollections.employees },
             { label: 'Admins', count: dbCollections.admins },

@@ -104,7 +104,7 @@ export interface EmployeeItem {
   createdAt: string;
 }
 
-const DEFAULT_DIVISIONS = ['Battery', 'Rental', 'Showroom', 'Spare Parts', 'Plant', 'Customer Support', 'Warranty'];
+const DEFAULT_DIVISIONS = ['Battery', 'Rental', 'Showroom', 'Spare Parts', 'Plant', 'Customer Support'];
 const DEFAULT_DEPARTMENTS = [
   'Technical',
   'Sales & Dealership',
@@ -112,7 +112,6 @@ const DEFAULT_DEPARTMENTS = [
   'Quality & Testing',
   'Plant & Assembly',
   'Customer Support',
-  'Warranty Operations',
 ];
 
 const SOFT_CODED_DESIGNATION_PRESETS = [
