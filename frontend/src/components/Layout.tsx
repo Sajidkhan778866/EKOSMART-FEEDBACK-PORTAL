@@ -194,6 +194,9 @@ interface HeaderNavContent {
   logoType?: 'preset' | 'image';
   logoImage?: string;
   logoLink?: string;
+  faviconType?: 'preset' | 'image';
+  faviconImage?: string;
+  customerTabTitle?: string;
   homeLabel?: string;
   showHome?: boolean;
   homeHref?: string;
@@ -474,6 +477,36 @@ const Layout = () => {
         console.warn('CMS content fallback load error:', err);
       });
   }, [theme]);
+
+  // Dynamically sync Browser Tab Title & Favicon from Softcoded CMS Branding
+  useEffect(() => {
+    const customTitle =
+      headerNav.customerTabTitle ||
+      (headerNav.brandTitle
+        ? `${headerNav.brandTitle} | ${headerNav.brandSubtitle || 'Battery Solution & Support'}`
+        : 'EBS Ekosmart | Battery Solution & Support');
+    if (typeof document !== 'undefined') {
+      document.title = customTitle;
+
+      const resolvedFavicon =
+        headerNav.faviconType === 'image' && headerNav.faviconImage
+          ? resolveImageUrl(headerNav.faviconImage)
+          : (headerNav.logoType || headerLogo.logoType) === 'image' &&
+              (headerNav.logoImage || headerLogo.logoImage)
+            ? resolveImageUrl(headerNav.logoImage || headerLogo.logoImage || '')
+            : '/favicon.svg';
+
+      let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement | null;
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'icon';
+        document.head.appendChild(link);
+      }
+      if (link.href !== resolvedFavicon) {
+        link.href = resolvedFavicon;
+      }
+    }
+  }, [headerNav, headerLogo]);
 
   // 20-Second Customer Login Prompt Trigger
   useEffect(() => {

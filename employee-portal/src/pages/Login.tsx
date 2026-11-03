@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Lock, User, AlertCircle, Loader2, Settings, CheckCircle2, RefreshCw } from 'lucide-react';
 import { empAuthApi, getApiBaseUrl, getCustomApiUrl, setCustomApiUrl, clearCustomApiUrl, normalizeApiBaseUrl } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { EbsLogo } from '../components/EbsLogo';
 
 const Login = () => {
   const [employeeId, setEmployeeId] = useState('');
@@ -143,8 +144,8 @@ const Login = () => {
     <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border-t-4 border-indigo-600">
         <div className="bg-slate-950 p-8 text-center text-white">
-          <div className="w-12 h-12 bg-indigo-600/20 text-indigo-400 rounded-xl flex items-center justify-center mx-auto mb-3">
-            <User size={24} />
+          <div className="flex justify-center mb-3">
+            <EbsLogo variant="battery" size="md" showText={false} />
           </div>
           <h1 className="text-2xl font-bold tracking-wide">STAFF & EMPLOYEE LOGIN</h1>
           <p className="text-slate-400 text-sm mt-1">Ekosmart Service & Operations Workspace</p>

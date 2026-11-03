@@ -137,6 +137,19 @@ export interface IHeaderNavContent {
   logoType: 'preset' | 'image';
   logoImage?: string;
   logoLink?: string;
+  faviconType?: 'preset' | 'image';
+  faviconImage?: string;
+  customerTabTitle?: string;
+  adminTabTitle?: string;
+  employeeTabTitle?: string;
+  adminBrandTitle?: string;
+  adminBrandSubtitle?: string;
+  adminLogoType?: 'inherit' | 'preset' | 'image';
+  adminLogoImage?: string;
+  employeeBrandTitle?: string;
+  employeeBrandSubtitle?: string;
+  employeeLogoType?: 'inherit' | 'preset' | 'image';
+  employeeLogoImage?: string;
   homeLabel: string;
   showHome: boolean;
   homeHref?: string;
@@ -588,6 +601,19 @@ const contentSchema = new Schema<IContent>(
       logoType: { type: String, enum: ['preset', 'image'], default: 'preset' },
       logoImage: { type: String, default: '' },
       logoLink: { type: String, default: '/' },
+      faviconType: { type: String, enum: ['preset', 'image'], default: 'preset' },
+      faviconImage: { type: String, default: '' },
+      customerTabTitle: { type: String, default: 'EBS Ekosmart | Battery Solution & Support' },
+      adminTabTitle: { type: String, default: 'EBS Ekosmart | Admin Portal' },
+      employeeTabTitle: { type: String, default: 'EBS Ekosmart | Employee Workspace' },
+      adminBrandTitle: { type: String, default: 'EBS EKOSMART' },
+      adminBrandSubtitle: { type: String, default: 'Battery Solution • Admin Portal' },
+      adminLogoType: { type: String, enum: ['inherit', 'preset', 'image'], default: 'inherit' },
+      adminLogoImage: { type: String, default: '' },
+      employeeBrandTitle: { type: String, default: 'EBS EKOSMART' },
+      employeeBrandSubtitle: { type: String, default: 'Battery Solution • Staff Portal' },
+      employeeLogoType: { type: String, enum: ['inherit', 'preset', 'image'], default: 'inherit' },
+      employeeLogoImage: { type: String, default: '' },
       homeLabel: { type: String, default: 'Home' },
       showHome: { type: Boolean, default: true },
       homeHref: { type: String, default: '/' },

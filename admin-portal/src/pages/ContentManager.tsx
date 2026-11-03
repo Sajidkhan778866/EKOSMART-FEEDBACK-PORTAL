@@ -303,6 +303,19 @@ export interface ISectionLayouts {
 }
 
 export interface IHeaderNavConfig {
+  faviconType?: 'preset' | 'image';
+  faviconImage?: string;
+  customerTabTitle?: string;
+  adminTabTitle?: string;
+  employeeTabTitle?: string;
+  adminBrandTitle?: string;
+  adminBrandSubtitle?: string;
+  adminLogoType?: 'inherit' | 'preset' | 'image';
+  adminLogoImage?: string;
+  employeeBrandTitle?: string;
+  employeeBrandSubtitle?: string;
+  employeeLogoType?: 'inherit' | 'preset' | 'image';
+  employeeLogoImage?: string;
   brandTitle?: string;
   brandSubtitle?: string;
   logoType?: 'preset' | 'image';
@@ -587,6 +600,19 @@ const defaultFallbackContent: ICMSContent = {
   headerNav: {
     brandTitle: 'EBS EKOSMART',
     brandSubtitle: 'Battery Solution • Li-ion & LFP',
+    faviconType: 'preset',
+    faviconImage: '',
+    customerTabTitle: 'EBS Ekosmart | Battery Solution & Support',
+    adminTabTitle: 'EBS Ekosmart | Admin Portal',
+    employeeTabTitle: 'EBS Ekosmart | Employee Workspace',
+    adminBrandTitle: 'EBS EKOSMART',
+    adminBrandSubtitle: 'Battery Solution • Admin Portal',
+    adminLogoType: 'inherit',
+    adminLogoImage: '',
+    employeeBrandTitle: 'EBS EKOSMART',
+    employeeBrandSubtitle: 'Battery Solution • Staff Portal',
+    employeeLogoType: 'inherit',
+    employeeLogoImage: '',
     logoType: 'preset',
     logoImage: '',
     logoLink: '/',
@@ -1536,6 +1562,9 @@ const ContentManager = () => {
         setNotification({
           type: 'success',
           message: 'Soft-coded CMS content & wallet rewards saved successfully!',
+        });
+        window.dispatchEvent(new Event('cms-branding-updated'));
+        if (false) setNotification({ type: 'success', message: ''
         });
         setTimeout(() => setNotification(null), 4000);
       } else {
@@ -3741,6 +3770,385 @@ const ContentManager = () => {
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* All-3 Portals Browser Tab Favicon, Tab Titles & Portal Logos (100% Soft-Coded) */}
+            <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-4 text-xs">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                <div>
+                  <span className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                    <Monitor size={14} className="text-emerald-600" />
+                    <span>All 3 Portals: Browser Tab Favicon, Tab Titles &amp; Portal Logos (Customer, Admin &amp; Employee)</span>
+                  </span>
+                  <p className="text-[11px] text-slate-500">
+                    Soft-code the browser tab icon (favicon), tab title, and sidebar/header brand logo across Customer Website, Admin Portal, and Employee Workspace.
+                  </p>
+                </div>
+                <SectionSaveButton label="Save All-3 Portals Branding" compact />
+              </div>
+
+              {/* Browser Tab Favicon Mode & Image */}
+              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-3 text-xs">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-bold text-slate-700">Browser Tab Icon (Favicon) for All 3 Websites</span>
+                  <div className="flex bg-slate-200 p-0.5 rounded-lg text-xs">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setContent({
+                          ...content,
+                          headerNav: { ...(content.headerNav || {}), faviconType: 'preset' },
+                        })
+                      }
+                      className={`px-3 py-1 rounded-md font-bold text-[11px] transition cursor-pointer ${
+                        (content.headerNav?.faviconType || 'preset') === 'preset'
+                          ? 'bg-white text-emerald-700 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Official EBS Favicon (or Brand Logo)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setContent({
+                          ...content,
+                          headerNav: { ...(content.headerNav || {}), faviconType: 'image' },
+                        })
+                      }
+                      className={`px-3 py-1 rounded-md font-bold text-[11px] transition cursor-pointer ${
+                        content.headerNav?.faviconType === 'image'
+                          ? 'bg-white text-emerald-700 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Custom Tab Favicon Image
+                    </button>
+                  </div>
+                </div>
+
+                {content.headerNav?.faviconType === 'image' && (
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center pt-1">
+                    <div className="sm:col-span-2 flex flex-col items-center justify-center p-2 bg-white rounded-xl border border-slate-200">
+                      <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center border border-slate-300 overflow-hidden">
+                        {content.headerNav?.faviconImage ? (
+                          <img
+                            src={resolveImageUrl(content.headerNav.faviconImage)}
+                            alt="Favicon Preview"
+                            className="w-full h-full object-contain p-0.5"
+                          />
+                        ) : (
+                          <ImageIcon size={18} className="text-slate-400" />
+                        )}
+                      </div>
+                      <span className="text-[9px] font-bold text-slate-500 mt-1">Tab Icon</span>
+                    </div>
+                    <div className="sm:col-span-10 space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <label className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
+                          <Upload size={13} />
+                          <span>Upload Favicon Image</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                try {
+                                  const res = await compressImageFile(file, 256, 256, 0.92);
+                                  if (res) {
+                                    setContent({
+                                      ...content,
+                                      headerNav: { ...(content.headerNav || {}), faviconImage: res },
+                                    });
+                                  }
+                                } catch (err) {
+                                  console.error('Failed to compress favicon:', err);
+                                }
+                              }
+                            }}
+                          />
+                        </label>
+                        {content.headerNav?.faviconImage && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setContent({
+                                ...content,
+                                headerNav: { ...(content.headerNav || {}), faviconImage: '' },
+                              })
+                            }
+                            className="px-2.5 py-1.5 text-red-600 hover:bg-red-50 rounded-lg text-xs font-semibold border border-red-200 transition cursor-pointer"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Or enter Favicon Image URL (e.g. https://example.com/favicon.png)"
+                        value={content.headerNav?.faviconImage || ''}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            headerNav: { ...(content.headerNav || {}), faviconImage: e.target.value },
+                          })
+                        }
+                        className="w-full border border-slate-300 rounded-lg p-2 text-xs bg-white font-mono"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Browser Tab Titles for all 3 websites */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 border-t border-slate-200">
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1 text-[11px]">
+                      1. Customer Website Browser Tab Title
+                    </label>
+                    <input
+                      type="text"
+                      value={content.headerNav?.customerTabTitle ?? 'EBS Ekosmart | Battery Solution & Support'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          headerNav: { ...(content.headerNav || {}), customerTabTitle: e.target.value },
+                        })
+                      }
+                      placeholder="EBS Ekosmart | Battery Solution & Support"
+                      className="w-full border border-slate-300 rounded-lg p-2 text-xs font-semibold text-slate-800 bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1 text-[11px]">
+                      2. Admin Portal Browser Tab Title
+                    </label>
+                    <input
+                      type="text"
+                      value={content.headerNav?.adminTabTitle ?? 'EBS Ekosmart | Admin Portal'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          headerNav: { ...(content.headerNav || {}), adminTabTitle: e.target.value },
+                        })
+                      }
+                      placeholder="EBS Ekosmart | Admin Portal"
+                      className="w-full border border-slate-300 rounded-lg p-2 text-xs font-semibold text-slate-800 bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1 text-[11px]">
+                      3. Employee Portal Browser Tab Title
+                    </label>
+                    <input
+                      type="text"
+                      value={content.headerNav?.employeeTabTitle ?? 'EBS Ekosmart | Employee Workspace'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          headerNav: { ...(content.headerNav || {}), employeeTabTitle: e.target.value },
+                        })
+                      }
+                      placeholder="EBS Ekosmart | Employee Workspace"
+                      className="w-full border border-slate-300 rounded-lg p-2 text-xs font-semibold text-slate-800 bg-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Admin Portal & Employee Portal Sidebar/Login Brand Logos & Titles */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                {/* Admin Portal Branding */}
+                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-800">Admin Portal Sidebar &amp; Login Logo</span>
+                    <select
+                      value={content.headerNav?.adminLogoType || 'inherit'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          headerNav: {
+                            ...(content.headerNav || {}),
+                            adminLogoType: e.target.value as 'inherit' | 'preset' | 'image',
+                          },
+                        })
+                      }
+                      className="border border-slate-300 rounded-lg px-2 py-1 text-[11px] font-bold bg-white text-slate-700"
+                    >
+                      <option value="inherit">Same as Customer Brand Logo</option>
+                      <option value="preset">Preset EBS SVG Emblem</option>
+                      <option value="image">Custom Admin Logo Image</option>
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[11px] text-slate-600 font-semibold mb-1">Admin Brand Title</label>
+                      <input
+                        type="text"
+                        value={content.headerNav?.adminBrandTitle ?? 'EBS EKOSMART'}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            headerNav: { ...(content.headerNav || {}), adminBrandTitle: e.target.value },
+                          })
+                        }
+                        placeholder="EBS EKOSMART"
+                        className="w-full border border-slate-300 rounded-lg p-1.5 text-xs font-bold bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] text-slate-600 font-semibold mb-1">Admin Brand Subtitle</label>
+                      <input
+                        type="text"
+                        value={content.headerNav?.adminBrandSubtitle ?? 'Battery Solution • Admin Portal'}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            headerNav: { ...(content.headerNav || {}), adminBrandSubtitle: e.target.value },
+                          })
+                        }
+                        placeholder="Battery Solution • Admin Portal"
+                        className="w-full border border-slate-300 rounded-lg p-1.5 text-xs bg-white"
+                      />
+                    </div>
+                  </div>
+                  {content.headerNav?.adminLogoType === 'image' && (
+                    <div className="space-y-1.5 pt-1">
+                      <div className="flex items-center gap-2">
+                        <label className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-[11px] font-bold transition flex items-center gap-1 cursor-pointer">
+                          <Upload size={12} />
+                          <span>Upload Admin Logo</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const res = await compressImageFile(file, 600, 300, 0.9);
+                                if (res) {
+                                  setContent({
+                                    ...content,
+                                    headerNav: { ...(content.headerNav || {}), adminLogoImage: res },
+                                  });
+                                }
+                              }
+                            }}
+                          />
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Or Admin Logo Image URL"
+                          value={content.headerNav?.adminLogoImage || ''}
+                          onChange={(e) =>
+                            setContent({
+                              ...content,
+                              headerNav: { ...(content.headerNav || {}), adminLogoImage: e.target.value },
+                            })
+                          }
+                          className="flex-1 border border-slate-300 rounded-lg p-1.5 text-xs bg-white font-mono"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Employee Portal Branding */}
+                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-800">Employee Portal Sidebar &amp; Login Logo</span>
+                    <select
+                      value={content.headerNav?.employeeLogoType || 'inherit'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          headerNav: {
+                            ...(content.headerNav || {}),
+                            employeeLogoType: e.target.value as 'inherit' | 'preset' | 'image',
+                          },
+                        })
+                      }
+                      className="border border-slate-300 rounded-lg px-2 py-1 text-[11px] font-bold bg-white text-slate-700"
+                    >
+                      <option value="inherit">Same as Customer Brand Logo</option>
+                      <option value="preset">Preset EBS SVG Emblem</option>
+                      <option value="image">Custom Employee Logo Image</option>
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[11px] text-slate-600 font-semibold mb-1">Employee Brand Title</label>
+                      <input
+                        type="text"
+                        value={content.headerNav?.employeeBrandTitle ?? 'EBS EKOSMART'}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            headerNav: { ...(content.headerNav || {}), employeeBrandTitle: e.target.value },
+                          })
+                        }
+                        placeholder="EBS EKOSMART"
+                        className="w-full border border-slate-300 rounded-lg p-1.5 text-xs font-bold bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] text-slate-600 font-semibold mb-1">Employee Brand Subtitle</label>
+                      <input
+                        type="text"
+                        value={content.headerNav?.employeeBrandSubtitle ?? 'Battery Solution • Staff Portal'}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            headerNav: { ...(content.headerNav || {}), employeeBrandSubtitle: e.target.value },
+                          })
+                        }
+                        placeholder="Battery Solution • Staff Portal"
+                        className="w-full border border-slate-300 rounded-lg p-1.5 text-xs bg-white"
+                      />
+                    </div>
+                  </div>
+                  {content.headerNav?.employeeLogoType === 'image' && (
+                    <div className="space-y-1.5 pt-1">
+                      <div className="flex items-center gap-2">
+                        <label className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-[11px] font-bold transition flex items-center gap-1 cursor-pointer">
+                          <Upload size={12} />
+                          <span>Upload Employee Logo</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const res = await compressImageFile(file, 600, 300, 0.9);
+                                if (res) {
+                                  setContent({
+                                    ...content,
+                                    headerNav: { ...(content.headerNav || {}), employeeLogoImage: res },
+                                  });
+                                }
+                              }
+                            }}
+                          />
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Or Employee Logo Image URL"
+                          value={content.headerNav?.employeeLogoImage || ''}
+                          onChange={(e) =>
+                            setContent({
+                              ...content,
+                              headerNav: { ...(content.headerNav || {}), employeeLogoImage: e.target.value },
+                            })
+                          }
+                          className="flex-1 border border-slate-300 rounded-lg p-1.5 text-xs bg-white font-mono"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Navbar Navigation Buttons & Styling */}

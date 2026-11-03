@@ -1,18 +1,153 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { getApiBaseUrl, resolveImageUrl } from '../api/client';
 
 interface EbsLogoProps {
   variant?: 'battery' | 'spare-parts' | 'header' | 'badge';
   size?: 'sm' | 'md' | 'lg' | 'xl';
   showText?: boolean;
   className?: string;
+  customTitle?: string;
+  customSubtitle?: string;
+  logoType?: 'preset' | 'image';
+  logoImage?: string;
+  lightText?: boolean;
 }
+
+export interface PortalBrandingData {
+  brandTitle: string;
+  brandSubtitle: string;
+  logoType: 'preset' | 'image';
+  logoImage: string;
+  faviconType: 'preset' | 'image';
+  faviconImage: string;
+  tabTitle: string;
+}
+
+const DEFAULT_EMPLOYEE_BRANDING: PortalBrandingData = {
+  brandTitle: 'EBS EKOSMART',
+  brandSubtitle: 'Battery Solution • Li-ion & LFP',
+  logoType: 'preset',
+  logoImage: '',
+  faviconType: 'preset',
+  faviconImage: '',
+  tabTitle: 'EBS Ekosmart | Employee Workspace',
+};
+
+let cachedBranding: PortalBrandingData | null = null;
+
+const applyDocumentBranding = (branding: PortalBrandingData) => {
+  if (typeof document === 'undefined') return;
+  if (branding.tabTitle) {
+    document.title = branding.tabTitle;
+  }
+  const resolvedFavicon =
+    branding.faviconType === 'image' && branding.faviconImage
+      ? resolveImageUrl(branding.faviconImage)
+      : branding.logoType === 'image' && branding.logoImage
+        ? resolveImageUrl(branding.logoImage)
+        : `${import.meta.env.BASE_URL || '/'}favicon.svg`.replace(/\/+/g, '/');
+
+  let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement | null;
+  if (!link) {
+    link = document.createElement('link');
+    link.rel = 'icon';
+    document.head.appendChild(link);
+  }
+  if (link.href !== resolvedFavicon) {
+    link.href = resolvedFavicon;
+  }
+};
+
+export const usePortalBranding = (): PortalBrandingData => {
+  const [branding, setBranding] = useState<PortalBrandingData>(() => {
+    if (cachedBranding) return cachedBranding;
+    try {
+      const saved = sessionStorage.getItem('ekosmart_employee_branding');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const next: PortalBrandingData = { ...DEFAULT_EMPLOYEE_BRANDING, ...parsed };
+        cachedBranding = next;
+        return next;
+      }
+    } catch {
+      // ignore storage errors
+    }
+    return DEFAULT_EMPLOYEE_BRANDING;
+  });
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadBranding = async () => {
+      try {
+        const res = await fetch(`${getApiBaseUrl()}/content/public`);
+        const json = await res.json();
+        if (json?.success && json.data) {
+          const nav = json.data.headerNav || {};
+          const hero = json.data.hero || {};
+
+          const effectiveLogoType: 'preset' | 'image' =
+            nav.employeeLogoType === 'image'
+              ? 'image'
+              : nav.employeeLogoType === 'preset'
+                ? 'preset'
+                : (nav.logoType || hero.logoType || 'preset');
+
+          const effectiveLogoImage: string =
+            nav.employeeLogoType === 'image' && nav.employeeLogoImage
+              ? nav.employeeLogoImage
+              : nav.logoImage || hero.logoImage || '';
+
+          const nextBranding: PortalBrandingData = {
+            brandTitle: nav.employeeBrandTitle || nav.brandTitle || 'EBS EKOSMART',
+            brandSubtitle: nav.employeeBrandSubtitle || nav.brandSubtitle || 'Battery Solution • Li-ion & LFP',
+            logoType: effectiveLogoType,
+            logoImage: effectiveLogoImage,
+            faviconType: nav.faviconType || 'preset',
+            faviconImage: nav.faviconImage || '',
+            tabTitle:
+              nav.employeeTabTitle ||
+              `${nav.employeeBrandTitle || nav.brandTitle || 'EBS Ekosmart'} | Employee Workspace`,
+          };
+
+          cachedBranding = nextBranding;
+          try {
+            sessionStorage.setItem('ekosmart_employee_branding', JSON.stringify(nextBranding));
+          } catch {
+            // ignore
+          }
+          applyDocumentBranding(nextBranding);
+          if (mounted) setBranding(nextBranding);
+        }
+      } catch {
+        applyDocumentBranding(branding);
+      }
+    };
+
+    applyDocumentBranding(branding);
+    loadBranding();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  return branding;
+};
 
 export const EbsLogo: React.FC<EbsLogoProps> = ({
   variant = 'header',
   size = 'md',
   showText = true,
   className = '',
+  customTitle,
+  customSubtitle,
+  logoType,
+  logoImage,
+  lightText = true,
 }) => {
+  const branding = usePortalBranding();
+
   const sizeMap = {
     sm: { icon: 'w-7 h-7', text: 'text-xs', sub: 'text-[9px]' },
     md: { icon: 'w-10 h-10', text: 'text-sm', sub: 'text-[10px]' },
@@ -21,6 +156,11 @@ export const EbsLogo: React.FC<EbsLogoProps> = ({
   };
 
   const { icon, text, sub } = sizeMap[size];
+
+  const activeLogoType = logoType || branding.logoType || 'preset';
+  const activeLogoImage = logoImage ?? branding.logoImage;
+  const activeTitle = customTitle || branding.brandTitle || 'EBS EKOSMART';
+  const activeSubtitle = customSubtitle || branding.brandSubtitle || 'Battery Solution • Li-ion & LFP';
 
   if (variant === 'spare-parts') {
     return (
@@ -45,7 +185,7 @@ export const EbsLogo: React.FC<EbsLogoProps> = ({
         </div>
         {showText && (
           <div>
-            <div className={`font-black tracking-wider text-white leading-none ${text} flex items-center gap-1`}>
+            <div className={`font-black tracking-wider ${lightText ? 'text-white' : 'text-slate-900'} leading-none ${text} flex items-center gap-1`}>
               <span>EKOSMART</span>
               <span className="text-emerald-400">EV SPARE PARTS</span>
             </div>
@@ -58,35 +198,52 @@ export const EbsLogo: React.FC<EbsLogoProps> = ({
     );
   }
 
-  // EBS Battery Solution Logo
+  const titleParts = activeTitle.trim().split(' ');
+
   return (
     <div className={`flex items-center gap-3 ${className}`}>
-      <div className={`${icon} rounded-xl bg-gradient-to-tr from-emerald-700 via-green-500 to-teal-300 p-0.5 shadow-md flex items-center justify-center flex-shrink-0`}>
-        <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center relative overflow-hidden">
-          <svg viewBox="0 0 100 100" className="w-full h-full p-1" fill="none">
-            <defs>
-              <linearGradient id="empEbsGreenGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#86efac" />
-                <stop offset="50%" stopColor="#22c55e" />
-                <stop offset="100%" stopColor="#166534" />
-              </linearGradient>
-            </defs>
-            <path d="M 18 42 C 28 16, 72 16, 82 42" stroke="url(#empEbsGreenGrad)" strokeWidth="7" strokeLinecap="round" />
-            <polygon points="80,30 94,40 76,46" fill="#86efac" />
-            <text x="50" y="68" textAnchor="middle" fill="url(#empEbsGreenGrad)" fontWeight="900" fontSize="30" fontFamily="Impact, Arial Black, sans-serif" letterSpacing="-0.5">
-              EBS
-            </text>
-          </svg>
+      {activeLogoType === 'image' && activeLogoImage ? (
+        <div className={`${icon} rounded-xl bg-white/95 p-0.5 shadow-md flex items-center justify-center flex-shrink-0 overflow-hidden border border-emerald-500/30`}>
+          <img
+            src={resolveImageUrl(activeLogoImage)}
+            alt={activeTitle}
+            className="w-full h-full object-contain"
+          />
         </div>
-      </div>
+      ) : (
+        <div className={`${icon} rounded-xl bg-gradient-to-tr from-emerald-700 via-green-500 to-teal-300 p-0.5 shadow-md flex items-center justify-center flex-shrink-0`}>
+          <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center relative overflow-hidden">
+            <svg viewBox="0 0 100 100" className="w-full h-full p-1" fill="none">
+              <defs>
+                <linearGradient id="empEbsGreenGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#86efac" />
+                  <stop offset="50%" stopColor="#22c55e" />
+                  <stop offset="100%" stopColor="#166534" />
+                </linearGradient>
+              </defs>
+              <path d="M 18 42 C 28 16, 72 16, 82 42" stroke="url(#empEbsGreenGrad)" strokeWidth="7" strokeLinecap="round" />
+              <polygon points="80,30 94,40 76,46" fill="#86efac" />
+              <text x="50" y="68" textAnchor="middle" fill="url(#empEbsGreenGrad)" fontWeight="900" fontSize="30" fontFamily="Impact, Arial Black, sans-serif" letterSpacing="-0.5">
+                EBS
+              </text>
+            </svg>
+          </div>
+        </div>
+      )}
       {showText && (
         <div>
-          <div className={`font-black tracking-wider text-white leading-tight ${text} flex items-center gap-1.5`}>
-            <span className="text-emerald-400 font-black">EBS</span>
-            <span className="text-slate-100">EKOSMART</span>
+          <div className={`font-black tracking-wider ${lightText ? 'text-white' : 'text-slate-900'} leading-tight ${text} flex items-center gap-1.5`}>
+            {titleParts.length > 1 ? (
+              <>
+                <span className="text-emerald-400 font-black">{titleParts[0]}</span>
+                <span className={lightText ? 'text-slate-100' : 'text-slate-800'}>{titleParts.slice(1).join(' ')}</span>
+              </>
+            ) : (
+              <span className={lightText ? 'text-slate-100' : 'text-slate-800'}>{activeTitle}</span>
+            )}
           </div>
           <span className={`text-emerald-400 font-bold uppercase tracking-wider block ${sub}`}>
-            Battery Solution • Li-ion & LFP
+            {activeSubtitle}
           </span>
         </div>
       )}

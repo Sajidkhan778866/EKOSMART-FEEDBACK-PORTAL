@@ -56,7 +56,7 @@ const Layout = () => {
             </button>
 
             <div className="md:hidden">
-              <EbsLogo variant="battery" size="sm" showText={true} />
+              <EbsLogo variant="battery" size="sm" showText={true} lightText={false} />
             </div>
 
             <h2 className="hidden md:block text-xl font-black text-slate-800 tracking-tight">
