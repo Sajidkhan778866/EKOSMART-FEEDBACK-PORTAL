@@ -1,7 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   Home,
-  Receipt,
   Package,
   CreditCard,
   ClipboardList,
@@ -26,7 +25,6 @@ const Sidebar = ({ onClose }: SidebarProps) => {
 
   const menuItems = [
     { name: 'Dashboard', path: '/dashboard', icon: <Home size={18} /> },
-    { name: 'Showroom Billing', path: '/billing', icon: <Receipt size={18} /> },
     { name: 'Stock & Serials', path: '/stock', icon: <Package size={18} /> },
     { name: 'My ID Card', path: '/idcard', icon: <CreditCard size={18} /> },
     { name: 'My Salary Slip', path: '/salary', icon: <FileSpreadsheet size={18} /> },

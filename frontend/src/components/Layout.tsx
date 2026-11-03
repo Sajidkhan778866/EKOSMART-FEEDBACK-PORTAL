@@ -697,7 +697,7 @@ const Layout = () => {
               )}
 
               {/* Showroom Billing Option */}
-              {(headerNav.showShowroomBilling ?? true) && (
+              {(headerNav.showShowroomBilling ?? false) && (
                 <li>
                   <NavLink
                     to={headerNav.showroomBillingHref || '/showroom-billing'}
@@ -1308,7 +1308,7 @@ const Layout = () => {
                     <ChevronRight size={14} className="text-slate-600" />
                   </NavLink>
 
-                  {(headerNav.showShowroomBilling ?? true) && (
+                  {(headerNav.showShowroomBilling ?? false) && (
                     <NavLink
                       to={headerNav.showroomBillingHref || '/showroom-billing'}
                       onClick={() => setMobileMenuOpen(false)}
