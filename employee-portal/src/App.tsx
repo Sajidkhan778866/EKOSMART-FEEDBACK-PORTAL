@@ -4,8 +4,6 @@ import Login from './pages/Login';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Reports from './pages/Reports';
-import Billing from './pages/Billing';
-import Stock from './pages/Stock';
 import MyIdCard from './pages/MyIdCard';
 import MySalarySlip from './pages/MySalarySlip';
 import Complaints from './pages/Complaints';
@@ -54,8 +52,8 @@ function App() {
           >
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
-            <Route path="billing" element={<Billing />} />
-            <Route path="stock" element={<Stock />} />
+            <Route path="billing" element={<Navigate to="/dashboard" replace />} />
+            <Route path="stock" element={<Navigate to="/dashboard" replace />} />
             <Route path="idcard" element={<MyIdCard />} />
             <Route path="salary" element={<MySalarySlip />} />
             <Route path="complaints" element={<Complaints />} />

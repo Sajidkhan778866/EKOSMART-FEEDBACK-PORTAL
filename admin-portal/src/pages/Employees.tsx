@@ -2656,7 +2656,7 @@ const Employees = () => {
                     <div>
                       <h4 className="text-sm font-bold text-emerald-950">6. Soft-Coded System & Role Permissions</h4>
                       <p className="text-[11px] text-slate-500">
-                        Control employee access to billing counter, inventory scanning, warranty manager, and customer tickets.
+                        Control employee access to warranty manager, digital ID card, and customer complaint tickets.
                       </p>
                     </div>
                   </div>
@@ -2665,10 +2665,6 @@ const Employees = () => {
                       type="button"
                       onClick={() =>
                         setPermissions([
-                          'billing:create',
-                          'billing:view',
-                          'stock:view',
-                          'stock:manage',
                           'warranty:manage',
                           'complaints:manage',
                           'idcard:view',
@@ -2690,10 +2686,6 @@ const Employees = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   {[
-                    { key: 'billing:create', title: 'Showroom Billing Counter', desc: 'Create sales invoices, scan items & deduct stock' },
-                    { key: 'billing:view', title: 'View & Print Invoices', desc: 'Access showroom invoices & print receipts' },
-                    { key: 'stock:view', title: 'Inventory Browser & Serial Check', desc: 'Check serialized battery stock & quantities' },
-                    { key: 'stock:manage', title: 'Stock Intake & Transfer', desc: 'Register new stock & transfer between branches' },
                     { key: 'warranty:manage', title: 'Warranty Registration & Claims', desc: 'Register customer warranties & file claims' },
                     { key: 'complaints:manage', title: 'Service Tickets & Work Orders', desc: 'View, update, and resolve customer complaints' },
                     { key: 'idcard:view', title: 'Employee Digital ID Card', desc: 'View & print verified official staff ID card' },

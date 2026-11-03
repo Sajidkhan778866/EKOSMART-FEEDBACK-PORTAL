@@ -304,10 +304,7 @@ const Dashboard = () => {
   const rangeResolved = stats?.todayStats?.resolvedAndClosed ?? (stats?.resolvedComplaints || 0);
   const rangePending = stats?.todayStats?.pendingComplaints ?? (stats?.pendingComplaints || 0);
   const rangeCustomers = stats?.todayStats?.customers ?? (stats?.totalCustomers || 0);
-  const rangeRevenue = stats?.todayStats?.revenue ?? (stats?.totalRevenue || 0);
-  const rangeBills = stats?.todayStats?.bills ?? (stats?.billsCount || 0);
   const rangeWarranties = stats?.todayStats?.warranties ?? (stats?.totalWarranties || 0);
-  const rangeStockMovements = stats?.todayStats?.stockMovements ?? (stats?.stockMovementsCount || 0);
 
   // All Time Stats
   const allTimeComplaints = stats?.allTimeStats?.totalComplaints ?? 124;
@@ -389,7 +386,7 @@ const Dashboard = () => {
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Real-time complaint tracking, billing revenue, stock operations, and engineer allocation metrics.
+            Real-time complaint tracking, warranty management, and engineer allocation metrics.
           </p>
         </div>
 
@@ -444,21 +441,21 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Card 3: Showroom Billing & Revenue in Period */}
+        {/* Card 3: Active Warranties */}
         <div className="bg-white p-5 rounded-2xl shadow-xs border border-slate-200 flex items-center gap-4 hover:shadow-md transition">
           <div className="w-13 h-13 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center flex-shrink-0">
             <ShoppingBag size={26} />
           </div>
           <div>
-            <h3 className="text-slate-500 text-xs font-semibold">Billed Revenue</h3>
+            <h3 className="text-slate-500 text-xs font-semibold">Warranties Registered</h3>
             <p className="text-2xl md:text-3xl font-black text-purple-700 tracking-tight mt-0.5">
-              ₹{rangeRevenue.toLocaleString('en-IN')}
+              {rangeWarranties}
             </p>
-            <span className="text-[10px] text-slate-400">{rangeBills} bills generated</span>
+            <span className="text-[10px] text-slate-400">Active warranty coverage</span>
           </div>
         </div>
 
-        {/* Card 4: Customers & Warranties Registered */}
+        {/* Card 4: Customers Registered */}
         <div className="bg-white p-5 rounded-2xl shadow-xs border border-slate-200 flex items-center gap-4 hover:shadow-md transition">
           <div className="w-13 h-13 bg-teal-50 text-teal-600 rounded-2xl flex items-center justify-center flex-shrink-0">
             <Users size={26} />
@@ -468,7 +465,7 @@ const Dashboard = () => {
             <p className="text-2xl md:text-3xl font-black text-teal-700 tracking-tight mt-0.5">
               {rangeCustomers}
             </p>
-            <span className="text-[10px] text-slate-400">{rangeWarranties} warranties • {rangeStockMovements} stock mov.</span>
+            <span className="text-[10px] text-slate-400">Verified customer accounts</span>
           </div>
         </div>
       </div>

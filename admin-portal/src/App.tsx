@@ -11,8 +11,6 @@ import Customers from './pages/Customers';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import ContentManager from './pages/ContentManager';
-import StockManager from './pages/StockManager';
-import BillingManager from './pages/BillingManager';
 import ErrorBoundary from './components/ErrorBoundary';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -62,8 +60,8 @@ function App() {
           >
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
-            <Route path="stock" element={<StockManager />} />
-            <Route path="billing" element={<BillingManager />} />
+            <Route path="stock" element={<Navigate to="/dashboard" replace />} />
+            <Route path="billing" element={<Navigate to="/dashboard" replace />} />
             <Route path="employees" element={<Employees />} />
             <Route path="complaints" element={<Complaints />} />
             <Route path="warranty" element={<Warranty />} />

@@ -9,8 +9,6 @@ import {
   QrCode,
   Eye,
   FileSpreadsheet,
-  Package,
-  Receipt,
   RotateCcw,
   Calendar,
 } from 'lucide-react';
@@ -332,30 +330,17 @@ const Dashboard = () => {
       </div>
 
       {/* Quick Action Navigation Tiles */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Link
-          to="/stock"
+          to="/idcard"
           className="p-4 bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl transition flex items-center gap-3 shadow-2xs"
         >
           <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
-            <Package size={20} />
+            <QrCode size={20} />
           </div>
           <div>
-            <h4 className="text-xs font-bold text-slate-800">Inventory & Stock</h4>
-            <p className="text-[10px] text-slate-400">Barcode scan & check</p>
-          </div>
-        </Link>
-
-        <Link
-          to="/billing"
-          className="p-4 bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl transition flex items-center gap-3 shadow-2xs"
-        >
-          <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl">
-            <Receipt size={20} />
-          </div>
-          <div>
-            <h4 className="text-xs font-bold text-slate-800">Showroom POS</h4>
-            <p className="text-[10px] text-slate-400">Generate sales invoice</p>
+            <h4 className="text-xs font-bold text-slate-800">My Employee ID Card</h4>
+            <p className="text-[10px] text-slate-400">Digital QR & badge print</p>
           </div>
         </Link>
 
